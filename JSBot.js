@@ -41,9 +41,13 @@ var Commands = {
 "sexymagicShow": function () {
 	postMessage("[x]ABRACADAMN")
 },
-"tenMinuteWordWar": function () {
-	postMessage("Wordwar Begins.")
-	setInterval(function() {postMessage("Wordwar ends.");}, 600000);
+"wordWar": function (length) {
+	if (length[0] <= 60 && length[0] > 0) {
+		postMessage(length[0] + " minute Word War Begins.")
+		setTimeout(function() {postMessage("Word War ends.");}, length[0] * 60000);
+	} else {
+		postMessage("Choose a number between 1 and 60.")
+	}
 },
 "fezIsSpecial": function (){
 	postMessage("Fez is a VERY special star \n http://media.tumblr.com/6f1dce613dc2bfc79d60c6edeab8d631/tumblr_inline_mgpdf1N2Ha1qaezui.jpg");
