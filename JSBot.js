@@ -12,7 +12,7 @@ var Commands = {
 		} else {
 			postMessage("Choose a number between 1 and 60.")
 		}
-	}
+	},
 	"help": function () {
 		postMessage("Greetings. I'm Talos, chat helper. My commands are:");
 		setTimeout( function() {
