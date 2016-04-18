@@ -5,19 +5,23 @@ var Commands = {
 	"seen": function(user) {
 		searchMessages("{V:" + user[0] + "}");
 	},
-	"kill": function () {
-		postMessage("Bot killed. Say wake to power it back on.")
-	}, //This will actually be useful when the bot is on a loop- so that it can be shut off
-	"wake": function () {
-		postMessage("Bot woken up.")
-	},
-	"wordWar": function (length) {
+	"wordWar": function(length) {
 		if (length[0] <= 60 && length[0] > 0) {
 			postMessage(length[0] + " minute Word War Begins.")
 			setTimeout(function() {postMessage("Word War ends.");}, length[0] * 60000);
 		} else {
 			postMessage("Choose a number between 1 and 60.")
 		}
+	}
+	"help": function () {
+		postMessage("Greetings. I'm Talos, chat helper. My commands are:");
+		setTimeout( function() {
+			var helpList = "";
+			for (var C in Commands) {
+				helpList += "^" + C + "\n"; 
+			}
+			postMessage(helpList);
+		}, 100);
 	}
 };
 
@@ -71,6 +75,24 @@ function toggleChatLock() {
 	}
 }
 
+
+function writingHour() {
+    d = new Date();
+    
+    if (d.getUTCHours() == 12 && d.getUTCMinutes() == 1 && d.getUTCSeconds() == 1) {
+        postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
+        setTimeout(function() {closeChat();}, 500);
+        setTimeout(function() {openChat(); postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 60 * 60000);
+
+    } else if (d.getUTCHours() == 12 && d.getUTCMinutes() == 50 && d.getUTCSeconds() == 1) {
+        postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
+
+    } else if (d.getUTCHours() == 12 && d.getUTCMinutes() == 55 && d.getUTCSeconds() == 1) {
+        postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
+    }
+}
+
+
 function readChat() {
 	var Messages = X17("X138").innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
@@ -89,3 +111,13 @@ function readChat() {
 	X783 = false;
 }
 
+function mainLoop() {
+    readChat();
+    writingHour();
+ 
+    
+}
+
+setInterval(function() {mainLoop();}, 1000);
+X17("X138").innerHTML = '<P class="b">Previous messages hidden. (press ESC to re-parse page)</P>\n';
+X783 = false;
