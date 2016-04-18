@@ -13,6 +13,16 @@ var Commands = {
 			postMessage("Choose a number between 1 and 60.")
 		}
 	}
+	"help": function () {
+		postMessage("Greetings. I'm Talos, chat helper. My commands are:");
+		setTimeout( function() {
+			var helpList = "";
+			for (var C in Commands) {
+				helpList += "^" + C + "\n"; 
+			}
+			postMessage(helpList);
+		}, 100);
+	}
 };
 
 function postMessage(message) {
