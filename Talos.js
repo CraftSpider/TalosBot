@@ -7,10 +7,10 @@ var Commands = {
 	},
 	"wordWar": function(length) {
 		if (length[0] <= 60 && length[0] > 0) {
-			postMessage(length[0] + " minute Word War Begins.")
+			postMessage(length[0] + " minute Word War Begins.");
 			setTimeout(function() {postMessage("Word War ends.");}, length[0] * 60000);
 		} else {
-			postMessage("Choose a number between 1 and 60.")
+			postMessage("Choose a number between 1 and 60.");
 		}
 	},
 	"help": function () {
