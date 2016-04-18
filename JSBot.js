@@ -65,19 +65,20 @@ function toggleChatLock() {
 	}
 }
 
+
 function writingHour() {
     d = new Date();
-    if (d.getUTCHours() == 13 && d.getUTCMinutes() < 1) {
-        postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!")
-        closeChat();
-        setTimeout(function() {openChat();}, 60 * 60000);
-        setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 60 * 60000);
-        
-    } else if (d.getUTCHours() == 12 && d.getUTCMinutes() == 50) {
-        postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!")
+    
+    if (d.getUTCHours() == 12 && d.getUTCMinutes() == 1 && d.getUTCSeconds() == 1) {
+        postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
+        setTimeout(function() {closeChat();}, 500);
+        setTimeout(function() {openChat(); postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 60 * 60000);
 
-    } else if (d.getUTCHours() == 12 && d.getUTCMinutes() == 55) {
-        postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!")
+    } else if (d.getUTCHours() == 12 && d.getUTCMinutes() == 50 && d.getUTCSeconds() == 1) {
+        postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
+
+    } else if (d.getUTCHours() == 12 && d.getUTCMinutes() == 55 && d.getUTCSeconds() == 1) {
+        postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
     }
 }
 
@@ -108,3 +109,5 @@ function mainLoop() {
 }
 
 setInterval(function() {mainLoop();}, 1000);
+X17("X138").innerHTML = '<P class="b">Previous messages hidden. (press ESC to re-parse page)</P>\n';
+X783 = false;
