@@ -2,14 +2,22 @@ var Commands = {
 	"toggleLock": function() {
 		toggleChatLock();
 	},
-	"hello": function() {
-		postMessage("Hello World!");
-	},
-	"sext": function() {
-		postMessage("[x]You concatenate my strings ;) ;) ;)[/x]");
-	},
 	"seen": function(user) {
 		searchMessages("{V:" + user[0] + "}");
+	},
+	"kill": function () {
+		postMessage("Bot killed. Say wake to power it back on.")
+	}, //This will actually be useful when the bot is on a loop- so that it can be shut off
+	"wake": function () {
+		postMessage("Bot woken up.")
+	},
+	"wordWar": function (length) {
+		if (length[0] <= 60 && length[0] > 0) {
+			postMessage(length[0] + " minute Word War Begins.")
+			setTimeout(function() {postMessage("Word War ends.");}, length[0] * 60000);
+		} else {
+			postMessage("Choose a number between 1 and 60.")
+		}
 	}
 };
 
@@ -20,17 +28,16 @@ function postMessage(message) {
 }
 
 function privateMessage(name, message) {
-    postMessage("/pm \"" + name + "\" " + message);
-    console.log("\"" + message + "\" sent to " + name);
+	postMessage("/pm \"" + name + "\" " + message);
 }
 
 //Note, only sends the message to online users.
 function globalMessage(message) {
-    var users = X330.split("\n");
-    for (var i = 1; i <= users[0]; i++) {
+	var users = X330.split("\n");
+	for (var i = 1; i <= users[0]; i++) {
 		user = users[i].split("	");
 		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
-    }
+	}
 }
 
 function searchMessages(term) {
@@ -40,12 +47,12 @@ function searchMessages(term) {
 
 ///requires re-init of JSBot. Automate that?
 function changeName(name) {
-    X292('X387');
+	X292('X387');
 
-    setTimeout(function() {
-        X481.value = name;
-        X544.onsubmit();
-    }, 1000);
+	setTimeout(function() {
+		X481.value = name;
+		X544.onsubmit();
+	}, 1000);
 }
 
 function closeChat() {
@@ -82,16 +89,3 @@ function readChat() {
 	X783 = false;
 }
 
-function test() {
-    
-    
-    
-    /*var x = 0;
-    postLoop = setInterval(function() {
-        postMessage("This is minute " + x);
-        x++;
-        if (x >= 60) {
-            clearInterval(postLoop);
-        }
-    }, 60000);*/
-}
