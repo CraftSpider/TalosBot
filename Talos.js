@@ -7,8 +7,8 @@ var Commands = {
 	},
 	"wordWar": function(length) {
 		if (length[0] <= 60 && length[0] > 0) {
-			postMessage(length[0] + " minute Word War Begins." + (length[1]? " Keyword: " + length[1] : ""));
-			setTimeout(function() {postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends.");}, length[0] * 60000);
+			postMessage("I'm starting a "length[0] + "minute word war." + (length[1]? " Keyword: " + length[1] : "") + " Go!");
+			setTimeout(function() {postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");}, length[0] * 60000);
 		} else {
 			postMessage("Choose a number between 1 and 60.");
 		}
@@ -79,15 +79,15 @@ function toggleChatLock() {
 function writingHour() {
     d = new Date();
     
-    if (d.getUTCHours() == 12 && d.getUTCMinutes() == 1 && d.getUTCSeconds() == 1) {
+    if (d.getUTCHours() == 1 && d.getUTCMinutes() == 1 && d.getUTCSeconds() == 1) {
         postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
         setTimeout(function() {closeChat();}, 500);
         setTimeout(function() {openChat(); postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 60 * 60000);
 
-    } else if (d.getUTCHours() == 12 && d.getUTCMinutes() == 50 && d.getUTCSeconds() == 1) {
+    } else if (d.getUTCHours() == 0 && d.getUTCMinutes() == 50 && d.getUTCSeconds() == 1) {
         postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
 
-    } else if (d.getUTCHours() == 12 && d.getUTCMinutes() == 55 && d.getUTCSeconds() == 1) {
+    } else if (d.getUTCHours() == 0 && d.getUTCMinutes() == 55 && d.getUTCSeconds() == 1) {
         postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
     }
 }
