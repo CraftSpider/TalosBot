@@ -7,7 +7,7 @@ var Commands = {
 	},
 	"wordWar": function(length) {
 		if (length[0] <= 60 && length[0] > 0) {
-			postMessage("I'm starting a "length[0] + "minute word war." + (length[1]? " Keyword: " + length[1] : "") + " Go!");
+			postMessage("I'm starting a " + length[0] + " minute word war." + (length[1]? " Keyword: " + length[1]  + "." : "") + " Go!");
 			setTimeout(function() {postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");}, length[0] * 60000);
 		} else {
 			postMessage("Choose a number between 1 and 60.");
