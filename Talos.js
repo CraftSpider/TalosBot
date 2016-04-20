@@ -88,7 +88,7 @@ function toggleChatLock() {
 function writingHour() {
     d = new Date();
     
-    if (d.getUTCHours() == 1 && d.getUTCMinutes() == 1 && d.getUTCSeconds() == 1) {
+    if (d.getUTCHours() == 1 && d.getUTCMinutes() == 0 && d.getUTCSeconds() == 1) {
         postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
         setTimeout(function() {closeChat();}, 500);
         setTimeout(function() {openChat(); postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 60 * 60000);
