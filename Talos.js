@@ -37,7 +37,7 @@ var Commands = {
 	    } else {
 	        switch (args[0]) {
 	            case "help":
-	                postMessage("Use: ^help [Command Name]\nDescription: Help command by default gives general information about Talos, and a list of available commands. Adding the name of another command as an argument will give a more detailed descriptiong of that command. Though you probably figured that out, you're here after all :P");
+	                postMessage("Use: ^help [Command Name]\nDescription: Help command, by default gives general information about Talos and a list of available commands. Adding the name of another command as an argument will give a more detailed descriptiong of that command. Though you probably figured that out, you're here after all :P");
 	                
 	                break;
 	            case "seen":
