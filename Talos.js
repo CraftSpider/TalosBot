@@ -132,7 +132,7 @@ function writingHour() {
         setTimeout(function() {closeChat();}, 500);
         setTimeout(function() {
             openChat();
-            postMessage("[b]Writing Hour is over.[/b] How did you do?");
+            setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 500);
             WHActive = false;
             WHAlertTwo = false;
             WHAlertOne = false;
