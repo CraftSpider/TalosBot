@@ -1,12 +1,12 @@
 var NumWWs = 0;
 var MaxWWs = 10;
 
+var Admins = ["Dino.", "α|CraftSpider|Ω"];
+
 var Commands = {
-	"toggleLock": function() {
-		toggleChatLock();
-	},
 	"seen": function(user) {
-		searchMessages("{V:" + user[0] + "}");
+	    postMessage("Sorry, this command doesn't work yet.");
+// 		searchMessages("{V:" + user[0] + "}");
 	},
 	"wordWar": function(length) {
 		if (length[0] > 60 || length[0] <= 0) {
@@ -22,16 +22,50 @@ var Commands = {
 			}, length[0] * 60000);
 		}
 	},
-	"help": function () {
-		postMessage("Greetings. I'm Talos, chat helper. My commands are:");
-		setTimeout( function() {
-			var helpList = "";
-			for (var C in Commands) {
-				helpList += "^" + C + "\n"; 
-			}
-			postMessage(helpList);
-		}, 100);
+	"help": function (args) {
+	    if (!args[0]) {
+		    var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
+		    for (var C in Commands) {
+		    	helpList += "^" + C + "\n"; 
+		    }
+		    helpList += "\nMy Admin Commands are:\n";
+		    for (var C in AdminCommands) {
+		    	helpList += "^" + C + "\n"; 
+		    }
+		    postMessage(helpList);
+	    } else {
+	        switch (args[0]) {
+	            case "help":
+	                postMessage("Use: ^help [Command Name]\nDescription: Help command by default gives general information about Talos, and a list of available commands. Adding the name of another command as an argument will give a more detailed descriptiong of that command. Though you probably figured that out, you're here after all :P");
+	                
+	                break;
+	            case "seen":
+	                postMessage("Use: ^seen <Username>\nDescription:");
+	                
+	                break;
+	            case "toggleLock":
+	                postMessage("Use: ^toggleLock [time]\nDescription:");
+	                
+	                break;
+	            case "wordWar":
+	                postMessage("Use: ^wordWar <time> [keyword]\nDescription:");
+	                
+	                break;
+	            default:
+	        }
+	    }
 	}
+};
+
+var AdminCommands = {
+    "toggleLock": function(time) {
+		toggleChatLock();
+		if (time[0]) {
+		    setTimeout( function() {
+		        toggleChatLock();
+		    }, time[0] * 60000);
+		}
+	},
 };
 
 function postMessage(message) {
@@ -106,11 +140,25 @@ function readChat() {
 	var Messages = X17("X138").innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
-		if (Message.match(/: \^(\w+)(?:\s(.+))?/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
-			var Command = RegExp.$1;
-			var Args = RegExp.$2.split(/[\s]|&nbsp;<span/);
-			if(window["Commands"][Command]) {
+		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
+		    var User = RegExp.$1;
+			var Command = RegExp.$2;
+			var Args = RegExp.$3.split(/[\s]|&nbsp;<span/);
+		    var isAdmin = false;
+			for (var U in Admins) {
+			    if (User == Admins[U]) {
+			        isAdmin = true;
+			        break;
+			    }
+			}
+			if (window["AdminCommands"][Command] && isAdmin) {
+			    window["AdminCommands"][Command](Args);
+			} else if (window["AdminCommands"][Command] && !isAdmin) {
+			    postMessage("Sorry, that command is Admin only, and I don't recognize you!");
+			} else if (window["Commands"][Command]) {
 				window["Commands"][Command](Args);
+			} else {
+			    postMessage("Sorry, I don't understand that. May I suggest ^help?");
 			}
 		}
 	}
