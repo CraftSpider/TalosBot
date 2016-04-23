@@ -138,11 +138,11 @@ function writingHour() {
             WHAlertOne = false;
         }, 60 * 60000);
 
-    } else if (d.getUTCHours() == (WHTime == 0 ? 24 : WHTime - 1)  && d.getUTCMinutes() == 50 && !WHAlertOne) {
+    } else if (d.getUTCHours() == (WHTime == 0 ? 23 : WHTime - 1)  && d.getUTCMinutes() == 50 && !WHAlertOne) {
         postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
         WHAlertOne = true;
 
-    } else if (d.getUTCHours() == (WHTime == 0 ? 24 : WHTime - 1) && d.getUTCMinutes() == 55 && !WHAlertTwo) {
+    } else if (d.getUTCHours() == (WHTime == 0 ? 23 : WHTime - 1) && d.getUTCMinutes() == 55 && !WHAlertTwo) {
         postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
         WHAlertTwo = true;
     }
