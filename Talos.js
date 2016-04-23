@@ -45,8 +45,8 @@ var Commands = {
 	                postMessage("Use: ^seen <Username>\nDescription:");
 	                
 	                break;
-	            case "toggleLock":
-	                postMessage("Use: ^toggleLock [time]\nDescription:");
+	            case "toggleSleep":
+	                postMessage("Use: ^toggleSleep [time]\nDescription:");
 	                
 	                break;
 	            case "wordWar":
