@@ -1,5 +1,6 @@
 var NumWWs = 0;
 var MaxWWs = 10;
+var IsSleeping = 0;
 const WH_TIME = 0;
 
 var Admins = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
@@ -59,13 +60,14 @@ var Commands = {
 };
 
 var AdminCommands = {
-    "toggleLock": function(time) {
-		toggleChatLock();
-		if (time[0]) {
-		    setTimeout( function() {
-		        toggleChatLock();
-		    }, time[0] * 60000);
-		}
+    "toggleSleep": function() {
+    	if (IsSleeping == 0) {
+    		IsSleeping = 1;
+    		postMessage("Good night! Going to sleep now. To wake me, type [b]^toggleSleep[/b] again.")
+    	} else {
+    		IsSleeping = 0;
+    		postMessage("I'm awake again, and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].")
+    	}
 	},
 };
 
@@ -168,7 +170,7 @@ function readChat() {
 			    window["AdminCommands"][Command](Args);
 			} else if (window["AdminCommands"][Command] && !isAdmin) {
 			    postMessage("Sorry, that command is Admin only, and I don't recognize you!");
-			} else if (window["Commands"][Command]) {
+			} else if (window["Commands"][Command] && isSleeping == 0) {
 				window["Commands"][Command](Args);
 			} else {
 			    postMessage("Sorry, I don't understand that. May I suggest ^help?");
