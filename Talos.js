@@ -126,7 +126,7 @@ var WHAlertTwo = false;
 function writingHour() {
     d = new Date();
     
-    if (d.getUTCHours() == WHTime && d.getUTCMinutes() == 0 && !isWH) {
+    if (d.getUTCHours() == WHTime && d.getUTCMinutes() == 0 && !WHActive) {
         postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
         WHActive = true;
         setTimeout(function() {closeChat();}, 500);
