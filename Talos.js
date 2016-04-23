@@ -63,10 +63,10 @@ var AdminCommands = {
     "toggleSleep": function() {
     	if (IsSleeping == 0) {
     		IsSleeping = 1;
-    		postMessage("Good night! Going to sleep now. To wake me, type [b]^toggleSleep[/b] again.")
+    		postMessage("Good night! Going to sleep now. To wake me, type [b]^toggleSleep[/b] again.");
     	} else {
     		IsSleeping = 0;
-    		postMessage("I'm awake again, and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].")
+    		postMessage("I'm awake again, and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].");
     	}
 	},
 };
