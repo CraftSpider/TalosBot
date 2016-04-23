@@ -1,10 +1,10 @@
 const WH_TIME = 0;
+const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
 var NumWWs = 0;
 var MaxWWs = 10;
 var IsSleeping = 0;
 
-const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 var Commands = {
 	"seen": function(user) {
 	    postMessage("Sorry, this command doesn't work yet.");
