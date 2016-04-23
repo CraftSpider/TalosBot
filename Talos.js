@@ -4,7 +4,7 @@ var NumWWs = 0;
 var MaxWWs = 10;
 var IsSleeping = 0;
 
-var Admins = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
+const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 var Commands = {
 	"seen": function(user) {
 	    postMessage("Sorry, this command doesn't work yet.");
@@ -31,7 +31,7 @@ var Commands = {
 		    	helpList += "^" + C + "\n"; 
 		    }
 		    helpList += "\nMy Admin Commands are:\n";
-		    for (var C in AdminCommands) {
+		    for (var C in ADMIN_COMMANDS) {
 		    	helpList += "^" + C + "\n"; 
 		    }
 		    postMessage(helpList);
@@ -59,7 +59,7 @@ var Commands = {
 	}
 };
 
-var AdminCommands = {
+const ADMIN_COMMANDS = {
     "toggleSleep": function() {
     	if (IsSleeping == 0) {
     		IsSleeping = 1;
@@ -160,15 +160,15 @@ function readChat() {
 			var Command = RegExp.$2;
 			var Args = RegExp.$3.split(/[\s]|&nbsp;<span/);
 		    var isAdmin = false;
-			for (var U in Admins) {
-			    if (User == Admins[U]) {
+			for (var U in ADMINS) {
+			    if (User == ADMINS[U]) {
 			        isAdmin = true;
 			        break;
 			    }
 			}
-			if (window["AdminCommands"][Command] && isAdmin) {
-			    window["AdminCommands"][Command](Args);
-			} else if (window["AdminCommands"][Command] && !isAdmin) {
+			if (window["ADMIN_COMMANDS"][Command] && isAdmin) {
+			    window["ADMIN_COMMANDS"][Command](Args);
+			} else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
 			    postMessage("Sorry, that command is Admin only, and I don't recognize you!");
 			} else if (window["Commands"][Command] && IsSleeping == 0) {
 				window["Commands"][Command](Args);
