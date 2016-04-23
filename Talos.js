@@ -1,7 +1,7 @@
 var NumWWs = 0;
 var MaxWWs = 10;
 
-var Admins = ["Dino.", "α|CraftSpider|Ω"];
+var Admins = ["Dino.", "α|CraftSpider|Ω", "HiddenStorys"];
 
 var Commands = {
 	"seen": function(user) {
