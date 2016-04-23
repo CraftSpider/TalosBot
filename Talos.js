@@ -1,5 +1,6 @@
 var NumWWs = 0;
 var MaxWWs = 10;
+var WHTime = 0;
 
 var Admins = ["Dino.", "α|CraftSpider|Ω", "HiddenStorys"];
 
@@ -125,7 +126,7 @@ var WHAlertTwo = false;
 function writingHour() {
     d = new Date();
     
-    if (d.getUTCHours() == 0 && d.getUTCMinutes() == 0 && !isWH) {
+    if (d.getUTCHours() == WHTime && d.getUTCMinutes() == 0 && !isWH) {
         postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
         WHActive = true;
         setTimeout(function() {closeChat();}, 500);
@@ -137,11 +138,11 @@ function writingHour() {
             WHAlertOne = false;
         }, 60 * 60000);
 
-    } else if (d.getUTCHours() == 23 && d.getUTCMinutes() == 50 && !WHAlertOne) {
+    } else if (d.getUTCHours() == (WHTime == 0 ? 24 : WHTime - 1)  && d.getUTCMinutes() == 50 && !WHAlertOne) {
         postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
         WHAlertOne = true;
 
-    } else if (d.getUTCHours() == 23 && d.getUTCMinutes() == 55 && !WHAlertTwo) {
+    } else if (d.getUTCHours() == (WHTime == 0 ? 24 : WHTime - 1) && d.getUTCMinutes() == 55 && !WHAlertTwo) {
         postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
         WHAlertTwo = true;
     }
