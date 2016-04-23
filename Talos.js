@@ -172,6 +172,8 @@ function readChat() {
 			    postMessage("Sorry, that command is Admin only, and I don't recognize you!");
 			} else if (window["Commands"][Command] && IsSleeping == 0) {
 				window["Commands"][Command](Args);
+			} else if (IsSleeping == 1) {
+				break;
 			} else {
 			    postMessage("Sorry, I don't understand that. May I suggest ^help?");
 			}
