@@ -157,10 +157,10 @@ function readChat() {
 	var Messages = X17("X138").innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
-		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
+		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
 		    var User = RegExp.$1;
 			var Command = RegExp.$2;
-			var Args = RegExp.$3.split(/[\s]|&nbsp;<span/);
+			var Args = RegExp.$3.split(/\s/);
 		    var isAdmin = false;
 			for (var U in ADMINS) {
 			    if (User == ADMINS[U]) {
