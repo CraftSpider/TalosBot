@@ -19,8 +19,14 @@ var Commands = {
 		    NumWWs++;
 			postMessage("I'm starting a " + length[0] + " minute word war." + (length[1]? " Keyword: " + length[1]  + "." : "") + " Go!");
 			setTimeout(function() {
-			    postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");
-			    NumWWs--;
+				if (isSleeping) {
+					numWWs--;
+					break;
+				} else {
+				    	postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");
+					NumWWs--;	
+				}
+
 			}, length[0] * 60000);
 		}
 	},
@@ -63,7 +69,6 @@ const ADMIN_COMMANDS = {
     "toggleSleep": function() {
     	if (IsSleeping == 0) {
     		IsSleeping = 1;
-    		NumWWs = 0;
     		postMessage("Good night! Going to sleep now. To wake me, type [b]^toggleSleep[/b] again.");
     	} else {
     		IsSleeping = 0;
