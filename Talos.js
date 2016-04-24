@@ -19,8 +19,10 @@ var Commands = {
 		    NumWWs++;
 			postMessage("I'm starting a " + length[0] + " minute word war." + (length[1]? " Keyword: " + length[1]  + "." : "") + " Go!");
 			setTimeout(function() {
-			    postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");
-			    NumWWs--;
+				NumWWs--;
+				if (!IsSleeping) {
+					postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");
+				}
 			}, length[0] * 60000);
 		}
 	},
