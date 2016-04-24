@@ -63,6 +63,7 @@ const ADMIN_COMMANDS = {
     "toggleSleep": function() {
     	if (IsSleeping == 0) {
     		IsSleeping = 1;
+    		NumWWs = 0;
     		postMessage("Good night! Going to sleep now. To wake me, type [b]^toggleSleep[/b] again.");
     	} else {
     		IsSleeping = 0;
