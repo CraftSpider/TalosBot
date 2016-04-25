@@ -152,7 +152,6 @@ function writingHour() {
     }
 }
 
-
 function readChat() {
 	var Messages = X17("X138").innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
@@ -187,10 +186,39 @@ function readChat() {
 	X783 = false;
 }
 
+function readPMs() {
+    var ReceivedPM = X17("X94").innerHTML;
+    if (ReceivedPM.match(/<!--X268-->.+>(.+)<\/em>.+X296">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
+        var User = RegExp.$1;
+        var Command = RegExp.$2;
+		var Args = RegExp.$3.split(/\s/);
+		var isAdmin = false;
+		for (var U in ADMINS) {
+		    if (User == ADMINS[U]) {
+		        isAdmin = true;
+		        break;
+		    }
+		}
+		if (window["ADMIN_COMMANDS"][Command] && isAdmin) {
+		    window["ADMIN_COMMANDS"][Command](Args);
+		} else if (IsSleeping == 1) {
+			X47();
+			return;
+		} else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
+		    privateMessage("Sorry, that command is Admin only, and I don't recognize you!");
+		} else if (window["Commands"][Command]) {
+			window["Commands"][Command](Args);
+		} else {
+		    privateMessage("Sorry, I don't understand that. May I suggest ^help?");
+		}
+    }
+    setTimeout(function(){ X47(); }, 100);
+}
+
 function mainLoop() {
     readChat();
     writingHour();
- 
+ 	readPMs();
     
 }
 
