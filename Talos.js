@@ -124,31 +124,31 @@ function toggleChatLock() {
 }
 
 var WHActive = false;
+var WHDisactive = false;
 var WHAlertOne = false;
 var WHAlertTwo = false;
 
 function writingHour() {
     d = new Date();
     
-    if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() == 0 && !WHActive) {
-        postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
-        WHActive = true;
-        setTimeout(function() {closeChat();}, 500);
-        setTimeout(function() {
-            openChat();
-            setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 500);
-            WHActive = false;
-            WHAlertTwo = false;
-            WHAlertOne = false;
-        }, 60 * 60000);
-
-    } else if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && !WHAlertOne) {
+    if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && !WHAlertOne) {
         postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
         WHAlertOne = true;
-
     } else if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && !WHAlertTwo) {
         postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
         WHAlertTwo = true;
+    } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() == 0 && !WHActive) {
+        postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
+        WHActive = true;
+        WHDisactive = false;
+        setTimeout(function() {closeChat();}, 500);
+    } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() == 0 && !WHDisactive) {
+        openChat();
+        setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 500);
+        WHDisactive = true;
+        WHActive = false;
+        WHAlertTwo = false;
+        WHAlertOne = false;
     }
 }
 
