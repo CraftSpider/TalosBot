@@ -61,7 +61,7 @@ var Commands = {
 	}
 };
 
-const ADMIN_COMMANDS = {
+var ADMIN_COMMANDS = {
     "toggleSleep": function() {
     	if (IsSleeping == 0) {
     		IsSleeping = 1;
