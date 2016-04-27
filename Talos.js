@@ -11,19 +11,52 @@ var Commands = {
 // 		searchMessages("{V:" + user[0] + "}");
 	},
 	"wordWar": function(length) {
-		if (length[0] > 60 || length[0] <= 0) {
+		if (args[0] > 60 || args[0] <= 0) {
 			postMessage("Choose a number between 1 and 60.");
 		} else if (NumWWs >= MaxWWs) {
-		    postMessage("Too many word wars, I can't keep up! Wait for one to finish first.");
+			postMessage("Too many word wars, I can't keep up! Wait for one to finish first.");
 		} else {
-		    NumWWs++;
-			postMessage("I'm starting a " + length[0] + " minute word war." + (length[1]? " Keyword: " + length[1]  + "." : "") + " Go!");
-			setTimeout(function() {
-				NumWWs--;
-				if (!IsSleeping) {
-					postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");
+			var length = args[0];
+			var StartTime;
+			var KeyWord;
+			
+			//Block of input handling. Checks for :xx format for times.
+			if(args[1] && args[2]) {
+				if(args[1].match(/:(\d\d)/)) {
+					StartTime = RegExp.$1;
+					KeyWord = args[2];
+				} else if (args[2].match(/:(\d\d)/)) {
+					StartTime = RegExp.$1;
+					KeyWord = args[1];
+				} else {
+					postMessage("I can't read that start time, sorry.");
 				}
-			}, length[0] * 60000);
+			} else if (args[1]) {
+				if(args[1].match(/:(\d\d)/)) {
+					StartTime = RegExp.$1;
+				} else {
+					KeyWord = args[1];
+				}
+			}
+			
+			//Yay for error handling.
+			if (StartTime && StartTime > 59) {
+				postMessage("What part of the hour is that? Sorry, but I don't recognize that time.");
+			} else {
+				NumWWs++;
+				postMessage("I'm starting a " + length + " minute word war" + (StartTime? " at :" + StartTime : "") + "." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+				if(StartTime) {
+					var d = new Date();
+					//Figure out difference between StartTime and current time.
+				}
+				//Then wait that long to start it. Maybe shift above pM function and below timeout into a different function, and call that?
+				setTimeout(function() {
+					NumWWs--;
+					if (!IsSleeping) {
+						postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
+					}
+				}, length * 60000);
+			}
 		}
 	},
 	"help": function (args) {
