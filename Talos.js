@@ -10,7 +10,7 @@ var Commands = {
 	    postMessage("Sorry, this command doesn't work yet.");
 // 		searchMessages("{V:" + user[0] + "}");
 	},
-	"wordWar": function(length) {
+	"wordWar": function(args) {
 		if (args[0] > 60 || args[0] <= 0) {
 			postMessage("Choose a number between 1 and 60.");
 		} else if (NumWWs >= MaxWWs) {
@@ -40,22 +40,31 @@ var Commands = {
 			}
 			
 			//Yay for error handling.
-			if (StartTime && StartTime > 59) {
+			if (StartTime && (StartTime > 59 || StartTime < 0)) {
 				postMessage("What part of the hour is that? Sorry, but I don't recognize that time.");
 			} else {
-				NumWWs++;
-				postMessage("I'm starting a " + length + " minute word war" + (StartTime? " at :" + StartTime : "") + "." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
-				if(StartTime) {
-					var d = new Date();
-					//Figure out difference between StartTime and current time.
+			    var TimeDif;
+			    NumWWs++;
+			    
+				if (StartTime) {
+				    //Figure out difference between StartTime and current time.
+					var CurTime = new Date().getUTCMinutes();
+					var RawDif = StartTime - CurTime;
+					TimeDif = (RawDif >= 0 ? RawDif : RawDif + 60);
 				}
-				//Then wait that long to start it. Maybe shift above pM function and below timeout into a different function, and call that?
-				setTimeout(function() {
-					NumWWs--;
-					if (!IsSleeping) {
-						postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
-					}
-				}, length * 60000);
+				
+				if (TimeDif > 0) {
+					postMessage("Alright, I'll start a " + length + " minute word war at :" + StartTime + "." + (KeyWord? " Keyword: " + KeyWord  + "." : ""));
+					console.log(length + " " + StartTime + " " + TimeDif);
+					setTimeout(function() {
+					    postMessage("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+					    console.log("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+					    startWW(length, KeyWord);
+					}, TimeDif * 60000);
+				} else {
+				    postMessage("I'm starting a " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+			    	startWW(length, KeyWord);
+				}
 			}
 		}
 	},
@@ -105,6 +114,18 @@ var ADMIN_COMMANDS = {
     	}
 	},
 };
+
+function startWW(length, KeyWord) {
+    console.log("StartWW called " + length);
+	setTimeout(function() {
+		NumWWs--;
+		console.log("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
+		if (!IsSleeping) {
+			postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
+			setTimeout(function() {postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");}, 500);
+		}
+	}, length * 60000);
+}
 
 function postMessage(message) {
     // X92.value = message;
