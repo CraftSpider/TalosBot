@@ -252,5 +252,6 @@ function mainLoop() {
     -------------------
 */
 setInterval(function() {mainLoop();}, 1000);
+setInterval(function() {postMessage("");}, 10000);
 elementByID("X138").innerHTML = '<P class="b">Previous messages hidden. (press ESC to re-parse page)</P>\n';
 X783 = false;
