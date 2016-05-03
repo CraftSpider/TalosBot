@@ -71,6 +71,10 @@ var ADMIN_COMMANDS = {
     		postMessage("I'm awake again, and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].");
     	}
 	},
+	"kill": function() {
+		postMessage("Et Tu, Brute?")
+		throw new Error("Talos Killed by Admin")
+	},
 };
 
 function postMessage(message) {
