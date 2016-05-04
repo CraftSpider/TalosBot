@@ -72,8 +72,9 @@ var ADMIN_COMMANDS = {
     	}
 	},
 	"kill": function() {
-		postMessage("Et Tu, Brute?")
-		throw new Error("Talos Killed by Admin")
+		postMessage("Et Tu, Brute?");
+		setTimeout(function() {leaveChat();}, 200);
+		throw new Error("Talos Killed by Admin");
 	},
 };
 
@@ -81,6 +82,10 @@ function postMessage(message) {
     // X92.value = message;
     // X342();
     X279(message);
+}
+
+function leaveChat() {
+    X17("X802").onclick();
 }
 
 function privateMessage(name, message) {
