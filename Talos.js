@@ -7,8 +7,26 @@ var IsSleeping = 0;
 
 var Commands = {
 	"seen": function(user) {
-	    postMessage("Sorry, this command doesn't work yet.");
-// 		searchMessages("{V:" + user[0] + "}");
+	    //postMessage("Sorry, this command doesn't work yet.");
+	    if(user[0]) {
+	        var time;
+ 	    	searchMessages("{V:" + user[0] + "}");
+ 	    	setTimeout(function() {
+ 	    	    time = X17("X138").childNodes[2].childNodes[4].innerText;
+ 		    }, 300);
+ 		    setTimeout(function() {
+ 		        if(time) {
+                    postMessage("User " + user[0] + " was last seen " + time);
+ 		        } else {
+ 		            postMessage("I couldn't find that user. Sorry.");
+ 		        }
+ 		    }, 500);
+ 		    setTimeout(function() {
+ 		        X47();
+ 		    }, 750);
+	    } else {
+	        postMessage("Sorry, I need a user to look for.");
+	    }
 	},
 	"wordWar": function(length) {
 		if (length[0] > 60 || length[0] <= 0) {
@@ -71,12 +89,21 @@ var ADMIN_COMMANDS = {
     		postMessage("I'm awake again, and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].");
     	}
 	},
+	"kill": function() {
+		postMessage("Et Tu, Brute?");
+		setTimeout(function() {leaveChat();}, 200);
+		throw new Error("Talos Killed by Admin");
+	},
 };
 
 function postMessage(message) {
     // X92.value = message;
     // X342();
     X279(message);
+}
+
+function leaveChat() {
+    X17("X802").onclick();
 }
 
 function privateMessage(name, message) {
@@ -94,7 +121,6 @@ function globalMessage(message) {
 
 function searchMessages(term) {
 	postMessage("/find " + term);
-	
 }
 
 ///requires re-init of JSBot. Automate that?
@@ -153,6 +179,9 @@ function writingHour() {
 }
 
 function readChat() {
+    if (!X17("X971") && X17("X138").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
+        return;
+    }
 	var Messages = X17("X138").innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
@@ -212,16 +241,16 @@ function readPMs() {
 		    privateMessage("Sorry, I don't understand that. May I suggest ^help?");
 		}
     }
-    setTimeout(function(){ X47(); }, 100);
+    //setTimeout(function(){ X47(); }, 100);
 }
 
 function mainLoop() {
     readChat();
     writingHour();
- 	readPMs();
+    readPMs();
     
 }
 
 setInterval(function() {mainLoop();}, 1000);
-X17("X138").innerHTML = '<P class="b">Previous messages hidden. (press ESC to re-parse page)</P>\n';
+X17("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 X783 = false;
