@@ -252,5 +252,6 @@ function mainLoop() {
 }
 
 setInterval(function() {mainLoop();}, 1000);
+setInterval(function() {postMessage("");}, 60000*10)
 X17("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 X783 = false;
