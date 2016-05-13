@@ -61,6 +61,9 @@ var Commands = {
 	                postMessage("Use: ^help [Command Name]\nDescription: Help command, by default gives general information about Talos and a list of available commands. Adding the name of another command as an argument will give a more detailed description of that command. Though you probably figured that out, you're here after all :P");
 	                
 	                break;
+	            case "kill":
+	                postMessage("Use: ^kill\nDescription:");
+	                break;
 	            case "seen":
 	                postMessage("Use: ^seen <Username>\nDescription:");
 	                
@@ -74,6 +77,7 @@ var Commands = {
 	                
 	                break;
 	            default:
+	                postMessage("Sorry, no available help page for that.");
 	        }
 	    }
 	}
