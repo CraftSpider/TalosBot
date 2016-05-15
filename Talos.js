@@ -5,6 +5,8 @@
 */
 
 //Constants
+const VERSION = 1.1;
+const BOOT_TIME = new Date();
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
@@ -23,6 +25,9 @@ var WHAlertTwo = false;
     User Commands dictionaries
 */
 var Commands = {
+	"information": function() {
+		postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, Dino, and HiddenStorys.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
+	},
 	"seen": function(user) {
 		//postMessage("Sorry, this command doesn't work yet.");
 		if(user[0]) {
@@ -49,6 +54,12 @@ var Commands = {
 		} else {
 			postMessage("Sorry, I need a user to look for.");
 		}
+	},
+	"uptime": function() {
+		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".")
+	},
+	"version": function() {
+		postMessage("I'm currently on version " + VERSION);
 	},
 	"wordWar": function(length) {
 		if (length[0] > 60 || length[0] <= 0) {
