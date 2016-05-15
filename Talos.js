@@ -29,7 +29,7 @@ var Commands = {
 	        var time;
  	    	searchMessages("{V:" + user[0] + "}");
  	    	setTimeout(function() {
- 	    	    time = X17("X138").childNodes[2].childNodes[4].innerText;
+ 	    	    time = elementByID("X138").childNodes[2].childNodes[4].innerText;
  		    }, 300);
  		    setTimeout(function() {
  		        if(time) {
@@ -208,10 +208,10 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!X17("X971") && X17("X138").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
+    if (!elementByID("X971") && elementByID("X138").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
         return;
     }
-	var Messages = X17("X138").innerHTML.split("\n");
+	var Messages = elementByID("X138").innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
 		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
@@ -287,5 +287,5 @@ function mainLoop() {
 */
 setInterval(function() {mainLoop();}, 1000);
 setInterval(function() {postMessage("");}, 60000*10)
-X17("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+elementByID("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 X783 = false;
