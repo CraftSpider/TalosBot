@@ -27,13 +27,13 @@ var Commands = {
 	    //postMessage("Sorry, this command doesn't work yet.");
 	    if(user[0]) {
 	        var time;
- 	    	searchMessages("{V:" + user[0] + "}");
+ 	    	searchMessages("{V:" + user.join(" ") + "}");
  	    	setTimeout(function() {
- 	    	    time = elementByID("X138").childNodes[2].childNodes[4].innerText;
+ 	    	    time = X17("X138").childNodes[2].childNodes[4].innerText;
  		    }, 300);
  		    setTimeout(function() {
  		        if(time) {
-                    postMessage("User " + user[0] + " was last seen " + time);
+                    postMessage("User " + user.join(" ") + " was last seen " + time);
  		        } else {
  		            postMessage("I couldn't find that user. Sorry.");
  		        }
