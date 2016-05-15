@@ -1,10 +1,27 @@
+/*
+    ------------------
+    Initialize Variables
+    ------------------
+*/
+
+//Constants
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
+//Command variables
 var NumWWs = 0;
 var MaxWWs = 10;
 var IsSleeping = 0;
 
+//Writing Hour variables
+var WHActive = false;
+var WHDisactive = false;
+var WHAlertOne = false;
+var WHAlertTwo = false;
+
+/*
+    User Commands dictionaries
+*/
 var Commands = {
 	"seen": function(user) {
 	    //postMessage("Sorry, this command doesn't work yet.");
@@ -65,11 +82,11 @@ var Commands = {
 	                postMessage("Use: ^kill\nDescription:");
 	                break;
 	            case "seen":
-	                postMessage("Use: ^seen <Username>\nDescription:");
+	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Currently doesn't work, sorry about that.");
 	                
 	                break;
 	            case "toggleSleep":
-	                postMessage("Use: ^toggleSleep [time]\nDescription:");
+	                postMessage("Use: ^toggleSleep [time]\nDescription: Turns user commands and related features off or on. An admin only command, to prevent abuse. Also doesn't declare the finish to any active WWs that finish while I'm asleep.");
 	                
 	                break;
 	            case "wordWar":
@@ -100,26 +117,34 @@ var ADMIN_COMMANDS = {
 	},
 };
 
+/*
+    -----------------
+    Wrapper Functions
+    -----------------
+*/
+function elementByID(elementID) {
+    return document.getElementById(elementID);
+}
+
 function postMessage(message) {
     // X92.value = message;
     // X342();
     X279(message);
 }
 
-function leaveChat() {
-    X17("X802").onclick();
+function closeChat() {
+	postMessage("/close");
 }
 
-function privateMessage(name, message) {
-	postMessage("/pm \"" + name + "\" " + message);
+function openChat() {
+	postMessage("/open");
 }
 
-//Note, only sends the message to online users.
-function globalMessage(message) {
-	var users = X330.split("\n");
-	for (var i = 1; i <= users[0]; i++) {
-		user = users[i].split("	");
-		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
+function toggleChatLock() {
+	if(X105.X398) { //Variable for whether the chat is locked, of course
+		postMessage("/open");
+	} else {
+		postMessage("/close");
 	}
 }
 
@@ -127,7 +152,23 @@ function searchMessages(term) {
 	postMessage("/find " + term);
 }
 
-///requires re-init of JSBot. Automate that?
+function leaveChat() {
+    elementByID("X802").onclick();
+}
+
+function privateMessage(name, message) {
+	postMessage("/pm \"" + name + "\" " + message);
+}
+
+function globalMessage(message) { //Note, only sends the message to online users.
+	var users = X330.split("\n");
+	for (var i = 1; i <= users[0]; i++) {
+		user = users[i].split("	");
+		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
+	}
+}
+
+//requires re-init of JSBot. Automate that?
 function changeName(name) {
 	X292('X387');
 
@@ -137,27 +178,11 @@ function changeName(name) {
 	}, 1000);
 }
 
-function closeChat() {
-	X279("/close");
-}
-
-function openChat() {
-	X279("/open");
-}
-
-function toggleChatLock() {
-	if(X105.X398) {
-		X279("/open");
-	} else {
-		X279("/close");
-	}
-}
-
-var WHActive = false;
-var WHDisactive = false;
-var WHAlertOne = false;
-var WHAlertTwo = false;
-
+/*
+    -------------------
+    Main loop functions
+    -------------------
+*/
 function writingHour() {
     d = new Date();
     
@@ -215,12 +240,12 @@ function readChat() {
 	}
 	
 	
-	X17("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+	elementByID("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 	X783 = false;
 }
 
 function readPMs() {
-    var ReceivedPM = X17("X94").innerHTML;
+    var ReceivedPM = elementByID("X94").innerHTML;
     if (ReceivedPM.match(/<!--X268-->.+>(.+)<\/em>.+X296">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
@@ -255,6 +280,11 @@ function mainLoop() {
     
 }
 
+/*
+    -------------------
+    Initialization Code
+    -------------------
+*/
 setInterval(function() {mainLoop();}, 1000);
 setInterval(function() {postMessage("");}, 60000*10)
 X17("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
