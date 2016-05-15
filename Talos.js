@@ -5,6 +5,7 @@
 */
 
 //Constants
+const VERSION = 1.1
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
