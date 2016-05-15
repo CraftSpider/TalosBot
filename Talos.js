@@ -48,12 +48,10 @@ var Commands = {
 			    
 				if (StartTime) {
 				    //Figure out difference between StartTime and current time.
-					var CurTime = new Date().getUTCMinutes();
-					var RawDif = StartTime - CurTime;
-					TimeDif = (RawDif >= 0 ? RawDif : RawDif + 60);
-				}
-				
-				if (TimeDif > 0) {
+					var CurTime = new Date();
+					var RawDif = StartTime - CurTime.getUTCMinutes();
+					RawDif = (RawDif >= 0 ? RawDif : RawDif + 60);
+					TimeDif = (curtime.getTime()-(curtime.getSeconds()*1000+curtime.getMilliseconds())) + RawDif * 60000
 					postMessage("Alright, I'll start a " + length + " minute word war at :" + StartTime + "." + (KeyWord? " Keyword: " + KeyWord  + "." : ""));
 					console.log(length + " " + StartTime + " " + TimeDif);
 					setTimeout(function() {
@@ -122,7 +120,6 @@ function startWW(length, KeyWord) {
 		console.log("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
 		if (!IsSleeping) {
 			postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
-			setTimeout(function() {postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");}, 500);
 		}
 	}, length * 60000);
 }
