@@ -24,26 +24,26 @@ var WHAlertTwo = false;
 */
 var Commands = {
 	"seen": function(user) {
-	    //postMessage("Sorry, this command doesn't work yet.");
-	    if(user[0]) {
-	        var time;
- 	    	searchMessages("{V:" + user.join(" ") + "}");
- 	    	setTimeout(function() {
- 	    	    time = elementByID("X138").childNodes[2].childNodes[4].innerText;
- 		    }, 300);
- 		    setTimeout(function() {
- 		        if(time) {
+		//postMessage("Sorry, this command doesn't work yet.");
+		if(user[0]) {
+			var time;
+			searchMessages("{V:" + user.join(" ") + "}");
+			setTimeout(function() {
+				time = elementByID("X138").childNodes[2].childNodes[4].innerText;
+			}, 300);
+			setTimeout(function() {
+				if(time) {
                     postMessage("User " + user.join(" ") + " was last seen " + time);
- 		        } else {
- 		            postMessage("I couldn't find that user. Sorry.");
- 		        }
- 		    }, 500);
- 		    setTimeout(function() {
- 		        X47();
- 		    }, 750);
-	    } else {
-	        postMessage("Sorry, I need a user to look for.");
-	    }
+				} else {
+					postMessage("I couldn't find that user. Sorry.");
+				}
+			}, 500);
+			setTimeout(function() {
+				X47();
+			}, 750);
+		} else {
+			postMessage("Sorry, I need a user to look for.");
+		}
 	},
 	"wordWar": function(length) {
 		if (length[0] > 60 || length[0] <= 0) {
