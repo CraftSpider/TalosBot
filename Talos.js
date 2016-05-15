@@ -29,7 +29,12 @@ var Commands = {
 			var time;
 			searchMessages("{V:" + user.join(" ") + "}");
 			setTimeout(function() {
-				time = elementByID("X138").childNodes[2].childNodes[4].innerText;
+				var history = elementByID("X138").childNodes[2];
+				if(history.childNodes[5]) {
+					time = history.childNodes[5].innerText;
+				} else {
+					time = history.childNodes[4].innerText;
+				}
 			}, 300);
 			setTimeout(function() {
 				if(time) {
