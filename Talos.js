@@ -5,7 +5,8 @@
 */
 
 //Constants
-const VERSION = 1.1
+const VERSION = 1.1;
+const BOOT_TIME = new Date();
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
@@ -24,27 +25,41 @@ var WHAlertTwo = false;
     User Commands dictionaries
 */
 var Commands = {
+	"information": function() {
+		postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, Dino, and HiddenStorys.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
+	},
 	"seen": function(user) {
-	    //postMessage("Sorry, this command doesn't work yet.");
-	    if(user[0]) {
-	        var time;
- 	    	searchMessages("{V:" + user[0] + "}");
- 	    	setTimeout(function() {
- 	    	    time = elementByID("X138").childNodes[2].childNodes[4].innerText;
- 		    }, 300);
- 		    setTimeout(function() {
- 		        if(time) {
-                    postMessage("User " + user[0] + " was last seen " + time);
- 		        } else {
- 		            postMessage("I couldn't find that user. Sorry.");
- 		        }
- 		    }, 500);
- 		    setTimeout(function() {
- 		        X47();
- 		    }, 750);
-	    } else {
-	        postMessage("Sorry, I need a user to look for.");
-	    }
+		//postMessage("Sorry, this command doesn't work yet.");
+		if(user[0]) {
+			var time;
+			searchMessages("{V:" + user.join(" ") + "}");
+			setTimeout(function() {
+				var recentMessage = elementByID("X138").childNodes[2];
+				if(recentMessage.childNodes[5]) {
+					time = recentMessage.childNodes[5].innerText;
+				} else {
+					time = recentMessage.childNodes[4].innerText;
+				}
+			}, 300);
+			setTimeout(function() {
+				if(time) {
+                    postMessage("User " + user.join(" ") + " was last seen " + time);
+				} else {
+					postMessage("I couldn't find that user. Sorry.");
+				}
+			}, 500);
+			setTimeout(function() {
+				X47();
+			}, 750);
+		} else {
+			postMessage("Sorry, I need a user to look for.");
+		}
+	},
+	"uptime": function() {
+		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".")
+	},
+	"version": function() {
+		postMessage("I'm currently on version " + VERSION);
 	},
 	"wordWar": function(length) {
 		if (length[0] > 60 || length[0] <= 0) {
