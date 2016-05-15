@@ -24,8 +24,26 @@ var WHAlertTwo = false;
 */
 var Commands = {
 	"seen": function(user) {
-	    postMessage("Sorry, this command doesn't work yet.");
-// 		searchMessages("{V:" + user[0] + "}");
+	    //postMessage("Sorry, this command doesn't work yet.");
+	    if(user[0]) {
+	        var time;
+ 	    	searchMessages("{V:" + user[0] + "}");
+ 	    	setTimeout(function() {
+ 	    	    time = X17("X138").childNodes[2].childNodes[4].innerText;
+ 		    }, 300);
+ 		    setTimeout(function() {
+ 		        if(time) {
+                    postMessage("User " + user[0] + " was last seen " + time);
+ 		        } else {
+ 		            postMessage("I couldn't find that user. Sorry.");
+ 		        }
+ 		    }, 500);
+ 		    setTimeout(function() {
+ 		        X47();
+ 		    }, 750);
+	    } else {
+	        postMessage("Sorry, I need a user to look for.");
+	    }
 	},
 	"wordWar": function(length) {
 		if (length[0] > 60 || length[0] <= 0) {
@@ -60,6 +78,9 @@ var Commands = {
 	                postMessage("Use: ^help [Command Name]\nDescription: Help command, by default gives general information about Talos and a list of available commands. Adding the name of another command as an argument will give a more detailed description of that command. Though you probably figured that out, you're here after all :P");
 	                
 	                break;
+	            case "kill":
+	                postMessage("Use: ^kill\nDescription:");
+	                break;
 	            case "seen":
 	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Currently doesn't work, sorry about that.");
 	                
@@ -73,6 +94,7 @@ var Commands = {
 	                
 	                break;
 	            default:
+	                postMessage("Sorry, no available help page for that.");
 	        }
 	    }
 	}
@@ -87,6 +109,11 @@ var ADMIN_COMMANDS = {
     		IsSleeping = 0;
     		postMessage("I'm awake again, and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].");
     	}
+	},
+	"kill": function() {
+		postMessage("Et Tu, Brute?");
+		setTimeout(function() {leaveChat();}, 200);
+		throw new Error("Talos Killed by Admin");
 	},
 };
 
@@ -121,10 +148,12 @@ function toggleChatLock() {
 	}
 }
 
-
 function searchMessages(term) {
 	postMessage("/find " + term);
-	
+}
+
+function leaveChat() {
+    elementByID("X802").onclick();
 }
 
 function privateMessage(name, message) {
@@ -139,7 +168,8 @@ function globalMessage(message) { //Note, only sends the message to online users
 	}
 }
 
-function changeName(name) { //requires re-init of JSBot. Automate that?
+//requires re-init of JSBot. Automate that?
+function changeName(name) {
 	X292('X387');
 
 	setTimeout(function() {
@@ -178,7 +208,10 @@ function writingHour() {
 }
 
 function readChat() {
-	var Messages = elementByID("X138").innerHTML.split("\n");
+    if (!X17("X971") && X17("X138").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
+        return;
+    }
+	var Messages = X17("X138").innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
 		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
@@ -237,13 +270,14 @@ function readPMs() {
 		    privateMessage("Sorry, I don't understand that. May I suggest ^help?");
 		}
     }
-    setTimeout(function(){ X47(); }, 100);
+    //setTimeout(function(){ X47(); }, 100);
 }
 
 function mainLoop() {
     readChat();
     writingHour();
- 	readPMs();
+    readPMs();
+    
 }
 
 /*
@@ -252,6 +286,6 @@ function mainLoop() {
     -------------------
 */
 setInterval(function() {mainLoop();}, 1000);
-setInterval(function() {postMessage("");}, 10000);
-elementByID("X138").innerHTML = '<P class="b">Previous messages hidden. (press ESC to re-parse page)</P>\n';
+setInterval(function() {postMessage("");}, 60000*10)
+X17("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 X783 = false;
