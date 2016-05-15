@@ -29,11 +29,11 @@ var Commands = {
 			var time;
 			searchMessages("{V:" + user.join(" ") + "}");
 			setTimeout(function() {
-				var history = elementByID("X138").childNodes[2];
-				if(history.childNodes[5]) {
-					time = history.childNodes[5].innerText;
+				var recentMessage = elementByID("X138").childNodes[2];
+				if(recentMessage.childNodes[5]) {
+					time = recentMessage.childNodes[5].innerText;
 				} else {
-					time = history.childNodes[4].innerText;
+					time = recentMessage.childNodes[4].innerText;
 				}
 			}, 300);
 			setTimeout(function() {
