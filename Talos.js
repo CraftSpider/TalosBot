@@ -40,17 +40,17 @@ var Commands = {
 				} else {
 					time = recentMessage.childNodes[4].innerText;
 				}
-			}, 300);
+			}, 500);
 			setTimeout(function() {
 				if(time) {
                     postMessage("User " + user.join(" ") + " was last seen " + time);
 				} else {
 					postMessage("I couldn't find that user. Sorry.");
 				}
-			}, 500);
+			}, 700);
 			setTimeout(function() {
 				X47();
-			}, 750);
+			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
 		}
