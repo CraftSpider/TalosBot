@@ -47,21 +47,21 @@ var Commands = {
 			    NumWWs++;
 			    
 				if (StartTime) {
-				    //Figure out difference between StartTime and current time.
+					//Figure out difference between StartTime and current time.
 					var CurTime = new Date();
 					var RawDif = StartTime - CurTime.getUTCMinutes();
 					RawDif = (RawDif >= 0 ? RawDif : RawDif + 60);
-					TimeDif = (curtime.getTime()-(curtime.getSeconds()*1000+curtime.getMilliseconds())) + RawDif * 60000
+					TimeDif = ((CurTime.getTime()-(CurTime.getSeconds()*1000+CurTime.getMilliseconds())) + RawDif * 60000) - CurTime.getTime();
 					postMessage("Alright, I'll start a " + length + " minute word war at :" + StartTime + "." + (KeyWord? " Keyword: " + KeyWord  + "." : ""));
 					console.log(length + " " + StartTime + " " + TimeDif);
 					setTimeout(function() {
-					    postMessage("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
-					    console.log("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
-					    startWW(length, KeyWord);
-					}, TimeDif * 60000);
+						postMessage("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+						console.log("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+						startWW(length, KeyWord);
+					}, TimeDif);
 				} else {
-				    postMessage("I'm starting a " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
-			    	startWW(length, KeyWord);
+					postMessage("I'm starting a " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+					startWW(length, KeyWord);
 				}
 			}
 		}
@@ -114,10 +114,8 @@ var ADMIN_COMMANDS = {
 };
 
 function startWW(length, KeyWord) {
-    console.log("StartWW called " + length);
 	setTimeout(function() {
 		NumWWs--;
-		console.log("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
 		if (!IsSleeping) {
 			postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
 		}
