@@ -142,6 +142,10 @@ function elementByID(elementID) {
     return document.getElementById(elementID);
 }
 
+function leaveChat() {
+    elementByID("X802").onclick();
+}
+
 function postMessage(message) {
     // X92.value = message;
     // X342();
@@ -168,10 +172,6 @@ function searchMessages(term) {
 	postMessage("/find " + term);
 }
 
-function leaveChat() {
-    elementByID("X802").onclick();
-}
-
 function privateMessage(name, message) {
 	postMessage("/pm \"" + name + "\" " + message);
 }
@@ -182,6 +182,29 @@ function globalMessage(message) { //Note, only sends the message to online users
 		user = users[i].split("	");
 		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
 	}
+}
+
+function editRoomBoard(message, method, key) {  //Method is the style of editing to use. Options are: 0/default, overwrite. 1, append. 2, prepend. 3, replace.
+    postMessage("/rb");
+    setTimeout(function() {
+        var BoardMessage = X17("X856");
+        switch (method) {
+            case 1:
+                BoardMessage.value = BoardMessage.value + "\n" + message;
+                break;
+            case 2:
+                BoardMessage.value = message + "\n" + BoardMessage.value;
+                break;
+            case 3:
+                if (BoardMessage.value.match(new RegExp(key, "g")).length > 1) {
+                    BoardMessage.value = BoardMessage.value.replace(new RegExp(key + ".+?" + key, "g"), key + message + key);
+                }
+                break;
+            default:
+                BoardMessage.value = message;
+        }
+        X565.onclick();
+    }, 150);
 }
 
 //requires re-init of JSBot. Automate that?
