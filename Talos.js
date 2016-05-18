@@ -92,22 +92,27 @@ var Commands = {
 	        switch (args[0]) {
 	            case "help":
 	                postMessage("Use: ^help [Command Name]\nDescription: Help command, by default gives general information about Talos and a list of available commands. Adding the name of another command as an argument will give a more detailed description of that command. Though you probably figured that out, you're here after all :P");
-	                
 	                break;
+	            case "information":
+	            	postMessage("Use: ^information\nDescription: Gives a short blurb about Talos.");
+	            	break;
 	            case "kill":
-	                postMessage("Use: ^kill\nDescription:");
+	                postMessage("Use: ^kill\nDescription: Causes Talos to immediately leave the chat, and cease running. Admin only.");
 	                break;
 	            case "seen":
-	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Currently doesn't work, sorry about that.");
-	                
+	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Returns a time or date in EST.");
 	                break;
 	            case "toggleSleep":
 	                postMessage("Use: ^toggleSleep [time]\nDescription: Turns user commands and related features off or on. An admin only command, to prevent abuse. Also doesn't declare the finish to any active WWs that finish while I'm asleep.");
-	                
 	                break;
+	            case "uptime":
+	            	postMessage("Use: ^uptime\nDescription: Gives the time and date, down to the second, that Talos began running.");
+	            	break;
+	            case "version":
+	            	postMessage("Use: ^version\nDescription: The version that Talos is currently running. I always know exactly where I am.");
+	            	break;
 	            case "wordWar":
-	                postMessage("Use: ^wordWar <time> [keyword]\nDescription:");
-	                
+	                postMessage("Use: ^wordWar <time> [keyword]\nDescription: Starts a Word War, with given keyword if provided. The time is in minutes, and Talos will say when that many minutes have elapsed.");
 	                break;
 	            default:
 	                postMessage("Sorry, no available help page for that.");
