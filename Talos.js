@@ -56,7 +56,7 @@ var Commands = {
 		}
 	},
 	"uptime": function() {
-		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".")
+		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".");
 	},
 	"version": function() {
 		postMessage("I'm currently on version " + VERSION);
@@ -143,8 +143,6 @@ function elementByID(elementID) {
 }
 
 function postMessage(message) {
-    // X92.value = message;
-    // X342();
     X279(message);
 }
 
@@ -286,7 +284,6 @@ function readPMs() {
 		    privateMessage("Sorry, I don't understand that. May I suggest ^help?");
 		}
     }
-    //setTimeout(function(){ X47(); }, 100);
 }
 
 function mainLoop() {
