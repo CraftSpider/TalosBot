@@ -22,7 +22,9 @@ var WHAlertOne = false;
 var WHAlertTwo = false;
 
 /*
+	--------------------------
     User Commands dictionaries
+    --------------------------
 */
 var Commands = {
 	"information": function() {
