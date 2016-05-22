@@ -46,6 +46,7 @@ var Commands = {
                     postMessage("User " + user.join(" ") + " was last seen " + time);
 				} else {
 					postMessage("I couldn't find that user. Sorry.");
+					X47();
 				}
 			}, 700);
 			setTimeout(function() {
@@ -53,6 +54,7 @@ var Commands = {
 			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
+			X47();
 		}
 	},
 	"uptime": function() {
