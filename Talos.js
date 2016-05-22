@@ -152,8 +152,11 @@ function leaveChat() {
 }
 
 function postMessage(message) {
-    // X92.value = message;
-    // X342();
+    var HTMLTags = ["<b>", "</b>", "<i>", "</i>", "<s>", "</s>", "<u>", "</u>"];
+    var ChatzyTags = ["[b]", "[/b]", "[i]", "[/i]", "[s]", "[/s]", "[u]", "[/u]"];
+    for (var tag in HTMLTags) {
+        message = message.replace(HTMLTags[tag],ChatzyTags[tag]);
+    }
     X279(message);
 }
 
