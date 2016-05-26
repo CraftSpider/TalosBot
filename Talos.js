@@ -34,7 +34,7 @@ var Commands = {
 			var time;
 			searchMessages("{V:" + user.join(" ") + "}");
 			setTimeout(function() {
-				var recentMessage = elementByID("X138").childNodes[2];
+				var recentMessage = elementByID("X6817").childNodes[2];
 				if(recentMessage.childNodes[5]) {
 					time = recentMessage.childNodes[5].innerText;
 				} else {
@@ -49,7 +49,7 @@ var Commands = {
 				}
 			}, 700);
 			setTimeout(function() {
-				X47();
+				X1774();
 			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
@@ -143,7 +143,7 @@ function elementByID(elementID) {
 }
 
 function postMessage(message) {
-    X279(message);
+    X9646(message);
 }
 
 function closeChat() {
@@ -155,7 +155,7 @@ function openChat() {
 }
 
 function toggleChatLock() {
-	if(X105.X398) { //Variable for whether the chat is locked, of course
+	if(X2667.X5476) { //Variable for whether the chat is locked, of course
 		postMessage("/open");
 	} else {
 		postMessage("/close");
@@ -167,7 +167,7 @@ function searchMessages(term) {
 }
 
 function leaveChat() {
-    elementByID("X802").onclick();
+    elementByID("X2122").onclick();
 }
 
 function privateMessage(name, message) {
@@ -175,7 +175,7 @@ function privateMessage(name, message) {
 }
 
 function globalMessage(message) { //Note, only sends the message to online users.
-	var users = X330.split("\n");
+	var users = X6958.split("\n");
 	for (var i = 1; i <= users[0]; i++) {
 		user = users[i].split("	");
 		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
@@ -184,11 +184,11 @@ function globalMessage(message) { //Note, only sends the message to online users
 
 //requires re-init of JSBot. Automate that?
 function changeName(name) {
-	X292('X387');
+	X3132('X3221')
 
 	setTimeout(function() {
-		X481.value = name;
-		X544.onsubmit();
+		X2714.value = name;
+		X6145.onsubmit();
 	}, 1000);
 }
 
@@ -222,10 +222,10 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID("X971") && elementByID("X138").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
+    if (!elementByID("X6285") && elementByID("X6817").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
-	var Messages = elementByID("X138").innerHTML.split("\n");
+	var Messages = elementByID("X6817").innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
 		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
@@ -254,13 +254,13 @@ function readChat() {
 	}
 	
 	
-	elementByID("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-	X783 = false;
+	elementByID("X6817").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+	X1281 = false;
 }
 
 function readPMs() {
-    var ReceivedPM = elementByID("X94").innerHTML;
-    if (ReceivedPM.match(/<!--X268-->.+>(.+)<\/em>.+X296">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
+    var ReceivedPM = elementByID("X8459").innerHTML;
+    if (ReceivedPM.match(/<!--X4585-->.+>(.+)<\/em>.+X8195">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
 		var Args = RegExp.$3.split(/\s/);
@@ -274,7 +274,7 @@ function readPMs() {
 		if (window["ADMIN_COMMANDS"][Command] && isAdmin) {
 		    window["ADMIN_COMMANDS"][Command](Args);
 		} else if (IsSleeping == 1) {
-			X47();
+			X1774();
 			return;
 		} else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
 		    privateMessage("Sorry, that command is Admin only, and I don't recognize you!");
@@ -300,5 +300,5 @@ function mainLoop() {
 */
 setInterval(function() {mainLoop();}, 1000);
 setInterval(function() {postMessage("");}, 60000*10)
-elementByID("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-X783 = false;
+elementByID("X6817").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+X1281 = false;
