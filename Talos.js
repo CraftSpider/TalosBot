@@ -34,7 +34,7 @@ var Commands = {
 			var time;
 			searchMessages("{V:" + user.join(" ") + "}");
 			setTimeout(function() {
-				var recentMessage = elementByID("X6817").childNodes[2];
+				var recentMessage = messageTable.childNodes[2];
 				if(recentMessage.childNodes[5]) {
 					time = recentMessage.childNodes[5].innerText;
 				} else {
@@ -49,7 +49,7 @@ var Commands = {
 				}
 			}, 700);
 			setTimeout(function() {
-				X1774();
+				closePopup();
 			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
@@ -142,6 +142,10 @@ function elementByID(elementID) {
     return document.getElementById(elementID);
 }
 
+function closePopup() {
+	X1774();
+}
+
 function postMessage(message) {
     X9646(message);
 }
@@ -222,10 +226,10 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID("X6285") && elementByID("X6817").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    if (!elementByID("X6285") && messageTable.firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
-	var Messages = elementByID("X6817").innerHTML.split("\n");
+	var Messages = messageTable.innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
 		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
@@ -254,7 +258,7 @@ function readChat() {
 	}
 	
 	
-	elementByID("X6817").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+	messageTable.innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 	X1281 = false;
 }
 
@@ -274,7 +278,7 @@ function readPMs() {
 		if (window["ADMIN_COMMANDS"][Command] && isAdmin) {
 		    window["ADMIN_COMMANDS"][Command](Args);
 		} else if (IsSleeping == 1) {
-			X1774();
+			closePopup();
 			return;
 		} else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
 		    privateMessage("Sorry, that command is Admin only, and I don't recognize you!");
@@ -298,7 +302,8 @@ function mainLoop() {
     Initialization Code
     -------------------
 */
+var messageTable = elementByID("X6817");
+messageTable.innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+X1281 = false;
 setInterval(function() {mainLoop();}, 1000);
 setInterval(function() {postMessage("");}, 60000*10)
-elementByID("X6817").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-X1281 = false;
