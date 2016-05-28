@@ -106,6 +106,7 @@ var Commands = {
 	                break;
 	            case "kill":
 	                postMessage("Use: ^kill\nDescription:");
+	                
 	                break;
 	            case "seen":
 	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Currently doesn't work, sorry about that.");
@@ -119,6 +120,10 @@ var Commands = {
 	                postMessage("Use: ^wordWar <time> [keyword]\nDescription:");
 	                
 	                break;
+	            case "prompt":
+	            	postMessage("Use: ^prompt");
+	            	
+	            	break;
 	            default:
 	                postMessage("Sorry, no available help page for that.");
 	        }
