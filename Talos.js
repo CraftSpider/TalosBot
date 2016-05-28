@@ -24,13 +24,12 @@ var WHAlertTwo = false;
 //Writing Prompts words
 var Nouns = ["dog", "cat", "robot", "astronaut", "man", "woman", "person", "child", "giant", "elephant", "zebra", "animal", "box", "tree", "wizard", "mage", "swordsman", "soldier", "inventor", "doctor", "Talos", "dinosaur", "insect", "nerd", "dancer", "singer", "actor", "barista", "acrobat", "gamer", "writer", "dragon"];
 var Adjectives = ["happy", "sad", "athletic", "giant", "tiny", "smart", "silly", "unintelligent", "funny", "coffee-loving", "lazy", "spray-tanned", "angry", "disheveled", "annoying", "loud", "quiet", "shy", "extroverted", "jumpy", "ditzy", "strong", "weak", "smiley", "annoyed", "dextrous"];
-var Goal = ["fly around the world", "go on a date", "win a race", "tell their crush how they feel", "write a chatbot", "get into university", "graduate high school", "plant a hundred trees", "find their biological parents", "fill their bucket list", "find atlantis", "learn magic", "learn to paint", "drive a car", "pilot a spaceship", "leave Earth", "go home", "redo elementary school", "not spill their beer"];
-var Obstacle = ["learning to read", "fighting aliens", "saving the world", "doing algebra", "find their soulmate", "losing their hearing", "losing their sense of sight", "learning the language", "hacking the mainframe", "coming of age", "the nuclear apocalypse is happening", "incredibly drunk", "drinking coffee", "surfing", "spying on the bad guys", "smelling terrible", "having a bad hair day", "exploring the new planet", "on the moon", "on Mars"];
+var Goal = ["fly around the world", "go on a date", "win a race", "tell their crush how they feel", "find their soulmate", "write a chatbot", "get into university", "graduate high school", "plant a hundred trees", "find their biological parents", "fill their bucket list", "find atlantis", "learn magic", "learn to paint", "drive a car", "pilot a spaceship", "leave Earth", "go home", "redo elementary school", "not spill their beer"];
+var Obstacle = ["learning to read", "fighting aliens", "saving the world", "doing algebra", "losing their hearing", "losing their sense of sight", "learning the language", "hacking the mainframe", "coming of age", "the nuclear apocalypse is happening", "incredibly drunk", "drinking coffee", "surfing", "spying on the bad guys", "smelling terrible", "having a bad hair day", "exploring the new planet", "on the moon", "on Mars"];
+
 
 /*
-	--------------------------
     User Commands dictionaries
-    --------------------------
 */
 var Commands = {
 	"information": function() {
@@ -42,7 +41,7 @@ var Commands = {
 			var time;
 			searchMessages("{V:" + user.join(" ") + "}");
 			setTimeout(function() {
-				var recentMessage = elementByID("X138").childNodes[2];
+				var recentMessage = messageTable.childNodes[2];
 				if(recentMessage.childNodes[5]) {
 					time = recentMessage.childNodes[5].innerText;
 				} else {
@@ -54,19 +53,17 @@ var Commands = {
                     postMessage("User " + user.join(" ") + " was last seen " + time);
 				} else {
 					postMessage("I couldn't find that user. Sorry.");
-					X47();
 				}
 			}, 700);
 			setTimeout(function() {
-				X47();
+				closePopup();
 			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
-			X47();
 		}
 	},
 	"uptime": function() {
-		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".")
+		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".");
 	},
 	"version": function() {
 		postMessage("I'm currently on version " + VERSION);
@@ -88,7 +85,7 @@ var Commands = {
 		}
 	},
 	"prompt": function() {
-		postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[0, Noun.length - 1] + " who must " + Goal[0, Goal.length - 1] + " while " + Obstacle[0, Goal.length - 1] + ".");
+		postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1);] + " " + Noun[randomNumber(0, Noun.length - 1);] + " who must " + Goal[randomNumber(0, Goal.length - 1);] + " while " + Obstacle[randomNumber(0, Goal.length - 1);] + ".");
 	},
 	"help": function (args) {
 	    if (!args[0]) {
@@ -105,27 +102,22 @@ var Commands = {
 	        switch (args[0]) {
 	            case "help":
 	                postMessage("Use: ^help [Command Name]\nDescription: Help command, by default gives general information about Talos and a list of available commands. Adding the name of another command as an argument will give a more detailed description of that command. Though you probably figured that out, you're here after all :P");
+	                
 	                break;
-	            case "information":
-	            	postMessage("Use: ^information\nDescription: Gives a short blurb about Talos.");
-	            	break;
 	            case "kill":
-	                postMessage("Use: ^kill\nDescription: Causes Talos to immediately leave the chat, and cease running. Admin only.");
+	                postMessage("Use: ^kill\nDescription:");
 	                break;
 	            case "seen":
-	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Returns a time or date in EST.");
+	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Currently doesn't work, sorry about that.");
+	                
 	                break;
 	            case "toggleSleep":
 	                postMessage("Use: ^toggleSleep [time]\nDescription: Turns user commands and related features off or on. An admin only command, to prevent abuse. Also doesn't declare the finish to any active WWs that finish while I'm asleep.");
+	                
 	                break;
-	            case "uptime":
-	            	postMessage("Use: ^uptime\nDescription: Gives the time and date, down to the second, that Talos began running.");
-	            	break;
-	            case "version":
-	            	postMessage("Use: ^version\nDescription: The version that Talos is currently running. I always know exactly where I am.");
-	            	break;
 	            case "wordWar":
-	                postMessage("Use: ^wordWar <time> [keyword]\nDescription: Starts a Word War, with given keyword if provided. The time is in minutes, and Talos will say when that many minutes have elapsed.");
+	                postMessage("Use: ^wordWar <time> [keyword]\nDescription:");
+	                
 	                break;
 	            default:
 	                postMessage("Sorry, no available help page for that.");
@@ -152,14 +144,6 @@ var ADMIN_COMMANDS = {
 };
 
 /*
-Arbitrary functions
-*/
-
-function randomNumber(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
-}
-
-/*
     -----------------
     Wrapper Functions
     -----------------
@@ -168,17 +152,12 @@ function elementByID(elementID) {
     return document.getElementById(elementID);
 }
 
-function leaveChat() {
-    elementByID("X802").onclick();
+function closePopup() {
+	X1774();
 }
 
 function postMessage(message) {
-    var HTMLTags = ["<b>", "</b>", "<i>", "</i>", "<s>", "</s>", "<u>", "</u>"];
-    var ChatzyTags = ["[b]", "[/b]", "[i]", "[/i]", "[s]", "[/s]", "[u]", "[/u]"];
-    for (var tag in HTMLTags) {
-        message = message.replace(HTMLTags[tag],ChatzyTags[tag]);
-    }
-    X279(message);
+    X9646(message);
 }
 
 function closeChat() {
@@ -190,7 +169,7 @@ function openChat() {
 }
 
 function toggleChatLock() {
-	if(X105.X398) { //Variable for whether the chat is locked, of course
+	if(X2667.X5476) { //Variable for whether the chat is locked, of course
 		postMessage("/open");
 	} else {
 		postMessage("/close");
@@ -201,50 +180,41 @@ function searchMessages(term) {
 	postMessage("/find " + term);
 }
 
+function leaveChat() {
+    elementByID("X2122").onclick();
+}
+
 function privateMessage(name, message) {
 	postMessage("/pm \"" + name + "\" " + message);
 }
 
 function globalMessage(message) { //Note, only sends the message to online users.
-	var users = X330.split("\n");
+	var users = X6958.split("\n");
 	for (var i = 1; i <= users[0]; i++) {
 		user = users[i].split("	");
 		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
 	}
 }
 
-function editRoomBoard(message, method, key) {  //Method is the style of editing to use. Options are: 0/default, overwrite. 1, append. 2, prepend. 3, replace.
-    postMessage("/rb");
-    setTimeout(function() {
-        var BoardMessage = X17("X856");
-        switch (method) {
-            case 1:
-                BoardMessage.value = BoardMessage.value + "\n" + message;
-                break;
-            case 2:
-                BoardMessage.value = message + "\n" + BoardMessage.value;
-                break;
-            case 3:
-                if (BoardMessage.value.match(new RegExp(key, "g")).length > 1) {
-                    BoardMessage.value = BoardMessage.value.replace(new RegExp(key + ".+?" + key, "g"), key + message + key);
-                }
-                break;
-            default:
-                BoardMessage.value = message;
-        }
-        X565.onclick();
-    }, 150);
-}
-
 //requires re-init of JSBot. Automate that?
 function changeName(name) {
-	X292('X387');
+	X3132('X3221')
 
 	setTimeout(function() {
-		X481.value = name;
-		X544.onsubmit();
+		X2714.value = name;
+		X6145.onsubmit();
 	}, 1000);
 }
+
+/*
+Arbitrary functions
+*/
+
+function randomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
+/*
 
 /*
     -------------------
@@ -276,10 +246,10 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID("X971") && elementByID("X138").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
+    if (!elementByID("X6285") && messageTable.firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
-	var Messages = elementByID("X138").innerHTML.split("\n");
+	var Messages = messageTable.innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
 		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
@@ -308,13 +278,13 @@ function readChat() {
 	}
 	
 	
-	elementByID("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-	X783 = false;
+	messageTable.innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+	X1281 = false;
 }
 
 function readPMs() {
-    var ReceivedPM = elementByID("X94").innerHTML;
-    if (ReceivedPM.match(/<!--X268-->.+>(.+)<\/em>.+X296">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
+    var ReceivedPM = elementByID("X8459").innerHTML;
+    if (ReceivedPM.match(/<!--X4585-->.+>(.+)<\/em>.+X8195">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
 		var Args = RegExp.$3.split(/\s/);
@@ -328,7 +298,7 @@ function readPMs() {
 		if (window["ADMIN_COMMANDS"][Command] && isAdmin) {
 		    window["ADMIN_COMMANDS"][Command](Args);
 		} else if (IsSleeping == 1) {
-			X47();
+			closePopup();
 			return;
 		} else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
 		    privateMessage("Sorry, that command is Admin only, and I don't recognize you!");
@@ -338,7 +308,6 @@ function readPMs() {
 		    privateMessage("Sorry, I don't understand that. May I suggest ^help?");
 		}
     }
-    //setTimeout(function(){ X47(); }, 100);
 }
 
 function mainLoop() {
@@ -353,7 +322,8 @@ function mainLoop() {
     Initialization Code
     -------------------
 */
+var messageTable = elementByID("X6817");
+messageTable.innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+X1281 = false;
 setInterval(function() {mainLoop();}, 1000);
 setInterval(function() {postMessage("");}, 60000*10)
-elementByID("X138").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-X783 = false;
