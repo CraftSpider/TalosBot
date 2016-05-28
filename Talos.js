@@ -27,8 +27,9 @@ var Adjective = ["happy", "sad", "athletic", "giant", "tiny", "smart", "silly", 
 var Goal = ["fly around the world", "go on a date", "win a race", "tell their crush how they feel", "find their soulmate", "write a chatbot", "get into university", "graduate high school", "plant a hundred trees", "find their biological parents", "fill their bucket list", "find atlantis", "learn magic", "learn to paint", "drive a car", "pilot a spaceship", "leave Earth", "go home", "redo elementary school", "not spill their beer"];
 var Obstacle = ["learning to read", "fighting aliens", "saving the world", "doing algebra", "losing their hearing", "losing their sense of sight", "learning the language", "hacking the mainframe", "coming of age", "the nuclear apocalypse is happening", "incredibly drunk", "drinking coffee", "surfing", "spying on the bad guys", "smelling terrible", "having a bad hair day", "exploring the new planet", "on the moon", "on Mars"];
 
-var Subgenre = ["spoof", "spaghetti", "romantic", "buddy-cop", "emo", "girly", "high-school", "children's", "urban", "legal", "medical", "gothic"];
-var Genre = ["horror", "sci-fi", "fantasy", "romance", "comedy", "musical", "fanfiction", "western", "parody", "YA", "graphic novel"];
+var Place = ["pub", "spaceship", "museum", "office", "jungle", "forest", "coffee shop", "store", "market", "station", "tree", "hut", "house", "bed", "bus", "car", "dormitory", "school", "desert", "ballroom", "cattery", "shelter", "street"];
+var Place_Adjective = ["quiet", "loud", "crowded", "deserted", "bookish", "colorful", "balloon-filled", "book", "tree", "money", "video game", "cat", "dog", "busy", "apocalypse", "writer", "magic", "light", "dark", "robotic", "futuristic", "old-timey"];
+var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", "smile", "spin in a circle", "get arrested", "dance to the music", "listen to your favourite song", "eat all the food", "win the lottery", "hack the mainframe", "save the world", "find atlantis", "get accepted to Hogwarts", "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship", "learn math", "write a lot", "do gymnastics"];
 /*
     User Commands dictionaries
 */
@@ -88,10 +89,10 @@ var Commands = {
 	"generate": function(type) {
 		if (type[0] == "prompt") {
 			postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
-		} else if (type[0] == "genre") {
-			postMessage(Subgenre[randomNumber(0, Subgenre.length - 1)] + " " + Genre[randomNumber(0, Subgenre.length - 1)]);
+		} else if (type[0] == "crawl") {
+			postMessage("You enter the" Place_Adjective[randomNumber(0, Place_Adjective.length - 1)] + " " + Place[randomNumber(0, Subgenre.length - 1)] + ". Write " + randomNumber(50, 500) + " words as you " + Action[randomNumber(0, Action.length - 1)] + ".");
 		} else {
-			postMessage("You can generate prompts and genres. Having trouble? Use ^help! :)");
+			postMessage("You can generate [b]prompt[/b]s and [b]crawl[/b] dares. Having trouble? Use ^help! :)");
 		}
 	},
 	"help": function (args) {
@@ -128,7 +129,7 @@ var Commands = {
 	                
 	                break;
 	            case "generate":
-	            	postMessage("Use: ^generate <type>\nDescription: Generates a prompt. Currently available types are [b]prompt[/b] and [b]genre[/b].");
+	            	postMessage("Use: ^generate <type>\nDescription: Generates a prompt. Currently available types are [b]prompt[/b] and [b]crawl[/b].");
 	            	
 	            	break;
 	            default:
