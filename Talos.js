@@ -87,6 +87,9 @@ var Commands = {
 			}, length[0] * 60000);
 		}
 	},
+	"prompt": function() {
+		postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[0, Noun.length - 1] + " who must " + Goal[0, Goal.length - 1] + " while " + Obstacle[0, Goal.length - 1] + ".");
+	},
 	"help": function (args) {
 	    if (!args[0]) {
 		    var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
@@ -147,6 +150,14 @@ var ADMIN_COMMANDS = {
 		throw new Error("Talos Killed by Admin");
 	},
 };
+
+/*
+Arbitrary functions
+*/
+
+function randomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
 
 /*
     -----------------
