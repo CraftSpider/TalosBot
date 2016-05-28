@@ -21,13 +21,14 @@ var WHDisactive = false;
 var WHAlertOne = false;
 var WHAlertTwo = false;
 
-//Writing Prompts words
+//Generator words
 var Noun = ["dog", "cat", "robot", "astronaut", "man", "woman", "person", "child", "giant", "elephant", "zebra", "animal", "box", "tree", "wizard", "mage", "swordsman", "soldier", "inventor", "doctor", "Talos", "dinosaur", "insect", "nerd", "dancer", "singer", "actor", "barista", "acrobat", "gamer", "writer", "dragon"];
 var Adjective = ["happy", "sad", "athletic", "giant", "tiny", "smart", "silly", "unintelligent", "funny", "coffee-loving", "lazy", "spray-tanned", "angry", "disheveled", "annoying", "loud", "quiet", "shy", "extroverted", "jumpy", "ditzy", "strong", "weak", "smiley", "annoyed", "dextrous"];
 var Goal = ["fly around the world", "go on a date", "win a race", "tell their crush how they feel", "find their soulmate", "write a chatbot", "get into university", "graduate high school", "plant a hundred trees", "find their biological parents", "fill their bucket list", "find atlantis", "learn magic", "learn to paint", "drive a car", "pilot a spaceship", "leave Earth", "go home", "redo elementary school", "not spill their beer"];
 var Obstacle = ["learning to read", "fighting aliens", "saving the world", "doing algebra", "losing their hearing", "losing their sense of sight", "learning the language", "hacking the mainframe", "coming of age", "the nuclear apocalypse is happening", "incredibly drunk", "drinking coffee", "surfing", "spying on the bad guys", "smelling terrible", "having a bad hair day", "exploring the new planet", "on the moon", "on Mars"];
 
-
+var Subgenre = ["spoof", "spaghetti", "romantic", "buddy-cop", "emo", "girly", "high-school", "children's", "urban", "legal", "medical", "gothic"];
+var Genre = ["horror", "sci-fi", "fantasy", "romance", "comedy", "musical", "fanfiction", "western", "parody", "YA", "graphic novel"];
 /*
     User Commands dictionaries
 */
@@ -84,8 +85,14 @@ var Commands = {
 			}, length[0] * 60000);
 		}
 	},
-	"prompt": function() {
-		postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
+	"generate": function(type) {
+		if (type[0] == "prompt") {
+			postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
+		} else if (type[0] == "genre") {
+			postMessage(Subgenre[randomNumber(0, Subgenre.length - 1)] + " " + Genre[randomNumber(0, Subgenre.length - 1)]);
+		} else {
+			postMessage("You can generate prompts and genres. Having trouble? Use ^help! :)");
+		}
 	},
 	"help": function (args) {
 	    if (!args[0]) {
@@ -120,8 +127,8 @@ var Commands = {
 	                postMessage("Use: ^wordWar <time> [keyword]\nDescription:");
 	                
 	                break;
-	            case "prompt":
-	            	postMessage("Use: ^prompt");
+	            case "generate":
+	            	postMessage("Use: ^generate <type>\nDescription: Generates a prompt. Currently available types are [b]prompt[/b] and [b]genre[/b].");
 	            	
 	            	break;
 	            default:
