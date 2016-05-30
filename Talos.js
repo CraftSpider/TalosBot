@@ -216,6 +216,7 @@ function elementByID(elementID) {
 
 function leaveChat() {
     elementByID("X2122").onclick();
+}
 
 function closePopup() {
 	X1774();
