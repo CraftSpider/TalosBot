@@ -22,7 +22,9 @@ var WHAlertOne = false;
 var WHAlertTwo = false;
 
 /*
+	--------------------------
     User Commands dictionaries
+    --------------------------
 */
 var Commands = {
 	"information": function() {
@@ -46,6 +48,7 @@ var Commands = {
                     postMessage("User " + user.join(" ") + " was last seen " + time);
 				} else {
 					postMessage("I couldn't find that user. Sorry.");
+					X47();
 				}
 			}, 700);
 			setTimeout(function() {
@@ -53,6 +56,7 @@ var Commands = {
 			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
+			X47();
 		}
 	},
 	"uptime": function() {
@@ -92,22 +96,27 @@ var Commands = {
 	        switch (args[0]) {
 	            case "help":
 	                postMessage("Use: ^help [Command Name]\nDescription: Help command, by default gives general information about Talos and a list of available commands. Adding the name of another command as an argument will give a more detailed description of that command. Though you probably figured that out, you're here after all :P");
-	                
 	                break;
+	            case "information":
+	            	postMessage("Use: ^information\nDescription: Gives a short blurb about Talos.");
+	            	break;
 	            case "kill":
-	                postMessage("Use: ^kill\nDescription:");
+	                postMessage("Use: ^kill\nDescription: Causes Talos to immediately leave the chat, and cease running. Admin only.");
 	                break;
 	            case "seen":
-	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Currently doesn't work, sorry about that.");
-	                
+	                postMessage("Use: ^seen <Username>\nDescription: Find how long ago this user last posted a message. Returns a time or date in EST.");
 	                break;
 	            case "toggleSleep":
 	                postMessage("Use: ^toggleSleep [time]\nDescription: Turns user commands and related features off or on. An admin only command, to prevent abuse. Also doesn't declare the finish to any active WWs that finish while I'm asleep.");
-	                
 	                break;
+	            case "uptime":
+	            	postMessage("Use: ^uptime\nDescription: Gives the time and date, down to the second, that Talos began running.");
+	            	break;
+	            case "version":
+	            	postMessage("Use: ^version\nDescription: The version that Talos is currently running. I always know exactly where I am.");
+	            	break;
 	            case "wordWar":
-	                postMessage("Use: ^wordWar <time> [keyword]\nDescription:");
-	                
+	                postMessage("Use: ^wordWar <time> [keyword]\nDescription: Starts a Word War, with given keyword if provided. The time is in minutes, and Talos will say when that many minutes have elapsed.");
 	                break;
 	            default:
 	                postMessage("Sorry, no available help page for that.");
@@ -142,7 +151,16 @@ function elementByID(elementID) {
     return document.getElementById(elementID);
 }
 
+function leaveChat() {
+    elementByID("X2122").onclick();
+}
+
 function postMessage(message) {
+    var HTMLTags = ["<b>", "</b>", "<i>", "</i>", "<s>", "</s>", "<u>", "</u>"];
+    var ChatzyTags = ["[b]", "[/b]", "[i]", "[/i]", "[s]", "[/s]", "[u]", "[/u]"];
+    for (var tag in HTMLTags) {
+        message = message.replace(HTMLTags[tag],ChatzyTags[tag]);
+    }
     X9646(message);
 }
 
@@ -166,10 +184,6 @@ function searchMessages(term) {
 	postMessage("/find " + term);
 }
 
-function leaveChat() {
-    elementByID("X2122").onclick();
-}
-
 function privateMessage(name, message) {
 	postMessage("/pm \"" + name + "\" " + message);
 }
@@ -180,6 +194,29 @@ function globalMessage(message) { //Note, only sends the message to online users
 		user = users[i].split("	");
 		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
 	}
+}
+
+function editRoomBoard(message, method, key) {  //Method is the style of editing to use. Options are: 0/default, overwrite. 1, append. 2, prepend. 3, replace.
+    postMessage("/rb");
+    setTimeout(function() {
+        var BoardMessage = X17("X856");
+        switch (method) {
+            case 1:
+                BoardMessage.value = BoardMessage.value + "\n" + message;
+                break;
+            case 2:
+                BoardMessage.value = message + "\n" + BoardMessage.value;
+                break;
+            case 3:
+                if (BoardMessage.value.match(new RegExp(key, "g")).length > 1) {
+                    BoardMessage.value = BoardMessage.value.replace(new RegExp(key + ".+?" + key, "g"), key + message + key);
+                }
+                break;
+            default:
+                BoardMessage.value = message;
+        }
+        X565.onclick();
+    }, 150);
 }
 
 //requires re-init of JSBot. Automate that?
