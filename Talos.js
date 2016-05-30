@@ -21,6 +21,15 @@ var WHDisactive = false;
 var WHAlertOne = false;
 var WHAlertTwo = false;
 
+//Generator words
+var Noun = ["dog", "cat", "robot", "astronaut", "man", "woman", "person", "child", "giant", "elephant", "zebra", "animal", "box", "tree", "wizard", "mage", "swordsman", "soldier", "inventor", "doctor", "Talos", "dinosaur", "insect", "nerd", "dancer", "singer", "actor", "barista", "acrobat", "gamer", "writer", "dragon"];
+var Adjective = ["happy", "sad", "athletic", "giant", "tiny", "smart", "silly", "unintelligent", "funny", "coffee-loving", "lazy", "spray-tanned", "angry", "disheveled", "annoying", "loud", "quiet", "shy", "extroverted", "jumpy", "ditzy", "strong", "weak", "smiley", "annoyed", "dextrous"];
+var Goal = ["fly around the world", "go on a date", "win a race", "tell their crush how they feel", "find their soulmate", "write a chatbot", "get into university", "graduate high school", "plant a hundred trees", "find their biological parents", "fill their bucket list", "find atlantis", "learn magic", "learn to paint", "drive a car", "pilot a spaceship", "leave Earth", "go home", "redo elementary school", "not spill their beer"];
+var Obstacle = ["learning to read", "fighting aliens", "saving the world", "doing algebra", "losing their hearing", "losing their sense of sight", "learning the language", "hacking the mainframe", "coming of age", "the nuclear apocalypse is happening", "incredibly drunk", "drinking coffee", "surfing", "spying on the bad guys", "smelling terrible", "having a bad hair day", "exploring the new planet", "on the moon", "on Mars"];
+
+var Place = ["pub", "spaceship", "museum", "office", "jungle", "forest", "coffee shop", "store", "market", "station", "tree", "hut", "house", "bed", "bus", "car", "dormitory", "school", "desert", "ballroom", "cattery", "shelter", "street"];
+var Place_Adjective = ["quiet", "loud", "crowded", "deserted", "bookish", "colorful", "balloon-filled", "book", "tree", "money", "video game", "cat", "dog", "busy", "apocalypse", "writer", "magic", "light", "dark", "robotic", "futuristic", "old-timey"];
+var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", "smile", "spin in a circle", "get arrested", "dance to the music", "listen to your favourite song", "eat all the food", "win the lottery", "hack the mainframe", "save the world", "find atlantis", "get accepted to Hogwarts", "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship", "learn math", "write a lot", "do gymnastics"];
 /*
 	--------------------------
     User Commands dictionaries
@@ -36,7 +45,7 @@ var Commands = {
 			var time;
 			searchMessages("{V:" + user.join(" ") + "}");
 			setTimeout(function() {
-				var recentMessage = elementByID("X6817").childNodes[2];
+				var recentMessage = messageTable.childNodes[2];
 				if(recentMessage.childNodes[5]) {
 					time = recentMessage.childNodes[5].innerText;
 				} else {
@@ -52,7 +61,7 @@ var Commands = {
 				}
 			}, 700);
 			setTimeout(function() {
-				X1774();
+				closePopup();
 			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
@@ -79,6 +88,15 @@ var Commands = {
 					postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");
 				}
 			}, length[0] * 60000);
+		}
+	},
+	"generate": function(type) {
+		if (type[0] == "prompt") {
+			postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
+		} else if (type[0] == "crawl") {
+			postMessage("You enter the " + Place_Adjective[randomNumber(0, Place_Adjective.length - 1)] + " " + Place[randomNumber(0, Place.length - 1)] + ". Write " + randomNumber(50, 500) + " words as you " + Action[randomNumber(0, Action.length - 1)] + ".");
+		} else {
+			postMessage("You can generate [b]prompt[/b]s and [b]crawl[/b] dares. Having trouble? Use ^help! :)");
 		}
 	},
 	"help": function (args) {
@@ -118,6 +136,10 @@ var Commands = {
 	            case "wordWar":
 	                postMessage("Use: ^wordWar <time> [keyword]\nDescription: Starts a Word War, with given keyword if provided. The time is in minutes, and Talos will say when that many minutes have elapsed.");
 	                break;
+	            case "generate":
+	            	postMessage("Use: ^generate <type>\nDescription: Generates a prompt. Currently available types are [b]prompt[/b] and [b]crawl[/b].");
+	            	
+	            	break;
 	            default:
 	                postMessage("Sorry, no available help page for that.");
 	        }
@@ -153,6 +175,9 @@ function elementByID(elementID) {
 
 function leaveChat() {
     elementByID("X2122").onclick();
+
+function closePopup() {
+	X1774();
 }
 
 function postMessage(message) {
@@ -230,6 +255,15 @@ function changeName(name) {
 }
 
 /*
+Arbitrary functions
+*/
+
+function randomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
+/*
+/*
     -------------------
     Main loop functions
     -------------------
@@ -259,10 +293,10 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID("X6285") && elementByID("X6817").firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    if (!elementByID("X6285") && messageTable.firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
-	var Messages = elementByID("X6817").innerHTML.split("\n");
+	var Messages = messageTable.innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
 		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
@@ -291,7 +325,7 @@ function readChat() {
 	}
 	
 	
-	elementByID("X6817").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+	messageTable.innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 	X1281 = false;
 }
 
@@ -311,7 +345,7 @@ function readPMs() {
 		if (window["ADMIN_COMMANDS"][Command] && isAdmin) {
 		    window["ADMIN_COMMANDS"][Command](Args);
 		} else if (IsSleeping == 1) {
-			X1774();
+			closePopup();
 			return;
 		} else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
 		    privateMessage("Sorry, that command is Admin only, and I don't recognize you!");
@@ -335,7 +369,8 @@ function mainLoop() {
     Initialization Code
     -------------------
 */
-setInterval(function() {mainLoop();}, 1000);
-setInterval(function() {postMessage("");}, 60000*10)
-elementByID("X6817").innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+var messageTable = elementByID("X6817");
+messageTable.innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 X1281 = false;
+setInterval(function() {mainLoop();}, 1000);
+setInterval(function() {postMessage("");}, 60000*10);
