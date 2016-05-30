@@ -30,6 +30,7 @@ var Obstacle = ["learning to read", "fighting aliens", "saving the world", "doin
 var Place = ["pub", "spaceship", "museum", "office", "jungle", "forest", "coffee shop", "store", "market", "station", "tree", "hut", "house", "bed", "bus", "car", "dormitory", "school", "desert", "ballroom", "cattery", "shelter", "street"];
 var Place_Adjective = ["quiet", "loud", "crowded", "deserted", "bookish", "colorful", "balloon-filled", "book", "tree", "money", "video game", "cat", "dog", "busy", "apocalypse", "writer", "magic", "light", "dark", "robotic", "futuristic", "old-timey"];
 var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", "smile", "spin in a circle", "get arrested", "dance to the music", "listen to your favourite song", "eat all the food", "win the lottery", "hack the mainframe", "save the world", "find atlantis", "get accepted to Hogwarts", "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship", "learn math", "write a lot", "do gymnastics"];
+
 /*
 	--------------------------
     User Commands dictionaries
@@ -74,20 +75,60 @@ var Commands = {
 	"version": function() {
 		postMessage("I'm currently on version " + VERSION);
 	},
-	"wordWar": function(length) {
-		if (length[0] > 60 || length[0] <= 0) {
+	"wordWar": function(args) {
+		if (args[0] > 60 || args[0] <= 0) {
 			postMessage("Choose a number between 1 and 60.");
 		} else if (NumWWs >= MaxWWs) {
-		    postMessage("Too many word wars, I can't keep up! Wait for one to finish first.");
+			postMessage("Too many word wars, I can't keep up! Wait for one to finish first.");
 		} else {
-		    NumWWs++;
-			postMessage("I'm starting a " + length[0] + " minute word war." + (length[1]? " Keyword: " + length[1]  + "." : "") + " Go!");
-			setTimeout(function() {
-				NumWWs--;
-				if (!IsSleeping) {
-					postMessage("Word War " + (length[1]? "'" + length[1] + "' " : "") + "ends. How did you do?");
+			var length = args[0];
+			var StartTime;
+			var KeyWord;
+			
+			//Block of input handling. Checks for :xx format for times.
+			if(args[1] && args[2]) {
+				if(args[1].match(/:(\d\d)/)) {
+					StartTime = RegExp.$1;
+					KeyWord = args[2];
+				} else if (args[2].match(/:(\d\d)/)) {
+					StartTime = RegExp.$1;
+					KeyWord = args[1];
+				} else {
+					postMessage("I can't read that start time, sorry.");
 				}
-			}, length[0] * 60000);
+			} else if (args[1]) {
+				if(args[1].match(/:(\d\d)/)) {
+					StartTime = RegExp.$1;
+				} else {
+					KeyWord = args[1];
+				}
+			}
+			
+			//Yay for error handling.
+			if (StartTime && (StartTime > 59 || StartTime < 0)) {
+				postMessage("What part of the hour is that? Sorry, but I don't recognize that time.");
+			} else {
+			    var TimeDif;
+			    NumWWs++;
+			    
+				if (StartTime) {
+					//Figure out difference between StartTime and current time.
+					var CurTime = new Date();
+					var RawDif = StartTime - CurTime.getUTCMinutes();
+					RawDif = (RawDif >= 0 ? RawDif : RawDif + 60);
+					TimeDif = ((CurTime.getTime()-(CurTime.getSeconds()*1000+CurTime.getMilliseconds())) + RawDif * 60000) - CurTime.getTime();
+					postMessage("Alright, I'll start a " + length + " minute word war at :" + StartTime + "." + (KeyWord? " Keyword: " + KeyWord  + "." : ""));
+					console.log(length + " " + StartTime + " " + TimeDif);
+					setTimeout(function() {
+						postMessage("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+						console.log("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+						startWW(length, KeyWord);
+					}, TimeDif);
+				} else {
+					postMessage("I'm starting a " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+					startWW(length, KeyWord);
+				}
+			}
 		}
 	},
 	"generate": function(type) {
@@ -255,14 +296,24 @@ function changeName(name) {
 }
 
 /*
-Arbitrary functions
+	-------------------
+	Arbitrary functions
+	-------------------
 */
 
 function randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-/*
+function startWW(length, KeyWord) {
+	setTimeout(function() {
+		NumWWs--;
+		if (!IsSleeping) {
+			postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
+		}
+	}, length * 60000);
+}
+
 /*
     -------------------
     Main loop functions
