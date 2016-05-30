@@ -5,7 +5,7 @@
 */
 
 //Constants
-const VERSION = 1.1;
+const VERSION = 1.2;
 const BOOT_TIME = new Date();
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
