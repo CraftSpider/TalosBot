@@ -10,6 +10,9 @@ const BOOT_TIME = new Date();
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
+//Chatzy Variables
+messageTable = "X6817"
+
 //Command variables
 var NumWWs = 0;
 var MaxWWs = 10;
@@ -46,7 +49,7 @@ var Commands = {
 			var time;
 			searchMessages("{V:" + user.join(" ") + "}");
 			setTimeout(function() {
-				var recentMessage = messageTable.childNodes[2];
+				var recentMessage = elementByID(messageTable).childNodes[2];
 				if(recentMessage.childNodes[5]) {
 					time = recentMessage.childNodes[5].innerText;
 				} else {
@@ -345,10 +348,10 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID("X6285") && messageTable.firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    if (!elementByID("X6285") && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
-	var Messages = messageTable.innerHTML.split("\n");
+	var Messages = elementByID(messageTable).innerHTML.split("\n");
 	for (var i = 1; i < Messages.length; i++) {
 		var Message = Messages[i];
 		if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
@@ -377,7 +380,7 @@ function readChat() {
 	}
 	
 	
-	messageTable.innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+	elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 	X1281 = false;
 }
 
@@ -421,8 +424,7 @@ function mainLoop() {
     Initialization Code
     -------------------
 */
-var messageTable = elementByID("X6817");
-messageTable.innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
 X1281 = false;
 setInterval(function() {mainLoop();}, 1000);
 setInterval(function() {postMessage("");}, 60000*10);
