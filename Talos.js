@@ -80,8 +80,21 @@ var Commands = {
 		}
 	},
 	"uptime": function() {
-	    var uptime = new Date() - BOOT_TIME;
-		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".");
+	    var uptime = Math.floor((new Date() - BOOT_TIME)/1000);
+	    
+	    var weeks = Math.floor(uptime / 604800);
+	    uptime -= weeks * 604800;
+	    var days = Math.floor(uptime / 86400);
+	    uptime -= days * 86400;
+	    var hours = Math.floor(uptime / 3600);
+	    uptime -= hours * 3600;
+	    var minutes = Math.floor(uptime / 60);
+	    uptime -= minutes * 60;
+	    var seconds = Math.floor(uptime);
+	    
+	    var upStr = (weeks?weeks + " weeks, ":"") + (days?days + " days, ":"") + (hours?hours + " hours, ":"") + (minutes?minutes + " minutes, and ":"") + seconds + " seconds.";
+	    
+		postMessage("I've been online " + upStr);
 	},
 	"version": function() {
 		postMessage("I'm currently on version " + VERSION);
