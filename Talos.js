@@ -11,7 +11,8 @@ const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
 //Chatzy Variables
-messageTable = "X6817"
+var messageTable = "X6817";
+var popup = "X8459";
 
 //Command variables
 var NumWWs = 0;
@@ -47,32 +48,39 @@ var Commands = {
 		//postMessage("Sorry, this command doesn't work yet.");
 		if(user[0]) {
 			var time;
-			searchMessages("{V:" + user.join(" ") + "}");
-			setTimeout(function() {
+			user = user.join(" ");
+			searchMessages("", user);
+			var getTime = setInterval(function() {
 				var recentMessage = elementByID(messageTable).childNodes[2];
-				if(recentMessage.childNodes[5]) {
+				if (recentMessage.childNodes[5]) {
 					time = recentMessage.childNodes[5].innerText;
-				} else {
+					clearInterval(getTime);
+					setTimeout(function() {
+					    closePopup();
+                        postMessage("User " + user + " was last seen " + time);
+			        }, 500);
+				} else if (recentMessage.childNodes[4]) {
 					time = recentMessage.childNodes[4].innerText;
+					clearInterval(getTime);
+					setTimeout(function() {
+					    closePopup();
+                        postMessage("User " + user + " was last seen " + time);
+			        }, 500);
+				} else if (elementByID(popup).childNodes[0].innerText == "No Messages Found") {
+				    postMessage("I couldn't find " + user + ". Sorry.");
+				    clearInterval(getTime);
+				    setTimeout(function() {
+				        closePopup();
+				    }, 500);
 				}
 			}, 500);
-			setTimeout(function() {
-				if(time) {
-                    postMessage("User " + user.join(" ") + " was last seen " + time);
-				} else {
-					postMessage("I couldn't find that user. Sorry.");
-					closePopup();
-				}
-			}, 700);
-			setTimeout(function() {
-				closePopup();
-			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
 			closePopup();
 		}
 	},
 	"uptime": function() {
+	    var uptime = new Date() - BOOT_TIME;
 		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".");
 	},
 	"version": function() {
@@ -250,8 +258,8 @@ function toggleChatLock() {
 	}
 }
 
-function searchMessages(term) {
-	postMessage("/find " + term);
+function searchMessages(term, poster) {
+	postMessage("/find " + (poster?"{V:" + poster + "} ":"") + (term?term:""));
 }
 
 function privateMessage(name, message) {
@@ -291,7 +299,7 @@ function editRoomBoard(message, method, key) {  //Method is the style of editing
 
 //requires re-init of JSBot. Automate that?
 function changeName(name) {
-	X3132('X3221')
+	X3132('X3221');
 
 	setTimeout(function() {
 		X2714.value = name;
@@ -385,7 +393,7 @@ function readChat() {
 }
 
 function readPMs() {
-    var ReceivedPM = elementByID("X8459").innerHTML;
+    var ReceivedPM = elementByID("popup").innerHTML;
     if (ReceivedPM.match(/<!--X4585-->.+>(.+)<\/em>.+X8195">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
