@@ -11,7 +11,8 @@ const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
 //Chatzy Variables
-messageTable = "X6817"
+var messageTable = "X6817";
+var popup = "X8459";
 
 //Command variables
 var NumWWs = 0;
@@ -40,6 +41,15 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
     --------------------------
 */
 var Commands = {
+    "generate": function(type) {
+		if (type[0] == "prompt") {
+			postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
+		} else if (type[0] == "crawl") {
+			postMessage("You enter the " + Place_Adjective[randomNumber(0, Place_Adjective.length - 1)] + " " + Place[randomNumber(0, Place.length - 1)] + ". Write " + randomNumber(50, 500) + " words as you " + Action[randomNumber(0, Action.length - 1)] + ".");
+		} else {
+			postMessage("You can generate [b]prompt[/b]s and [b]crawl[/b] dares. Having trouble? Use ^help! :)");
+		}
+	},
 	"information": function() {
 		postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, Dino, and HiddenStorys.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
 	},
@@ -47,33 +57,57 @@ var Commands = {
 		//postMessage("Sorry, this command doesn't work yet.");
 		if(user[0]) {
 			var time;
-			searchMessages("{V:" + user.join(" ") + "}");
-			setTimeout(function() {
+			user = user.join(" ");
+			searchMessages("", user);
+			var getTime = setInterval(function() {
 				var recentMessage = elementByID(messageTable).childNodes[2];
-				if(recentMessage.childNodes[5]) {
+				if (recentMessage.childNodes[5]) {
 					time = recentMessage.childNodes[5].innerText;
-				} else {
+					clearInterval(getTime);
+					setTimeout(function() {
+					    closePopup();
+                        postMessage("User " + user + " was last seen " + time);
+			        }, 500);
+				} else if (recentMessage.childNodes[4]) {
 					time = recentMessage.childNodes[4].innerText;
+					clearInterval(getTime);
+					setTimeout(function() {
+					    closePopup();
+                        postMessage("User " + user + " was last seen " + time);
+			        }, 500);
+				} else if (elementByID(popup).childNodes[0].innerText == "No Messages Found") {
+				    postMessage("I couldn't find " + user + ". Sorry.");
+				    clearInterval(getTime);
+				    setTimeout(function() {
+				        closePopup();
+				    }, 500);
 				}
 			}, 500);
-			setTimeout(function() {
-				if(time) {
-                    postMessage("User " + user.join(" ") + " was last seen " + time);
-				} else {
-					postMessage("I couldn't find that user. Sorry.");
-					closePopup();
-				}
-			}, 700);
-			setTimeout(function() {
-				closePopup();
-			}, 900);
 		} else {
 			postMessage("Sorry, I need a user to look for.");
 			closePopup();
 		}
 	},
 	"uptime": function() {
-		postMessage("I've been online since " + BOOT_TIME.toUTCString() + ".");
+	    var uptime = Math.floor((new Date() - BOOT_TIME)/1000);
+	    
+	    var weeks = Math.floor(uptime / 604800);
+	    uptime -= weeks * 604800;
+	    var days = Math.floor(uptime / 86400);
+	    uptime -= days * 86400;
+	    var hours = Math.floor(uptime / 3600);
+	    uptime -= hours * 3600;
+	    var minutes = Math.floor(uptime / 60);
+	    uptime -= minutes * 60;
+	    var seconds = Math.floor(uptime);
+	    
+	    var upStr = (weeks?weeks + " week" + (weeks == 1?"":"s") + ", ":"") +
+	                (days?days + " day" + (days == 1?"":"s") + ", ":"") +
+	                (hours?hours + " hour" + (hours == 1?"":"s") + ", ":"") +
+	                (minutes?minutes + " minute" + (minutes == 1?"":"s") + ", and ":"") +
+	                seconds + " second" + (seconds == 1?"":"s") + ".";
+	    
+		postMessage("I've been online " + upStr);
 	},
 	"version": function() {
 		postMessage("I'm currently on version " + VERSION);
@@ -134,15 +168,6 @@ var Commands = {
 			}
 		}
 	},
-	"generate": function(type) {
-		if (type[0] == "prompt") {
-			postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
-		} else if (type[0] == "crawl") {
-			postMessage("You enter the " + Place_Adjective[randomNumber(0, Place_Adjective.length - 1)] + " " + Place[randomNumber(0, Place.length - 1)] + ". Write " + randomNumber(50, 500) + " words as you " + Action[randomNumber(0, Action.length - 1)] + ".");
-		} else {
-			postMessage("You can generate [b]prompt[/b]s and [b]crawl[/b] dares. Having trouble? Use ^help! :)");
-		}
-	},
 	"help": function (args) {
 	    if (!args[0]) {
 		    var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
@@ -159,6 +184,9 @@ var Commands = {
 	            case "help":
 	                postMessage("Use: ^help [Command Name]\nDescription: Help command, by default gives general information about Talos and a list of available commands. Adding the name of another command as an argument will give a more detailed description of that command. Though you probably figured that out, you're here after all :P");
 	                break;
+	            case "generate":
+	            	postMessage("Use: ^generate <type>\nDescription: Generates a prompt. Currently available types are [b]prompt[/b] and [b]crawl[/b].");
+	            	break;
 	            case "information":
 	            	postMessage("Use: ^information\nDescription: Gives a short blurb about Talos.");
 	            	break;
@@ -172,18 +200,14 @@ var Commands = {
 	                postMessage("Use: ^toggleSleep [time]\nDescription: Turns user commands and related features off or on. An admin only command, to prevent abuse. Also doesn't declare the finish to any active WWs that finish while I'm asleep.");
 	                break;
 	            case "uptime":
-	            	postMessage("Use: ^uptime\nDescription: Gives the time and date, down to the second, that Talos began running.");
+	            	postMessage("Use: ^uptime\nDescription: Gives how long, down to the second, that Talos has been running.");
 	            	break;
 	            case "version":
 	            	postMessage("Use: ^version\nDescription: The version that Talos is currently running. I always know exactly where I am.");
 	            	break;
 	            case "wordWar":
-	                postMessage("Use: ^wordWar <time> [keyword]\nDescription: Starts a Word War, with given keyword if provided. The time is in minutes, and Talos will say when that many minutes have elapsed.");
+	                postMessage("Use: ^wordWar <length> [keyword] [start time]\nDescription: Starts a Word War, with given keyword and start time if provided. Start time should be two digits, the minute of the hour that the WW should start, and be prefixed by a colon. The length is in minutes, and Talos will say when that many minutes have elapsed.");
 	                break;
-	            case "generate":
-	            	postMessage("Use: ^generate <type>\nDescription: Generates a prompt. Currently available types are [b]prompt[/b] and [b]crawl[/b].");
-	            	
-	            	break;
 	            default:
 	                postMessage("Sorry, no available help page for that.");
 	        }
@@ -192,13 +216,18 @@ var Commands = {
 };
 
 var ADMIN_COMMANDS = {
-    "toggleSleep": function() {
+    "toggleSleep": function(time) {
     	if (IsSleeping == 0) {
     		IsSleeping = 1;
-    		postMessage("Good night! Going to sleep now. To wake me, type [b]^toggleSleep[/b] again.");
+    		postMessage("Good night! Going to sleep " + (time[0]?"for " + time[0] + " minutes":"now") + ". To wake me, type [b]^toggleSleep[/b] again.");
     	} else {
     		IsSleeping = 0;
-    		postMessage("I'm awake again, and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].");
+    		postMessage("I'm awake again" + (time[0]? " for " + time[0] + " minutes":"") + ", and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].");
+    	}
+    	if(time[0]) {
+    	    setTimeout(function(){
+    	        ADMIN_COMMANDS.toggleSleep();
+    	    }, time[0] * 60000);
     	}
 	},
 	"kill": function() {
@@ -250,8 +279,8 @@ function toggleChatLock() {
 	}
 }
 
-function searchMessages(term) {
-	postMessage("/find " + term);
+function searchMessages(term, poster) {
+	postMessage("/find " + (poster?"{V:" + poster + "} ":"") + (term?term:""));
 }
 
 function privateMessage(name, message) {
@@ -291,7 +320,7 @@ function editRoomBoard(message, method, key) {  //Method is the style of editing
 
 //requires re-init of JSBot. Automate that?
 function changeName(name) {
-	X3132('X3221')
+	X3132('X3221');
 
 	setTimeout(function() {
 		X2714.value = name;
@@ -385,7 +414,7 @@ function readChat() {
 }
 
 function readPMs() {
-    var ReceivedPM = elementByID("X8459").innerHTML;
+    var ReceivedPM = elementByID(popup).innerHTML;
     if (ReceivedPM.match(/<!--X4585-->.+>(.+)<\/em>.+X8195">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
