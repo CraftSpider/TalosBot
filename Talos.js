@@ -11,8 +11,8 @@ const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
 //Chatzy Variables
-var messageTable = "X6817";
-var popup = "X8459";
+var messageTable = "X9403";
+var popup = "X2159";
 
 //Command variables
 var NumWWs = 0;
@@ -54,7 +54,6 @@ var Commands = {
 		postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, Dino, and HiddenStorys.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
 	},
 	"seen": function(user) {
-		//postMessage("Sorry, this command doesn't work yet.");
 		if(user[0]) {
 			var time;
 			user = user.join(" ");
@@ -247,11 +246,11 @@ function elementByID(elementID) {
 }
 
 function leaveChat() {
-    elementByID("X2122").onclick();
+    elementByID("X4312").onclick();
 }
 
 function closePopup() {
-	X1774();
+	X1729();
 }
 
 function postMessage(message) {
@@ -260,7 +259,7 @@ function postMessage(message) {
     for (var tag in HTMLTags) {
         message = message.replace(HTMLTags[tag],ChatzyTags[tag]);
     }
-    X9646(message);
+    X9941(message);
 }
 
 function closeChat() {
@@ -272,7 +271,7 @@ function openChat() {
 }
 
 function toggleChatLock() {
-	if(X2667.X5476) { //Variable for whether the chat is locked, of course
+	if(X2667.X5476) { //Variable for whether the chat is locked, of course. TODO: Find the new name for this
 		postMessage("/open");
 	} else {
 		postMessage("/close");
@@ -288,7 +287,7 @@ function privateMessage(name, message) {
 }
 
 function globalMessage(message) { //Note, only sends the message to online users.
-	var users = X6958.split("\n");
+	var users = X6284.split("\n");
 	for (var i = 1; i <= users[0]; i++) {
 		user = users[i].split("	");
 		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
@@ -298,7 +297,7 @@ function globalMessage(message) { //Note, only sends the message to online users
 function editRoomBoard(message, method, key) {  //Method is the style of editing to use. Options are: 0/default, overwrite. 1, append. 2, prepend. 3, replace.
     postMessage("/rb");
     setTimeout(function() {
-        var BoardMessage = X17("X856");
+        var BoardMessage = elementByID("X856"); //TODO fix this
         switch (method) {
             case 1:
                 BoardMessage.value = BoardMessage.value + "\n" + message;
@@ -320,11 +319,11 @@ function editRoomBoard(message, method, key) {  //Method is the style of editing
 
 //requires re-init of JSBot. Automate that?
 function changeName(name) {
-	X3132('X3221');
+	X8606('X2374');
 
 	setTimeout(function() {
-		X2714.value = name;
-		X6145.onsubmit();
+		X2720.value = name;
+		X6536.onsubmit();
 	}, 1000);
 }
 
@@ -377,7 +376,7 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID("X6285") && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    if (!elementByID("X4127") && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
 	var Messages = elementByID(messageTable).innerHTML.split("\n");
@@ -410,12 +409,12 @@ function readChat() {
 	
 	
 	elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-	X1281 = false;
+	X3485 = false;
 }
 
 function readPMs() {
     var ReceivedPM = elementByID(popup).innerHTML;
-    if (ReceivedPM.match(/<!--X4585-->.+>(.+)<\/em>.+X8195">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
+    if (ReceivedPM.match(/<!--X5657-->.+>(.+)<\/em>.+X8061">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
 		var Args = RegExp.$3.split(/\s/);
@@ -454,6 +453,6 @@ function mainLoop() {
     -------------------
 */
 elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-X1281 = false;
+X3485 = false;
 setInterval(function() {mainLoop();}, 1000);
 setInterval(function() {postMessage("");}, 60000*10);
