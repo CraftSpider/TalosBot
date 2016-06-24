@@ -12,7 +12,7 @@ const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
 //Chatzy Variables
 var messageTable = "X9403";
-var popup = "X2159";
+var popup = "XT2159";
 
 //Command variables
 var NumWWs = 0;
@@ -271,7 +271,7 @@ function openChat() {
 }
 
 function toggleChatLock() {
-	if(X2667.X5476) { //Variable for whether the chat is locked, of course. TODO: Find the new name for this
+	if(X5990.X5458) { //Variable for whether the chat is locked, of course.
 		postMessage("/open");
 	} else {
 		postMessage("/close");
@@ -297,7 +297,7 @@ function globalMessage(message) { //Note, only sends the message to online users
 function editRoomBoard(message, method, key) {  //Method is the style of editing to use. Options are: 0/default, overwrite. 1, append. 2, prepend. 3, replace.
     postMessage("/rb");
     setTimeout(function() {
-        var BoardMessage = elementByID("X856"); //TODO fix this
+        var BoardMessage = elementByID("X9524");
         switch (method) {
             case 1:
                 BoardMessage.value = BoardMessage.value + "\n" + message;
