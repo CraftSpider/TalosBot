@@ -205,13 +205,9 @@ var Commands = {
 	    if (!args[0]) {
 		    var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
 		    for (var C in Commands) {
-		    	//TODO: make sure this if statement works right
-		    	if(C.localeCompare("roulette")) {
-		    		continue;
+		    	if(C.toLowerCase() != "roulette") {
+		    		helpList += "^" + C + "\n";
 		    	}
-		    	
-		    	if(c)
-		    	helpList += "^" + C + "\n"; 
 		    }
 		    helpList += "\nMy Admin Commands are:\n";
 		    for (var C in ADMIN_COMMANDS) {
