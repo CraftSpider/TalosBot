@@ -119,7 +119,7 @@ var Commands = {
 				postMessage("Save the game 10 times, just to be sure");
 				break;
 			case 2:
-				postMessage("\u200B");
+				postMessage("/me \u200B");
 				break;
 			case 3:
 				postMessage("How much you wanna bet wundr broke Talos deliberately?");
