@@ -131,7 +131,7 @@ var Commands = {
 				postMessage("wundr's not good at making up dumb things for Talos to say, despite the fact that he himself speaks exclusively in stupid");
 				break;
 			case 6:
-				var alphabet = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z');
+				var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
 				var arbitraryLetters = "";
 				
 				for(var i = 0; i < 10; i++) {
@@ -142,7 +142,7 @@ var Commands = {
 				postMessage("Arbitrary string of ten letters: " + arbitraryLetters);
 				break;
 			default:
-				postMessage("Something broke; go yell at wundrweapon");
+				postMessage("pǝʞoɹq ɹ ᴉ | Go yell at wundrweapon");
 		}
 	},
 	"wordWar": function(args) {
