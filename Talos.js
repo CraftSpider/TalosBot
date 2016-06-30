@@ -9,6 +9,7 @@ const VERSION = 1.2;
 const BOOT_TIME = new Date();
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
+const EGG_DEV = "wundrweapon" //this is just here so wundrweapon feels good about himself
 
 //Chatzy Variables
 var messageTable = "X9403";
@@ -111,6 +112,39 @@ var Commands = {
 	"version": function() {
 		postMessage("I'm currently on version " + VERSION);
 	},
+	"roulette": function() {
+		var num = parseInt(Math.ceil(Math.random() * 6));
+		switch(num) {
+			case 1:
+				postMessage("Save the game 10 times, just to be sure");
+				break;
+			case 2:
+				postMessage("\u200B");
+				break;
+			case 3:
+				postMessage("How much you wanna bet wundr broke Talos deliberately?");
+				break;
+			case 4:
+				postMessage("This message has 50 characters in it\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B");
+				break;
+			case 5:
+				postMessage("wundr's not good at making up dumb things for Talos to say, despite the fact that he himself speaks exclusively in stupid");
+				break;
+			case 6:
+				var alphabet = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+				var arbitraryLetters = "";
+				
+				for(int i = 0; i < 10; i++) {
+					var index = parseInt(Math.floor(Math.random() * 26));
+					arbitraryLetters += alphabet[index];
+				}
+				
+				postMessage("Arbitrary string of ten letters: " + arbitraryLetters);
+				break;
+			default:
+				postMessage("Something broke; go yell at wundrweapon");
+		}
+	},
 	"wordWar": function(args) {
 		if (args[0] > 60 || args[0] <= 0) {
 			postMessage("Choose a number between 1 and 60.");
@@ -171,6 +205,12 @@ var Commands = {
 	    if (!args[0]) {
 		    var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
 		    for (var C in Commands) {
+		    	//TODO: make sure this if statement works right
+		    	if(C.localeCompare("roulette")) {
+		    		continue;
+		    	}
+		    	
+		    	if(c)
 		    	helpList += "^" + C + "\n"; 
 		    }
 		    helpList += "\nMy Admin Commands are:\n";
