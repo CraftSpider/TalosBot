@@ -12,7 +12,7 @@ const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 
 //Chatzy Variables
 var messageTable = "X9403";
-var popup = "XT2159";
+var popup = "X2159";
 
 //Command variables
 var NumWWs = 0;
