@@ -14,6 +14,8 @@ const EGG_DEV = "wundrweapon" //this is just here so wundrweapon feels good abou
 //Chatzy Variables
 var messageTable = "X9403";
 var popup = "X2159";
+var messageTime = "X1546";
+var messageButton = "X5083"
 
 //Command variables
 var NumWWs = 0;
@@ -60,21 +62,13 @@ var Commands = {
 			user = user.join(" ");
 			searchMessages("", user);
 			var getTime = setInterval(function() {
-				var recentMessage = elementByID(messageTable).childNodes[2];
-				if (recentMessage.childNodes[5]) {
-					time = recentMessage.childNodes[5].innerText;
+				if (elementsByClass(messageButton)) {
+					time = elementsByClass(messageTime)[0].innerText;
 					clearInterval(getTime);
 					setTimeout(function() {
-					    closePopup();
-                        postMessage("User " + user + " was last seen " + time);
-			        }, 500);
-				} else if (recentMessage.childNodes[4]) {
-					time = recentMessage.childNodes[4].innerText;
-					clearInterval(getTime);
-					setTimeout(function() {
-					    closePopup();
-                        postMessage("User " + user + " was last seen " + time);
-			        }, 500);
+						closePopup();
+						postMessage("User " + user + " was last seen " + time);
+				    }, 500);
 				} else if (elementByID(popup).childNodes[0].innerText == "No Messages Found" || iterations > 60) {
 				    postMessage("I couldn't find " + user + ". Sorry.");
 				    clearInterval(getTime);
@@ -281,6 +275,10 @@ var ADMIN_COMMANDS = {
 */
 function elementByID(elementID) {
     return document.getElementById(elementID);
+}
+
+function elementsByClass(elementClass) {
+	return document.getElementsByClassName(elementClass);
 }
 
 function leaveChat() {
