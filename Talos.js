@@ -56,7 +56,7 @@ var Commands = {
 	},
 	"seen": function(user) {
 		if(user[0]) {
-			var time;
+			var time, iterations = 0;
 			user = user.join(" ");
 			searchMessages("", user);
 			var getTime = setInterval(function() {
@@ -75,12 +75,14 @@ var Commands = {
 					    closePopup();
                         postMessage("User " + user + " was last seen " + time);
 			        }, 500);
-				} else if (elementByID(popup).childNodes[0].innerText == "No Messages Found") {
+				} else if (elementByID(popup).childNodes[0].innerText == "No Messages Found" || iterations > 60) {
 				    postMessage("I couldn't find " + user + ". Sorry.");
 				    clearInterval(getTime);
 				    setTimeout(function() {
 				        closePopup();
 				    }, 500);
+				} else {
+					iterations++;
 				}
 			}, 500);
 		} else {
