@@ -14,6 +14,8 @@ const EGG_DEV = "wundrweapon" //this is just here so wundrweapon feels good abou
 //Chatzy Variables
 var messageTable = "X9403";
 var popup = "X2159";
+var messageTime = "X1546";
+var messageButton = "X5083"
 
 //Command variables
 var NumWWs = 0;
@@ -60,21 +62,13 @@ var Commands = {
 			user = user.join(" ");
 			searchMessages("", user);
 			var getTime = setInterval(function() {
-				var recentMessage = elementByID(messageTable).childNodes[2];
-				if (recentMessage.childNodes[5]) {
-					time = recentMessage.childNodes[5].innerText;
+				if (elementsByClass(messageButton)) {
+					time = elementsByClass(messageTime)[0].innerText;
 					clearInterval(getTime);
 					setTimeout(function() {
-					    closePopup();
-                        postMessage("User " + user + " was last seen " + time);
-			        }, 500);
-				} else if (recentMessage.childNodes[4]) {
-					time = recentMessage.childNodes[4].innerText;
-					clearInterval(getTime);
-					setTimeout(function() {
-					    closePopup();
-                        postMessage("User " + user + " was last seen " + time);
-			        }, 500);
+						closePopup();
+						postMessage("User " + user + " was last seen " + time);
+				    }, 500);
 				} else if (elementByID(popup).childNodes[0].innerText == "No Messages Found" || iterations > 60) {
 				    postMessage("I couldn't find " + user + ". Sorry.");
 				    clearInterval(getTime);
@@ -283,6 +277,10 @@ function elementByID(elementID) {
     return document.getElementById(elementID);
 }
 
+function elementsByClass(elementClass) {
+	return document.getElementsByClassName(elementClass);
+}
+
 function leaveChat() {
     elementByID("X4312").onclick();
 }
@@ -309,7 +307,7 @@ function openChat() {
 }
 
 function toggleChatLock() {
-	if(X5990.X5458) { //Variable for whether the chat is locked, of course.
+	if(X2667.X5476) { //Variable for whether the chat is locked, of course. TODO: Find the new name for this
 		postMessage("/open");
 	} else {
 		postMessage("/close");
@@ -335,7 +333,7 @@ function globalMessage(message) { //Note, only sends the message to online users
 function editRoomBoard(message, method, key) {  //Method is the style of editing to use. Options are: 0/default, overwrite. 1, append. 2, prepend. 3, replace.
     postMessage("/rb");
     setTimeout(function() {
-        var BoardMessage = elementByID("X9524");
+        var BoardMessage = elementByID("X856"); //TODO fix this
         switch (method) {
             case 1:
                 BoardMessage.value = BoardMessage.value + "\n" + message;
