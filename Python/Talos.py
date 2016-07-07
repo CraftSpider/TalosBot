@@ -2,23 +2,36 @@ import discord
 from discord.ext import commands
 import random
 import logging
+import datetime
+import time
 
 #
 #   Constants
 #
 VERSION = 2.0
-BOOT_TIME = new Date()
+BOOT_TIME = datetime.datetime.now()
 ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"]
 EGG_DEV = "wundrweapon"
+STATIC_KEY = "" #Replace this with your key before running Talos
 
 #
 #   Command Variables
 #
-NumWWs = 0
-MaxWWs = 10
-IsSleeping = 0
+num_wws = 0
+max_wws = 10
+is_sleeping = 0
 
+#
+#   Generator Strings
+#
+noun = ["dog", "cat", "robot", "astronaut", "man", "woman", "person", "child", "giant", "elephant", "zebra", "animal", "box", "tree", "wizard", "mage", "swordsman", "soldier", "inventor", "doctor", "Talos", "dinosaur", "insect", "nerd", "dancer", "singer", "actor", "barista", "acrobat", "gamer", "writer", "dragon"]
+adjective = ["happy", "sad", "athletic", "giant", "tiny", "smart", "silly", "unintelligent", "funny", "coffee-loving", "lazy", "spray-tanned", "angry", "disheveled", "annoying", "loud", "quiet", "shy", "extroverted", "jumpy", "ditzy", "strong", "weak", "smiley", "annoyed", "dextrous"]
+goal = ["fly around the world", "go on a date", "win a race", "tell their crush how they feel", "find their soulmate", "write a chatbot", "get into university", "graduate high school", "plant a hundred trees", "find their biological parents", "fill their bucket list", "find atlantis", "learn magic", "learn to paint", "drive a car", "pilot a spaceship", "leave Earth", "go home", "redo elementary school", "not spill their beer"]
+obstacle = ["learning to read", "fighting aliens", "saving the world", "doing algebra", "losing their hearing", "losing their sense of sight", "learning the language", "hacking the mainframe", "coming of age", "the nuclear apocalypse is happening", "incredibly drunk", "drinking coffee", "surfing", "spying on the bad guys", "smelling terrible", "having a bad hair day", "exploring the new planet", "on the moon", "on Mars"]
 
+place = ["pub", "spaceship", "museum", "office", "jungle", "forest", "coffee shop", "store", "market", "station", "tree", "hut", "house", "bed", "bus", "car", "dormitory", "school", "desert", "ballroom", "cattery", "shelter", "street"]
+place_adjective = ["quiet", "loud", "crowded", "deserted", "bookish", "colorful", "balloon-filled", "book", "tree", "money", "video game", "cat", "dog", "busy", "apocalypse", "writer", "magic", "light", "dark", "robotic", "futuristic", "old-timey"]
+action = ["learn to read", "jump up and down", "cry a lot", "cry a little", "smile", "spin in a circle", "get arrested", "dance to the music", "listen to your favourite song", "eat all the food", "win the lottery", "hack the mainframe", "save the world", "find atlantis", "get accepted to Hogwarts", "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship", "learn math", "write a lot", "do gymnastics"]
 
 logging.basicConfig(level=logging.INFO)
 
@@ -50,9 +63,28 @@ async def roll(dice : str):
     await bot.say(result)
 
 @bot.command(description='For when you wanna settle the score some other way')
-async def choose(*choices : str):
+async def choose(*input : str):
     """Chooses between multiple choices."""
+    result =  " ".join(input)
+    await bot.say("I'm choosing between: " + result + ".")
+    choices = result.split(", ")
+    
     await bot.say(random.choice(choices))
+
+@bot.command()
+async def wordwar(length : str): #Need to find way to wait without blocking threads. Command currently nonoperational
+    try:
+        length = int(length)
+    except length > 60 or length < 1:
+        await bot.say("Please choose a length between 1 and 60 minutes.")
+        return
+    except Exception:
+        await bot.say("Please specify the length of your word war (in minutes).")
+        return
+    
+    await bot.say("Word War for " + str(length) + " minutes.")
+    await bot.say("Word War Over")
+    
 
 @bot.command()
 async def joined(member : discord.Member):
@@ -60,17 +92,21 @@ async def joined(member : discord.Member):
     await bot.say('{0.name} joined in {0.joined_at}'.format(member))
 
 @bot.group(pass_context=True)
-async def cool(ctx):
-    """Says if a user is cool.
-
-    In reality this just checks if a subcommand is being invoked.
+async def generate(ctx):
+    """Checks if a subcommand is being invoked for
+    generation commands
     """
     if ctx.invoked_subcommand is None:
-        await bot.say('No, {0.subcommand_passed} is not cool'.format(ctx))
+        await bot.say("Valid options are 'prompt' and 'crawl'.")
 
-@cool.command(name='Talos')
-async def _bot():
-    """Is the bot cool?"""
-    await bot.say('Yes, Talos is cool.')
+@generate.command(name='crawl')
+async def _crawl():
+    """Generates a crawl"""
+    await bot.say("You enter the " + random.choice(place_adjective) + " " + random.choice(place) + ". Write " + str(random.randint(50, 500)) + " words as you " + random.choice(action) + ".")
 
-bot.run('MTk5OTY1NjEyNjkxMjkyMTYw.Cl2X_Q.SWyFAXsMeDG87vW6WERSLljDQIQ')
+@generate.command(name='prompt')
+async def _prompt():
+    """Generates a prompt"""
+    await bot.say("A story about a " + random.choice(adjective) + " " + random.choice(noun) + " who must " + random.choice(goal) + " while " + random.choice(obstacle) + ".")
+
+bot.run(STATIC_KEY)
