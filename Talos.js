@@ -12,10 +12,10 @@ const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
 const EGG_DEV = "wundrweapon" //this is just here so wundrweapon feels good about himself
 
 //Chatzy Variables
-var messageTable = "X9403";
-var popup = "X2159";
-var messageTime = "X1546";
-var messageButton = "X5083"
+var messageTable = "X8414";
+var popup = "X5721";
+var messageTime = "X2087";
+var messageButton = "X5794"
 
 //Command variables
 var NumWWs = 0;
@@ -282,11 +282,11 @@ function elementsByClass(elementClass) {
 }
 
 function leaveChat() {
-    elementByID("X4312").onclick();
+    elementByID("X7769").onclick();
 }
 
 function closePopup() {
-	X1729();
+	X8071();
 }
 
 function postMessage(message) {
@@ -295,7 +295,7 @@ function postMessage(message) {
     for (var tag in HTMLTags) {
         message = message.replace(HTMLTags[tag],ChatzyTags[tag]);
     }
-    X9941(message);
+    X4727(message);
 }
 
 function closeChat() {
@@ -307,7 +307,7 @@ function openChat() {
 }
 
 function toggleChatLock() {
-	if(X5990.X5458) { //Variable for whether the chat is locked, of course.
+	if(X5170.X5289) { //Variable for whether the chat is locked, of course.
 		postMessage("/open");
 	} else {
 		postMessage("/close");
@@ -323,7 +323,7 @@ function privateMessage(name, message) {
 }
 
 function globalMessage(message) { //Note, only sends the message to online users.
-	var users = X6284.split("\n");
+	var users = X3884.split("\n");
 	for (var i = 1; i <= users[0]; i++) {
 		user = users[i].split("	");
 		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
@@ -333,7 +333,7 @@ function globalMessage(message) { //Note, only sends the message to online users
 function editRoomBoard(message, method, key) {  //Method is the style of editing to use. Options are: 0/default, overwrite. 1, append. 2, prepend. 3, replace.
     postMessage("/rb");
     setTimeout(function() {
-        var BoardMessage = elementByID("X9524");
+        var BoardMessage = elementByID("X6196");
         switch (method) {
             case 1:
                 BoardMessage.value = BoardMessage.value + "\n" + message;
@@ -355,11 +355,11 @@ function editRoomBoard(message, method, key) {  //Method is the style of editing
 
 //requires re-init of JSBot. Automate that?
 function changeName(name) {
-	X8606('X2374');
+	X8752('X6610');
 
 	setTimeout(function() {
-		X2720.value = name;
-		X6536.onsubmit();
+		X4964.value = name;
+		X2575.onsubmit();
 	}, 1000);
 }
 
@@ -412,7 +412,7 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID("X4127") && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    if (!elementByID("X4233") && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
 	var Messages = elementByID(messageTable).innerHTML.split("\n");
@@ -445,12 +445,12 @@ function readChat() {
 	
 	
 	elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-	X3485 = false;
+	X8614 = false;
 }
 
 function readPMs() {
     var ReceivedPM = elementByID(popup).innerHTML;
-    if (ReceivedPM.match(/<!--X5657-->.+>(.+)<\/em>.+X8061">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
+    if (ReceivedPM.match(/<!--X1046-->.+>(.+)<\/em>.+X5999">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
 		var Args = RegExp.$3.split(/\s/);
@@ -489,6 +489,6 @@ function mainLoop() {
     -------------------
 */
 elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-X3485 = false;
+X8614 = false;
 setInterval(function() {mainLoop();}, 1000);
 setInterval(function() {postMessage("");}, 60000*10);
