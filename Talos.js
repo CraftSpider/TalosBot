@@ -387,6 +387,7 @@ function startWW(length, KeyWord) {
     Main loop functions
     -------------------
 */
+
 function writingHour() {
     d = new Date();
     
@@ -400,11 +401,7 @@ function writingHour() {
         postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
         WHActive = true;
         WHDisactive = false;
-        setTimeout(function() {closeChat();}, 500);
-    } else if (d.) {
-
     } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() == 0 && !WHDisactive) {
-        openChat();
         setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 500);
         WHDisactive = true;
         WHActive = false;
