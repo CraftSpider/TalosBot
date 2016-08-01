@@ -263,7 +263,7 @@ var ADMIN_COMMANDS = {
 	},
 	"kill": function() {
 		postMessage("Et Tu, Brute?");
-		setTimeout(function() {leaveChat();}, 200);
+		setInterval(function() {leaveChat();}, 200);
 		throw new Error("Talos Killed by Admin");
 	},
 };
@@ -401,6 +401,8 @@ function writingHour() {
         WHActive = true;
         WHDisactive = false;
         setTimeout(function() {closeChat();}, 500);
+    } else if (d.) {
+
     } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() == 0 && !WHDisactive) {
         openChat();
         setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 500);
