@@ -23,10 +23,7 @@ var MaxWWs = 10;
 var IsSleeping = 0;
 
 //Writing Hour variables
-var WHActive = false;
-var WHDisactive = false;
-var WHAlertOne = false;
-var WHAlertTwo = false;
+var WHSwitch = 0;
 
 //Generator words
 var Noun = ["dog", "cat", "robot", "astronaut", "man", "woman", "person", "child", "giant", "elephant", "zebra", "animal", "box", "tree", "wizard", "mage", "swordsman", "soldier", "inventor", "doctor", "Talos", "dinosaur", "insect", "nerd", "dancer", "singer", "actor", "barista", "acrobat", "gamer", "writer", "dragon"];
@@ -263,7 +260,7 @@ var ADMIN_COMMANDS = {
 	},
 	"kill": function() {
 		postMessage("Et Tu, Brute?");
-		setTimeout(function() {leaveChat();}, 200);
+		setInterval(function() {leaveChat();}, 200);
 		throw new Error("Talos Killed by Admin");
 	},
 };
@@ -387,27 +384,22 @@ function startWW(length, KeyWord) {
     Main loop functions
     -------------------
 */
+
 function writingHour() {
-    d = new Date();
-    
-    if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && !WHAlertOne) {
+	d = new Date();
+
+	if(d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch == 0) {
         postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
-        WHAlertOne = true;
-    } else if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && !WHAlertTwo) {
+        WHSwitch++;
+	} else if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && WHSwitch == 1) {
         postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
-        WHAlertTwo = true;
-    } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() == 0 && !WHActive) {
+		WHSwitch++;
+    } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() == 0 && WHSwitch == 2) {
         postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
-        WHActive = true;
-        WHDisactive = false;
-        setTimeout(function() {closeChat();}, 500);
-    } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() == 0 && !WHDisactive) {
-        openChat();
+        WHSwitch++;
+    } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() == 0 && WHSwitch == 3) {
         setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 500);
-        WHDisactive = true;
-        WHActive = false;
-        WHAlertTwo = false;
-        WHAlertOne = false;
+        WHSwitch = 0;
     }
 }
 
