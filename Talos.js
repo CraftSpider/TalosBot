@@ -58,24 +58,27 @@ var Commands = {
 			var time, iterations = 0;
 			user = user.join(" ");
 			searchMessages("", user);
-			var getTime = setInterval(function() {
-				if (elementsByClass(messageButton)) {
-					time = elementsByClass(messageTime)[0].innerText;
-					clearInterval(getTime);
-					setTimeout(function() {
-						closePopup();
-						postMessage("User " + user + " was last seen " + time);
-				    }, 500);
-				} else if (elementByID(popup).childNodes[0].innerText == "No Messages Found" || iterations > 60) {
-				    postMessage("I couldn't find " + user + ". Sorry.");
-				    clearInterval(getTime);
-				    setTimeout(function() {
-				        closePopup();
-				    }, 500);
-				} else {
+			if (!getTime){
+				var getTime = setInterval(function() {
 					iterations++;
-				}
-			}, 500);
+					if (elementsByClass(messageButton).length > 0) {
+						time = elementsByClass(messageTime)[0].innerText;
+						clearInterval(getTime);
+						setTimeout(function() {
+							closePopup();
+							postMessage("User " + user + " was last seen " + time);
+						}, 500);
+					} else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found" ) {
+						postMessage("I couldn't find " + user + ". Sorry.");
+						clearInterval(getTime);
+						setTimeout(function() {
+							closePopup();
+						}, 500);
+					}
+				}, 500);
+			} else {
+				postMessage("Previous seen command still running! Please wait between 10 seconds and a minute then ask again.")
+			}
 		} else {
 			postMessage("Sorry, I need a user to look for.");
 			closePopup();
