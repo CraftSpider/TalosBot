@@ -24,7 +24,7 @@ function elementsByClass(elementClass) {
 }
 
 function leaveChat() {
-    elementByID("X7769").onclick();
+    X2661('X3836');
 }
 
 function closePopup() {
