@@ -21,6 +21,7 @@ var messageButton = "X5794"
 var NumWWs = 0;
 var MaxWWs = 10;
 var IsSleeping = 0;
+var getTime;
 
 //Writing Hour variables
 var WHSwitch = 0;
@@ -59,7 +60,7 @@ var Commands = {
 			user = user.join(" ");
 			searchMessages("", user);
 			if (!getTime){
-				var getTime = setInterval(function() {
+				getTime = setInterval(function() {
 					iterations++;
 					if (elementsByClass(messageButton).length > 0) {
 						time = elementsByClass(messageTime)[0].innerText;
@@ -71,6 +72,7 @@ var Commands = {
 					} else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found" ) {
 						postMessage("I couldn't find " + user + ". Sorry.");
 						clearInterval(getTime);
+						getTime = undefined;
 						setTimeout(function() {
 							closePopup();
 						}, 500);
@@ -262,9 +264,9 @@ var ADMIN_COMMANDS = {
     	}
 	},
 	"kill": function() {
-		postMessage("Et Tu, Brute?");
+  		postMessage("Et Tu, Brute?");
 		setInterval(function() {leaveChat();}, 200);
-		throw new Error("Talos Killed by Admin");
+		window.open('http://www.chatzy.com/', '_self')
 	},
 };
 
@@ -282,7 +284,7 @@ function elementsByClass(elementClass) {
 }
 
 function leaveChat() {
-    elementByID("X7769").onclick();
+    X2661('X3836');
 }
 
 function closePopup() {
