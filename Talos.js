@@ -5,11 +5,11 @@
 */
 
 //Constants
-const VERSION = 1.3 ;
+const VERSION = 1.3;
 const BOOT_TIME = new Date();
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
-const EGG_DEV = "wundrweapon" //this is just here so wundrweapon feels good about himself
+const EGG_DEV = "wundrweapon"; //this is just here so wundrweapon feels good about himself
 
 //Command variables
 var NumWWs = 0;
@@ -53,7 +53,7 @@ var Commands = {
             var time, iterations = 0;
             user = user.join(" ");
             searchMessages("", user);
-            if (!getTime){
+            if (!getTime) {
                 getTime = setInterval(function() {
                     iterations++;
                     if (elementsByClass(messageButton).length > 0) {
@@ -65,7 +65,7 @@ var Commands = {
                                 postMessage("User " + user + " was last seen " + time);
                             }
                         }, 500);
-                    } else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found" ) {
+                    } else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found") {
                         if (!IsSleeping) {
                             postMessage("I couldn't find " + user + ". Sorry.");
                         }
@@ -77,7 +77,7 @@ var Commands = {
                     }
                 }, 500);
             } else {
-                postMessage("Previous seen command still running! Please wait between 10 seconds and a minute then ask again.")
+                postMessage("Previous seen command still running! Please wait between 10 seconds and a minute then ask again.");
             }
         } else {
             postMessage("Sorry, I need a user to look for.");
@@ -130,7 +130,7 @@ var Commands = {
                 var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
                 var arbitraryLetters = "";
                 
-                for(var i = 0; i < 10; i++) {
+                for (var i = 0; i < 10; i++) {
                     var index = parseInt(Math.floor(Math.random() * 26));
                     arbitraryLetters += alphabet[index];
                 }
@@ -152,8 +152,8 @@ var Commands = {
             var KeyWord;
             
             //Block of input handling. Checks for :xx format for times.
-            if(args[1] && args[2]) {
-                if(args[1].match(/:(\d\d)/)) {
+            if (args[1] && args[2]) {
+                if (args[1].match(/:(\d\d)/)) {
                     StartTime = RegExp.$1;
                     KeyWord = args[2];
                 } else if (args[2].match(/:(\d\d)/)) {
@@ -163,7 +163,7 @@ var Commands = {
                     postMessage("I can't read that start time, sorry.");
                 }
             } else if (args[1]) {
-                if(args[1].match(/:(\d\d)/)) {
+                if (args[1].match(/:(\d\d)/)) {
                     StartTime = RegExp.$1;
                 } else {
                     KeyWord = args[1];
@@ -199,11 +199,11 @@ var Commands = {
             }
         }
     },
-    "help": function (args) {
+    "help": function(args) {
         if (!args[0]) {
             var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
             for (var C in Commands) {
-                if(C.toLowerCase() != "roulette") {
+                if (C.toLowerCase() != "roulette") {
                     helpList += "^" + C + "\n";
                 }
             }
@@ -257,7 +257,7 @@ var ADMIN_COMMANDS = {
             IsSleeping = 0;
             postMessage("I'm awake again" + (time[0]? " for " + time[0] + " minutes":"") + ", and available for user commands. To have me sleep again, type [b]^toggleSleep[/b].");
         }
-        if(time[0]) {
+        if (time[0]) {
             setTimeout(function(){
                 ADMIN_COMMANDS.toggleSleep("");
             }, time[0] * 60000);
@@ -266,7 +266,7 @@ var ADMIN_COMMANDS = {
     "kill": function() {
         postMessage("Et Tu, Brute?");
         setInterval(function() {leaveChat();}, 200);
-        window.open('http://www.chatzy.com/', '_self')
+        window.open('http://www.chatzy.com/', '_self');
     },
 };
 
@@ -298,7 +298,7 @@ function startWW(length, KeyWord) {
 function writingHour() {
     d = new Date();
 
-    if(d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch == 0) {
+    if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch == 0) {
         postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
         WHSwitch++;
     } else if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && WHSwitch == 1) {
@@ -382,7 +382,6 @@ function mainLoop() {
     readChat();
     writingHour();
     readPMs();
-    
 }
 
 /*
@@ -390,12 +389,13 @@ function mainLoop() {
     Initialization Code
     -------------------
 */
+
 function talosInit() {
-    ChatzyAPI = document.createElement('script')
-    ChatzyAPI.setAttribute('type', 'text/javascript')
-    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/update/ChatzyWrappers.js')
-    ChatzyAPI.setAttribute('onload', 'talosStart()')
-    document.head.appendChild(ChatzyAPI)
+    ChatzyAPI = document.createElement('script');
+    ChatzyAPI.setAttribute('type', 'text/javascript');
+    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/update/ChatzyWrappers.js');
+    ChatzyAPI.setAttribute('onload', 'talosStart()');
+    document.head.appendChild(ChatzyAPI);
 }
 
 function talosStart() {
@@ -405,4 +405,4 @@ function talosStart() {
     setInterval(function() {postMessage("");}, 60000*10);
 }
 
-talosInit()
+talosInit();
