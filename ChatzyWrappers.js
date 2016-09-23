@@ -20,7 +20,7 @@ function elementByID(elementID) {
 }
 
 function elementsByClass(elementClass) {
-	return document.getElementsByClassName(elementClass);
+    return document.getElementsByClassName(elementClass);
 }
 
 function leaveChat() {
@@ -28,7 +28,7 @@ function leaveChat() {
 }
 
 function closePopup() {
-	X8071();
+    X8071();
 }
 
 function postMessage(message) {
@@ -41,35 +41,35 @@ function postMessage(message) {
 }
 
 function closeChat() {
-	postMessage("/close");
+    postMessage("/close");
 }
 
 function openChat() {
-	postMessage("/open");
+    postMessage("/open");
 }
 
 function toggleChatLock() {
-	if(X5170.X5289) { //Variable for whether the chat is locked, of course.
-		postMessage("/open");
-	} else {
-		postMessage("/close");
-	}
+    if(X5170.X5289) { //Variable for whether the chat is locked, of course.
+        postMessage("/open");
+    } else {
+        postMessage("/close");
+    }
 }
 
 function searchMessages(term, poster) {
-	postMessage("/find " + (poster?"{V:" + poster + "} ":"") + (term?term:""));
+    postMessage("/find " + (poster?"{V:" + poster + "} ":"") + (term?term:""));
 }
 
 function privateMessage(name, message) {
-	postMessage("/pm \"" + name + "\" " + message);
+    postMessage("/pm \"" + name + "\" " + message);
 }
 
 function globalMessage(message) { //Note, only sends the message to online users.
-	var users = X3884.split("\n");
-	for (var i = 1; i <= users[0]; i++) {
-		user = users[i].split("	");
-		privateMessage(user[0], message);	//Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
-	}
+    var users = X3884.split("\n");
+    for (var i = 1; i <= users[0]; i++) {
+        user = users[i].split(" ");
+        privateMessage(user[0], message);   //Replace the 0 with other numbers to grab different values. 2 is last leave/exit, 4 is status, 5 is location.
+    }
 }
 
 function editRoomBoard(message, method, key) {  //Method is the style of editing to use. Options are: 0/default, overwrite. 1, append. 2, prepend. 3, replace.
@@ -97,12 +97,12 @@ function editRoomBoard(message, method, key) {  //Method is the style of editing
 
 //Requires Re-Init. Fix that?
 function changeName(name) {
-	X8752('X6610');
+    X8752('X6610');
 
-	setTimeout(function() {
-		X4964.value = name;
-		X2575.onsubmit();
-	}, 1000);
+    setTimeout(function() {
+        X4964.value = name;
+        X2575.onsubmit();
+    }, 1000);
 }
 
 function highlightTab(elIn, classIn, confusingBool) {
