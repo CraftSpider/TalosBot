@@ -5,7 +5,7 @@
 */
 
 //Constants
-const VERSION = 1.2;
+const VERSION = 1.3	;
 const BOOT_TIME = new Date();
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
@@ -37,9 +37,9 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
 */
 var Commands = {
     "generate": function(type) {
-		if (type[0] == "prompt") {
+		if (type[0].toUpperCase() == "PROMPT") {
 			postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
-		} else if (type[0] == "crawl") {
+		} else if (type[0].toUpperCase() == "CRAWL") {
 			postMessage("You enter the " + Place_Adjective[randomNumber(0, Place_Adjective.length - 1)] + " " + Place[randomNumber(0, Place.length - 1)] + ". Write " + randomNumber(50, 500) + " words as you " + Action[randomNumber(0, Action.length - 1)] + ".");
 		} else {
 			postMessage("You can generate [b]prompt[/b]s and [b]crawl[/b] dares. Having trouble? Use ^help! :)");
@@ -180,10 +180,12 @@ var Commands = {
 					RawDif = (RawDif >= 0 ? RawDif : RawDif + 60);
 					TimeDif = ((CurTime.getTime()-(CurTime.getSeconds()*1000+CurTime.getMilliseconds())) + RawDif * 60000) - CurTime.getTime();
 					postMessage("Alright, I'll start a " + length + " minute word war at :" + StartTime + "." + (KeyWord? " Keyword: " + KeyWord  + "." : ""));
-					console.log(length + " " + StartTime + " " + TimeDif);
+					// console.log(length + " " + StartTime + " " + TimeDif);
 					setTimeout(function() {
-						postMessage("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
-						console.log("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+						if (!IsSleeping) {
+							postMessage("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+						}
+						// console.log("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
 						startWW(length, KeyWord);
 					}, TimeDif);
 				} else {
@@ -253,7 +255,7 @@ var ADMIN_COMMANDS = {
     	}
     	if(time[0]) {
     	    setTimeout(function(){
-    	        ADMIN_COMMANDS.toggleSleep();
+    	        ADMIN_COMMANDS.toggleSleep("");
     	    }, time[0] * 60000);
     	}
 	},
