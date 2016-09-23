@@ -1,13 +1,23 @@
 /*
-    ----------------
-    Chatzy Variables
-    ----------------
+    ---------------------
+    Chatzy HTML Variables
+    ---------------------
 */
 
 var messageTable = "X8414";
 var popup = "X5721";
 var messageTime = "X2087";
 var messageButton = "X5794";
+var PMTag = 'X1046';
+var textBox = 'X5999';
+
+/*
+    -------------------
+    Chatzy JS Variables
+    -------------------
+*/
+
+var isCleared = "X8614"
 
 /*
     -----------------
