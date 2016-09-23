@@ -314,7 +314,7 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID("X4233") && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    if (!elementByID(messageTable) && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
     var Messages = elementByID(messageTable).innerHTML.split("\n");
@@ -347,12 +347,13 @@ function readChat() {
     
     
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-    X8614 = false;
+    window[isCleared] = false;
 }
 
 function readPMs() {
     var ReceivedPM = elementByID(popup).innerHTML;
-    if (ReceivedPM.match(/<!--X1046-->.+>(.+)<\/em>.+X5999">\^(\w+)[\W]?(?:\s(.+))?(?:<\/div><p)/)) {
+    var PMSearch = new RegExp('<!--' + PMTag + '-->.+>(.+)<\/em>.+' + textBox + '">\\^(\\w+)[\\W]?(?:\\s(.+))?(?:<\/div><p)')
+    if (ReceivedPM.match(PMSearch)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
         var Args = RegExp.$3.split(/\s/);
@@ -369,11 +370,11 @@ function readPMs() {
             closePopup();
             return;
         } else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
-            privateMessage("Sorry, that command is Admin only, and I don't recognize you!");
+            privateMessage(User, "Sorry, that command is Admin only, and I don't recognize you!");
         } else if (window["Commands"][Command]) {
             window["Commands"][Command](Args);
         } else {
-            privateMessage("Sorry, I don't understand that. May I suggest ^help?");
+            privateMessage(User, "Sorry, I don't understand that. May I suggest ^help?");
         }
     }
 }
@@ -400,7 +401,7 @@ function talosInit() {
 
 function talosStart() {
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-    X8614 = false;
+    window["isCleared"] = false;
     setInterval(function() {mainLoop();}, 1000);
     setInterval(function() {postMessage("");}, 60000*10);
 }
