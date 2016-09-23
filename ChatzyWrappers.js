@@ -95,6 +95,7 @@ function editRoomBoard(message, method, key) {  //Method is the style of editing
     }, 150);
 }
 
+//Requires Re-Init. Fix that?
 function changeName(name) {
 	X8752('X6610');
 
