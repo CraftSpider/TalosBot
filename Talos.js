@@ -61,10 +61,14 @@ var Commands = {
 						clearInterval(getTime);
 						setTimeout(function() {
 							closePopup();
-							postMessage("User " + user + " was last seen " + time);
+							if (!IsSleeping) {
+								postMessage("User " + user + " was last seen " + time);
+							}
 						}, 500);
 					} else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found" ) {
-						postMessage("I couldn't find " + user + ". Sorry.");
+						if (!IsSleeping) {
+							postMessage("I couldn't find " + user + ". Sorry.");
+						}
 						clearInterval(getTime);
 						getTime = undefined;
 						setTimeout(function() {
