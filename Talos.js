@@ -17,6 +17,8 @@ var MaxWWs = 10;
 var IsSleeping = 0;
 var getTime;
 
+var loggedOn = {}
+
 //Writing Hour variables
 var WHSwitch = 0;
 
@@ -47,6 +49,28 @@ var Commands = {
     },
     "information": function() {
         postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, Dino, and HiddenStorys.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
+    },
+    "login": function(args, user) {
+        if (!args[0] || !args[1]) {
+            postMessage("I need both a username and a password!");
+        } else if (!getStorage(args[0])) {
+            postMessage("Sorry, I don't know any user named " + args[0]);
+        } else if (args[1] == getStorage(args[0]) && !loggedOn[user]) {
+            loggedOn[user] = args[0];
+            postMessage(user + " has ben succesfully logged in!");
+        } else if (args[1] == getStorage(args[0])) {
+            postMessage("You appear to be already logged on as " + loggedOn[user]);
+        } else {
+            postMessage("That password doesn't match what I remember.");
+        }
+    },
+    "logout": function(args, user) {
+        if (loggedOn[user]) {
+            loggedOn[user] = undefined;
+            postMessage(user + " has been logged out.");
+        } else {
+            postMessage("I can't log you out if you aren't even logged in.");
+        }
     },
     "seen": function(user) {
         if(user[0]) {
@@ -107,6 +131,15 @@ var Commands = {
     },
     "version": function() {
         postMessage("I'm currently on version " + VERSION);
+    },
+    "register": function(args) {
+        if (args[0] && args[1]) {
+            setStorage(args[0], args[1]);
+            setStorage(args[0]+"Words", 0);
+            postMessage("User " + args[0] + " has been registered!");
+        } else {
+            postMessage("I need both a username and a password to register an account.");
+        }
     },
     "roulette": function() {
         var num = parseInt(Math.ceil(Math.random() * 6));
@@ -289,6 +322,49 @@ function startWW(length, KeyWord) {
     }, length * 60000);
 }
 
+function parseArgs(str) {
+    var out = [];
+    
+    if (str.match(/".*?"/)) {
+        var delim = false;
+        var arg = "";
+        for (var char in str) {
+            if (str[char] == "\"") {
+                delim = !delim;
+                if (arg) {
+                    out.push(arg);
+                    arg = "";
+                }
+            } else if (str[char] == " " && !delim) {
+                if (arg) {
+                    out.push(arg);
+                    arg = "";
+                }
+            } else {
+                arg += str[char];
+            }
+        }
+    } else {
+        out = str.split(/\s/);
+    }
+    
+    return out;
+}
+
+function setStorage(key, content) {
+    window.localStorage[key] = content;
+}
+
+function getStorage(key) {
+    return window.localStorage[key];
+}
+
+function removeStorage(key) {
+    oldItem = getStorage(key);
+    window.localStorage.removeItem(key);
+    return oldItem;
+}
+
 /*
     -------------------
     Main loop functions
@@ -323,7 +399,7 @@ function readChat() {
         if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
             var User = RegExp.$1;
             var Command = RegExp.$2;
-            var Args = RegExp.$3.split(/\s/);
+            var Args = parseArgs(RegExp.$3);
             var isAdmin = false;
             for (var U in ADMINS) {
                 if (User == ADMINS[U]) {
@@ -332,13 +408,13 @@ function readChat() {
                 }
             }
             if (window.ADMIN_COMMANDS[Command] && isAdmin) {
-                window.ADMIN_COMMANDS[Command](Args);
+                window.ADMIN_COMMANDS[Command](Args, User);
             } else if (IsSleeping == 1) {
                 break;
             } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
                 postMessage("Sorry, that command is Admin only, and I don't recognize you!");
             } else if (window.Commands[Command]) {
-                window.Commands[Command](Args);
+                window.Commands[Command](Args, User);
             } else {
                 postMessage("Sorry, I don't understand that. May I suggest ^help?");
             }
@@ -356,7 +432,7 @@ function readPMs() {
     if (ReceivedPM.match(PMSearch)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
-        var Args = RegExp.$3.split(/\s/);
+        var Args = parseArgs(RegExp.$3);
         var isAdmin = false;
         for (var U in ADMINS) {
             if (User == ADMINS[U]) {
@@ -403,7 +479,6 @@ function talosStart() {
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window["isCleared"] = false;
     setInterval(function() {mainLoop();}, 1000);
-    setInterval(function() {postMessage("");}, 60000*10);
 }
 
 talosInit();
