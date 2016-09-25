@@ -250,7 +250,7 @@ var Commands = {
 
 var ADMIN_COMMANDS = {
     "toggleSleep": function(time) {
-        if (IsSleeping == 0) {
+        if (IsSleeping === 0) {
             IsSleeping = 1;
             postMessage("Good night! Going to sleep " + (time[0]?"for " + time[0] + " minutes":"now") + ". To wake me, type [b]^toggleSleep[/b] again.");
         } else {
@@ -298,16 +298,16 @@ function startWW(length, KeyWord) {
 function writingHour() {
     d = new Date();
 
-    if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch == 0) {
+    if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch === 0) {
         postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
         WHSwitch++;
-    } else if (d.getUTCHours() == (WH_TIME == 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && WHSwitch == 1) {
+    } else if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && WHSwitch == 1) {
         postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
         WHSwitch++;
-    } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() == 0 && WHSwitch == 2) {
+    } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() === 0 && WHSwitch == 2) {
         postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
         WHSwitch++;
-    } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() == 0 && WHSwitch == 3) {
+    } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() === 0 && WHSwitch == 3) {
         setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 500);
         WHSwitch = 0;
     }
@@ -331,14 +331,14 @@ function readChat() {
                     break;
                 }
             }
-            if (window["ADMIN_COMMANDS"][Command] && isAdmin) {
-                window["ADMIN_COMMANDS"][Command](Args);
+            if (window.ADMIN_COMMANDS[Command] && isAdmin) {
+                window.ADMIN_COMMANDS[Command](Args);
             } else if (IsSleeping == 1) {
                 break;
-            } else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
+            } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
                 postMessage("Sorry, that command is Admin only, and I don't recognize you!");
-            } else if (window["Commands"][Command]) {
-                window["Commands"][Command](Args);
+            } else if (window.Commands[Command]) {
+                window.Commands[Command](Args);
             } else {
                 postMessage("Sorry, I don't understand that. May I suggest ^help?");
             }
@@ -352,7 +352,7 @@ function readChat() {
 
 function readPMs() {
     var ReceivedPM = elementByID(popup).innerHTML;
-    var PMSearch = new RegExp('<!--' + PMTag + '-->.+>(.+)<\/em>.+' + textBox + '">\\^(\\w+)[\\W]?(?:\\s(.+))?(?:<\/div><p)')
+    var PMSearch = new RegExp('<!--' + PMTag + '-->.+>(.+)<\/em>.+' + textBox + '">\\^(\\w+)[\\W]?(?:\\s(.+))?(?:<\/div><p)');
     if (ReceivedPM.match(PMSearch)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
@@ -364,15 +364,15 @@ function readPMs() {
                 break;
             }
         }
-        if (window["ADMIN_COMMANDS"][Command] && isAdmin) {
-            window["ADMIN_COMMANDS"][Command](Args);
+        if (window.ADMIN_COMMANDS[Command] && isAdmin) {
+            window.ADMIN_COMMANDS[Command](Args);
         } else if (IsSleeping == 1) {
             closePopup();
             return;
-        } else if (window["ADMIN_COMMANDS"][Command] && !isAdmin) {
+        } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
             privateMessage(User, "Sorry, that command is Admin only, and I don't recognize you!");
-        } else if (window["Commands"][Command]) {
-            window["Commands"][Command](Args);
+        } else if (window.Commands[Command]) {
+            window.Commands[Command](Args);
         } else {
             privateMessage(User, "Sorry, I don't understand that. May I suggest ^help?");
         }
