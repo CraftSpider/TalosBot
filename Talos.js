@@ -59,6 +59,7 @@ var Commands = {
                     if (elementsByClass(messageButton).length > 0) {
                         time = elementsByClass(messageTime)[0].innerText;
                         clearInterval(getTime);
+                        getTime = undefined;
                         setTimeout(function() {
                             closePopup();
                             if (!IsSleeping) {
