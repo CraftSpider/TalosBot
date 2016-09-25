@@ -49,37 +49,35 @@ var Commands = {
         postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, Dino, and HiddenStorys.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
     },
     "seen": function(user) {
-        if(user[0]) {
+        if(user[0] && !getTime) {
             var time, iterations = 0;
             user = user.join(" ");
             searchMessages("", user);
-            if (!getTime) {
-                getTime = setInterval(function() {
-                    iterations++;
-                    if (elementsByClass(messageButton).length > 0) {
-                        time = elementsByClass(messageTime)[0].innerText;
-                        clearInterval(getTime);
-                        getTime = undefined;
-                        setTimeout(function() {
-                            closePopup();
-                            if (!IsSleeping) {
-                                postMessage("User " + user + " was last seen " + time);
-                            }
-                        }, 500);
-                    } else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found") {
+            getTime = setInterval(function() {
+                iterations++;
+                if (elementsByClass(messageButton).length > 0) {
+                    time = elementsByClass(messageTime)[0].innerText;
+                    clearInterval(getTime);
+                    getTime = undefined;
+                    setTimeout(function() {
+                        closePopup();
                         if (!IsSleeping) {
-                            postMessage("I couldn't find " + user + ". Sorry.");
+                            postMessage("User " + user + " was last seen " + time);
                         }
-                        clearInterval(getTime);
-                        getTime = undefined;
-                        setTimeout(function() {
-                            closePopup();
-                        }, 500);
+                    }, 500);
+                } else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found") {
+                    if (!IsSleeping) {
+                        postMessage("I couldn't find " + user + ". Sorry.");
                     }
-                }, 500);
-            } else {
-                postMessage("Previous seen command still running! Please wait between 10 seconds and a minute then ask again.");
-            }
+                    clearInterval(getTime);
+                    getTime = undefined;
+                    setTimeout(function() {
+                        closePopup();
+                    }, 500);
+                }
+            }, 500);
+        } else if (user[0]) {
+            postMessage("Previous seen command still running! Please wait between 10 seconds and a minute then ask again.");
         } else {
             postMessage("Sorry, I need a user to look for.");
             closePopup();
