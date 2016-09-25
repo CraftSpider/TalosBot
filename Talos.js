@@ -394,7 +394,7 @@ function mainLoop() {
 function talosInit() {
     ChatzyAPI = document.createElement('script');
     ChatzyAPI.setAttribute('type', 'text/javascript');
-    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/master/Talos.js');
+    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/master/ChatzyWrappers.js');
     ChatzyAPI.setAttribute('onload', 'talosStart()');
     document.head.appendChild(ChatzyAPI);
 }
