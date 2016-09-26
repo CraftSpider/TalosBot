@@ -38,6 +38,28 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
     --------------------------
 */
 var Commands = {
+    "addWords": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[0])) {
+            args = +args[0];
+            username = loggedOn[user];
+            curWords = +getStorage(username+"Words");
+            setStorage(username+"Words", curWords + args);
+            postMessage(username + " wordcount has been succesfully changed from " + curWords + " to " + (curWords + args));
+        } else if (loggedOn[user]) {
+            postMessage("You can only add number inputs!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "checkWords": function(args, user) {
+        if (loggedOn[user]) {
+            username = loggedOn[user];
+            curWords = +getStorage(username+"Words");
+            postMessage(username + "'s wordcount is currently " + curWords);
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
     "generate": function(type) {
         if (type[0].toUpperCase() == "PROMPT") {
             postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
@@ -73,36 +95,35 @@ var Commands = {
         }
     },
     "seen": function(user) {
-        if(user[0]) {
+        if(user[0] && !getTime) {
             var time, iterations = 0;
             user = user.join(" ");
             searchMessages("", user);
-            if (!getTime) {
-                getTime = setInterval(function() {
-                    iterations++;
-                    if (elementsByClass(messageButton).length > 0) {
-                        time = elementsByClass(messageTime)[0].innerText;
-                        clearInterval(getTime);
-                        setTimeout(function() {
-                            closePopup();
-                            if (!IsSleeping) {
-                                postMessage("User " + user + " was last seen " + time);
-                            }
-                        }, 500);
-                    } else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found") {
+            getTime = setInterval(function() {
+                iterations++;
+                if (elementsByClass(messageButton).length > 0) {
+                    time = elementsByClass(messageTime)[0].innerText;
+                    clearInterval(getTime);
+                    getTime = undefined;
+                    closePopup();
+                    setTimeout(function() {
                         if (!IsSleeping) {
-                            postMessage("I couldn't find " + user + ". Sorry.");
+                            postMessage("User " + user + " was last seen " + time);
                         }
-                        clearInterval(getTime);
-                        getTime = undefined;
-                        setTimeout(function() {
-                            closePopup();
-                        }, 500);
+                    }, 500);
+                } else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found") {
+                    if (!IsSleeping) {
+                        postMessage("I couldn't find " + user + ". Sorry.");
                     }
-                }, 500);
-            } else {
-                postMessage("Previous seen command still running! Please wait between 10 seconds and a minute then ask again.");
-            }
+                    clearInterval(getTime);
+                    getTime = undefined;
+                    setTimeout(function() {
+                        closePopup();
+                    }, 500);
+                }
+            }, 500);
+        } else if (user[0]) {
+            postMessage("Previous seen command still running! Please wait between 10 seconds and a minute then ask again.");
         } else {
             postMessage("Sorry, I need a user to look for.");
             closePopup();
@@ -134,11 +155,28 @@ var Commands = {
     },
     "register": function(args) {
         if (args[0] && args[1]) {
-            setStorage(args[0], args[1]);
-            setStorage(args[0]+"Words", 0);
-            postMessage("User " + args[0] + " has been registered!");
+            if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/)) {
+                setStorage(args[0], args[1]);
+                setStorage(args[0]+"Words", 0);
+                postMessage("User " + args[0] + " has been registered!");
+            } else {
+                postMessage("Both username and password must contain at least one character, A-Z, case insensitive.")
+            }
         } else {
             postMessage("I need both a username and a password to register an account.");
+        }
+    },
+    "removeWords": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[0])) {
+            args = +args[0];
+            username = loggedOn[user];
+            curWords = +getStorage(username+"Words");
+            setStorage(username+"Words", curWords - args);
+            postMessage(username + " wordcount has been succesfully changed from " + curWords + " to " + (curWords - args));
+        } else if (loggedOn[user]) {
+            postMessage("You can only subtract number inputs!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
         }
     },
     "roulette": function() {
@@ -282,6 +320,35 @@ var Commands = {
 };
 
 var ADMIN_COMMANDS = {
+    "kill": function() {
+        postMessage("Et Tu, Brute?");
+        setInterval(function() {leaveChat();}, 200);
+        window.open('http://www.chatzy.com/', '_self');
+    },
+    "listUsers": function() {
+        out = "Current list of all users:\n";
+        for (var key in window.localStorage) {
+            if(isNaN(+getStorage(key))) {
+                out += key + "\n";
+            }
+        }
+        postMessage(out);
+    },
+    "removeUser": function(args) {
+        if (args[0]) {
+            for (var key in window.localStorage) {
+                if (args[0] == key) {
+                    removeStorage(key);
+                    removeStorage(key+"Words");
+                    postMessage("User " + args[0] + " succesfully removed.");
+                    return;
+                }
+            }
+            postMessage("I couldn't find that user, sorry.");
+        } else {
+            postMessage("I need a username to search for!")
+        }
+    },
     "toggleSleep": function(time) {
         if (IsSleeping === 0) {
             IsSleeping = 1;
@@ -295,11 +362,6 @@ var ADMIN_COMMANDS = {
                 ADMIN_COMMANDS.toggleSleep("");
             }, time[0] * 60000);
         }
-    },
-    "kill": function() {
-        postMessage("Et Tu, Brute?");
-        setInterval(function() {leaveChat();}, 200);
-        window.open('http://www.chatzy.com/', '_self');
     },
 };
 
@@ -390,7 +452,8 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID(messageTable) && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    //Pointless, in current form
+    if (!elementByID(messageContainer) && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
     var Messages = elementByID(messageTable).innerHTML.split("\n");
@@ -470,7 +533,7 @@ function mainLoop() {
 function talosInit() {
     ChatzyAPI = document.createElement('script');
     ChatzyAPI.setAttribute('type', 'text/javascript');
-    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/update/ChatzyWrappers.js');
+    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/tracker/ChatzyWrappers.js');
     ChatzyAPI.setAttribute('onload', 'talosStart()');
     document.head.appendChild(ChatzyAPI);
 }
@@ -479,6 +542,7 @@ function talosStart() {
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window["isCleared"] = false;
     setInterval(function() {mainLoop();}, 1000);
+    setInterval(function() {postMessage("");}, 60000*10);
 }
 
 talosInit();
