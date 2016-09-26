@@ -17,7 +17,7 @@ var MaxWWs = 10;
 var IsSleeping = 0;
 var getTime;
 
-var loggedOn = {}
+var loggedOn = {};
 
 //Writing Hour variables
 var WHSwitch = 0;
@@ -70,7 +70,7 @@ var Commands = {
         }
     },
     "information": function() {
-        postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, Dino, and HiddenStorys.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
+        postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, and Dino.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
     },
     "login": function(args, user) {
         if (!args[0] || !args[1]) {
@@ -92,6 +92,74 @@ var Commands = {
             postMessage(user + " has been logged out.");
         } else {
             postMessage("I can't log you out if you aren't even logged in.");
+        }
+    },
+    "register": function(args) {
+        if (args[0] && args[1]) {
+            if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/)) {
+                setStorage(args[0], args[1]);
+                setStorage(args[0]+"Words", 0);
+                postMessage("User " + args[0] + " has been registered!");
+            } else {
+                postMessage("Both username and password must contain at least one character, A-Z, case insensitive.");
+            }
+        } else {
+            postMessage("I need both a username and a password to register an account.");
+        }
+    },
+    "removeWords": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[0])) {
+            args = +args[0];
+            username = loggedOn[user];
+            curWords = +getStorage(username+"Words");
+            setStorage(username+"Words", curWords - args);
+            postMessage(username + " wordcount has been succesfully changed from " + curWords + " to " + (curWords - args));
+        } else if (loggedOn[user]) {
+            postMessage("You can only subtract number inputs!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "resetWords": function(rgs, user) {
+        if (loggedOn[user]) {
+            username = loggedOn[user];
+            setStorage(username+"Words", 0);
+            postMessage(username + "'s wordcount has been cleared.");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "roulette": function() {
+        var num = parseInt(Math.ceil(Math.random() * 6));
+        switch(num) {
+            case 1:
+                postMessage("Save the game 10 times, just to be sure");
+                break;
+            case 2:
+                postMessage("/me \u200B");
+                break;
+            case 3:
+                postMessage("How much you wanna bet wundr broke Talos deliberately?");
+                break;
+            case 4:
+                postMessage("This message has 50 characters in it\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B");
+                break;
+            case 5:
+                postMessage("wundr's not good at making up dumb things for Talos to say, despite the fact that he himself speaks exclusively in stupid");
+                break;
+            case 6:
+                var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+                var arbitraryLetters = "";
+                
+                for (var i = 0; i < 10; i++) {
+                    var index = parseInt(Math.floor(Math.random() * 26));
+                    arbitraryLetters += alphabet[index];
+                }
+                
+                postMessage("Arbitrary string of ten letters: " + arbitraryLetters);
+                break;
+            default:
+                postMessage("pǝʞoɹq ɹ ᴉ | Go yell at " + EGG_DEV);
         }
     },
     "seen": function(user) {
@@ -152,65 +220,6 @@ var Commands = {
     },
     "version": function() {
         postMessage("I'm currently on version " + VERSION);
-    },
-    "register": function(args) {
-        if (args[0] && args[1]) {
-            if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/)) {
-                setStorage(args[0], args[1]);
-                setStorage(args[0]+"Words", 0);
-                postMessage("User " + args[0] + " has been registered!");
-            } else {
-                postMessage("Both username and password must contain at least one character, A-Z, case insensitive.")
-            }
-        } else {
-            postMessage("I need both a username and a password to register an account.");
-        }
-    },
-    "removeWords": function(args, user) {
-        if(loggedOn[user] && !isNaN(+args[0])) {
-            args = +args[0];
-            username = loggedOn[user];
-            curWords = +getStorage(username+"Words");
-            setStorage(username+"Words", curWords - args);
-            postMessage(username + " wordcount has been succesfully changed from " + curWords + " to " + (curWords - args));
-        } else if (loggedOn[user]) {
-            postMessage("You can only subtract number inputs!");
-        } else {
-            postMessage("Sorry, you need to be logged on to do that");
-        }
-    },
-    "roulette": function() {
-        var num = parseInt(Math.ceil(Math.random() * 6));
-        switch(num) {
-            case 1:
-                postMessage("Save the game 10 times, just to be sure");
-                break;
-            case 2:
-                postMessage("/me \u200B");
-                break;
-            case 3:
-                postMessage("How much you wanna bet wundr broke Talos deliberately?");
-                break;
-            case 4:
-                postMessage("This message has 50 characters in it\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B");
-                break;
-            case 5:
-                postMessage("wundr's not good at making up dumb things for Talos to say, despite the fact that he himself speaks exclusively in stupid");
-                break;
-            case 6:
-                var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-                var arbitraryLetters = "";
-                
-                for (var i = 0; i < 10; i++) {
-                    var index = parseInt(Math.floor(Math.random() * 26));
-                    arbitraryLetters += alphabet[index];
-                }
-                
-                postMessage("Arbitrary string of ten letters: " + arbitraryLetters);
-                break;
-            default:
-                postMessage("pǝʞoɹq ɹ ᴉ | Go yell at wundrweapon");
-        }
     },
     "wordWar": function(args) {
         if (args[0] > 60 || args[0] <= 0) {
@@ -279,8 +288,10 @@ var Commands = {
                 }
             }
             helpList += "\nMy Admin Commands are:\n";
-            for (var C in ADMIN_COMMANDS) {
-                helpList += "^" + C + "\n"; 
+            for (C in ADMIN_COMMANDS) {
+                if (ADMIN_COMMANDS.hasOwnProperty(C)) {
+                    helpList += "^" + C + "\n";
+                }
             }
             postMessage(helpList);
         } else {
@@ -346,7 +357,7 @@ var ADMIN_COMMANDS = {
             }
             postMessage("I couldn't find that user, sorry.");
         } else {
-            postMessage("I need a username to search for!")
+            postMessage("I need a username to search for!");
         }
     },
     "toggleSleep": function(time) {
@@ -540,7 +551,7 @@ function talosInit() {
 
 function talosStart() {
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-    window["isCleared"] = false;
+    window[isCleared] = false;
     setInterval(function() {mainLoop();}, 1000);
     setInterval(function() {postMessage("");}, 60000*10);
 }
