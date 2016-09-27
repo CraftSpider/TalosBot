@@ -72,7 +72,6 @@ var Commands = {
     "information": function() {
         postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, and Dino.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
     },
-<<<<<<< HEAD
     "login": function(args, user) {
         if (!args[0] || !args[1]) {
             postMessage("I need both a username and a password!");
