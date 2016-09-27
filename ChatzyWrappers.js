@@ -19,6 +19,7 @@ var textBox = 'X5999';
 */
 
 var isCleared = "X8614"
+var timeoutTimer = "X5462"
 
 /*
     -----------------
