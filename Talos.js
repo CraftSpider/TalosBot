@@ -72,6 +72,7 @@ var Commands = {
     "information": function() {
         postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, and Dino.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
     },
+<<<<<<< HEAD
     "login": function(args, user) {
         if (!args[0] || !args[1]) {
             postMessage("I need both a username and a password!");
@@ -462,29 +463,28 @@ function writingHour() {
     d = new Date();
 
     if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch === 0) {
-        postMessage("[b][Alert][/b] Writing Hour starts in 10 minutes!");
+        postMessage("[b][Alert][/b] 10 minute mark!");
         WHSwitch++;
     } else if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && WHSwitch == 1) {
-        postMessage("[b][Alert][/b] Writing Hour starts in 5 minutes!");
+        postMessage("[b][Alert][/b] 5 minute mark!");
         WHSwitch++;
     } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() === 0 && WHSwitch == 2) {
-        postMessage("[b]Writing Hour has started.[/b] Have fun, and use it productively!");
+        postMessage("[b]Productivity hour with Talos[/b] Time to do that thing you've been meaning to all day!");
         WHSwitch++;
     } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() === 0 && WHSwitch == 3) {
-        setTimeout(function() {postMessage("[b]Writing Hour is over.[/b] How did you do?");}, 500);
+        setTimeout(function() {postMessage("[b]Productivity is over.[/b]");}, 500);
         WHSwitch = 0;
     }
 }
 
 function readChat() {
-    //Pointless, in current form
     if (!elementByID(messageContainer) && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
     var Messages = elementByID(messageTable).innerHTML.split("\n");
     for (var i = 1; i < Messages.length; i++) {
         var Message = Messages[i];
-        if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
+        if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) {
             var User = RegExp.$1;
             var Command = RegExp.$2;
             var Args = parseArgs(RegExp.$3);
@@ -558,7 +558,7 @@ function mainLoop() {
 function talosInit() {
     ChatzyAPI = document.createElement('script');
     ChatzyAPI.setAttribute('type', 'text/javascript');
-    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/tracker/ChatzyWrappers.js');
+    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/master/ChatzyWrappers.js');
     ChatzyAPI.setAttribute('onload', 'talosStart()');
     document.head.appendChild(ChatzyAPI);
 }
@@ -567,7 +567,6 @@ function talosStart() {
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window[isCleared] = false;
     setInterval(function() {mainLoop();}, 1000);
-    setInterval(function() {postMessage("");}, 60000*10);
 }
 
 talosInit();
