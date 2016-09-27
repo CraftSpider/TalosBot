@@ -5,6 +5,7 @@
 */
 
 var messageTable = "X8414";
+var messageContainer = "X4233"
 var popup = "X5721";
 var messageTime = "X2087";
 var messageButton = "X5794";

@@ -17,6 +17,8 @@ var MaxWWs = 10;
 var IsSleeping = 0;
 var getTime;
 
+var loggedOn = {};
+
 //Writing Hour variables
 var WHSwitch = 0;
 
@@ -36,6 +38,28 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
     --------------------------
 */
 var Commands = {
+    "addWords": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[0])) {
+            args = +args[0];
+            username = loggedOn[user];
+            curWords = +getStorage(username+"Words");
+            setStorage(username+"Words", curWords + args);
+            postMessage(username + " wordcount has been succesfully changed from " + curWords + " to " + (curWords + args));
+        } else if (loggedOn[user]) {
+            postMessage("You can only add number inputs!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "checkWords": function(args, user) {
+        if (loggedOn[user]) {
+            username = loggedOn[user];
+            curWords = +getStorage(username+"Words");
+            postMessage(username + "'s wordcount is currently " + curWords);
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
     "generate": function(type) {
         if (type[0].toUpperCase() == "PROMPT") {
             postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
@@ -46,7 +70,98 @@ var Commands = {
         }
     },
     "information": function() {
-        postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, Dino, and HiddenStorys.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
+        postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, and Dino.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
+    },
+<<<<<<< HEAD
+    "login": function(args, user) {
+        if (!args[0] || !args[1]) {
+            postMessage("I need both a username and a password!");
+        } else if (!getStorage(args[0])) {
+            postMessage("Sorry, I don't know any user named " + args[0]);
+        } else if (args[1] == getStorage(args[0]) && !loggedOn[user]) {
+            loggedOn[user] = args[0];
+            postMessage(user + " has ben succesfully logged in!");
+        } else if (args[1] == getStorage(args[0])) {
+            postMessage("You appear to be already logged on as " + loggedOn[user]);
+        } else {
+            postMessage("That password doesn't match what I remember.");
+        }
+    },
+    "logout": function(args, user) {
+        if (loggedOn[user]) {
+            loggedOn[user] = undefined;
+            postMessage(user + " has been logged out.");
+        } else {
+            postMessage("I can't log you out if you aren't even logged in.");
+        }
+    },
+    "register": function(args) {
+        if (args[0] && args[1]) {
+            if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/)) {
+                setStorage(args[0], args[1]);
+                setStorage(args[0]+"Words", 0);
+                postMessage("User " + args[0] + " has been registered!");
+            } else {
+                postMessage("Both username and password must contain at least one character, A-Z, case insensitive.");
+            }
+        } else {
+            postMessage("I need both a username and a password to register an account.");
+        }
+    },
+    "removeWords": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[0])) {
+            args = +args[0];
+            username = loggedOn[user];
+            curWords = +getStorage(username+"Words");
+            setStorage(username+"Words", curWords - args);
+            postMessage(username + " wordcount has been succesfully changed from " + curWords + " to " + (curWords - args));
+        } else if (loggedOn[user]) {
+            postMessage("You can only subtract number inputs!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "resetWords": function(args, user) {
+        if (loggedOn[user]) {
+            username = loggedOn[user];
+            setStorage(username+"Words", 0);
+            postMessage(username + "'s wordcount has been cleared.");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "roulette": function() {
+        var num = parseInt(Math.ceil(Math.random() * 6));
+        switch(num) {
+            case 1:
+                postMessage("Save the game 10 times, just to be sure");
+                break;
+            case 2:
+                postMessage("/me \u200B");
+                break;
+            case 3:
+                postMessage("How much you wanna bet wundr broke Talos deliberately?");
+                break;
+            case 4:
+                postMessage("This message has 50 characters in it\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B");
+                break;
+            case 5:
+                postMessage("wundr's not good at making up dumb things for Talos to say, despite the fact that he himself speaks exclusively in stupid");
+                break;
+            case 6:
+                var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+                var arbitraryLetters = "";
+                
+                for (var i = 0; i < 10; i++) {
+                    var index = parseInt(Math.floor(Math.random() * 26));
+                    arbitraryLetters += alphabet[index];
+                }
+                
+                postMessage("Arbitrary string of ten letters: " + arbitraryLetters);
+                break;
+            default:
+                postMessage("pǝʞoɹq ɹ ᴉ | Go yell at " + EGG_DEV);
+        }
     },
     "seen": function(user) {
         if(user[0] && !getTime) {
@@ -59,8 +174,8 @@ var Commands = {
                     time = elementsByClass(messageTime)[0].innerText;
                     clearInterval(getTime);
                     getTime = undefined;
+                    closePopup();
                     setTimeout(function() {
-                        closePopup();
                         if (!IsSleeping) {
                             postMessage("User " + user + " was last seen " + time);
                         }
@@ -106,39 +221,6 @@ var Commands = {
     },
     "version": function() {
         postMessage("I'm currently on version " + VERSION);
-    },
-    "roulette": function() {
-        var num = parseInt(Math.ceil(Math.random() * 6));
-        switch(num) {
-            case 1:
-                postMessage("Save the game 10 times, just to be sure");
-                break;
-            case 2:
-                postMessage("/me \u200B");
-                break;
-            case 3:
-                postMessage("How much you wanna bet wundr broke Talos deliberately?");
-                break;
-            case 4:
-                postMessage("This message has 50 characters in it\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B\u200B");
-                break;
-            case 5:
-                postMessage("wundr's not good at making up dumb things for Talos to say, despite the fact that he himself speaks exclusively in stupid");
-                break;
-            case 6:
-                var alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-                var arbitraryLetters = "";
-                
-                for (var i = 0; i < 10; i++) {
-                    var index = parseInt(Math.floor(Math.random() * 26));
-                    arbitraryLetters += alphabet[index];
-                }
-                
-                postMessage("Arbitrary string of ten letters: " + arbitraryLetters);
-                break;
-            default:
-                postMessage("pǝʞoɹq ɹ ᴉ | Go yell at wundrweapon");
-        }
     },
     "wordWar": function(args) {
         if (args[0] > 60 || args[0] <= 0) {
@@ -207,8 +289,10 @@ var Commands = {
                 }
             }
             helpList += "\nMy Admin Commands are:\n";
-            for (var C in ADMIN_COMMANDS) {
-                helpList += "^" + C + "\n"; 
+            for (C in ADMIN_COMMANDS) {
+                if (ADMIN_COMMANDS.hasOwnProperty(C)) {
+                    helpList += "^" + C + "\n";
+                }
             }
             postMessage(helpList);
         } else {
@@ -248,6 +332,49 @@ var Commands = {
 };
 
 var ADMIN_COMMANDS = {
+    "kill": function() {
+        postMessage("Et Tu, Brute?");
+        setInterval(function() {leaveChat();}, 200);
+        window.open('http://www.chatzy.com/', '_self');
+    },
+    "listUsers": function() {
+        out = "Current list of all users:\n";
+        for (var key in window.localStorage) {
+            if(isNaN(+getStorage(key))) {
+                out += key + "\n";
+            }
+        }
+        postMessage(out);
+    },
+    "removeUser": function(args) {
+        if (args[0]) {
+            for (var key in window.localStorage) {
+                if (args[0] == key) {
+                    removeStorage(key);
+                    removeStorage(key+"Words");
+                    postMessage("User " + args[0] + " succesfully removed.");
+                    return;
+                }
+            }
+            postMessage("I couldn't find that user, sorry.");
+        } else {
+            postMessage("I need a username to search for!");
+        }
+    },
+    "resetUser": function(args) {
+        if (args[0]) {
+            for (var key in window.localStorage) {
+                if (args[0] == key) {
+                    setStorage(key+"Words", 0);
+                    postMessage("Succesfully reset user " + args[0]);
+                    return;
+                }
+            }
+            postMessage("I couldn't find that user, sorry.");
+        } else {
+            postMessage("I need a username to search for!");
+        }
+    },
     "toggleSleep": function(time) {
         if (IsSleeping === 0) {
             IsSleeping = 1;
@@ -261,11 +388,6 @@ var ADMIN_COMMANDS = {
                 ADMIN_COMMANDS.toggleSleep("");
             }, time[0] * 60000);
         }
-    },
-    "kill": function() {
-        postMessage("Et Tu, Brute?");
-        setInterval(function() {leaveChat();}, 200);
-        window.open('http://www.chatzy.com/', '_self');
     },
 };
 
@@ -286,6 +408,49 @@ function startWW(length, KeyWord) {
             postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
         }
     }, length * 60000);
+}
+
+function parseArgs(str) {
+    var out = [];
+    
+    if (str.match(/".*?"/)) {
+        var delim = false;
+        var arg = "";
+        for (var char in str) {
+            if (str[char] == "\"") {
+                delim = !delim;
+                if (arg) {
+                    out.push(arg);
+                    arg = "";
+                }
+            } else if (str[char] == " " && !delim) {
+                if (arg) {
+                    out.push(arg);
+                    arg = "";
+                }
+            } else {
+                arg += str[char];
+            }
+        }
+    } else {
+        out = str.split(/\s/);
+    }
+    
+    return out;
+}
+
+function setStorage(key, content) {
+    window.localStorage[key] = content;
+}
+
+function getStorage(key) {
+    return window.localStorage[key];
+}
+
+function removeStorage(key) {
+    oldItem = getStorage(key);
+    window.localStorage.removeItem(key);
+    return oldItem;
 }
 
 /*
@@ -313,16 +478,16 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID(messageTable) && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    if (!elementByID(messageContainer) && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
         return;
     }
     var Messages = elementByID(messageTable).innerHTML.split("\n");
     for (var i = 1; i < Messages.length; i++) {
         var Message = Messages[i];
-        if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) { //Instead of matching a set list of commands, match the word then check it against a dict?
+        if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) {
             var User = RegExp.$1;
             var Command = RegExp.$2;
-            var Args = RegExp.$3.split(/\s/);
+            var Args = parseArgs(RegExp.$3);
             var isAdmin = false;
             for (var U in ADMINS) {
                 if (User == ADMINS[U]) {
@@ -331,13 +496,13 @@ function readChat() {
                 }
             }
             if (window.ADMIN_COMMANDS[Command] && isAdmin) {
-                window.ADMIN_COMMANDS[Command](Args);
+                window.ADMIN_COMMANDS[Command](Args, User);
             } else if (IsSleeping == 1) {
                 break;
             } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
                 postMessage("Sorry, that command is Admin only, and I don't recognize you!");
             } else if (window.Commands[Command]) {
-                window.Commands[Command](Args);
+                window.Commands[Command](Args, User);
             } else {
                 postMessage("Sorry, I don't understand that. May I suggest ^help?");
             }
@@ -355,7 +520,7 @@ function readPMs() {
     if (ReceivedPM.match(PMSearch)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
-        var Args = RegExp.$3.split(/\s/);
+        var Args = parseArgs(RegExp.$3);
         var isAdmin = false;
         for (var U in ADMINS) {
             if (User == ADMINS[U]) {
@@ -400,7 +565,7 @@ function talosInit() {
 
 function talosStart() {
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-    window["isCleared"] = false;
+    window[isCleared] = false;
     setInterval(function() {mainLoop();}, 1000);
 }
 
