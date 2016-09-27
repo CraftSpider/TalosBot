@@ -120,7 +120,7 @@ var Commands = {
             postMessage("Sorry, you need to be logged on to do that");
         }
     },
-    "resetWords": function(rgs, user) {
+    "resetWords": function(args, user) {
         if (loggedOn[user]) {
             username = loggedOn[user];
             setStorage(username+"Words", 0);
@@ -352,6 +352,20 @@ var ADMIN_COMMANDS = {
                     removeStorage(key);
                     removeStorage(key+"Words");
                     postMessage("User " + args[0] + " succesfully removed.");
+                    return;
+                }
+            }
+            postMessage("I couldn't find that user, sorry.");
+        } else {
+            postMessage("I need a username to search for!");
+        }
+    },
+    "resetUser": function(args) {
+        if (args[0]) {
+            for (var key in window.localStorage) {
+                if (args[0] == key) {
+                    setStorage(key+"Words", 0);
+                    postMessage("Succesfully reset user " + args[0]);
                     return;
                 }
             }
