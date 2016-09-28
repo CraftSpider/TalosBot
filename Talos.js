@@ -8,8 +8,7 @@
 const VERSION = 1.4;
 const BOOT_TIME = new Date();
 const WH_TIME = 0;
-const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"];
-const EGG_DEV = "wundrweapon"; //this is just here so wundrweapon feels good about himself
+const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys", "wundrweapon"];
 
 //Command variables
 var NumWWs = 0;
@@ -70,7 +69,7 @@ var Commands = {
         }
     },
     "information": function() {
-        postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, and Dino.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
+        postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, and Dino, but wundrweapon did something too.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
     },
     "login": function(args, user) {
         if (!args[0] || !args[1]) {
@@ -130,8 +129,11 @@ var Commands = {
         }
     },
     "roulette": function() {
-        var num = parseInt(Math.ceil(Math.random() * 6));
+        var num = parseInt(Math.ceil(Math.random() * 12));
         switch(num) {
+            case 0:
+                postMessage("The chances of you getting this message are [i]vastly[/i] lower than that of any other. GG");
+                break;
             case 1:
                 postMessage("Save the game 10 times, just to be sure");
                 break;
@@ -158,8 +160,26 @@ var Commands = {
                 
                 postMessage("Arbitrary string of ten letters: " + arbitraryLetters);
                 break;
+            case 7:
+                postMessage("Conglaturation, modified RNG pulled 7. Do not you are feel the luck?");
+                break;
+            case 8:
+                postMessage("People don't think it be like it is, but it do");
+                break;
+            case 9:
+                postMessage("/me crashes uncontrollably");
+                break;
+            case 10:
+                postMessage("The only reason I have more than 7 statements is because wundr got bored of them #exposed");
+                break;
+            case 11:
+                postMessage("/me makes a cryptic reference to SLeSbot");
+                break;
+            case 12:
+                postMessage("woag 593 lines of code"); //intentional spelling error
+                break;
             default:
-                postMessage("pǝʞoɹq ɹ ᴉ | Go yell at " + EGG_DEV);
+                postMessage("pǝʞoɹq ɹ ᴉ | Go yell at " + ADMINS[3]);
         }
     },
     "seen": function(user) {
