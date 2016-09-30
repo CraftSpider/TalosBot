@@ -38,24 +38,27 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
     --------------------------
 */
 var Commands = {
-    "addWords": function(args, user) {
-        if(loggedOn[user] && !isNaN(+args[0])) {
-            args = +args[0];
-            username = loggedOn[user];
-            curWords = +getStorage(username+"Words");
-            setStorage(username+"Words", curWords + args);
-            postMessage(username + " wordcount has been succesfully changed from " + curWords + " to " + (curWords + args));
+    "add": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[1])) {
+            TalosUser = parse(getStorage(loggedOn[user]))
+            curVal = TalosUser[args[0]]
+            TalosUser[args[0]] += args[1];
+            postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal + args[1]));
         } else if (loggedOn[user]) {
             postMessage("You can only add number inputs!");
         } else {
             postMessage("Sorry, you need to be logged on to do that");
         }
     },
-    "checkWords": function(args, user) {
+    "check": function(args, user) {
         if (loggedOn[user]) {
-            username = loggedOn[user];
-            curWords = +getStorage(username+"Words");
-            postMessage(username + "'s wordcount is currently " + curWords);
+            TalosUser = parse(getStorage(loggedOn[user]));
+            if (TalosUser[args[0]] != "undefined" && TalosUser[args[0]] != "null") {
+                curVal = TalosUser[args[0]];
+                postMessage(loggedOn[user] + " " + args[0] + " is currently " + curVal);
+            } else {
+                postMessage("Your account doesn't have any value called " + args[0]);
+            }
         } else {
             postMessage("Sorry, you need to be logged on to do that");
         }
@@ -77,13 +80,16 @@ var Commands = {
             postMessage("I need both a username and a password!");
         } else if (!getStorage(args[0])) {
             postMessage("Sorry, I don't know any user named " + args[0]);
-        } else if (args[1] == getStorage(args[0]) && !loggedOn[user]) {
-            loggedOn[user] = args[0];
-            postMessage(user + " has ben succesfully logged in!");
-        } else if (args[1] == getStorage(args[0])) {
-            postMessage("You appear to be already logged on as " + loggedOn[user]);
         } else {
-            postMessage("That password doesn't match what I remember.");
+            TalosUser = parse(getStorage(args[0]));
+            if (args[1] == TalosUser.password && !loggedOn[user]) {
+                loggedOn[user] = args[0];
+                postMessage(user + " has been succesfully logged in!");
+            } else if (args[1] == TalosUser.password) {
+                postMessage("You appear to be already logged on as " + loggedOn[user]);
+            } else {
+                postMessage("That password doesn't match what I remember.");
+            }
         }
     },
     "logout": function(args, user) {
@@ -97,8 +103,8 @@ var Commands = {
     "register": function(args) {
         if (args[0] && args[1]) {
             if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/)) {
-                setStorage(args[0], args[1]);
-                setStorage(args[0]+"Words", 0);
+                TalosUser = {"password":args[1], "words":0};
+                setStorage(args[0], stringify(TalosUser));
                 postMessage("User " + args[0] + " has been registered!");
             } else {
                 postMessage("Both username and password must contain at least one character, A-Z, case insensitive.");
@@ -107,24 +113,29 @@ var Commands = {
             postMessage("I need both a username and a password to register an account.");
         }
     },
-    "removeWords": function(args, user) {
+    "subtract": function(args, user) {
         if(loggedOn[user] && !isNaN(+args[0])) {
-            args = +args[0];
-            username = loggedOn[user];
-            curWords = +getStorage(username+"Words");
-            setStorage(username+"Words", curWords - args);
-            postMessage(username + " wordcount has been succesfully changed from " + curWords + " to " + (curWords - args));
+            TalosUser = parse(getStorage(loggedOn[user]))
+            curVal = TalosUser[args[0]];
+            TalosUser[args[0]] -= args[1];
+            postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal - args[1]));
         } else if (loggedOn[user]) {
             postMessage("You can only subtract number inputs!");
         } else {
             postMessage("Sorry, you need to be logged on to do that");
         }
     },
-    "resetWords": function(args, user) {
-        if (loggedOn[user]) {
-            username = loggedOn[user];
-            setStorage(username+"Words", 0);
-            postMessage(username + "'s wordcount has been cleared.");
+    "reset": function(args, user) {
+        if (loggedOn[user] && args[0]) {
+            TalosUser = parse(getStorage(loggedOn[user]));
+            for (var key in TalosUser) {
+                if (key == args[0]) {
+                    TalosUser.key = undefined;
+                }
+            }
+            postMessage(loggedOn[user] + " " + args[0] + " cleared.");
+        } else if {
+            postMessage("I need a value to reset!");
         } else {
             postMessage("Sorry, you need to be logged on to do that");
         }
@@ -195,6 +206,17 @@ var Commands = {
         } else {
             postMessage("Sorry, I need a user to look for.");
             closePopup();
+        }
+    },
+    "set": function(args, user) {
+        if (loggedOn[user] && args[0]) {
+            TalosUser = parse(getStorage(loggedOn[user]));
+            TalosUser[args[0]] = args[1]l
+            postMessage(username + " " + args[0] + " has been set to " + args[0] + ".");
+        } else if (loggedOn[user]) {
+            postMessage("I can only set the value of Words to a number!")
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
         }
     },
     "uptime": function() {
@@ -283,11 +305,11 @@ var Commands = {
         if (!args[0]) {
             var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
             for (var C in Commands) {
-                if (C.toLowerCase() != "roulette") {
-                    helpList += "^" + C + "\n";
+                if (C.toLowerCase() != "roulette" || C.toLowerCase() != "help") {
+                    helpList += "^" + C + ", ";
                 }
             }
-            helpList += "\nMy Admin Commands are:\n";
+            helpList += "^help.\nMy Admin Commands are:\n";
             for (C in ADMIN_COMMANDS) {
                 if (ADMIN_COMMANDS.hasOwnProperty(C)) {
                     helpList += "^" + C + "\n";
@@ -431,11 +453,22 @@ function parseArgs(str) {
                 arg += str[char];
             }
         }
+        if (arg) {
+            out.push(arg);
+        }
     } else {
         out = str.split(/\s/);
     }
     
     return out;
+}
+
+function stringify(object) {
+    return JSON.stringify(object);
+}
+
+function parse(string) {
+    return JSON.parse(string);
 }
 
 function setStorage(key, content) {
