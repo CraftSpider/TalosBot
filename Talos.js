@@ -40,9 +40,11 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
 var Commands = {
     "add": function(args, user) {
         if(loggedOn[user] && !isNaN(+args[1])) {
-            TalosUser = parse(getStorage(loggedOn[user]))
-            curVal = TalosUser[args[0]]
+            args[1] = +args[1];
+            TalosUser = parse(getStorage(loggedOn[user]));
+            curVal = TalosUser[args[0]];
             TalosUser[args[0]] += args[1];
+            setStorage(loggedOn[user], stringify(TalosUser));
             postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal + args[1]));
         } else if (loggedOn[user]) {
             postMessage("You can only add number inputs!");
@@ -113,28 +115,17 @@ var Commands = {
             postMessage("I need both a username and a password to register an account.");
         }
     },
-    "subtract": function(args, user) {
-        if(loggedOn[user] && !isNaN(+args[0])) {
-            TalosUser = parse(getStorage(loggedOn[user]))
-            curVal = TalosUser[args[0]];
-            TalosUser[args[0]] -= args[1];
-            postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal - args[1]));
-        } else if (loggedOn[user]) {
-            postMessage("You can only subtract number inputs!");
-        } else {
-            postMessage("Sorry, you need to be logged on to do that");
-        }
-    },
     "reset": function(args, user) {
         if (loggedOn[user] && args[0]) {
             TalosUser = parse(getStorage(loggedOn[user]));
             for (var key in TalosUser) {
                 if (key == args[0]) {
-                    TalosUser.key = undefined;
+                    TalosUser[key] = undefined;
                 }
             }
+            setStorage(loggedOn[user], stringify(TalosUser));
             postMessage(loggedOn[user] + " " + args[0] + " cleared.");
-        } else if {
+        } else if (loggedOn[user]) {
             postMessage("I need a value to reset!");
         } else {
             postMessage("Sorry, you need to be logged on to do that");
@@ -211,10 +202,24 @@ var Commands = {
     "set": function(args, user) {
         if (loggedOn[user] && args[0]) {
             TalosUser = parse(getStorage(loggedOn[user]));
-            TalosUser[args[0]] = args[1]l
-            postMessage(username + " " + args[0] + " has been set to " + args[0] + ".");
+            TalosUser[args[0]] = args[1];
+            setStorage(loggedOn[user], stringify(TalosUser));
+            postMessage(loggedOn[user] + " " + args[0] + " has been set to " + args[1] + ".");
         } else if (loggedOn[user]) {
-            postMessage("I can only set the value of Words to a number!")
+            postMessage("I can only set the value of Words to a number!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "subtract": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[1])) {
+            TalosUser = parse(getStorage(loggedOn[user]));
+            curVal = TalosUser[args[0]];
+            TalosUser[args[0]] -= +args[1];
+            setStorage(loggedOn[user], stringify(TalosUser));
+            postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal - +args[1]));
+        } else if (loggedOn[user]) {
+            postMessage("You can only subtract number inputs!");
         } else {
             postMessage("Sorry, you need to be logged on to do that");
         }
@@ -353,6 +358,10 @@ var Commands = {
 };
 
 var ADMIN_COMMANDS = {
+    "clearLogin": function() {
+        loggedOn = {};
+        postMessage("Logged in users cleared.");
+    },
     "kill": function() {
         postMessage("Et Tu, Brute?");
         setInterval(function() {leaveChat();}, 200);
@@ -372,7 +381,6 @@ var ADMIN_COMMANDS = {
             for (var key in window.localStorage) {
                 if (args[0] == key) {
                     removeStorage(key);
-                    removeStorage(key+"Words");
                     postMessage("User " + args[0] + " succesfully removed.");
                     return;
                 }
@@ -386,7 +394,12 @@ var ADMIN_COMMANDS = {
         if (args[0]) {
             for (var key in window.localStorage) {
                 if (args[0] == key) {
-                    setStorage(key+"Words", 0);
+                    TalosUser = getStorage(key);
+                    for (var value in TalosUser) {
+                        if (value != "password") {
+                            value = undefined;
+                        }
+                    }
                     postMessage("Succesfully reset user " + args[0]);
                     return;
                 }
