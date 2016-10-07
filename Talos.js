@@ -38,33 +38,6 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
     --------------------------
 */
 var Commands = {
-    "add": function(args, user) {
-        if(loggedOn[user] && !isNaN(+args[1])) {
-            args[1] = +args[1];
-            TalosUser = parse(getStorage(loggedOn[user]));
-            curVal = TalosUser[args[0]];
-            TalosUser[args[0]] += args[1];
-            setStorage(loggedOn[user], stringify(TalosUser));
-            postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal + args[1]));
-        } else if (loggedOn[user]) {
-            postMessage("You can only add number inputs!");
-        } else {
-            postMessage("Sorry, you need to be logged on to do that");
-        }
-    },
-    "check": function(args, user) {
-        if (loggedOn[user]) {
-            TalosUser = parse(getStorage(loggedOn[user]));
-            if (TalosUser[args[0]] != "undefined" && TalosUser[args[0]] != "null") {
-                curVal = TalosUser[args[0]];
-                postMessage(loggedOn[user] + " " + args[0] + " is currently " + curVal);
-            } else {
-                postMessage("Your account doesn't have any value called " + args[0]);
-            }
-        } else {
-            postMessage("Sorry, you need to be logged on to do that");
-        }
-    },
     "generate": function(type) {
         if (type[0].toUpperCase() == "PROMPT") {
             postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
@@ -77,31 +50,6 @@ var Commands = {
     "information": function() {
         postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, and Dino.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
     },
-    "login": function(args, user) {
-        if (!args[0] || !args[1]) {
-            postMessage("I need both a username and a password!");
-        } else if (!getStorage(args[0])) {
-            postMessage("Sorry, I don't know any user named " + args[0]);
-        } else {
-            TalosUser = parse(getStorage(args[0]));
-            if (args[1] == TalosUser.password && !loggedOn[user]) {
-                loggedOn[user] = args[0];
-                postMessage(user + " has been succesfully logged in!");
-            } else if (args[1] == TalosUser.password) {
-                postMessage("You appear to be already logged on as " + loggedOn[user]);
-            } else {
-                postMessage("That password doesn't match what I remember.");
-            }
-        }
-    },
-    "logout": function(args, user) {
-        if (loggedOn[user]) {
-            loggedOn[user] = undefined;
-            postMessage(user + " has been logged out.");
-        } else {
-            postMessage("I can't log you out if you aren't even logged in.");
-        }
-    },
     "register": function(args) {
         if (args[0] && args[1]) {
             if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/)) {
@@ -113,22 +61,6 @@ var Commands = {
             }
         } else {
             postMessage("I need both a username and a password to register an account.");
-        }
-    },
-    "reset": function(args, user) {
-        if (loggedOn[user] && args[0]) {
-            TalosUser = parse(getStorage(loggedOn[user]));
-            for (var key in TalosUser) {
-                if (key == args[0]) {
-                    TalosUser[key] = undefined;
-                }
-            }
-            setStorage(loggedOn[user], stringify(TalosUser));
-            postMessage(loggedOn[user] + " " + args[0] + " cleared.");
-        } else if (loggedOn[user]) {
-            postMessage("I need a value to reset!");
-        } else {
-            postMessage("Sorry, you need to be logged on to do that");
         }
     },
     "roulette": function() {
@@ -197,31 +129,6 @@ var Commands = {
         } else {
             postMessage("Sorry, I need a user to look for.");
             closePopup();
-        }
-    },
-    "set": function(args, user) {
-        if (loggedOn[user] && args[0]) {
-            TalosUser = parse(getStorage(loggedOn[user]));
-            TalosUser[args[0]] = args[1];
-            setStorage(loggedOn[user], stringify(TalosUser));
-            postMessage(loggedOn[user] + " " + args[0] + " has been set to " + args[1] + ".");
-        } else if (loggedOn[user]) {
-            postMessage("I can only set the value of Words to a number!");
-        } else {
-            postMessage("Sorry, you need to be logged on to do that");
-        }
-    },
-    "subtract": function(args, user) {
-        if(loggedOn[user] && !isNaN(+args[1])) {
-            TalosUser = parse(getStorage(loggedOn[user]));
-            curVal = TalosUser[args[0]];
-            TalosUser[args[0]] -= +args[1];
-            setStorage(loggedOn[user], stringify(TalosUser));
-            postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal - +args[1]));
-        } else if (loggedOn[user]) {
-            postMessage("You can only subtract number inputs!");
-        } else {
-            postMessage("Sorry, you need to be logged on to do that");
         }
     },
     "uptime": function() {
@@ -310,16 +217,17 @@ var Commands = {
         if (!args[0]) {
             var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
             for (var C in Commands) {
-                if (C.toLowerCase() != "roulette" || C.toLowerCase() != "help") {
-                    helpList += "^" + C + ", ";
+                if (C.toLowerCase() != "roulette") {
+                    helpList += "^" + C + "\n";
                 }
             }
-            helpList += "^help.\nMy Admin Commands are:\n";
+            helpList += "My Admin Commands are:\n";
             for (C in ADMIN_COMMANDS) {
                 if (ADMIN_COMMANDS.hasOwnProperty(C)) {
                     helpList += "^" + C + "\n";
                 }
             }
+            helpList += "See user commands list by typing '^help users'\n";
             postMessage(helpList);
         } else {
             switch (args[0]) {
@@ -344,6 +252,15 @@ var Commands = {
                 case "uptime":
                     postMessage("Use: ^uptime\nDescription: Gives how long, down to the second, that Talos has been running.");
                     break;
+                case "users":
+                    var commandList = "User commands are:\n";
+                    for (var C in UserCommands) {
+                        if (UserCommands.hasOwnProperty(C)) {
+                            commandList += "^" + C + "\n";
+                        }
+                    }
+                    postMessage(commandList);
+                    break;
                 case "version":
                     postMessage("Use: ^version\nDescription: The version that Talos is currently running. I always know exactly where I am.");
                     break;
@@ -355,6 +272,102 @@ var Commands = {
             }
         }
     }
+};
+
+var UserCommands {
+    "add": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[1])) {
+            args[1] = +args[1];
+            TalosUser = parse(getStorage(loggedOn[user]));
+            curVal = TalosUser[args[0]];
+            TalosUser[args[0]] += args[1];
+            setStorage(loggedOn[user], stringify(TalosUser));
+            postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal + args[1]));
+        } else if (loggedOn[user]) {
+            postMessage("You can only add number inputs!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "check": function(args, user) {
+        if (loggedOn[user]) {
+            TalosUser = parse(getStorage(loggedOn[user]));
+            if (TalosUser[args[0]] != "undefined" && TalosUser[args[0]] != "null") {
+                curVal = TalosUser[args[0]];
+                postMessage(loggedOn[user] + " " + args[0] + " is currently " + curVal);
+            } else {
+                postMessage("Your account doesn't have any value called " + args[0]);
+            }
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "login": function(args, user) {
+        if (!args[0] || !args[1]) {
+            postMessage("I need both a username and a password!");
+        } else if (!getStorage(args[0])) {
+            postMessage("Sorry, I don't know any user named " + args[0]);
+        } else {
+            TalosUser = parse(getStorage(args[0]));
+            if (args[1] == TalosUser.password && !loggedOn[user]) {
+                loggedOn[user] = args[0];
+                postMessage(user + " has been succesfully logged in!");
+            } else if (args[1] == TalosUser.password) {
+                postMessage("You appear to be already logged on as " + loggedOn[user]);
+            } else {
+                postMessage("That password doesn't match what I remember.");
+            }
+        }
+    },
+    "logout": function(args, user) {
+        if (loggedOn[user]) {
+            loggedOn[user] = undefined;
+            postMessage(user + " has been logged out.");
+        } else {
+            postMessage("I can't log you out if you aren't even logged in.");
+        }
+    },
+    "reset": function(args, user) {
+        if (loggedOn[user] && args[0]) {
+            TalosUser = parse(getStorage(loggedOn[user]));
+            for (var key in TalosUser) {
+                if (key == args[0]) {
+                    TalosUser[key] = undefined;
+                }
+            }
+            setStorage(loggedOn[user], stringify(TalosUser));
+            postMessage(loggedOn[user] + " " + args[0] + " cleared.");
+        } else if (loggedOn[user]) {
+            postMessage("I need a value to reset!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "set": function(args, user) {
+        if (loggedOn[user] && args[0]) {
+            TalosUser = parse(getStorage(loggedOn[user]));
+            TalosUser[args[0]] = args[1];
+            setStorage(loggedOn[user], stringify(TalosUser));
+            postMessage(loggedOn[user] + " " + args[0] + " has been set to " + args[1] + ".");
+        } else if (loggedOn[user]) {
+            postMessage("I can only set the value of Words to a number!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
+    "subtract": function(args, user) {
+        if(loggedOn[user] && !isNaN(+args[1])) {
+            TalosUser = parse(getStorage(loggedOn[user]));
+            curVal = TalosUser[args[0]];
+            TalosUser[args[0]] -= +args[1];
+            setStorage(loggedOn[user], stringify(TalosUser));
+            postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal - +args[1]));
+        } else if (loggedOn[user]) {
+            postMessage("You can only subtract number inputs!");
+        } else {
+            postMessage("Sorry, you need to be logged on to do that");
+        }
+    },
 };
 
 var ADMIN_COMMANDS = {
@@ -546,8 +559,10 @@ function readChat() {
                 break;
             } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
                 postMessage("Sorry, that command is Admin only, and I don't recognize you!");
+            } else if (window.UserCommands[Command]){
+                window.UserCommands[Command](Args, user);
             } else if (window.Commands[Command]) {
-                window.Commands[Command](Args, User);
+                window.Commands[Command](Args);
             } else {
                 postMessage("Sorry, I don't understand that. May I suggest ^help?");
             }
@@ -580,6 +595,8 @@ function readPMs() {
             return;
         } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
             privateMessage(User, "Sorry, that command is Admin only, and I don't recognize you!");
+        } else if (window.UserCommands[Command]) {
+            window.Commands[Command](Args, user);
         } else if (window.Commands[Command]) {
             window.Commands[Command](Args);
         } else {
