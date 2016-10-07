@@ -59,6 +59,9 @@ var Commands = {
             postMessage("Sorry, you need to be logged on to do that");
         }
     },
+    "credits": function() {
+        postMessage("Primary Developers: CraftSpider, Dino.\nOther contributors: Wundrweapon, HiddenStorys")
+    },
     "generate": function(type) {
         if (type[0].toUpperCase() == "PROMPT") {
             postMessage("A story about a " + Adjective[randomNumber(0, Adjective.length - 1)] + " " + Noun[randomNumber(0, Noun.length - 1)] + " who must " + Goal[randomNumber(0, Goal.length - 1)] + " while " + Obstacle[randomNumber(0, Goal.length - 1)] + ".");
@@ -69,7 +72,7 @@ var Commands = {
         }
     },
     "information": function() {
-        postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider, and Dino, but wundrweapon did something too.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
+        postMessage("Hello! I'm Talos, official PtP mod-bot.\nMy Developers are CraftSpider and Dino.\nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.");
     },
     "login": function(args, user) {
         if (!args[0] || !args[1]) {
