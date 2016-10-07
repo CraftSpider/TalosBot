@@ -254,9 +254,9 @@ var Commands = {
                     break;
                 case "users":
                     var commandList = "User commands are:\n";
-                    for (var C in UserCommands) {
-                        if (UserCommands.hasOwnProperty(C)) {
-                            commandList += "^" + C + "\n";
+                    for (var UC in UserCommands) {
+                        if (UserCommands.hasOwnProperty(UC)) {
+                            commandList += "^" + UC + "\n";
                         }
                     }
                     postMessage(commandList);
@@ -274,7 +274,7 @@ var Commands = {
     }
 };
 
-var UserCommands {
+var UserCommands = {
     "add": function(args, user) {
         if(loggedOn[user] && !isNaN(+args[1])) {
             args[1] = +args[1];
@@ -560,7 +560,7 @@ function readChat() {
             } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
                 postMessage("Sorry, that command is Admin only, and I don't recognize you!");
             } else if (window.UserCommands[Command]){
-                window.UserCommands[Command](Args, user);
+                window.UserCommands[Command](Args, User);
             } else if (window.Commands[Command]) {
                 window.Commands[Command](Args);
             } else {
@@ -596,7 +596,7 @@ function readPMs() {
         } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
             privateMessage(User, "Sorry, that command is Admin only, and I don't recognize you!");
         } else if (window.UserCommands[Command]) {
-            window.Commands[Command](Args, user);
+            window.Commands[Command](Args, User);
         } else if (window.Commands[Command]) {
             window.Commands[Command](Args);
         } else {
