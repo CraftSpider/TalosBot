@@ -294,13 +294,13 @@ var Commands = {
                     // console.log(length + " " + StartTime + " " + TimeDif);
                     setTimeout(function() {
                         if (!IsSleeping) {
-                            postMessage("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+                            postMessage("[b]I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go![/b]");
                         }
                         // console.log("I'm starting the " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
                         startWW(length, KeyWord);
                     }, TimeDif);
                 } else {
-                    postMessage("I'm starting a " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go!");
+                    postMessage("[b]I'm starting a " + length + " minute word war." + (KeyWord? " Keyword: " + KeyWord  + "." : "") + " Go![/b]");
                     startWW(length, KeyWord);
                 }
             }
@@ -439,7 +439,7 @@ function startWW(length, KeyWord) {
     setTimeout(function() {
         NumWWs--;
         if (!IsSleeping) {
-            postMessage("Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends. How did you do?");
+            postMessage("[b]Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends.[/b] How did you do?");
         }
     }, length * 60000);
 }
