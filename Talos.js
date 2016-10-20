@@ -36,6 +36,7 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
     User Commands dictionaries
     --------------------------
 */
+
 var Commands = {
     "credits": function() {
         postMessage("Primary Developers: CraftSpider, Dino.\nOther contributors: Wundrweapon, HiddenStorys")
@@ -400,6 +401,7 @@ var ADMIN_COMMANDS = {
     },
     "kill": function() {
         postMessage("Et Tu, Brute?");
+        log.fatal("Talos killed on " + new Date());
         setInterval(function() {leaveChat();}, 200);
         window.open('http://www.chatzy.com/', '_self');
     },
@@ -566,6 +568,7 @@ function readChat() {
     for (var i = 1; i < Messages.length; i++) {
         var Message = Messages[i];
         if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) {
+            
             var User = RegExp.$1;
             var Command = RegExp.$2;
             var Args = parseArgs(RegExp.$3);
@@ -576,15 +579,24 @@ function readChat() {
                     break;
                 }
             }
+            
             if (window.ADMIN_COMMANDS[Command] && isAdmin) {
+                log.warn("Admin command " + Command + " called by " + User);
+                log.debug("With arguments \"" + Args + "\"")
                 window.ADMIN_COMMANDS[Command](Args, User);
             } else if (IsSleeping == 1) {
                 break;
             } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
+                log.warn("Admin command " + Command + " ignored from " + User);
+                log.debug("With arguments \"" + Args + "\"")
                 postMessage("Sorry, that command is Admin only, and I don't recognize you!");
             } else if (window.UserCommands[Command]){
+                log.info("User command " + Command + " called by " + User);
+                log.debug("With arguments \"" + Args + "\"")
                 window.UserCommands[Command](Args, User);
             } else if (window.Commands[Command]) {
+                log.info("Command " + Command + " called by " + User);
+                log.debug("With arguments \"" + Args + "\"")
                 window.Commands[Command](Args);
             } else {
                 postMessage("Sorry, I don't understand that. May I suggest ^help?");
@@ -601,6 +613,7 @@ function readPMs() {
     var ReceivedPM = elementByID(popup).innerHTML;
     var PMSearch = new RegExp('<!--' + PMTag + '-->.+>(.+)<\/em>.+' + textBox + '">\\^(\\w+)[\\W]?(?:\\s(.+))?(?:<\/div><p)');
     if (ReceivedPM.match(PMSearch)) {
+        
         var User = RegExp.$1;
         var Command = RegExp.$2;
         var Args = parseArgs(RegExp.$3);
@@ -611,16 +624,25 @@ function readPMs() {
                 break;
             }
         }
+        
         if (window.ADMIN_COMMANDS[Command] && isAdmin) {
+            log.warn("Admin command " + Command + " called by " + User + " via PM");
+            log.debug("With arguments \"" + Args + "\"")
             window.ADMIN_COMMANDS[Command](Args);
         } else if (IsSleeping == 1) {
             closePopup();
             return;
         } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
+            log.warn("Admin command " + Command + " ignored from " + User + " via PM");
+            log.debug("With arguments \"" + Args + "\"")
             privateMessage(User, "Sorry, that command is Admin only, and I don't recognize you!");
         } else if (window.UserCommands[Command]) {
+            log.info("User command " + Command + " called by " + User + " via PM");
+            log.debug("With arguments \"" + Args + "\"")
             window.Commands[Command](Args, User);
         } else if (window.Commands[Command]) {
+            log.info("Command " + Command + " called by " + User + " via PM");
+            log.debug("With arguments \"" + Args + "\"")
             window.Commands[Command](Args);
         } else {
             privateMessage(User, "Sorry, I don't understand that. May I suggest ^help?");
@@ -640,19 +662,30 @@ function mainLoop() {
     -------------------
 */
 
+function loggerInit() {
+    Logger = document.createElement('script');
+    Logger.setAttribute('type', 'text/javascript');
+    Logger.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/logging/log4javascript.js');
+    Logger.setAttribute('onload', 'talosInit()');
+    document.head.appendChild(Logger);
+}
+
 function talosInit() {
     ChatzyAPI = document.createElement('script');
     ChatzyAPI.setAttribute('type', 'text/javascript');
-    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/master/ChatzyWrappers.js');
+    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/logging/ChatzyWrappers.js');
     ChatzyAPI.setAttribute('onload', 'talosStart()');
     document.head.appendChild(ChatzyAPI);
 }
 
 function talosStart() {
+    log = log4javascript.getDefaultLogger();
+    log.debug("Talos Booting")
+    
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window[isCleared] = false;
     setInterval(function() {mainLoop();}, 1000);
     setInterval(function() {window[timeoutTimer] = new Date().getTime();}, 60000*10);
 }
 
-talosInit();
+loggerInit();
