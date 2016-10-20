@@ -665,7 +665,7 @@ function mainLoop() {
 function loggerInit() {
     Logger = document.createElement('script');
     Logger.setAttribute('type', 'text/javascript');
-    Logger.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/logging/log4javascript.js');
+    Logger.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/master/log4javascript.js');
     Logger.setAttribute('onload', 'talosInit()');
     document.head.appendChild(Logger);
 }
@@ -673,7 +673,7 @@ function loggerInit() {
 function talosInit() {
     ChatzyAPI = document.createElement('script');
     ChatzyAPI.setAttribute('type', 'text/javascript');
-    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/logging/ChatzyWrappers.js');
+    ChatzyAPI.setAttribute('src', 'https://rawgit.com/CraftSpider/TalosBot/master/ChatzyWrappers.js');
     ChatzyAPI.setAttribute('onload', 'talosStart()');
     document.head.appendChild(ChatzyAPI);
 }
