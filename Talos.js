@@ -546,16 +546,18 @@ function writingHour() {
     d = new Date();
 
     if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch === 0) {
-        postMessage("[b][Alert][/b] 10 minute mark!");
+        postMessage("[b][Alert][/b] 10 minute's until WH!");
         WHSwitch++;
     } else if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && WHSwitch == 1) {
-        postMessage("[b][Alert][/b] 5 minute mark!");
+        postMessage("[b][Alert][/b] 5 minute's until WH!");
         WHSwitch++;
     } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() === 0 && WHSwitch == 2) {
-        postMessage("[b]Productivity hour with Talos[/b] Time to do that thing you've been meaning to all day!");
+        postMessage("[b]Writing Hour begins![/b] Time to write, good luck!");
+        setTimeout(function(){closeChat()}, 1000)
         WHSwitch++;
     } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() === 0 && WHSwitch == 3) {
-        setTimeout(function() {postMessage("[b]Productivity is over.[/b]");}, 500);
+        setTimeout(function() {postMessage("[b]Writing Hour is over.[/b]");}, 500);
+        setTimeout(function(){openChat()}, 1000)
         WHSwitch = 0;
     }
 }
