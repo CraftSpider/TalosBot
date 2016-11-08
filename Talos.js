@@ -7,7 +7,7 @@
 //Constants
 const VERSION = 1.4;
 const BOOT_TIME = new Date();
-const WH_TIME = 0;
+const WH_TIME = 1;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys", "wundrweapon"];
 
 //Command variables
