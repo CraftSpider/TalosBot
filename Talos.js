@@ -107,7 +107,7 @@ function reloadCommands() {
     Commands = undefined;
     UserCommands = undefined;
     ADMIN_COMMANDS = undefined;
-    TalosCommands = makeElement('script', {'type':'text/javascript',
+    var TalosCommands = makeElement('script', {'type':'text/javascript',
                                            'src': URL + 'Commands.js',
                                            'onload':'CommandsLoaded = true',
                                            'id':'CommandScript'});
@@ -243,20 +243,20 @@ function mainLoop() {
 */
 
 function loggerInit() {
-    Logger = makeElement('script', {'type':'text/javascript',
+    var Logger = makeElement('script', {'type':'text/javascript',
                                     'src': URL + 'log4javascript.js',
                                     'onload':'talosInit()'});
     document.head.appendChild(Logger);
 }
 
 function talosInit() {
-    TalosCommands = makeElement('script', {'type':'text/javascript',
+    var TalosCommands = makeElement('script', {'type':'text/javascript',
                                            'src': URL + 'Commands.js',
                                            'onload':'CommandsLoaded = true',
                                            'id':'CommandScript'});
     document.head.appendChild(TalosCommands);
     
-    ChatzyAPI = makeElement('script', {'type':'text/javascript',
+    var ChatzyAPI = makeElement('script', {'type':'text/javascript',
                                        'src': URL + 'ChatzyWrappers.js',
                                        'onload':'talosStart()'});
     document.head.appendChild(ChatzyAPI);

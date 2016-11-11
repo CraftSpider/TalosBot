@@ -29,9 +29,6 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
 */
 
 var Commands = {
-    "arbitrary": function() {
-        postMessage("Mwahahaha, it works!")
-    },
     "credits": function() {
         postMessage("Primary Developers: CraftSpider, Dino.\nOther contributors: Wundrweapon, HiddenStorys")
     },
