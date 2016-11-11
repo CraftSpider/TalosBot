@@ -9,10 +9,10 @@ const VERSION = 1.4;
 const BOOT_TIME = new Date();
 const WH_TIME = 0;
 const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys", "wundrweapon"];
-const URL = "http://rawgit.com/CraftSpider/TalosBot/Command/"
+const URL = "http://rawgit.com/CraftSpider/TalosBot/Command/";
 
 //Control variables
-var CommandsLoaded = false
+var CommandsLoaded = false;
 
 //Writing Hour variables
 var WHSwitch = 0;
@@ -91,13 +91,13 @@ function removeStorage(key) {
 }
 
 function makeElement(name, attrs) {
-    ele = document.createElement(name)
-    for (key in attrs) {
+    ele = document.createElement(name);
+    for (var key in attrs) {
         if (attrs.hasOwnProperty(key)) {
             ele.setAttribute(key, attrs[key]);
         }
     }
-    return ele
+    return ele;
 }
 
 function reloadCommands() {
@@ -160,21 +160,21 @@ function readChat() {
             
             if (window.ADMIN_COMMANDS[Command] && isAdmin) {
                 log.warn("Admin command " + Command + " called by " + User);
-                log.debug("With arguments \"" + Args + "\"")
+                log.debug("With arguments \"" + Args + "\"");
                 window.ADMIN_COMMANDS[Command](Args, User);
             } else if (IsSleeping == 1) {
                 break;
             } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
                 log.warn("Admin command " + Command + " ignored from " + User);
-                log.debug("With arguments \"" + Args + "\"")
+                log.debug("With arguments \"" + Args + "\"");
                 postMessage("Sorry, that command is Admin only, and I don't recognize you!");
             } else if (window.UserCommands[Command]){
                 log.info("User command " + Command + " called by " + User);
-                log.debug("With arguments \"" + Args + "\"")
+                log.debug("With arguments \"" + Args + "\"");
                 window.UserCommands[Command](Args, User);
             } else if (window.Commands[Command]) {
                 log.info("Command " + Command + " called by " + User);
-                log.debug("With arguments \"" + Args + "\"")
+                log.debug("With arguments \"" + Args + "\"");
                 window.Commands[Command](Args);
             } else {
                 postMessage("Sorry, I don't understand that. May I suggest ^help?");
@@ -205,22 +205,22 @@ function readPMs() {
         
         if (window.ADMIN_COMMANDS[Command] && isAdmin) {
             log.warn("Admin command " + Command + " called by " + User + " via PM");
-            log.debug("With arguments \"" + Args + "\"")
+            log.debug("With arguments \"" + Args + "\"");
             window.ADMIN_COMMANDS[Command](Args);
         } else if (IsSleeping == 1) {
             closePopup();
             return;
         } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
             log.warn("Admin command " + Command + " ignored from " + User + " via PM");
-            log.debug("With arguments \"" + Args + "\"")
+            log.debug("With arguments \"" + Args + "\"");
             privateMessage(User, "Sorry, that command is Admin only, and I don't recognize you!");
         } else if (window.UserCommands[Command]) {
             log.info("User command " + Command + " called by " + User + " via PM");
-            log.debug("With arguments \"" + Args + "\"")
+            log.debug("With arguments \"" + Args + "\"");
             window.Commands[Command](Args, User);
         } else if (window.Commands[Command]) {
             log.info("Command " + Command + " called by " + User + " via PM");
-            log.debug("With arguments \"" + Args + "\"")
+            log.debug("With arguments \"" + Args + "\"");
             window.Commands[Command](Args);
         } else {
             privateMessage(User, "Sorry, I don't understand that. May I suggest ^help?");
@@ -264,7 +264,7 @@ function talosInit() {
 
 function talosStart() {
     log = log4javascript.getDefaultLogger();
-    log.debug("Talos Booting")
+    log.debug("Talos Booting");
     
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window[isCleared] = false;
