@@ -546,10 +546,10 @@ function writingHour() {
     d = new Date();
 
     if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch === 0) {
-        postMessage("[b][Alert][/b] 10 minute's until WH!");
+        postMessage("[b][Alert][/b] 10 minutes until WH!");
         WHSwitch++;
     } else if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && WHSwitch == 1) {
-        postMessage("[b][Alert][/b] 5 minute's until WH!");
+        postMessage("[b][Alert][/b] 5 minutes until WH!");
         WHSwitch++;
     } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() === 0 && WHSwitch == 2) {
         postMessage("[b]Writing Hour begins![/b] Time to write, good luck!");
