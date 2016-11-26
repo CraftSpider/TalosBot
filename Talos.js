@@ -303,8 +303,8 @@ var UserCommands = {
         if(loggedOn[user] && !isNaN(+args[1])) {
             args[1] = +args[1];
             TalosUser = parse(getStorage(loggedOn[user]));
-            curVal = TalosUser[args[0]];
-            TalosUser[args[0]] += args[1];
+            curVal = +TalosUser[args[0]];
+            TalosUser[args[0]] = curVal + args[1];
             setStorage(loggedOn[user], stringify(TalosUser));
             postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal + args[1]));
         } else if (loggedOn[user]) {
