@@ -46,7 +46,7 @@ var Commands = {
     },
     "register": function(args) {
         if (args[0] && args[1]) {
-            if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/)) {
+            if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/) && args[0] != "Logger") {
                 TalosUser = {"password":args[1], "words":0};
                 setStorage(args[0], stringify(TalosUser));
                 postMessage("User " + args[0] + " has been registered!");
@@ -236,16 +236,19 @@ var Commands = {
                     helpList += "^" + C + "\n";
                 }
             }
-            helpList += "My Admin Commands are:\n";
-            for (C in ADMIN_COMMANDS) {
-                if (ADMIN_COMMANDS.hasOwnProperty(C)) {
-                    helpList += "^" + C + "\n";
-                }
-            }
-            helpList += "See user commands list by typing '^help users'\n";
+            helpList += "See user commands list by typing '^help users'\nSee admin commands list by typing '^help admins'";
             postMessage(helpList);
         } else {
             switch (args[0]) {
+                case "admins":
+                    var commandList = "Admin Commands are:\n";
+                    for (var AC in ADMIN_COMMANDS) {
+                        if (ADMIN_COMMANDS.hasOwnProperty(AC)) {
+                            commandList += "^" + AC + "\n";
+                        }
+                    }
+                    postMessage(helpList);
+                    break;
                 case "help":
                     postMessage("Use: ^help [Command Name]\nDescription: Help command, by default gives general information about Talos and a list of available commands. Adding the name of another command as an argument will give a more detailed description of that command. Though you probably figured that out, you're here after all :P");
                     break;
