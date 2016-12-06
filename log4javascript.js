@@ -5786,7 +5786,53 @@
 
 		init();
 	})();
+	
+	/* ---------------------------------------------------------------------- */
+	//LocalStorage Related
+	//Author: CraftSpider
+	
+	function setStorage(key, content) {
+	    window.localStorage[key] = content;
+	}
+	
+	function appendStorage(key, content) {
+		window.localStorage[key] += "\n" + content;
+	}
 
+	function getStorage(key) {
+	    return window.localStorage[key];
+	}
+	
+	/* ---------------------------------------------------------------------- */
+	//LocalStorage Appender
+	//Author: CraftSpider
+	
+	function LocalStorageAppender(name) {
+		if (typeof name == "string") {
+			this.name = name
+		} else {
+			this.name = "Logger"
+		}
+		
+		this.append = function(loggingEvent) {
+			if (getStorage(this.name)) {
+				appendStorage(this.name, this.getLayout().formatWithException(loggingEvent));
+			} else {
+				setStorage(this.name, this.getLayout().formatWithException(loggingEvent));
+			}
+		}
+	}
+	
+	LocalStorageAppender.prototype = new Appender()
+	
+	LocalStorageAppender.prototype.layout = new NullLayout()
+	
+	LocalStorageAppender.prototype.toString = function() {
+		return "LocalStorageAppender";
+	}
+	
+	log4javascript.LocalStorageAppender = LocalStorageAppender
+	
 	/* ---------------------------------------------------------------------- */
 
 	function createDefaultLogger() {

@@ -8,8 +8,8 @@
 const VERSION = 1.4;
 const BOOT_TIME = new Date();
 const WH_TIME = 0;
-const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys", "wundrweapon"];
-const URL = "http://rawgit.com/CraftSpider/TalosBot/Command/";
+const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys", "Ariana", "fez"];
+const URL = "https://rawgit.com/CraftSpider/TalosBot/Command/";
 
 //Control variables
 var CommandsLoaded = false;
@@ -177,6 +177,7 @@ function readChat() {
                 log.debug("With arguments \"" + Args + "\"");
                 window.Commands[Command](Args);
             } else {
+                log.debug("Failed to parse " + Command);
                 postMessage("Sorry, I don't understand that. May I suggest ^help?");
             }
         }
@@ -207,7 +208,7 @@ function readPMs() {
             log.warn("Admin command " + Command + " called by " + User + " via PM");
             log.debug("With arguments \"" + Args + "\"");
             window.ADMIN_COMMANDS[Command](Args);
-        } else if (IsSleeping == 1) {
+        } else if (IsSleeping == 1 || (WHSwitch >= 3 && !isAdmin)) {
             closePopup();
             return;
         } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
@@ -223,6 +224,7 @@ function readPMs() {
             log.debug("With arguments \"" + Args + "\"");
             window.Commands[Command](Args);
         } else {
+            log.debug("Failed to parse " + Command + " via PM");
             privateMessage(User, "Sorry, I don't understand that. May I suggest ^help?");
         }
     }
@@ -264,6 +266,9 @@ function talosInit() {
 
 function talosStart() {
     log = log4javascript.getDefaultLogger();
+    localStorageAppender = new log4javascript.LocalStorageAppender();
+    log.addAppender(localStorageAppender);
+    
     log.debug("Talos Booting");
     
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
