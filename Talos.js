@@ -7,12 +7,14 @@
 //Constants
 const VERSION = 1.5;
 const BOOT_TIME = new Date();
-const WH_TIME = 0;
-const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys", "Ariana", "fez"];
-const URL = "https://rawgit.com/CraftSpider/TalosBot/master/";
+const WH_TIME = 0; //What hour Writing Hour should start at, in UTC
+const ADMIN_URL = "http://localhost:8000/Admins.txt"; //URL to pull admin list from
+const ADMINS = []; //Will be filled with Admin data from file
+const URL = "https://rawgit.com/CraftSpider/TalosBot/master/"; //URL to load Commands and ChatzyAPI From
 
 //Control variables
 var CommandsLoaded = false;
+var adminAliases = []
 
 //Writing Hour variables
 var WHSwitch = 0;
@@ -34,6 +36,14 @@ function startWW(length, KeyWord) {
             postMessage("[b]Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends.[/b] How did you do?");
         }
     }, length * 60000);
+}
+
+function parseAdmins(str) {
+    str = str.split(/\r?\n/)
+    for (i in str) {
+        str[i] = str[i].split(",")[1]
+    }
+    return str
 }
 
 function parseArgs(str) {
@@ -112,6 +122,26 @@ function reloadCommands() {
                                            'onload':'CommandsLoaded = true',
                                            'id':'CommandScript'});
     document.head.appendChild(TalosCommands);
+}
+
+function readFile(file) {
+    var p = new Promise(function(resolve, reject) {
+        var rawFile = new XMLHttpRequest();
+        rawFile.open("GET", file, false);
+        rawFile.onreadystatechange = function ()
+        {
+            if(rawFile.readyState === 4)
+            {
+                if(rawFile.status === 200 || rawFile.status == 0)
+                {
+                    var allText = rawFile.responseText;
+                    resolve(allText);
+                }
+            }
+        }
+        rawFile.send(null);
+    });
+    return p
 }
 
 /*
@@ -254,16 +284,21 @@ function loggerInit() {
 }
 
 function talosInit() {
+    readFile(ADMIN_URL).then(function(fileText){
+        parseAdmins(fileText).forEach(function(item) {ADMINS.push(item)});
+        Object.freeze(ADMINS)
+    });
+    
     var TalosCommands = makeElement('script', {'type':'text/javascript',
                                            'src': URL + 'Commands.js',
                                            'onload':'CommandsLoaded = true',
                                            'id':'CommandScript'});
     document.head.appendChild(TalosCommands);
     
-    var ChatzyAPI = makeElement('script', {'type':'text/javascript',
-                                       'src': URL + 'ChatzyWrappers.js',
-                                       'onload':'talosStart()'});
-    document.head.appendChild(ChatzyAPI);
+    //var ChatzyAPI = makeElement('script', {'type':'text/javascript',
+                                       //'src': URL + 'ChatzyWrappers.js',
+                                       //'onload':'talosStart()'});
+    //document.head.appendChild(ChatzyAPI);
 }
 
 function talosStart() {
@@ -272,6 +307,21 @@ function talosStart() {
     log.addAppender(localStorageAppender);
     
     log.debug("Talos Booting");
+    
+    getVisitorData(["Alias","UID"]).then(function(visitorData) {
+        for (i in visitorData) {
+            visitor = visitorData[i]
+            if (visitor[1][0] == "\"") {
+                visitor[1] =  visitor[1].substr(1,visitor[1].length-2)
+            }
+            for (j in ADMINS) {
+                console.log(visitor[1] + " " + ADMINS[j])
+                if (ADMINS[j] == visitor[1]) {
+                    adminAliases.push(visitor[0])
+                }
+            }
+        }
+    });
     
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window[isCleared] = false;
