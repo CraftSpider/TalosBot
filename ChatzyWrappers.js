@@ -137,7 +137,7 @@ function generateTab(picName, clickFunc, displayText, isChecked, isLocked) {
 // rows are named "Alias", "Last", "Loc", "UIP", "UID", "Status", "Perms"
 function getVisitorData(columns) {
     return p1 = new Promise(function(resolve, reject) {
-        postMessage("/visitors");
+        X7535.onclick();
         iterations = 0
         vis = setInterval(function() {
             iterations++;
