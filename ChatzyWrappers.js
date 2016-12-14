@@ -193,6 +193,7 @@ function getVisitorData(columns) {
                 }
                 resolve(visitorData)
             } else if (iterations > 30) {
+                clearInterval(vis)
                 reject([])
             }
         }, 1000)

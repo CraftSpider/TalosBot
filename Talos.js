@@ -14,7 +14,7 @@ const URL = "https://rawgit.com/CraftSpider/TalosBot/admins/"; //URL to load Com
 
 //Control variables
 var CommandsLoaded = false;
-var adminAliases = []
+var adminAliases = [];
 
 //Writing Hour variables
 var WHSwitch = 0;
@@ -39,11 +39,13 @@ function startWW(length, KeyWord) {
 }
 
 function parseAdmins(str) {
-    str = str.split(/\r?\n/)
-    for (i in str) {
-        str[i] = str[i].split(",")[1]
+    str = str.split(/\r?\n/);
+    for (var i in str) {
+        if (str.hasOwnProperty(i)) {
+            str[i] = str[i].split(",")[1];
+        }
     }
-    return str
+    return str;
 }
 
 function parseArgs(str) {
@@ -128,20 +130,41 @@ function readFile(file) {
     var p = new Promise(function(resolve, reject) {
         var rawFile = new XMLHttpRequest();
         rawFile.open("GET", file, false);
-        rawFile.onreadystatechange = function ()
-        {
-            if(rawFile.readyState === 4)
-            {
-                if(rawFile.status === 200 || rawFile.status == 0)
-                {
+        rawFile.onreadystatechange = function () {
+            if(rawFile.readyState === 4) {
+                if(rawFile.status === 200 || rawFile.status === 0) {
                     var allText = rawFile.responseText;
                     resolve(allText);
+                } else {
+                    reject();
+                }
+            } else {
+                reject();
+            }
+        };
+        rawFile.send(null);
+    });
+    return p;
+}
+
+function getAdminNames() {
+    getVisitorData(["Alias","UID"]).then(function(visitorData) {
+        adminAliases = [];
+        for (var i = 0; i < visitorData.length; i++) {
+            visitor = visitorData[i];
+            if (visitor[1] == "(Email hidden)") {
+                continue;
+            }
+            if (visitor[1][0] == "\"") {
+                visitor[1] =  visitor[1].substr(1,visitor[1].length-2);
+            }
+            for (var j = 0; j < ADMINS.length; j++) {
+                if (ADMINS[j] == visitor[1]) {
+                    adminAliases.push(visitor[0]);
                 }
             }
         }
-        rawFile.send(null);
     });
-    return p
 }
 
 /*
@@ -161,11 +184,11 @@ function writingHour() {
         WHSwitch++;
     } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() === 0 && WHSwitch == 2) {
         postMessage("[b]Writing Hour begins![/b] Time to write, good luck!");
-        setTimeout(function(){closeChat()}, 1000)
+        setTimeout(function(){closeChat();}, 1000);
         WHSwitch++;
     } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() === 0 && WHSwitch == 3) {
         setTimeout(function() {postMessage("[b]Writing Hour is over.[/b]");}, 500);
-        setTimeout(function(){openChat()}, 1000)
+        setTimeout(function(){openChat();}, 1000);
         WHSwitch = 0;
     }
 }
@@ -183,8 +206,8 @@ function readChat() {
             var Command = RegExp.$2;
             var Args = parseArgs(RegExp.$3);
             var isAdmin = false;
-            for (var U in ADMINS) {
-                if (User == ADMINS[U]) {
+            for (var U in adminAliases) {
+                if (User == adminAliases[U]) {
                     isAdmin = true;
                     break;
                 }
@@ -229,8 +252,8 @@ function readPMs() {
         var Command = RegExp.$2;
         var Args = parseArgs(RegExp.$3);
         var isAdmin = false;
-        for (var U in ADMINS) {
-            if (User == ADMINS[U]) {
+        for (var U in adminAliases) {
+            if (User == adminAliases[U]) {
                 isAdmin = true;
                 break;
             }
@@ -285,8 +308,8 @@ function loggerInit() {
 
 function talosInit() {
     readFile(ADMIN_URL).then(function(fileText){
-        parseAdmins(fileText).forEach(function(item) {ADMINS.push(item)});
-        Object.freeze(ADMINS)
+        parseAdmins(fileText).forEach(function(item) {ADMINS.push(item);});
+        Object.freeze(ADMINS);
     });
     
     var TalosCommands = makeElement('script', {'type':'text/javascript',
@@ -308,25 +331,12 @@ function talosStart() {
     
     log.debug("Talos Booting");
     
-    getVisitorData(["Alias","UID"]).then(function(visitorData) {
-        for (i in visitorData) {
-            visitor = visitorData[i]
-            if (visitor[1][0] == "\"") {
-                visitor[1] =  visitor[1].substr(1,visitor[1].length-2)
-            }
-            for (j in ADMINS) {
-                console.log(visitor[1] + " " + ADMINS[j])
-                if (ADMINS[j] == visitor[1]) {
-                    adminAliases.push(visitor[0])
-                }
-            }
-        }
-    });
+    getAdminNames();
     
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window[isCleared] = false;
     setInterval(function() {mainLoop();}, 1000);
-    setInterval(function() {window[timeoutTimer] = new Date().getTime();}, 60000*10);
+    setInterval(function() {window[timeoutTimer] = new Date().getTime(); getAdminNames();}, 60000*10);
 }
 
 loggerInit();
