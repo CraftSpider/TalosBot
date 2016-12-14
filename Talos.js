@@ -7,12 +7,14 @@
 //Constants
 const VERSION = 1.5;
 const BOOT_TIME = new Date();
-const WH_TIME = 0;
-const ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys", "Ariana", "fez"];
-const URL = "https://rawgit.com/CraftSpider/TalosBot/master/";
+const WH_TIME = 0; //What hour Writing Hour should start at, in UTC
+const ADMIN_URL = "http://localhost:8000/Admins.txt"; //URL to pull admin list from
+const ADMINS = []; //Will be filled with Admin data from file
+const URL = "https://rawgit.com/CraftSpider/TalosBot/admins/"; //URL to load Commands and ChatzyAPI From
 
 //Control variables
 var CommandsLoaded = false;
+var adminAliases = [];
 
 //Writing Hour variables
 var WHSwitch = 0;
@@ -34,6 +36,16 @@ function startWW(length, KeyWord) {
             postMessage("[b]Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends.[/b] How did you do?");
         }
     }, length * 60000);
+}
+
+function parseAdmins(str) {
+    str = str.split(/\r?\n/);
+    for (var i in str) {
+        if (str.hasOwnProperty(i)) {
+            str[i] = str[i].split(",")[1];
+        }
+    }
+    return str;
 }
 
 function parseArgs(str) {
@@ -114,6 +126,47 @@ function reloadCommands() {
     document.head.appendChild(TalosCommands);
 }
 
+function readFile(file) {
+    var p = new Promise(function(resolve, reject) {
+        var rawFile = new XMLHttpRequest();
+        rawFile.open("GET", file, false);
+        rawFile.onreadystatechange = function () {
+            if(rawFile.readyState === 4) {
+                if(rawFile.status === 200 || rawFile.status === 0) {
+                    var allText = rawFile.responseText;
+                    resolve(allText);
+                } else {
+                    reject();
+                }
+            } else {
+                reject();
+            }
+        };
+        rawFile.send(null);
+    });
+    return p;
+}
+
+function getAdminNames() {
+    getVisitorData(["Alias","UID"]).then(function(visitorData) {
+        adminAliases = [];
+        for (var i = 0; i < visitorData.length; i++) {
+            visitor = visitorData[i];
+            if (visitor[1] == "(Email hidden)") {
+                continue;
+            }
+            if (visitor[1][0] == "\"") {
+                visitor[1] =  visitor[1].substr(1,visitor[1].length-2);
+            }
+            for (var j = 0; j < ADMINS.length; j++) {
+                if (ADMINS[j] == visitor[1]) {
+                    adminAliases.push(visitor[0]);
+                }
+            }
+        }
+    });
+}
+
 /*
     -------------------
     Main loop functions
@@ -131,11 +184,11 @@ function writingHour() {
         WHSwitch++;
     } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() === 0 && WHSwitch == 2) {
         postMessage("[b]Writing Hour begins![/b] Time to write, good luck!");
-        setTimeout(function(){closeChat()}, 1000)
+        setTimeout(function(){closeChat();}, 1000);
         WHSwitch++;
     } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() === 0 && WHSwitch == 3) {
         setTimeout(function() {postMessage("[b]Writing Hour is over.[/b]");}, 500);
-        setTimeout(function(){openChat()}, 1000)
+        setTimeout(function(){openChat();}, 1000);
         WHSwitch = 0;
     }
 }
@@ -153,8 +206,8 @@ function readChat() {
             var Command = RegExp.$2;
             var Args = parseArgs(RegExp.$3);
             var isAdmin = false;
-            for (var U in ADMINS) {
-                if (User == ADMINS[U]) {
+            for (var U in adminAliases) {
+                if (User == adminAliases[U]) {
                     isAdmin = true;
                     break;
                 }
@@ -199,8 +252,8 @@ function readPMs() {
         var Command = RegExp.$2;
         var Args = parseArgs(RegExp.$3);
         var isAdmin = false;
-        for (var U in ADMINS) {
-            if (User == ADMINS[U]) {
+        for (var U in adminAliases) {
+            if (User == adminAliases[U]) {
                 isAdmin = true;
                 break;
             }
@@ -254,6 +307,11 @@ function loggerInit() {
 }
 
 function talosInit() {
+    readFile(ADMIN_URL).then(function(fileText){
+        parseAdmins(fileText).forEach(function(item) {ADMINS.push(item);});
+        Object.freeze(ADMINS);
+    });
+    
     var TalosCommands = makeElement('script', {'type':'text/javascript',
                                            'src': URL + 'Commands.js',
                                            'onload':'CommandsLoaded = true',
@@ -273,10 +331,12 @@ function talosStart() {
     
     log.debug("Talos Booting");
     
+    getAdminNames();
+    
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window[isCleared] = false;
     setInterval(function() {mainLoop();}, 1000);
-    setInterval(function() {window[timeoutTimer] = new Date().getTime();}, 60000*10);
+    setInterval(function() {window[timeoutTimer] = new Date().getTime(); getAdminNames();}, 60000*10);
 }
 
 loggerInit();

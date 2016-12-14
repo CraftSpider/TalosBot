@@ -30,7 +30,7 @@ var Action = ["learn to read", "jump up and down", "cry a lot", "cry a little", 
 
 var Commands = {
     "credits": function() {
-        postMessage("Primary Developers: CraftSpider, Dino.\nOther contributors: Wundrweapon, HiddenStorys")
+        postMessage("Primary Developers: CraftSpider, Dino.\nOther contributors: Wundrweapon, HiddenStorys");
     },
     "generate": function(type) {
         if (type[0].toUpperCase() == "PROMPT") {
@@ -402,7 +402,7 @@ var ADMIN_COMMANDS = {
     "listUsers": function() {
         out = "Current list of all users:\n";
         for (var key in window.localStorage) {
-            if(isNaN(+getStorage(key))) {
+            if(key != "logger" || isNaN(+getStorage(key))) {
                 out += key + "\n";
             }
         }

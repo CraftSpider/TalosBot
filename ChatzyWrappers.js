@@ -11,6 +11,7 @@ var messageTime = "X4177";
 var messageButton = "X1602";
 var PMTag = "X6200";
 var textBox = "X5694";
+var visitorTable = "X2280";
 
 /*
     -------------------
@@ -130,4 +131,71 @@ function highlightTab(elIn, classIn, confusingBool) {
 
 function generateTab(picName, clickFunc, displayText, isChecked, isLocked) {
     return '<A href="#" onClick="' + clickFunc + 'return false;"' + (isLocked ? ' class="X6614"' : "") + '>' + (isChecked ? "<SPAN style='float:right;margin:0 4px 0 0;'>&nbsp;&#10003;</SPAN>" : "") + (picName ? '<IMG src="/elements/icon17/' + picName + '.png">' : "") + displayText + '</A>';
+}
+
+//Returns a promise of the data.
+// rows are named "Alias", "Last", "Loc", "UIP", "UID", "Status", "Perms"
+function getVisitorData(columns) {
+    return p1 = new Promise(function(resolve, reject) {
+        X7535.onclick();
+        iterations = 0
+        vis = setInterval(function() {
+            iterations++;
+            if (window[visitorTable]) {
+                clearInterval(vis)
+                table = window[visitorTable].firstChild.children;
+                closePopup();
+                visitorData = [];
+                for (var i=1; i < table.length-1; i++) {
+                    visitor = [];
+                    for (j in columns) {
+                        option = columns[j]
+                        switch (option) {
+                            case "Alias":
+                                visitor.push(table[i].firstChild.lastChild.innerText);
+                                break;
+                            case "Last":
+                                visitor.push(table[i].children[1].innerText);
+                                break;
+                            case "Loc":
+                                visitor.push(table[i].children[2].innerText);
+                                break;
+                            case "UIP":
+                                visitor.push(table[i].children[3].innerText);
+                                break;
+                            case "UID":
+                                visitor.push(table[i].children[4].innerText);
+                                break;
+                            case "Status":
+                                visitor.push(table[i].children[5].firstChild.title);
+                                break;
+                            case "Perms":
+                                image = table[i].children[6].firstChild.firstChild.src
+                                if (image.match("P.png")) {
+                                    perm = "Moderator"
+                                } else if (image.match("A.png")) {
+                                    perm = "Regular"
+                                } else if (image.match("S.png")) {
+                                    perm = "Silenced"
+                                } else if (image.match("0.png")) {
+                                    perm = "Unknown"
+                                } else if (image.match("K.png")) {
+                                    perm = "Kicked"
+                                } else if (image.match("D.png")) {
+                                    perm = "Banned"
+                                } else if (image.match("B.png")) {
+                                    perm = "Blocked"
+                                }
+                                visitor.push(perm)
+                        }
+                    }
+                    visitorData.push(visitor)
+                }
+                resolve(visitorData)
+            } else if (iterations > 30) {
+                clearInterval(vis)
+                reject([])
+            }
+        }, 1000)
+    });
 }
