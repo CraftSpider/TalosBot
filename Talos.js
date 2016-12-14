@@ -10,7 +10,7 @@ const BOOT_TIME = new Date();
 const WH_TIME = 0; //What hour Writing Hour should start at, in UTC
 const ADMIN_URL = "http://localhost:8000/Admins.txt"; //URL to pull admin list from
 const ADMINS = []; //Will be filled with Admin data from file
-const URL = "https://rawgit.com/CraftSpider/TalosBot/admins/"; //URL to load Commands and ChatzyAPI From
+const URL = "https://rawgit.com/CraftSpider/TalosBot/master/"; //URL to load Commands and ChatzyAPI From
 
 //Control variables
 var CommandsLoaded = false;
