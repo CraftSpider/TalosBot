@@ -10,7 +10,8 @@ const BOOT_TIME = new Date();
 const WH_TIME = 1; //What hour Writing Hour should start at, in UTC
 const ADMIN_URL = "http://localhost:8000/Admins.txt"; //URL to pull admin list from
 const ADMINS = []; //Will be filled with Admin data from file
-const URL = "https://rawgit.com/CraftSpider/TalosBot/master/"; //URL to load Commands and ChatzyAPI From
+const URL = "https://rawgit.com/CraftSpider/TalosBot/master/"; //URL to load Commands from
+const API_URL = "https://rawgit.com/CraftSpider/ChatzyAPI/master/"; //URL to load ChatzyAPI from
 
 //Control variables
 var CommandsLoaded = false;
@@ -319,7 +320,7 @@ function talosInit() {
     document.head.appendChild(TalosCommands);
     
     var ChatzyAPI = makeElement('script', {'type':'text/javascript',
-                                       'src': URL + 'ChatzyWrappers.js',
+                                       'src': API_URL + 'ChatzyWrappers.js',
                                        'onload':'talosStart()'});
     document.head.appendChild(ChatzyAPI);
 }
