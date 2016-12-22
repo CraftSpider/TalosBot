@@ -443,7 +443,7 @@ var ADMIN_COMMANDS = {
     },
     "setStatus": function(status) {
         setStatus(status.join(" "));
-    }
+    },
     "toggleSleep": function(time) {
         if (IsSleeping === 0) {
             IsSleeping = 1;
