@@ -98,13 +98,13 @@ function getStorage(key) {
 }
 
 function removeStorage(key) {
-    oldItem = getStorage(key);
+    var oldItem = getStorage(key);
     window.localStorage.removeItem(key);
     return oldItem;
 }
 
 function makeElement(name, attrs) {
-    ele = document.createElement(name);
+    var ele = document.createElement(name);
     for (var key in attrs) {
         if (attrs.hasOwnProperty(key)) {
             ele.setAttribute(key, attrs[key]);
@@ -128,7 +128,7 @@ function reloadCommands() {
 }
 
 function readFile(file) {
-    var p = new Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
         var rawFile = new XMLHttpRequest();
         rawFile.open("GET", file, false);
         rawFile.onreadystatechange = function () {
@@ -145,14 +145,13 @@ function readFile(file) {
         };
         rawFile.send(null);
     });
-    return p;
 }
 
 function getAdminNames() {
     getVisitorData(["Alias","UID"]).then(function(visitorData) {
         adminAliases = [];
         for (var i = 0; i < visitorData.length; i++) {
-            visitor = visitorData[i];
+            var visitor = visitorData[i];
             if (visitor[1] == "(Email hidden)") {
                 continue;
             }
@@ -175,7 +174,7 @@ function getAdminNames() {
 */
 
 function writingHour() {
-    d = new Date();
+    var d = new Date();
 
     if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch === 0) {
         postMessage("[b][Alert][/b] 10 minutes until WH!");

@@ -47,7 +47,7 @@ var Commands = {
     "register": function(args) {
         if (args[0] && args[1]) {
             if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/) && args[0] != "Logger") {
-                TalosUser = {"password":args[1], "words":0};
+                var TalosUser = {"password":args[1], "words":0};
                 setStorage(args[0], stringify(TalosUser));
                 postMessage("User " + args[0] + " has been registered!");
             } else {
@@ -108,7 +108,7 @@ var Commands = {
                 postMessage("woag 593 lines of code"); //intentional spelling error
                 break;
             default:
-                postMessage("pǝʞoɹq ɹ ᴉ | Go yell at " + ADMINS[3]);
+                postMessage("pǝʞoɹq ɹ ᴉ | Go yell at wundr");
         }
     },
     "seen": function(user) {
@@ -296,8 +296,8 @@ var UserCommands = {
     "add": function(args, user) {
         if(loggedOn[user] && !isNaN(+args[1])) {
             args[1] = +args[1];
-            TalosUser = parse(getStorage(loggedOn[user]));
-            curVal = +TalosUser[args[0]];
+            var TalosUser = parse(getStorage(loggedOn[user]));
+            var curVal = +TalosUser[args[0]];
             TalosUser[args[0]] = curVal + args[1];
             setStorage(loggedOn[user], stringify(TalosUser));
             postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal + args[1]));
@@ -309,9 +309,9 @@ var UserCommands = {
     },
     "check": function(args, user) {
         if (loggedOn[user]) {
-            TalosUser = parse(getStorage(loggedOn[user]));
+            var TalosUser = parse(getStorage(loggedOn[user]));
             if (TalosUser[args[0]] != "undefined" && TalosUser[args[0]] != "null") {
-                curVal = TalosUser[args[0]];
+                var curVal = TalosUser[args[0]];
                 postMessage(loggedOn[user] + " " + args[0] + " is currently " + curVal);
             } else {
                 postMessage("Your account doesn't have any value called " + args[0]);
@@ -326,7 +326,7 @@ var UserCommands = {
         } else if (!getStorage(args[0])) {
             postMessage("Sorry, I don't know any user named " + args[0]);
         } else {
-            TalosUser = parse(getStorage(args[0]));
+            var TalosUser = parse(getStorage(args[0]));
             if (args[1] == TalosUser.password && !loggedOn[user]) {
                 loggedOn[user] = args[0];
                 postMessage(user + " has been succesfully logged in!");
@@ -347,7 +347,7 @@ var UserCommands = {
     },
     "reset": function(args, user) {
         if (loggedOn[user] && args[0]) {
-            TalosUser = parse(getStorage(loggedOn[user]));
+            var TalosUser = parse(getStorage(loggedOn[user]));
             for (var key in TalosUser) {
                 if (key == args[0]) {
                     TalosUser[key] = undefined;
@@ -363,7 +363,7 @@ var UserCommands = {
     },
     "set": function(args, user) {
         if (loggedOn[user] && args[0]) {
-            TalosUser = parse(getStorage(loggedOn[user]));
+            var TalosUser = parse(getStorage(loggedOn[user]));
             TalosUser[args[0]] = args[1];
             setStorage(loggedOn[user], stringify(TalosUser));
             postMessage(loggedOn[user] + " " + args[0] + " has been set to " + args[1] + ".");
@@ -375,8 +375,8 @@ var UserCommands = {
     },
     "subtract": function(args, user) {
         if(loggedOn[user] && !isNaN(+args[1])) {
-            TalosUser = parse(getStorage(loggedOn[user]));
-            curVal = TalosUser[args[0]];
+            var TalosUser = parse(getStorage(loggedOn[user]));
+            var curVal = TalosUser[args[0]];
             TalosUser[args[0]] -= +args[1];
             setStorage(loggedOn[user], stringify(TalosUser));
             postMessage(loggedOn[user] + " " + args[0] + " has been succesfully changed from " + curVal + " to " + (curVal - +args[1]));
@@ -400,9 +400,9 @@ var ADMIN_COMMANDS = {
         window.open('http://www.chatzy.com/', '_self');
     },
     "listUsers": function() {
-        out = "Current list of all users:\n";
+        var out = "Current list of all users:\n";
         for (var key in window.localStorage) {
-            if(key != "logger" || isNaN(+getStorage(key))) {
+            if(key != "Logger" || isNaN(+getStorage(key))) {
                 out += key + "\n";
             }
         }
@@ -410,14 +410,12 @@ var ADMIN_COMMANDS = {
     },
     "removeUser": function(args) {
         if (args[0]) {
-            for (var key in window.localStorage) {
-                if (args[0] == key) {
-                    removeStorage(key);
-                    postMessage("User " + args[0] + " succesfully removed.");
-                    return;
-                }
+            if (getStorage(args[0])) {
+                removeStorage(args[0]);
+                postMessage("User " + args[0] + " succesfully removed.");
+            } else {
+                postMessage("I couldn't find that user, sorry.");
             }
-            postMessage("I couldn't find that user, sorry.");
         } else {
             postMessage("I need a username to search for!");
         }
@@ -428,23 +426,24 @@ var ADMIN_COMMANDS = {
     },
     "resetUser": function(args) {
         if (args[0]) {
-            for (var key in window.localStorage) {
-                if (args[0] == key) {
-                    TalosUser = getStorage(key);
-                    for (var value in TalosUser) {
-                        if (value != "password") {
-                            value = undefined;
-                        }
+            if (getStorage(args[0])) {
+                TalosUser = getStorage(args[0]);
+                for (var value in TalosUser) {
+                    if (value != "password") {
+                        value = undefined;
                     }
-                    postMessage("Succesfully reset user " + args[0]);
-                    return;
                 }
+                postMessage("Succesfully reset user " + args[0]);
+            } else {
+                postMessage("I couldn't find that user, sorry.");
             }
-            postMessage("I couldn't find that user, sorry.");
         } else {
             postMessage("I need a username to search for!");
         }
     },
+    "setStatus": function(status) {
+        setStatus(status.join(" "));
+    }
     "toggleSleep": function(time) {
         if (IsSleeping === 0) {
             IsSleeping = 1;
