@@ -215,16 +215,14 @@ function readChat() {
     		    Args = [];
     		}
     		
-		    var isAdmin = false;
+			var isAdmin = false;
 			for (var U in adminAliases) {
 			    if (User == adminAliases[U]) {
 			        isAdmin = true;
 			        break;
 			    }
 			}
-			
-			console.log(Command + " | " + /*FirstArgs + " |*/ "\"" + Args + "\"")
-			
+						
 			if (window.ADMIN_COMMANDS[Command] && isAdmin) {
                 log.warn("Admin command " + Command + " called by " + User);
                 log.debug("With arguments \"" + Args + "\"");
