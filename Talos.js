@@ -194,26 +194,38 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID(messageContainer) && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") { //First check is if we're on a page with normal chat table. Second is that that page is parsed.
+    if (!elementByID(messageContainer) && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
         return;
     }
-    var Messages = elementByID(messageTable).innerHTML.split("\n");
-    for (var i = 1; i < Messages.length; i++) {
-        var Message = Messages[i];
-        if (Message.match(/<b .*>(.*)<\/b>: \^(\w+)(?:\s(.+))?(?:&nbsp;)/)) {
-            
-            var User = RegExp.$1;
-            var Command = RegExp.$2;
-            var Args = parseArgs(RegExp.$3);
-            var isAdmin = false;
-            for (var U in adminAliases) {
-                if (User == adminAliases[U]) {
-                    isAdmin = true;
-                    break;
-                }
-            }
-            
-            if (window.ADMIN_COMMANDS[Command] && isAdmin) {
+	var Messages = elementByID(messageTable).children;
+	for (var i = 1; i < Messages.length; i++) {
+		var Message = Messages[i].childNodes;
+		if(!Message[1] || !Message[1].data) {
+		    continue;
+		}
+		
+		var text = Message[1].data
+		
+		if (text.match(/^: \^/)) {
+		    var User = Message[0].innerText;
+			var Command = /\^(\w+)/.exec(text)[1];
+    		var Args = text.substr(Command.length + 3).match(/(?:([^\s"]+)|"(.+)")/g);
+    		
+    		if (Args == null) {
+    		    Args = [];
+    		}
+    		
+		    var isAdmin = false;
+			for (var U in adminAliases) {
+			    if (User == adminAliases[U]) {
+			        isAdmin = true;
+			        break;
+			    }
+			}
+			
+			console.log(Command + " | " + /*FirstArgs + " |*/ "\"" + Args + "\"")
+			
+			if (window.ADMIN_COMMANDS[Command] && isAdmin) {
                 log.warn("Admin command " + Command + " called by " + User);
                 log.debug("With arguments \"" + Args + "\"");
                 window.ADMIN_COMMANDS[Command](Args, User);
@@ -235,12 +247,11 @@ function readChat() {
                 log.debug("Failed to parse " + Command);
                 postMessage("Sorry, I don't understand that. May I suggest ^help?");
             }
-        }
-    }
-    
-    
-    elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-    window[isCleared] = false;
+		}
+	}
+	
+	elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+	window[isCleared] = false;
 }
 
 function readPMs() {
