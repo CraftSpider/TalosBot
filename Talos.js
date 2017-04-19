@@ -10,7 +10,7 @@ const BOOT_TIME = new Date();
 const WH_TIME = 1; //What hour Writing Hour should start at, in UTC
 const ADMIN_URL = "http://localhost:8000/Admins.txt"; //URL to pull admin list from
 const ADMINS = []; //Will be filled with Admin data from file
-const URL = "https://rawgit.com/CraftSpider/TalosBot/master/"; //URL to load Commands from
+const MAIN_URL = "https://rawgit.com/CraftSpider/TalosBot/master/"; //URL to load Commands from
 const API_URL = "https://rawgit.com/CraftSpider/ChatzyAPI/master/"; //URL to load ChatzyAPI from
 
 //Control variables
@@ -121,7 +121,7 @@ function reloadCommands() {
     UserCommands = undefined;
     ADMIN_COMMANDS = undefined;
     var TalosCommands = makeElement('script', {'type':'text/javascript',
-                                           'src': URL + 'Commands.js',
+                                           'src': MAIN_URL + 'Commands.js',
                                            'onload':'CommandsLoaded = true',
                                            'id':'CommandScript'});
     document.head.appendChild(TalosCommands);
@@ -204,14 +204,14 @@ function readChat() {
 		    continue;
 		}
 		
-		var text = Message[1].data
+		var text = Message[1].data;
 		
 		if (text.match(/^: \^/)) {
 		    var User = Message[0].innerText;
 			var Command = /\^(\w+)/.exec(text)[1];
-    		var Args = text.substr(Command.length + 3).match(/(?:([^\s"]+)|"(.+)")/g);
+    		var Args = text.substr(Command.length + 3).match(/([^\s"]+)|"(.+?)"/g);
     		
-    		if (Args == null) {
+    		if (Args === null) {
     		    Args = [];
     		}
     		
@@ -223,7 +223,7 @@ function readChat() {
 			    }
 			}
 			
-			console.log(Command + " | " + /*FirstArgs + " |*/ "\"" + Args + "\"")
+			//console.log(Command + " | " + /*FirstArgs + " |*/ "\"" + Args + "\"");
 			
 			if (window.ADMIN_COMMANDS[Command] && isAdmin) {
                 log.warn("Admin command " + Command + " called by " + User);
@@ -312,7 +312,7 @@ function mainLoop() {
 
 function loggerInit() {
     var Logger = makeElement('script', {'type':'text/javascript',
-                                    'src': URL + 'log4javascript.js',
+                                    'src': MAIN_URL + 'log4javascript.js',
                                     'onload':'talosInit()'});
     document.head.appendChild(Logger);
 }
@@ -324,7 +324,7 @@ function talosInit() {
     });
     
     var TalosCommands = makeElement('script', {'type':'text/javascript',
-                                           'src': URL + 'Commands.js',
+                                           'src': MAIN_URL + 'Commands.js',
                                            'onload':'CommandsLoaded = true',
                                            'id':'CommandScript'});
     document.head.appendChild(TalosCommands);
@@ -347,7 +347,7 @@ function talosStart() {
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window[isCleared] = false;
     setInterval(function() {mainLoop();}, 1000);
-    setInterval(function() {window[timeoutTimer] = new Date().getTime(); getAdminNames();}, 60000*10);
+    setInterval(function() {window[timeoutTimer] = new Date().getTime(); getAdminNames();}, 1000*60*10);
 }
 
 loggerInit();
