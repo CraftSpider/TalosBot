@@ -12,7 +12,7 @@ VERSION = 2.0
 BOOT_TIME = datetime.datetime.now()
 ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"]
 EGG_DEV = "wundrweapon"
-STATIC_KEY = "" #Replace this with your key before running Talos
+STATIC_KEY = "MTk5OTY1NjEyNjkxMjkyMTYw.C9kj5g.zx63pLGVm7oJ_YOod1L2HLurm2g" #Replace this with your key before running Talos
 
 #
 #   Command Variables
@@ -73,6 +73,7 @@ async def choose(*input : str):
 
 @bot.command()
 async def wordwar(length : str): #Need to find way to wait without blocking threads. Command currently nonoperational
+    """Runs an X minute long word-war"""
     try:
         length = int(length)
     except length > 60 or length < 1:
@@ -93,9 +94,7 @@ async def joined(member : discord.Member):
 
 @bot.group(pass_context=True)
 async def generate(ctx):
-    """Checks if a subcommand is being invoked for
-    generation commands
-    """
+    """Generates a crawl or prompt"""
     if ctx.invoked_subcommand is None:
         await bot.say("Valid options are 'prompt' and 'crawl'.")
 
