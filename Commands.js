@@ -345,6 +345,16 @@ var UserCommands = {
             postMessage("I can't log you out if you aren't even logged in.");
         }
     },
+    "pronouns": function(args, user) {
+        var TalosUser = parse(getStorage(args[0]));
+        if (!TalosUser) {
+            postMessage("Sorry, that user doesn't exist");
+        } else if (TalosUser.pronouns) {
+            postMessage("Pronouns for " + args[0] + " are " + TalosUser.pronouns);
+        } else {
+            postMessage("User " + args[0] + " hasn't set any pronouns.");
+        }
+    }
     "reset": function(args, user) {
         if (loggedOn[user] && args[0]) {
             var TalosUser = parse(getStorage(loggedOn[user]));

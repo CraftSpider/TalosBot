@@ -284,7 +284,7 @@ function readPMs() {
         } else if (window.UserCommands[Command]) {
             log.info("User command " + Command + " called by " + User + " via PM");
             log.debug("With arguments \"" + Args + "\"");
-            window.Commands[Command](Args, User);
+            window.UserCommands[Command](Args, User);
         } else if (window.Commands[Command]) {
             log.info("Command " + Command + " called by " + User + " via PM");
             log.debug("With arguments \"" + Args + "\"");
