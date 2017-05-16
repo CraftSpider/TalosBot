@@ -208,7 +208,7 @@ function readChat() {
 		
 		var text = Message[1].data;
 		
-		if (text.match(/^: \^/)) {
+		if (text.match(/^: \^\w/)) {
 		    var User = Message[0].innerText;
 			var Command = /\^(\w+)/.exec(text)[1];
     		var Args = text.substr(Command.length + 3).match(/([^\s"]+)|"(.+?)"/g);
