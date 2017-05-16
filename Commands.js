@@ -354,7 +354,7 @@ var UserCommands = {
         } else {
             postMessage("User " + args[0] + " hasn't set any pronouns.");
         }
-    }
+    },
     "reset": function(args, user) {
         if (loggedOn[user] && args[0]) {
             var TalosUser = parse(getStorage(loggedOn[user]));
