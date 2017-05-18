@@ -194,7 +194,7 @@ function writingHour() {
 }
 
 function readChat() {
-    if (elementByID(messageContainer) ||
+    if (!elementByID(messageContainer) ||
             !elementByID(messageTable) ||
             !elementByID(messageTable).children ||
             elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
