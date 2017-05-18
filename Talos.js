@@ -194,66 +194,71 @@ function writingHour() {
 }
 
 function readChat() {
-    if (!elementByID(messageContainer)
-            && elementByID(messageTable)
-            && elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
+    if (elementByID(messageContainer) ||
+            !elementByID(messageTable) ||
+            !elementByID(messageTable).children ||
+            elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
         return;
     }
-	var Messages = elementByID(messageTable).children;
-	for (var i = 1; i < Messages.length; i++) {
-		var Message = Messages[i].childNodes;
-		if(!Message[1] || !Message[1].data) {
-		    continue;
-		}
-		
-		var text = Message[1].data;
-		
-		if (text.match(/^: \^\w/)) {
-		    var User = Message[0].innerText;
-			var Command = /\^(\w+)/.exec(text)[1];
-    		var Args = text.substr(Command.length + 3).match(/([^\s"]+)|"(.+?)"/g);
-    		
-    		if (Args === null) {
-    		    Args = [];
-    		}
-    		
-			var isAdmin = false;
-			for (var U in adminAliases) {
-			    if (User == adminAliases[U]) {
-			        isAdmin = true;
-			        break;
-			    }
-			}
-            
-			//console.log(Command + " | " + /*FirstArgs + " |*/ "\"" + Args + "\"");
-			
-			if (window.ADMIN_COMMANDS[Command] && isAdmin) {
-                log.warn("Admin command " + Command + " called by " + User);
-                log.debug("With arguments \"" + Args + "\"");
-                window.ADMIN_COMMANDS[Command](Args, User);
-            } else if (IsSleeping == 1) {
-                break;
-            } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
-                log.warn("Admin command " + Command + " ignored from " + User);
-                log.debug("With arguments \"" + Args + "\"");
-                postMessage("Sorry, that command is Admin only, and I don't recognize you!");
-            } else if (window.UserCommands[Command]){
-                log.info("User command " + Command + " called by " + User);
-                log.debug("With arguments \"" + Args + "\"");
-                window.UserCommands[Command](Args, User);
-            } else if (window.Commands[Command]) {
-                log.info("Command " + Command + " called by " + User);
-                log.debug("With arguments \"" + Args + "\"");
-                window.Commands[Command](Args);
-            } else {
-                log.debug("Failed to parse " + Command);
-                postMessage("Sorry, I don't understand that. May I suggest ^help?");
-            }
-		}
-	}
-	
-	elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
-	window[isCleared] = false;
+    try {
+        var Messages = elementByID(messageTable).children;
+        for (var i = 1; i < Messages.length; i++) {
+            try {
+                var Message = Messages[i].childNodes;
+                if(!Message[1] || !Message[1].data) {
+                    continue;
+                }
+                
+                var text = Message[1].data;
+                
+                if (text.match(/^: \^\w/)) {
+                    var User = Message[0].innerText;
+                    var Command = /\^(\w+)/.exec(text)[1];
+                    var Args = text.substr(Command.length + 3).match(/([^\s"]+)|"(.+?)"/g);
+                    
+                    if (Args === null) {
+                        Args = [];
+                    }
+                    
+                    var isAdmin = false;
+                    for (var U in adminAliases) {
+                        if (User == adminAliases[U]) {
+                            isAdmin = true;
+                            break;
+                        }
+                    }
+                    
+                    //console.log(Command + " | " + /*FirstArgs + " |*/ "\"" + Args + "\"");
+                    
+                    if (window.ADMIN_COMMANDS[Command] && isAdmin) {
+                        log.warn("Admin command " + Command + " called by " + User);
+                        log.debug("With arguments \"" + Args + "\"");
+                        window.ADMIN_COMMANDS[Command](Args, User);
+                    } else if (IsSleeping == 1) {
+                        break;
+                    } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
+                        log.warn("Admin command " + Command + " ignored from " + User);
+                        log.debug("With arguments \"" + Args + "\"");
+                        postMessage("Sorry, that command is Admin only, and I don't recognize you!");
+                    } else if (window.UserCommands[Command]){
+                        log.info("User command " + Command + " called by " + User);
+                        log.debug("With arguments \"" + Args + "\"");
+                        window.UserCommands[Command](Args, User);
+                    } else if (window.Commands[Command]) {
+                        log.info("Command " + Command + " called by " + User);
+                        log.debug("With arguments \"" + Args + "\"");
+                        window.Commands[Command](Args);
+                    } else {
+                        log.debug("Failed to parse " + Command);
+                        postMessage("Sorry, I don't understand that. May I suggest ^help?");
+                    }
+                }
+            } catch (Exception) {}
+        }
+    } finally {
+        elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
+        window[isCleared] = false;
+    }
 }
 
 function readPMs() {
