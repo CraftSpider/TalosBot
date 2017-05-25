@@ -262,10 +262,9 @@ function readChat() {
 }
 
 function readPMs() {
-    var ReceivedPM = elementByID(popup).innerHTML;
+    var Popup = elementByID(popup);
     var PMSearch = new RegExp('<!--' + PMTag + '-->.+>(.+)<\/em>.+' + textBox + '">\\^(\\w+)[\\W]?(?:\\s(.+))?(?:<\/div><p)');
-    if (ReceivedPM.match(PMSearch)) {
-        
+    if (Popup.innerHTML.match(PMSearch)) {
         var User = RegExp.$1;
         var Command = RegExp.$2;
         var Args = parseArgs(RegExp.$3);
@@ -300,6 +299,8 @@ function readPMs() {
             log.debug("Failed to parse " + Command + " via PM");
             privateMessage(User, "Sorry, I don't understand that. May I suggest ^help?");
         }
+    } else if (Popup.style.display == "") {
+        closePopup();
     }
 }
 
