@@ -1,4 +1,4 @@
-const MAIN_URL = "https://rawgit.com/CraftSpider/TalosBot/master/"; //URL to load Commands from
+const MAIN_URL = "https://rawgit.com/CraftSpider/TalosBot/init/"; //URL to load Commands from
 const API_URL = "https://rawgit.com/CraftSpider/ChatzyAPI/master/"; //URL to load ChatzyAPI from
 
 var requirements = [
@@ -16,7 +16,7 @@ var requirements = [
     },
     {
         'src': MAIN_URL + 'Talos.js',
-        'onload': null,
+        'onload': 'talosStart()',
         'id':'MainScript',
         'message': 'Talos Loading',
     },
