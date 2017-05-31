@@ -10,8 +10,6 @@ const BOOT_TIME = new Date();
 const WH_TIME = 0; //What hour Writing Hour should start at, in UTC
 const ADMIN_URL = "http://localhost:8000/Admins.txt"; //URL to pull admin list from
 const ADMINS = []; //Will be filled with Admin data from file
-const MAIN_URL = "https://rawgit.com/CraftSpider/TalosBot/master/"; //URL to load Commands from
-const API_URL = "https://rawgit.com/CraftSpider/ChatzyAPI/master/"; //URL to load ChatzyAPI from
 
 //Control variables
 var CommandsLoaded = false;
@@ -101,16 +99,6 @@ function removeStorage(key) {
     var oldItem = getStorage(key);
     window.localStorage.removeItem(key);
     return oldItem;
-}
-
-function makeElement(name, attrs) {
-    var ele = document.createElement(name);
-    for (var key in attrs) {
-        if (attrs.hasOwnProperty(key)) {
-            ele.setAttribute(key, attrs[key]);
-        }
-    }
-    return ele;
 }
 
 function reloadCommands() {
@@ -299,7 +287,7 @@ function readPMs() {
             log.debug("Failed to parse " + Command + " via PM");
             privateMessage(User, "Sorry, I don't understand that. May I suggest ^help?");
         }
-    } else if (Popup.style.display == "") {
+    } else if (Popup.style.display === "") {
         closePopup();
     }
 }
@@ -312,50 +300,17 @@ function mainLoop() {
     }
 }
 
-/*
-    -------------------
-    Initialization Code
-    -------------------
-*/
-
-function loggerInit() {
-    var Logger = makeElement('script', {'type':'text/javascript',
-                                    'src': MAIN_URL + 'log4javascript.js',
-                                    'onload':'talosInit()'});
-    document.head.appendChild(Logger);
-}
-
-function talosInit() {
+function talosStart() {
+    log.debug("Talos Starting");
+    
     readFile(ADMIN_URL).then(function(fileText){
         parseAdmins(fileText).forEach(function(item) {ADMINS.push(item);});
         Object.freeze(ADMINS);
+        getAdminNames();
     });
-    
-    var TalosCommands = makeElement('script', {'type':'text/javascript',
-                                           'src': MAIN_URL + 'Commands.js',
-                                           'onload':'CommandsLoaded = true',
-                                           'id':'CommandScript'});
-    document.head.appendChild(TalosCommands);
-    
-    var ChatzyAPI = makeElement('script', {'type':'text/javascript',
-                                       'src': API_URL + 'ChatzyWrappers.js',
-                                       'onload':'talosStart()'});
-    document.head.appendChild(ChatzyAPI);
-}
-
-function talosStart() {
-    log = log4javascript.getDefaultLogger();
-    localStorageAppender = new log4javascript.LocalStorageAppender();
-    log.addAppender(localStorageAppender);
-    
-    log.debug("Talos Booting");
-    
-    getAdminNames();
     
     elementByID(messageTable).innerHTML = '<P class="b">Previous messages parsed (press ESC to re-parse page)</P>\n';
     window[isCleared] = false;
     setInterval(function() {mainLoop();}, 1000);
     setInterval(function() {window[timeoutTimer] = new Date().getTime(); getAdminNames();}, 1000*60*10);
 }
-
-loggerInit();
