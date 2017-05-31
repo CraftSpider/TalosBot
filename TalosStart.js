@@ -50,54 +50,13 @@ function makeElement(name, attrs) {
     -------------------
 */
 
-/*function loggerInit() {
-    console.log("Logger Initializing");
-    
-    var Logger = makeElement('script', {'type':'text/javascript',
-                                    'src': MAIN_URL + 'log4javascript.js',
-                                    'onload':'buildLogger()',
-                                    'id':'LoggerScript'});
-    document.head.appendChild(Logger);
-}*/
-
 function buildLogger() {
     log = log4javascript.getDefaultLogger();
     localStorageAppender = new log4javascript.LocalStorageAppender();
     log.addAppender(localStorageAppender);
 }
 
-/*function wrapperInit() {
-    log.debug("ChatzyWrappers Loading");
-    
-    var ChatzyAPI = makeElement('script', {'type':'text/javascript',
-                                       'src': API_URL + 'ChatzyWrappers.js',
-                                       'onload':'commandsInit()',
-                                       'id':'ChatzyWrappers'});
-    document.head.appendChild(ChatzyAPI);
-}
-
-function commandsInit() {
-    log.debug("Commands Loading");
-    
-    var TalosCommands = makeElement('script', {'type':'text/javascript',
-                                           'src': MAIN_URL + 'Commands.js',
-                                           'onload':'CommandsLoaded = true; talosInit()',
-                                           'id':'CommandScript'});
-    document.head.appendChild(TalosCommands);
-}
-
-function talosInit() {
-    log.debug("Talos Loading");
-    
-    var TalosMain = makeElement('script', {'type':'text/javascript',
-                                           'src': MAIN_URL + 'Talos.js',
-                                           'onload':'talosStart()',
-                                           'id':'MainScript'})
-    document.head.appendChild(TalosMain);
-}*/
-
 function init(req) {
-    console.log(req)
     if (req >= requirements.length) {
         return;
     }
