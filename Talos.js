@@ -252,7 +252,7 @@ function readChat() {
     console.log(!elementByID(messageContainer) + " " +
                 !elementByID(messageTable) + " " +
                 !elementByID(messageTable).children + " " +
-                elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)");
+                (elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)"));
     if (!elementByID(messageContainer) ||
             !elementByID(messageTable) ||
             !elementByID(messageTable).children ||
