@@ -249,13 +249,9 @@ function writingHour() {
  * And passes those on to the ADMIN_COMMANDS, UserCommands, or Commands dict in that precedence.
  */
 function readChat() {
-    console.log(!elementByID(messageContainer) + " " +
-                !elementByID(messageTable) + " " +
-                !elementByID(messageTable).children + " " +
-                (elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)"));
-    if (!elementByID(messageContainer) ||
+    if ((!elementByID(messageContainer) ||
             !elementByID(messageTable) ||
-            !elementByID(messageTable).children ||
+            !elementByID(messageTable).children) &&
             elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
         return;
     }
