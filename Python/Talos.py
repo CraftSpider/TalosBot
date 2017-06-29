@@ -4,6 +4,7 @@ import random
 import logging
 import datetime
 import time
+import asyncio
 
 #
 #   Constants
@@ -12,7 +13,7 @@ VERSION = 2.0
 BOOT_TIME = datetime.datetime.now()
 ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"]
 EGG_DEV = "wundrweapon"
-STATIC_KEY = "MTk5OTY1NjEyNjkxMjkyMTYw.C9kj5g.zx63pLGVm7oJ_YOod1L2HLurm2g" #Replace this with your key before running Talos
+STATIC_KEY = "MzMwMDYxOTk3ODQyNjI4NjIz.DDbiUQ.wFtGjEv1rqOwGdRFW7neEgCUYC8" #Replace this with your key before running Talos
 
 #
 #   Command Variables
@@ -65,14 +66,12 @@ async def roll(dice : str):
 @bot.command(description='For when you wanna settle the score some other way')
 async def choose(*input : str):
     """Chooses between multiple choices."""
-    result =  " ".join(input)
-    await bot.say("I'm choosing between: " + result + ".")
-    choices = result.split(", ")
-    
-    await bot.say(random.choice(choices))
+    logging.info(input)
+    await bot.say("I'm choosing between: " + ", ".join(input) + ".")
+    await bot.say(random.choice(input).strip())
 
 @bot.command()
-async def wordwar(length : str): #Need to find way to wait without blocking threads. Command currently nonoperational
+async def wordwar(length : str):
     """Runs an X minute long word-war"""
     try:
         length = int(length)
@@ -82,8 +81,9 @@ async def wordwar(length : str): #Need to find way to wait without blocking thre
     except Exception:
         await bot.say("Please specify the length of your word war (in minutes).")
         return
-    
+        
     await bot.say("Word War for " + str(length) + " minutes.")
+    await asyncio.sleep(length * 60)
     await bot.say("Word War Over")
     
 
