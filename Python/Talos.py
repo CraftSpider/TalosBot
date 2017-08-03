@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import logging
 import datetime
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 
 startup_extensions = ["Commands", "UserCommands", "AdminCommands"]
@@ -11,9 +13,9 @@ startup_extensions = ["Commands", "UserCommands", "AdminCommands"]
 #
 VERSION = 2.0
 BOOT_TIME = datetime.datetime.now()
-ADMINS = ["Dino", "α|CraftSpider|Ω", "HiddenStorys"]
 EGG_DEV = "wundrweapon"
-STATIC_KEY = "MzMwMDYxOTk3ODQyNjI4NjIz.DFvCvw.w8azTi_Hf8wyB4LeaIVZqwXIln4" #Replace this with your key before running Talos
+# Replace this with your key before running Talos
+STATIC_KEY = "MzMwMDYxOTk3ODQyNjI4NjIz.DFvCvw.w8azTi_Hf8wyB4LeaIVZqwXIln4"
 
 #
 #   Command Variables
@@ -24,8 +26,28 @@ is_sleeping = 0
 
 logging.basicConfig(level=logging.INFO)
 
+
+def handle_text():
+    while input() != "quit":
+        pass
+    bot.stop()
+
+
+class Talos(commands.Bot):
+
+    def __init__(self, command_prefix, **options):
+        super().__init__(command_prefix, **options)
+
+    def stop(self):
+        try:
+            self.loop.run_until_complete(self.logout())
+        except Exception as e:
+            pass
+
+
 description = '''Greetings. I'm Talos, chat helper. My commands are:'''
-bot = commands.Bot(command_prefix='^', description=description)
+bot = Talos(command_prefix='^', description=description)
+
 
 @bot.event
 async def on_ready():
@@ -42,4 +64,9 @@ if __name__ == "__main__":
         except Exception as e:
             exc = '{}: {}'.format(type(e).__name__, e)
             logging.info('Failed to load extension {}\n{}'.format(extension, exc))
-    bot.run(STATIC_KEY)
+    executor = ThreadPoolExecutor(2)
+    asyncio.ensure_future(bot.loop.run_in_executor(executor, handle_text))
+    try:
+        bot.run(STATIC_KEY)
+    finally:
+        print("Talos Exiting")

@@ -8,7 +8,7 @@ class UserCommands:
         self.bot = bot
 
     @commands.command(pass_context=True)
-    async def color(self, ctx, color : str):
+    async def color(self, ctx, color: str):
         color_role = None
         if color.startswith("#") and len(color) == 7:
             for role in ctx.message.author.roles:
@@ -20,7 +20,8 @@ class UserCommands:
             if color_role is not None:
                 await self.bot.add_roles(ctx.message.author, color_role)
             else:
-                color_role = await self.bot.create_role(ctx.message.server, name="<TALOS COLOR>", color=discord.Colour(int(color[1:], 16)))
+                color_role = await self.bot.create_role(ctx.message.server, name="<TALOS COLOR>",
+                                                        color=discord.Colour(int(color[1:], 16)))
                 await self.bot.move_role(ctx.message.server, color_role, ctx.message.server.me.top_role.position - 1)
                 await self.bot.add_roles(ctx.message.author, color_role)
             await self.bot.say("{0.name}'s color changed to {1}!".format(ctx.message.author, color))
