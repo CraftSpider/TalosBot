@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import Python.Talos
 import asyncio
 import random
 import datetime
@@ -62,6 +63,11 @@ class Commands:
                            \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.")
 
     @commands.command()
+    async def version(self):
+        """Returns Talos version."""
+        await self.bot.say("Version: {0}".format(Python.Talos.VERSION))
+
+    @commands.command()
     async def roll(self, dice: str):
         """Rolls a dice in NdN format."""
         try:
@@ -98,7 +104,12 @@ class Commands:
 
         if start:
             try:
-                start = int(start[1:])
+                if start[0] == ":":
+                    start = int(start[1:])
+                elif start[0].isnumeric():
+                    start = int(start)
+                else:
+                    raise Exception
             except Exception:
                 await self.bot.say("Start time format broken. Starting now.")
                 start = ""
@@ -209,6 +220,9 @@ class Commands:
         """End the whole PW, if one is currently running."""
         if active_pw[ctx.message.server.id] is None:
             await self.bot.say("There's currently no PW going on. Would you like to **create** one?")
+        elif not active_pw[ctx.message.server.id].get_started():
+            await self.bot.say("Deleting un-started PW.")
+            active_pw[ctx.message.server.id] = None
         else:
             await self.bot.say("Ending PW.")
             active_pw[ctx.message.server.id].finish()

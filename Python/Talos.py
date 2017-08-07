@@ -4,34 +4,34 @@ from discord.ext.commands.view import StringView
 import logging
 import datetime
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-
-
-startup_extensions = ["Commands", "UserCommands", "AdminCommands"]
+# from concurrent.futures import ThreadPoolExecutor
+# import threading
 
 #
 #   Constants
 #
-VERSION = 2.0
+VERSION = "2.1.1"
 BOOT_TIME = datetime.datetime.now()
-EGG_DEV = "wundrweapon"
+EGG_DEV = "wundrweapon#4856"
+STARTUP_EXTENSIONS = ["Commands", "UserCommands", "AdminCommands"]
+
+#
+#   Command Vars
+#
+is_sleeping = 0
+
 # Replace this with your key before running Talos
 STATIC_KEY = "MzMwMDYxOTk3ODQyNjI4NjIz.DFvCvw.w8azTi_Hf8wyB4LeaIVZqwXIln4"
 
-#
-#   Command Variables
-#
-num_wws = 0
-max_wws = 10
-is_sleeping = 0
-
+# Initiate Logging
 logging.basicConfig(level=logging.INFO)
 
 
-def handle_text():
-    while input() != "quit":
-        pass
-    bot.stop()
+# def handle_text():
+#     while input() != "quit":
+#         pass
+#     print("quitting")
+#     bot.stop()
 
 
 class Talos(commands.Bot):
@@ -79,14 +79,14 @@ async def on_ready():
 
 
 if __name__ == "__main__":
-    for extension in startup_extensions:
+    for extension in STARTUP_EXTENSIONS:
         try:
             bot.load_extension(extension)
         except Exception as e:
             exc = '{}: {}'.format(type(e).__name__, e)
             logging.info('Failed to load extension {}\n{}'.format(extension, exc))
-    executor = ThreadPoolExecutor(2)
-    asyncio.ensure_future(bot.loop.run_in_executor(executor, handle_text))
+    # executor = ThreadPoolExecutor(2)
+    # bot.future = asyncio.ensure_future(bot.loop.run_in_executor(executor, handle_text))
     try:
         bot.run(STATIC_KEY)
     finally:
