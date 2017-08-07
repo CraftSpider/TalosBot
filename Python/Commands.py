@@ -81,6 +81,7 @@ class Commands:
 
     @commands.command()
     async def time(self):
+        """Prints out the current time in UTC, HH:MM:SS format"""
         await self.bot.say("It's time to get a watch. {0}".format(datetime.datetime.utcnow().strftime("%H:%M:%S")))
     
     @commands.command(aliases=["ww", "WW"])

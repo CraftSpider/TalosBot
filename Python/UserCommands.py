@@ -9,6 +9,7 @@ class UserCommands:
 
     @commands.command(pass_context=True)
     async def color(self, ctx, color: str):
+        """Changes the User's color, if Talos has role permissions."""
         color_role = None
         if color.startswith("#") and len(color) == 7:
             for role in ctx.message.author.roles:
