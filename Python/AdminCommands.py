@@ -1,5 +1,6 @@
 import discord
 import logging
+import asyncio
 from discord.ext import commands
 from collections import defaultdict
 
@@ -41,7 +42,15 @@ class AdminCommands:
     @admin_only()
     async def playing(self, *playing: str):
         """Changes the game Talos is playing"""
-        await self.bot.change_presence(game=discord.Game(name=" ".join(map(str, playing)), type="0"))
+        game = " ".join(map(str, playing))
+        await self.bot.change_presence(game=discord.Game(name=game, type="0"))
+        await self.bot.say("Now playing {0}".format(game))
+
+    @commands.command(hidden=True)
+    @admin_only()
+    async def stop(self):
+        await self.bot.say("Et Tu, Brute?")
+        await self.bot.logout()
 
     @commands.command(hidden=True)
     @admin_only()

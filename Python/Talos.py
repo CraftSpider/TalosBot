@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands.view import StringView
 import logging
 import datetime
 import asyncio
@@ -43,6 +44,26 @@ class Talos(commands.Bot):
             self.loop.run_until_complete(self.logout())
         except Exception as e:
             pass
+
+    @asyncio.coroutine
+    def on_message(self, message):
+        yield from self.process_commands(message)
+
+        view = StringView(message.content)
+        prefix = yield from self._get_prefix(message)
+        invoked_prefix = prefix
+
+        if not isinstance(prefix, (tuple, list)):
+            if not view.skip_string(prefix):
+                return
+        else:
+            invoked_prefix = discord.utils.find(view.skip_string, prefix)
+            if invoked_prefix is None:
+                return
+
+        invoker = view.get_word()
+        if invoker not in self.commands and self.is_logged_in:
+            yield from self.send_message(message.channel, "Sorry, I don't understand \"{0}\". May I suggest ^help?".format(invoker))
 
 
 description = '''Greetings. I'm Talos, chat helper. My commands are:'''

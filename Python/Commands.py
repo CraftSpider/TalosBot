@@ -2,6 +2,14 @@ import discord
 from discord.ext import commands
 import asyncio
 import random
+import datetime
+from collections import defaultdict
+
+active_pw = defaultdict(lambda: None)
+
+
+def sort_mem(member):
+    return member.end - member.start
 
 
 class Commands:
@@ -70,23 +78,42 @@ class Commands:
         """Chooses between multiple choices."""
         await self.bot.say("I'm choosing between: " + ", ".join(choices) + ".")
         await self.bot.say(random.choice(choices).strip())
-    
+
     @commands.command()
-    async def wordwar(self, length: str):
+    async def time(self):
+        await self.bot.say("It's time to get a watch. {0}".format(datetime.datetime.utcnow().strftime("%H:%M:%S")))
+    
+    @commands.command(aliases=["ww", "WW"])
+    async def wordwar(self, length: str="", start: str=""):
         """Runs an X minute long word-war"""
         try:
             length = float(length)
-        except length > 60 or length < 1:
-            await self.bot.say("Please choose a length between 1 and 60 minutes.")
-            return
         except Exception:
             await self.bot.say("Please specify the length of your word war (in minutes).")
             return
-            
-        await self.bot.say("Word War for " + str(length) + " minutes.")
+        if length > 60 or length < 1:
+            await self.bot.say("Please choose a length between 1 and 60 minutes.")
+            return
+
+        if start:
+            try:
+                start = int(start[1:])
+            except Exception:
+                await self.bot.say("Start time format broken. Starting now.")
+                start = ""
+            if start != "" and (start > 59 or start < 0):
+                await self.bot.say("Please specify a start time in the range of 0 to 59.")
+                return
+
+        if start:
+            dif = abs(datetime.datetime.utcnow() - datetime.datetime.utcnow().replace(minute=start, second=0))
+            await self.bot.say("Starting WW at :{0:02}".format(start))
+            await asyncio.sleep(dif.total_seconds())
+        minutes = "minutes" if length != 1 else "minute"
+        await self.bot.say("Word War for {0:g} {1}.".format(length, minutes))
         await asyncio.sleep(length * 60)
         await self.bot.say("Word War Over")
-        
+
     @commands.command()
     async def credits(self):
         """Giving credit where it is due"""
@@ -120,6 +147,182 @@ class Commands:
         """Generates a prompt"""
         await self.bot.say("A story about a " + random.choice(self.adjective) + " " + random.choice(self.noun) +
                            " who must " + random.choice(self.goal) + " while " + random.choice(self.obstacle) + ".")
+
+    @commands.group(pass_context=True, aliases=["pw", "PW"])
+    async def productivitywar(self, ctx):
+        """Commands for a productivity war."""
+        if ctx.invoked_subcommand is None:
+            await self.bot.say("Valid options are 'create', 'join', 'start', 'leave', and 'end'.")
+
+    @productivitywar.command(name='create', pass_context=True)
+    async def _create(self, ctx):
+        """Begins a new PW, if one isn't already running."""
+        if active_pw[ctx.message.server.id] is not None:
+            await self.bot.say("There's already a PW going on. Would you like to **join**?")
+        else:
+            await self.bot.say("Creating a new PW.")
+            active_pw[ctx.message.server.id] = PW()
+            active_pw[ctx.message.server.id].join(ctx.message.author)
+
+    @productivitywar.command(name='join', pass_context=True)
+    async def _join(self, ctx):
+        """Join a currently running PW, if you aren't already in it."""
+        if active_pw[ctx.message.server.id] is not None:
+            if active_pw[ctx.message.server.id].join(ctx.message.author):
+                await self.bot.say("User {0} joined the PW.".format(ctx.message.author))
+            else:
+                await self.bot.say("You're already in this PW.")
+        else:
+            await self.bot.say("No PW to join. Maybe you want to **create** one?")
+
+    @productivitywar.command(name='start', pass_context=True)
+    async def _start(self, ctx):
+        """Start a PW that isn't yet begun."""
+        if active_pw[ctx.message.server.id] is not None:
+            if not active_pw[ctx.message.server.id].get_started():
+                await self.bot.say("Starting PW")
+                active_pw[ctx.message.server.id].begin()
+            else:
+                await self.bot.say("PW has already started! Would you like to **join**?")
+        else:
+            await self.bot.say("No PW to start. Maybe you want to **create** one?")
+
+    @productivitywar.command(name='leave', pass_context=True)
+    async def _leave(self, ctx):
+        """End your involvement in a PW, if you're the last person, the whole thing ends."""
+        if active_pw[ctx.message.server.id] is not None:
+            leave = active_pw[ctx.message.server.id].leave(ctx.message.author)
+            if leave == 0:
+                await self.bot.say("User {0} left the PW.".format(ctx.message.author))
+            elif leave == 1:
+                await self.bot.say("You aren't in the PW! Would you like to **join**?")
+            elif leave == 2:
+                await self.bot.say("You've already left this PW! Are you going to **end** it?")
+            if active_pw[ctx.message.server.id].get_finished():
+                await self._end.invoke(ctx)
+        else:
+            await self.bot.say("No PW to start. Maybe you want to **create** one?")
+
+    @productivitywar.command(name='end', pass_context=True)
+    async def _end(self, ctx):
+        """End the whole PW, if one is currently running."""
+        if active_pw[ctx.message.server.id] is None:
+            await self.bot.say("There's currently no PW going on. Would you like to **create** one?")
+        else:
+            await self.bot.say("Ending PW.")
+            active_pw[ctx.message.server.id].finish()
+            cur_pw = active_pw[ctx.message.server.id]
+            out = "```"
+            out += "Start: {0}\n".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
+            out += "End: {0}\n".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
+            out += "Total: {0}\n".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
+            out += "Times:\n"
+            cur_pw.members.sort(key=sort_mem, reverse=True)
+            for member in cur_pw.members:
+                out += "    {0} - {1}\n".format(member.user, member.end.replace(microsecond=0) - member.start.replace(microsecond=0))
+            out += "```"
+            await self.bot.say(out)
+            active_pw[ctx.message.server.id] = None
+
+    @productivitywar.command(name='dump', pass_context=True, hidden=True)
+    async def _dump(self, ctx):
+        """Dumps info about the current state of a running PW"""
+        cur_pw = active_pw[ctx.message.server.id]
+        if cur_pw is None:
+            await self.bot.say("No PW currently running")
+            return
+        out = "```"
+        out += "Start: {0}\n".format(cur_pw.start)
+        out += "End: {0}\n".format(cur_pw.end)
+        out += "Members:\n"
+        for member in cur_pw.members:
+            out += "    {0} - {1} - {2}\n".format(member, member.start, member.end)
+        out += "```"
+        await self.bot.say(out)
+
+
+class PW:
+
+    def __init__(self):
+        self.start = None
+        self.end = None
+        self.members = []
+
+    def get_started(self):
+        return self.start is not None
+
+    def get_finished(self):
+        return self.end is not None
+
+    def begin(self):
+        self.start = datetime.datetime.utcnow()
+        for member in self.members:
+            if not member.get_started():
+                member.begin(self.start)
+
+    def finish(self):
+        self.end = datetime.datetime.utcnow()
+        for member in self.members:
+            if not member.get_finished():
+                member.finish(self.end)
+
+    def join(self, member):
+        if PW_Member(member) not in self.members:
+            new_mem = PW_Member(member)
+            if self.get_started():
+                new_mem.begin(datetime.datetime.utcnow())
+            self.members.append(new_mem)
+            return True
+        else:
+            return False
+
+    def leave(self, member):
+        if PW_Member(member) in self.members:
+            for user in self.members:
+                if user == PW_Member(member):
+                    if user.get_finished():
+                        return 2
+                    else:
+                        user.finish(datetime.datetime.utcnow())
+            for user in self.members:
+                if not user.get_finished():
+                    return 0
+            self.finish()
+            return 0
+        else:
+            return 1
+
+
+class PW_Member:
+
+    def __init__(self, user):
+        self.user = user
+        self.start = None
+        self.end = None
+
+    def __str__(self):
+        return str(self.user)
+
+    def __eq__(self, other):
+        return isinstance(other, PW_Member) and self.user == other.user
+
+    def get_len(self):
+        if self.end is None:
+            return -1
+        else:
+            return self.start - self.end
+
+    def get_started(self):
+        return self.start is not None
+
+    def get_finished(self):
+        return self.end is not None
+
+    def begin(self, time):
+        self.start = time
+
+    def finish(self, time):
+        self.end = time
 
 
 def setup(bot):
