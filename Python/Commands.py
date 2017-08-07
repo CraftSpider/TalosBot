@@ -1,10 +1,14 @@
 import discord
 from discord.ext import commands
-import Python.Talos
 import asyncio
 import random
 import datetime
 from collections import defaultdict
+
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from Python import Talos
 
 active_pw = defaultdict(lambda: None)
 
@@ -65,7 +69,7 @@ class Commands:
     @commands.command()
     async def version(self):
         """Returns Talos version."""
-        await self.bot.say("Version: {0}".format(Python.Talos.VERSION))
+        await self.bot.say("Version: {0}".format(Talos.VERSION))
 
     @commands.command()
     async def roll(self, dice: str):
