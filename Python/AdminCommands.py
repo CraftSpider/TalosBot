@@ -1,14 +1,12 @@
 import discord
 import logging
-import asyncio
 from discord.ext import commands
 from collections import defaultdict
 
-logging.basicConfig(level=logging.INFO)
-
-
-ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900"]
+ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "hiddenstorys#3008"]
 ops = defaultdict(lambda: [])
+
+logging.basicConfig(level=logging.INFO)
 
 
 def admin_check():
@@ -36,7 +34,7 @@ class AdminCommands:
     async def nick(self, ctx, nick: str):
         """Changes Talos nickname"""
         await self.bot.change_nickname(ctx.message.server.me, nick)
-        await self.bot.say("Nickname changed to {0}".format(nick))
+        await self.bot.say("Nickname changed to {}".format(nick))
 
     @commands.command(hidden=True)
     @admin_only()
@@ -44,11 +42,12 @@ class AdminCommands:
         """Changes the game Talos is playing"""
         game = " ".join(map(str, playing))
         await self.bot.change_presence(game=discord.Game(name=game, type="0"))
-        await self.bot.say("Now playing {0}".format(game))
+        await self.bot.say("Now playing {}".format(game))
 
     @commands.command(hidden=True)
     @admin_only()
     async def stop(self):
+        """Stops Talos running and logs it out."""
         await self.bot.say("Et Tu, Brute?")
         await self.bot.logout()
 
@@ -58,7 +57,7 @@ class AdminCommands:
         """Changes Talos nickname in all servers"""
         for server in self.bot.servers:
             await self.bot.change_nickname(server.me, nick)
-        await self.bot.say("Nickname universally changed to {0}".format(nick))
+        await self.bot.say("Nickname universally changed to {}".format(nick))
 
     @commands.command(hidden=True)
     @admin_only()
@@ -66,9 +65,9 @@ class AdminCommands:
         """Displays all operators everywhere"""
         out = "```"
         for key in ops:
-            out += "Server: {0}\n".format(key)
+            out += "Server: {}\n".format(key)
             for user in ops[key]:
-                out += "    {0}\n".format(user)
+                out += "    {}\n".format(user)
         if out != "```":
             out += "```"
             await self.bot.say(out)
@@ -82,7 +81,7 @@ class AdminCommands:
         if ops[ctx.message.server.id]:
             out = "```"
             for op in ops[ctx.message.server.id]:
-                out += "{0}\n".format(op)
+                out += "{}\n".format(op)
             out += "```"
             await self.bot.say(out)
         else:
@@ -92,16 +91,21 @@ class AdminCommands:
     @admin_check()
     async def add_op(self, ctx, member: discord.Member):
         """Adds a new operator user"""
-        ops[ctx.message.server.id].append(str(member))
-        await self.bot.say("Opped {0.name}!".format(member))
+        if str(member) not in ops[ctx.message.server.id]:
+            ops[ctx.message.server.id].append(str(member))
+            await self.bot.say("Opped {0.name}!".format(member))
+            await self.bot.save()
+        else:
+            await self.bot.say("That user is already an op!")
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["de_op"])
     @admin_check()
     async def remove_op(self, ctx, member: discord.Member):
         """Removes an operator user"""
         try:
             ops[ctx.message.server.id].remove(str(member))
             await self.bot.say("De-opped {0.name}".format(member))
+            await self.bot.save()
         except ValueError:
             await self.bot.say("That person isn't an op!")
 

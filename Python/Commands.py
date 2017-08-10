@@ -5,11 +5,6 @@ import random
 import datetime
 from collections import defaultdict
 
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from Python import Talos
-
 active_pw = defaultdict(lambda: None)
 
 
@@ -69,18 +64,24 @@ class Commands:
     @commands.command()
     async def version(self):
         """Returns Talos version."""
-        await self.bot.say("Version: {0}".format(Talos.VERSION))
+        await self.bot.say("Version: {0}".format(Python.Talos.VERSION))
 
     @commands.command()
     async def roll(self, dice: str):
         """Rolls a dice in NdN format."""
         try:
-            rolls, limit = map(int, dice.split('d'))
-        except Exception:
+            rolls, limit = map(int, dice.lower().split('d'))
+        except ValueError:
             await self.bot.say('Format has to be in NdN!')
             return
-    
-        result = ', '.join(str(random.randint(1, limit)) for _ in range(rolls))
+        try:
+            result = ', '.join(str(random.randint(1, limit)) for _ in range(rolls))
+        except ValueError:
+            await self.bot.say("Minimum second value is 1")
+            return
+        if result is "":
+            await self.bot.say("Minimum first value is 1")
+            return
         await self.bot.say(result)
         
     @commands.command(description='For when you wanna settle the score some other way')
