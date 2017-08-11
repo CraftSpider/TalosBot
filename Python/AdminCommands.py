@@ -3,12 +3,24 @@ import logging
 from discord.ext import commands
 from collections import defaultdict
 
+
+#
+# Admin Command Variables
+#
+
+# Hardcoded Admin List
 ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "hiddenstorys#3008"]
+# Ops list. Filled on bot load, altered through the add and remove op commands.
 ops = defaultdict(lambda: [])
+# Permissions list. Filled on bot load, altered
+perms = {}
 
 logging.basicConfig(level=logging.INFO)
 
 
+#
+# Admin Command Checks
+#
 def admin_check():
     def predicate(ctx):
         return str(ctx.message.author) in ADMINS or len(ops[ctx.message.server.id]) == 0\
@@ -22,6 +34,9 @@ def admin_only():
     return commands.check(predicate)
 
 
+#
+# Admin Cog Class
+#
 class AdminCommands:
     """These commands can only be used by Admins or Ops, and will work at any time.
     If no Ops exist, anyone can use op commands"""

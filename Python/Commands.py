@@ -7,6 +7,8 @@ from collections import defaultdict
 
 active_pw = defaultdict(lambda: None)
 
+perms = {}
+
 
 def sort_mem(member):
     return member.end - member.start
@@ -134,7 +136,7 @@ class Commands:
     @commands.command()
     async def credits(self):
         """Giving credit where it is due"""
-        await self.bot.say("Primary Developers: CraftSpider, Dino.\nOther contributors: Wundrweapon, HiddenStorys")
+        await self.bot.say("Primary Developers: CraftSpider, Dino.\nOther contributors: Wundrweapon, HiddenStorys\nArtist: Misty Tynan")
     
     @commands.command()
     async def joined(self, member: discord.Member):
