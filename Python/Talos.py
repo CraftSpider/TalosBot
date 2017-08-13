@@ -1,3 +1,9 @@
+"""
+    Talos for Discord
+    A python based bot for discord, good for writing and a couple of minor shenanigans.
+
+    Author: CraftSpider
+"""
 import discord
 import traceback
 import sys
@@ -12,7 +18,7 @@ import asyncio
 #
 #   Constants
 #
-VERSION = "2.1.1"
+VERSION = "2.2.1"
 BOOT_TIME = datetime.datetime.now()
 EGG_DEV = "wundrweapon#4856"
 STARTUP_EXTENSIONS = ["Commands", "UserCommands", "AdminCommands"]
@@ -40,6 +46,8 @@ logging.basicConfig(level=logging.INFO)
 
 class Talos(commands.Bot):
 
+    VERSION = VERSION
+
     def __init__(self, command_prefix, **options):
         super().__init__(command_prefix, **options)
 
@@ -55,18 +63,17 @@ class Talos(commands.Bot):
     @asyncio.coroutine
     async def on_ready(self):
         print('| Now logged in as')
-        print('| ' + self.user.name)
-        print('| ' + self.user.id)
+        print('| {}'.format(self.user.name))
+        print('| {}'.format(self.user.id))
         await bot.change_presence(game=discord.Game(name="Taking over the World", type="0"))
 
     @asyncio.coroutine
-    def on_command_error(self, exception, context):
+    def on_command_error(self, ctx, exception):
         if type(exception) == discord.ext.commands.CommandNotFound:
-            yield from self.send_message(context.message.channel,
-                                         "Sorry, I don't understand \"{}\". May I suggest ^help?"
-                                         .format(context.invoked_with))
-        print('Ignoring exception in command {}'.format(context.command), file=sys.stderr)
-        traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
+            yield from ctx.send("Sorry, I don't understand \"{}\". May I suggest ^help?".format(ctx.invoked_with))
+        else:
+            print('Ignoring exception in command {}'.format(ctx.command), file=sys.stderr)
+            traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
 
 def load_file(filename):

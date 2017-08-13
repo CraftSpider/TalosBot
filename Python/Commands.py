@@ -1,3 +1,9 @@
+"""
+    Commands cog for Talos
+    Holds all commands usable by any user, and a couple of classes relevant to those commands.
+
+    Author: CraftSpider
+"""
 import discord
 from discord.ext import commands
 import asyncio
@@ -11,12 +17,17 @@ perms = {}
 
 
 def sort_mem(member):
+    """Function key for sorting PW_Member objects."""
     return member.end - member.start
 
 
 class Commands:
     """These commands can be used by anyone, as long as Talos is awake.\nThey don't care who is using them."""
+
+    __slots__ = ['bot']
+
     def __init__(self, bot):
+        """Initialize the Commands cog. Takes in an instance of bot to use while running."""
         self.bot = bot
     
     #
@@ -57,56 +68,57 @@ class Commands:
     #
     
     @commands.command()
-    async def information(self):
+    async def information(self, ctx):
         """Gives a short blurb about Talos."""
-        await self.bot.say("Hello! I'm Talos, official PtP mod-bot.\
+        await ctx.send("Hello! I'm Talos, official PtP mod-bot.\
                            \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
                            \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.")
 
     @commands.command()
-    async def version(self):
+    async def version(self, ctx):
         """Returns Talos version."""
-        await self.bot.say("Version: {0}".format(Python.Talos.VERSION))
+        await ctx.send("Version: {0}".format(self.bot.VERSION))
 
     @commands.command()
-    async def roll(self, dice: str):
+    async def roll(self, ctx, dice: str):
         """Rolls a dice in NdN format."""
         try:
             rolls, limit = map(int, dice.lower().split('d'))
         except ValueError:
-            await self.bot.say('Format has to be in NdN!')
+            await ctx.send('Format has to be in NdN!')
             return
         try:
             result = ', '.join(str(random.randint(1, limit)) for _ in range(rolls))
         except ValueError:
-            await self.bot.say("Minimum second value is 1")
+            await ctx.send("Minimum second value is 1")
             return
         if result is "":
-            await self.bot.say("Minimum first value is 1")
+            await ctx.send("Minimum first value is 1")
             return
-        await self.bot.say(result)
+        await ctx.send(result)
         
-    @commands.command(description='For when you wanna settle the score some other way')
-    async def choose(self, *choices: str):
+    @commands.command(description='For when you wanna settle the score some other way',
+                      usage="[choice 1] [choice 2] ...")
+    async def choose(self, ctx, *choices: str):
         """Chooses between multiple choices."""
-        await self.bot.say("I'm choosing between: " + ", ".join(choices) + ".")
-        await self.bot.say(random.choice(choices).strip())
+        await ctx.send("I'm choosing between: " + ", ".join(choices) + ".")
+        await ctx.send(random.choice(choices).strip())
 
     @commands.command()
-    async def time(self):
+    async def time(self, ctx):
         """Prints out the current time in UTC, HH:MM:SS format"""
-        await self.bot.say("It's time to get a watch. {0}".format(datetime.datetime.utcnow().strftime("%H:%M:%S")))
+        await ctx.send("It's time to get a watch. {0}".format(datetime.datetime.utcnow().strftime("%H:%M:%S")))
     
     @commands.command(aliases=["ww", "WW"])
-    async def wordwar(self, length: str="", start: str=""):
+    async def wordwar(self, ctx, length: str="", start: str=""):
         """Runs an X minute long word-war"""
         try:
             length = float(length)
         except Exception:
-            await self.bot.say("Please specify the length of your word war (in minutes).")
+            await ctx.send("Please specify the length of your word war (in minutes).")
             return
         if length > 60 or length < 1:
-            await self.bot.say("Please choose a length between 1 and 60 minutes.")
+            await ctx.send("Please choose a length between 1 and 60 minutes.")
             return
 
         if start:
@@ -118,177 +130,192 @@ class Commands:
                 else:
                     raise Exception
             except Exception:
-                await self.bot.say("Start time format broken. Starting now.")
+                await ctx.send("Start time format broken. Starting now.")
                 start = ""
             if start != "" and (start > 59 or start < 0):
-                await self.bot.say("Please specify a start time in the range of 0 to 59.")
+                await ctx.send("Please specify a start time in the range of 0 to 59.")
                 return
 
         if start:
             dif = abs(datetime.datetime.utcnow() - datetime.datetime.utcnow().replace(minute=start, second=0))
-            await self.bot.say("Starting WW at :{0:02}".format(start))
+            await ctx.send("Starting WW at :{0:02}".format(start))
             await asyncio.sleep(dif.total_seconds())
         minutes = "minutes" if length != 1 else "minute"
-        await self.bot.say("Word War for {0:g} {1}.".format(length, minutes))
+        await ctx.send("Word War for {0:g} {1}.".format(length, minutes))
         await asyncio.sleep(length * 60)
-        await self.bot.say("Word War Over")
+        await ctx.send("Word War Over")
 
     @commands.command()
-    async def credits(self):
+    async def credits(self, ctx):
         """Giving credit where it is due"""
-        await self.bot.say("Primary Developers: CraftSpider, Dino.\nOther contributors: Wundrweapon, HiddenStorys\nArtist: Misty Tynan")
+        await ctx.send("Primary Developers: CraftSpider, Dino.\n"
+                       "Other contributors: Wundrweapon, HiddenStorys\n"
+                       "Artist: Misty Tynan")
     
     @commands.command()
-    async def joined(self, member: discord.Member):
+    async def joined(self, ctx, member: discord.Member):
         """Says when a member joined."""
-        await self.bot.say('{0.name} joined in {0.joined_at}'.format(member))
+        await ctx.send('{0.name} joined in {0.joined_at}'.format(member))
     
     @commands.command()
-    async def uptime(self):
+    async def uptime(self, ctx):
         """To figure out how long the bot has been online."""
         pass
     
-    @commands.group(pass_context=True)
+    @commands.group()
     async def generate(self, ctx):
         """Generates a crawl or prompt"""
         if ctx.invoked_subcommand is None:
-            await self.bot.say("Valid options are 'prompt' and 'crawl'.")
+            await ctx.send("Valid options are 'prompt' and 'crawl'.")
     
     @generate.command(name='crawl')
-    async def _crawl(self):
+    async def _crawl(self, ctx):
         """Generates a crawl"""
-        await self.bot.say("You enter the " + random.choice(self.place_adjective) + " " + random.choice(self.place) +
-                           ". Write " + str(random.randint(50, 500)) + " words as you " + random.choice(self.action) +
-                           ".")
+        place_adj = random.choice(self.place_adjective)
+        place = random.choice(self.place)
+        words = str(random.randint(50, 500))
+        action = random.choice(self.action)
+        await ctx.send("You enter the {} {}. Write {} words as you {}.".format(place_adj, place, words, action))
     
     @generate.command(name='prompt')
-    async def _prompt(self):
+    async def _prompt(self, ctx):
         """Generates a prompt"""
-        await self.bot.say("A story about a " + random.choice(self.adjective) + " " + random.choice(self.noun) +
-                           " who must " + random.choice(self.goal) + " while " + random.choice(self.obstacle) + ".")
+        adj = random.choice(self.adjective)
+        noun = random.choice(self.noun)
+        goal = random.choice(self.goal)
+        obstacle = random.choice(self.obstacle)
+        await ctx.send("A story about a {} {} who must {} while {}.".format(adj, noun, goal, obstacle))
 
-    @commands.group(pass_context=True, aliases=["pw", "PW"])
+    @commands.group(aliases=["pw", "PW"])
     async def productivitywar(self, ctx):
         """Commands for a productivity war."""
         if ctx.invoked_subcommand is None:
-            await self.bot.say("Valid options are 'create', 'join', 'start', 'leave', and 'end'.")
+            await ctx.send("Valid options are 'create', 'join', 'start', 'leave', and 'end'.")
 
-    @productivitywar.command(name='create', pass_context=True)
+    @productivitywar.command(name='create')
     async def _create(self, ctx):
         """Begins a new PW, if one isn't already running."""
-        if active_pw[ctx.message.server.id] is not None:
-            await self.bot.say("There's already a PW going on. Would you like to **join**?")
+        if active_pw[ctx.guild.id] is not None:
+            await ctx.send("There's already a PW going on. Would you like to **join**?")
         else:
-            await self.bot.say("Creating a new PW.")
-            active_pw[ctx.message.server.id] = PW()
-            active_pw[ctx.message.server.id].join(ctx.message.author)
+            await ctx.send("Creating a new PW.")
+            active_pw[ctx.guild.id] = PW()
+            active_pw[ctx.guild.id].join(ctx.author)
 
-    @productivitywar.command(name='join', pass_context=True)
+    @productivitywar.command(name='join')
     async def _join(self, ctx):
         """Join a currently running PW, if you aren't already in it."""
-        if active_pw[ctx.message.server.id] is not None:
-            if active_pw[ctx.message.server.id].join(ctx.message.author):
-                await self.bot.say("User {0} joined the PW.".format(ctx.message.author))
+        if active_pw[ctx.guild.id] is not None:
+            if active_pw[ctx.guild.id].join(ctx.author):
+                await ctx.send("User {} joined the PW.".format(ctx.author))
             else:
-                await self.bot.say("You're already in this PW.")
+                await ctx.send("You're already in this PW.")
         else:
-            await self.bot.say("No PW to join. Maybe you want to **create** one?")
+            await ctx.send("No PW to join. Maybe you want to **create** one?")
 
-    @productivitywar.command(name='start', pass_context=True)
+    @productivitywar.command(name='start')
     async def _start(self, ctx):
         """Start a PW that isn't yet begun."""
-        if active_pw[ctx.message.server.id] is not None:
-            if not active_pw[ctx.message.server.id].get_started():
-                await self.bot.say("Starting PW")
-                active_pw[ctx.message.server.id].begin()
+        if active_pw[ctx.guild.id] is not None:
+            if not active_pw[ctx.guild.id].get_started():
+                await ctx.send("Starting PW")
+                active_pw[ctx.guild.id].begin()
             else:
-                await self.bot.say("PW has already started! Would you like to **join**?")
+                await ctx.send("PW has already started! Would you like to **join**?")
         else:
-            await self.bot.say("No PW to start. Maybe you want to **create** one?")
+            await ctx.send("No PW to start. Maybe you want to **create** one?")
 
-    @productivitywar.command(name='leave', pass_context=True)
+    @productivitywar.command(name='leave')
     async def _leave(self, ctx):
         """End your involvement in a PW, if you're the last person, the whole thing ends."""
-        if active_pw[ctx.message.server.id] is not None:
-            leave = active_pw[ctx.message.server.id].leave(ctx.message.author)
+        if active_pw[ctx.guild.id] is not None:
+            leave = active_pw[ctx.guild.id].leave(ctx.author)
             if leave == 0:
-                await self.bot.say("User {0} left the PW.".format(ctx.message.author))
+                await ctx.send("User {} left the PW.".format(ctx.author))
             elif leave == 1:
-                await self.bot.say("You aren't in the PW! Would you like to **join**?")
+                await ctx.send("You aren't in the PW! Would you like to **join**?")
             elif leave == 2:
-                await self.bot.say("You've already left this PW! Are you going to **end** it?")
-            if active_pw[ctx.message.server.id].get_finished():
+                await ctx.send("You've already left this PW! Are you going to **end** it?")
+            if active_pw[ctx.guild.id].get_finished():
                 await self._end.invoke(ctx)
         else:
-            await self.bot.say("No PW to start. Maybe you want to **create** one?")
+            await ctx.send("No PW to leave. Maybe you want to **create** one?")
 
-    @productivitywar.command(name='end', pass_context=True)
+    @productivitywar.command(name='end')
     async def _end(self, ctx):
         """End the whole PW, if one is currently running."""
-        if active_pw[ctx.message.server.id] is None:
-            await self.bot.say("There's currently no PW going on. Would you like to **create** one?")
-        elif not active_pw[ctx.message.server.id].get_started():
-            await self.bot.say("Deleting un-started PW.")
-            active_pw[ctx.message.server.id] = None
+        if active_pw[ctx.guild.id] is None:
+            await ctx.send("There's currently no PW going on. Would you like to **create** one?")
+        elif not active_pw[ctx.guild.id].get_started():
+            await ctx.send("Deleting un-started PW.")
+            active_pw[ctx.guild.id] = None
         else:
-            await self.bot.say("Ending PW.")
-            active_pw[ctx.message.server.id].finish()
-            cur_pw = active_pw[ctx.message.server.id]
+            await ctx.send("Ending PW.")
+            active_pw[ctx.guild.id].finish()
+            cur_pw = active_pw[ctx.guild.id]
             out = "```"
-            out += "Start: {0}\n".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
-            out += "End: {0}\n".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
-            out += "Total: {0}\n".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
+            out += "Start: {}\n".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
+            out += "End: {}\n".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
+            out += "Total: {}\n".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
             out += "Times:\n"
             cur_pw.members.sort(key=sort_mem, reverse=True)
             for member in cur_pw.members:
                 out += "    {0} - {1}\n".format(member.user, member.end.replace(microsecond=0) - member.start.replace(microsecond=0))
             out += "```"
-            await self.bot.say(out)
-            active_pw[ctx.message.server.id] = None
+            await ctx.send(out)
+            active_pw[ctx.guild.id] = None
 
-    @productivitywar.command(name='dump', pass_context=True, hidden=True)
+    @productivitywar.command(name='dump', hidden=True)
     async def _dump(self, ctx):
         """Dumps info about the current state of a running PW"""
-        cur_pw = active_pw[ctx.message.server.id]
+        cur_pw = active_pw[ctx.guild.id]
         if cur_pw is None:
-            await self.bot.say("No PW currently running")
+            await ctx.send("No PW currently running")
             return
         out = "```"
-        out += "Start: {0}\n".format(cur_pw.start)
-        out += "End: {0}\n".format(cur_pw.end)
+        out += "Start: {}\n".format(cur_pw.start)
+        out += "End: {}\n".format(cur_pw.end)
         out += "Members:\n"
         for member in cur_pw.members:
             out += "    {0} - {1} - {2}\n".format(member, member.start, member.end)
         out += "```"
-        await self.bot.say(out)
+        await ctx.send(out)
 
 
 class PW:
 
+    __slots__ = ['start', 'end', 'members']
+
     def __init__(self):
+        """Creates a PW object, with empty variables."""
         self.start = None
         self.end = None
         self.members = []
 
     def get_started(self):
+        """Gets whether the PW is started"""
         return self.start is not None
 
     def get_finished(self):
+        """Gets whether the PW is ended"""
         return self.end is not None
 
     def begin(self):
+        """Starts the PW, assumes it isn't started"""
         self.start = datetime.datetime.utcnow()
         for member in self.members:
             if not member.get_started():
                 member.begin(self.start)
 
     def finish(self):
+        """Ends the PW, assumes it isn't ended"""
         self.end = datetime.datetime.utcnow()
         for member in self.members:
             if not member.get_finished():
                 member.finish(self.end)
 
     def join(self, member):
+        """Have a new member join the PW."""
         if PW_Member(member) not in self.members:
             new_mem = PW_Member(member)
             if self.get_started():
@@ -299,6 +326,7 @@ class PW:
             return False
 
     def leave(self, member):
+        """Have a member in the PW leave the PW."""
         if PW_Member(member) in self.members:
             for user in self.members:
                 if user == PW_Member(member):
@@ -316,6 +344,8 @@ class PW:
 
 
 class PW_Member:
+
+    __slots__ = ['user', 'start', 'end']
 
     def __init__(self, user):
         self.user = user
