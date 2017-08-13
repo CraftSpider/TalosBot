@@ -31,15 +31,15 @@ logging.basicConfig(level=logging.INFO)
 def admin_check():
     """Determine whether the person calling the command is an operator or admin."""
     def predicate(ctx):
-        return str(ctx.message.author) in ADMINS or len(ops[ctx.message.server.id]) == 0\
-               or str(ctx.message.author) in ops[ctx.message.server.id]
+        return str(ctx.author) in ADMINS or len(ops[str(ctx.guild.id)]) == 0\
+               or str(ctx.author) in ops[str(ctx.guild.id)]
     return commands.check(predicate)
 
 
 def admin_only():
     """Determine whether the person calling the command is an admin."""
     def predicate(ctx):
-        return str(ctx.message.author) in ADMINS
+        return str(ctx.author) in ADMINS
     return commands.check(predicate)
 
 
@@ -74,7 +74,7 @@ class AdminCommands:
     @admin_only()
     async def stop(self, ctx):
         """Stops Talos running and logs it out."""
-        await ctx.say("Et Tu, Brute?")
+        await ctx.send("Et Tu, Brute?")
         await self.bot.logout()
 
     @commands.command(hidden=True)
@@ -104,9 +104,9 @@ class AdminCommands:
     @admin_check()
     async def oplist(self, ctx):
         """Displays all operators for the current server"""
-        if ops[ctx.message.guild.id]:
+        if ops[str(ctx.guild.id)]:
             out = "```"
-            for op in ops[ctx.message.guild.id]:
+            for op in ops[str(ctx.guild.id)]:
                 out += "{}\n".format(op)
             out += "```"
             await ctx.send(out)
@@ -117,8 +117,8 @@ class AdminCommands:
     @admin_check()
     async def add_op(self, ctx, member: discord.Member):
         """Adds a new operator user"""
-        if str(member) not in ops[ctx.message.guild.id]:
-            ops[ctx.message.guild.id].append(str(member))
+        if str(member) not in ops[str(ctx.guild.id)]:
+            ops[str(ctx.guild.id)].append(str(member))
             await ctx.send("Opped {0.name}!".format(member))
             await self.bot.save()
         else:
@@ -129,7 +129,7 @@ class AdminCommands:
     async def remove_op(self, ctx, member: discord.Member):
         """Removes an operator user"""
         try:
-            ops[ctx.message.guild.id].remove(str(member))
+            ops[str(ctx.guild.id)].remove(str(member))
             await ctx.send("De-opped {0.name}".format(member))
             await self.bot.save()
         except ValueError:
