@@ -91,7 +91,7 @@ class AdminCommands:
         """Displays all operators everywhere"""
         out = "```"
         for key in ops:
-            out += "Server: {}\n".format(key)
+            out += "Server: {}\n".format(self.bot.get_guild(int(key)))
             for user in ops[key]:
                 out += "    {}\n".format(user)
         if out != "```":
