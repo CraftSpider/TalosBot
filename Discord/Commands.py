@@ -80,8 +80,9 @@ class Commands:
         await ctx.send("Talos will in the process of running possibly log your username and log commands that you give "
                        "it. Due to Discord TOS, you must be informed and consent to any storage of data you send here. "
                        "This data will never be publicly shared except at your request, and only used to help run Talos"
-                       " and support features that require this data. If you have any questions about this or problems "
-                       "with it, please talk to one of the Talos developers for info and things we can do to help")
+                       " and support features that require it. If you have any questions about this or problems with it"
+                       " , please talk to one of the Talos developers for information and we'll see what we can do to "
+                       "help")
 
     @commands.command()
     async def version(self, ctx):
