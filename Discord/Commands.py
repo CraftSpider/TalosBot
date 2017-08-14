@@ -75,6 +75,15 @@ class Commands:
                            \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.")
 
     @commands.command()
+    async def discord_tos(self, ctx):
+        """Disclaimer for discord TOS"""
+        await ctx.send("Talos will in the process of running possibly log your username and log commands that you give "
+                       "it. Due to Discord TOS, you must be informed and consent to any storage of data you send here. "
+                       "This data will never be publicly shared except at your request, and only used to help run Talos"
+                       " and support features that require this data. If you have any questions about this or problems "
+                       "with it, please talk to one of the Talos developers for info and things we can do to help")
+
+    @commands.command()
     async def version(self, ctx):
         """Returns Talos version."""
         await ctx.send("Version: {0}".format(self.bot.VERSION))
