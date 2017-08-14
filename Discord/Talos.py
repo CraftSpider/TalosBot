@@ -30,18 +30,11 @@ SAVE_FILE = "./TalosData.dat"
 is_sleeping = 0
 perms = {}
 
-# Replace this with your key before running Talos
-STATIC_KEY = "MzMwMDYxOTk3ODQyNjI4NjIz.DFvCvw.w8azTi_Hf8wyB4LeaIVZqwXIln4"
+# Place your token in a file with this name, or change this to the name of a file with the token in it.
+TOKEN_FILE = "Token.txt"
 
 # Initiate Logging
 logging.basicConfig(level=logging.INFO)
-
-
-# def handle_text():
-#     while input() != "quit":
-#         pass
-#     print("quitting")
-#     bot.stop()
 
 
 class Talos(commands.Bot):
@@ -53,12 +46,12 @@ class Talos(commands.Bot):
 
     @asyncio.coroutine
     async def logout(self):
-        save_file(SAVE_FILE, bot.extensions["AdminCommands"].ops, perms)
+        json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=perms)
         await super().logout()
 
     @asyncio.coroutine
     async def save(self):
-        save_file(SAVE_FILE, bot.extensions["AdminCommands"].ops, perms)
+        json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=perms)
 
     @asyncio.coroutine
     async def on_ready(self):
@@ -76,7 +69,23 @@ class Talos(commands.Bot):
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
 
-def load_file(filename):
+def string_load(filename):
+    out = []
+    with open(filename, 'a+') as file:
+        try:
+            file.seek(0)
+            out = file.readlines()
+        except Exception as e:
+            print(e)
+    return out
+
+
+def load_token():
+    file = string_load(TOKEN_FILE)
+    return file[0].strip()
+
+
+def json_load(filename):
     with open(filename, 'a+') as file:
         try:
             file.seek(0)
@@ -91,12 +100,12 @@ def build_trees(data):
     bot.extensions["AdminCommands"].ops.update(data['ops'])
 
 
-def save_file(filename, ops, permissions):
+def json_save(filename, **options):
     with open(filename, 'w+') as file:
         try:
             out = dict()
-            out['ops'] = ops
-            out['perms'] = permissions
+            for key in options:
+                out[key] = options[key]
             json.dump(out, file)
         except Exception as e:
             print(e)
@@ -112,12 +121,10 @@ if __name__ == "__main__":
         except Exception as err:
             exc = '{}: {}'.format(type(err).__name__, err)
             logging.info('Failed to load extension {}\n{}'.format(extension, exc))
-    # executor = ThreadPoolExecutor(2)
-    # bot.future = asyncio.ensure_future(bot.loop.run_in_executor(executor, handle_text))
     try:
-        json_data = load_file(SAVE_FILE)
+        json_data = json_load(SAVE_FILE)
         if json_data is not None:
             build_trees(json_data)
-        bot.run(STATIC_KEY)
+        bot.run(load_token())
     finally:
         print("Talos Exiting")

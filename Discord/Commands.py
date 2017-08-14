@@ -108,11 +108,22 @@ class Commands:
         await ctx.send(result)
         
     @commands.command(description='For when you wanna settle the score some other way',
-                      usage="[choice 1] [choice 2] ...")
+                      usage="[choice 1], [choice 2], ...")
     async def choose(self, ctx, *choices: str):
         """Chooses between multiple choices."""
-        await ctx.send("I'm choosing between: " + ", ".join(choices) + ".")
-        await ctx.send(random.choice(choices).strip())
+        choices = " ".join(choices)
+        if "," not in choices:
+            await ctx.send("I need at least two choices to choose between!")
+            return
+        out = "I'm choosing between: {}.\n".format(choices)
+        if random.randint(1, 500) == 1:
+            out += "None of the above"
+        elif random.randint(1, 500) == 500:
+            out += "All of the above"
+        else:
+            choices = choices.split(",")
+            out += random.choice(choices).strip()
+        await ctx.send(out)
 
     @commands.command()
     async def time(self, ctx):
