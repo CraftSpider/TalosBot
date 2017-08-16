@@ -1,7 +1,7 @@
 """
     User Commands cog for Talos
     Holds all user specific commands, those things that alter a user's permissions, roles,
-    Talos knowledge of them, so on.
+    Talos' knowledge of them, so on.
 
     Author: CraftSpider
 """

@@ -97,7 +97,10 @@ def json_load(filename):
 
 
 def build_trees(data):
-    bot.extensions["AdminCommands"].ops.update(data['ops'])
+    try:
+        bot.extensions["AdminCommands"].ops.update(data['ops'])
+    except KeyError:
+        logging.warning("Admin Commands cog not loaded")
 
 
 def json_save(filename, **options):
