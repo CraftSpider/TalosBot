@@ -70,7 +70,7 @@ class AdminCommands:
 
     @commands.command()
     @admin_check()
-    async def my_perms(self, ctx):
+    async def talos_perms(self, ctx):
         """Has Talos print out their current permissions"""
         perms = ctx.me.guild_permissions
         out = "```Permissions:\n"

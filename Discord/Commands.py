@@ -193,6 +193,43 @@ class Commands:
         out = "I've been online since {0}, a total of {1}".format(boot_string, delta_string)
         await ctx.send(out)
 
+    @commands.command()
+    @admin_check()
+    async def my_perms(self, ctx):
+        """Has Talos print out their current permissions"""
+        perms = ctx.author.guild_permissions
+        out = "```Permissions:\n"
+        out += "    Administrator: {}\n".format(perms.administrator)
+        out += "    Add Reactions: {}\n".format(perms.add_reactions)
+        out += "    Attach Files: {}\n".format(perms.attach_files)
+        out += "    Ban Members: {}\n".format(perms.ban_members)
+        out += "    Change Nickname: {}\n".format(perms.change_nickname)
+        out += "    Connect: {}\n".format(perms.connect)
+        out += "    Deafen Members: {}\n".format(perms.deafen_members)
+        out += "    Embed Links: {}\n".format(perms.embed_links)
+        out += "    External Emojis: {}\n".format(perms.external_emojis)
+        out += "    Instant Invite: {}\n".format(perms.create_instant_invite)
+        out += "    Kick Members: {}\n".format(perms.kick_members)
+        out += "    Manage Channels: {}\n".format(perms.manage_channels)
+        out += "    Manage Emojis: {}\n".format(perms.manage_emojis)
+        out += "    Manage Guild: {}\n".format(perms.manage_guild)
+        out += "    Manage Messages: {}\n".format(perms.manage_messages)
+        out += "    Manage Nicknames: {}\n".format(perms.manage_nicknames)
+        out += "    Manage Roles: {}\n".format(perms.manage_roles)
+        out += "    Manage Webhooks: {}\n".format(perms.manage_webhooks)
+        out += "    Mention Everyone: {}\n".format(perms.mention_everyone)
+        out += "    Move Members: {}\n".format(perms.move_members)
+        out += "    Mute Members: {}\n".format(perms.mute_members)
+        out += "    Read Message History: {}\n".format(perms.read_message_history)
+        out += "    Read Messages: {}\n".format(perms.read_messages)
+        out += "    Send Messages: {}\n".format(perms.send_messages)
+        out += "    Send TTS: {}\n".format(perms.send_tts_messages)
+        out += "    Speak: {}\n".format(perms.speak)
+        out += "    Use Voice Activation: {}\n".format(perms.use_voice_activation)
+        out += "    View Audit: {}\n".format(perms.view_audit_log)
+        out += "```"
+        await ctx.send(out)
+
     @commands.command(name="Hi", hidden=True)
     async def hi(self, ctx, *extra):
         if str(ctx.author) == "East#4048" and extra[0] == "there...":
