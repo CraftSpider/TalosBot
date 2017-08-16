@@ -40,6 +40,7 @@ logging.basicConfig(level=logging.INFO)
 class Talos(commands.Bot):
 
     VERSION = VERSION
+    BOOT_TIME = BOOT_TIME
 
     def __init__(self, command_prefix, **options):
         super().__init__(command_prefix, **options)

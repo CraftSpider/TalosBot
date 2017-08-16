@@ -20,6 +20,12 @@ def sort_mem(member):
     """Function key for sorting PW_Member objects."""
     return member.end - member.start
 
+def strfdelta(tdelta, fmt):
+    d = {"d": tdelta.days}
+    d["h"], rem = divmod(tdelta.seconds, 3600)
+    d["m"], d["s"] = divmod(rem, 60)
+    return fmt.format(**d)
+
 
 class Commands:
     """These commands can be used by anyone, as long as Talos is awake.\nThey don't care who is using them."""
@@ -29,7 +35,7 @@ class Commands:
     def __init__(self, bot):
         """Initialize the Commands cog. Takes in an instance of bot to use while running."""
         self.bot = bot
-    
+
     #
     #   Generator Strings
     #
@@ -62,7 +68,7 @@ class Commands:
               "win the lottery", "hack the mainframe", "save the world", "find atlantis", "get accepted to Hogwarts",
               "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship",
               "learn math", "write a lot", "do gymnastics"]
-    
+
     #
     #   User Commands
     #
@@ -181,7 +187,24 @@ class Commands:
     @commands.command()
     async def uptime(self, ctx):
         """To figure out how long the bot has been online."""
-        pass
+        boot_string = self.bot.BOOT_TIME.strftime("%b %d, %H:%M:%S")
+        tdelta = datetime.datetime.now() - self.bot.BOOT_TIME
+        delta_string = strfdelta(tdelta, "{d} days, {h:02}:{m:02}:{s:02}")
+        out = "I've been online since {0}, a total of {1}".format(boot_string, delta_string)
+        await ctx.send(out)
+
+    @commands.command(name="Hi", hidden=True)
+    async def hi(self, ctx, *extra):
+        if str(ctx.author) == "East#4048" and extra[0] == "there...":
+            async with ctx.typing():
+                await asyncio.sleep(1)
+                await ctx.send("Hello East.")
+            await asyncio.sleep(1)
+            async with ctx.typing():
+                await asyncio.sleep(2)
+                await ctx.send("Thank you. The same to you.")
+            return
+        await ctx.send("Hello there {}".format(ctx.author.name))
     
     @commands.group()
     async def generate(self, ctx):
