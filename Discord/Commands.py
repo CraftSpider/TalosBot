@@ -194,7 +194,6 @@ class Commands:
         await ctx.send(out)
 
     @commands.command()
-    @admin_check()
     async def my_perms(self, ctx):
         """Has Talos print out their current permissions"""
         perms = ctx.author.guild_permissions
