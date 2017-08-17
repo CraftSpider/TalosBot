@@ -199,7 +199,7 @@ class Commands:
         await asyncio.sleep(2)
         async with ctx.typing():
             await asyncio.sleep(1)
-            await ctx.send("Thanks, you're the best!")
+            await ctx.send("Oh my. Well, if you insist ;)")
 
     @commands.command()
     async def my_perms(self, ctx):
