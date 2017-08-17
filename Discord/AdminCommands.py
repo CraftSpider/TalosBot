@@ -6,6 +6,7 @@
 """
 import discord
 import logging
+import asyncio
 from discord.ext import commands
 from collections import defaultdict
 
@@ -19,10 +20,23 @@ ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "Hidd/Metallic#3
 # Ops list. Filled on bot load, altered through the add and remove op commands.
 ops = defaultdict(lambda: [])
 # Permissions list. Filled on bot load, altered by command
-perms = {}
+perms = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {})))
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
+
+
+def set_perm(guild, command, level, name, allow=None):
+    if allow is None:
+        if name is not None:
+            del perms[guild][command][level][name]
+        else:
+            del perms[guild][command][level]
+    else:
+        if name is not None:
+            perms[guild][command][level][name] = allow
+        else:
+            perms[guild][command][level] = allow
 
 
 #
@@ -52,6 +66,8 @@ class AdminCommands:
 
     __slots__ = ['bot']
 
+    LEVELS = ["server", "role", "channel", "user"]
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -66,7 +82,8 @@ class AdminCommands:
     @admin_check()
     async def repeat(self, ctx, *text):
         """Causes Talos to repeat whatever you said"""
-        await ctx.send(" ".join(text))
+        if len(text) is not 0:
+            await ctx.send(" ".join(text))
 
     @commands.command()
     @admin_check()
@@ -110,8 +127,16 @@ class AdminCommands:
     async def playing(self, ctx, *playing: str):
         """Changes the game Talos is playing"""
         game = " ".join(map(str, playing))
-        await self.bot.change_presence(game=discord.Game(name=game, type="0"))
+        await self.bot.change_presence(game=discord.Game(name=game, type=0))
         await ctx.send("Now playing {}".format(game))
+
+    @commands.command(hidden=True)
+    @admin_only()
+    async def streaming(self, ctx, *streaming: str):
+        """Changes the game Talos is streaming"""
+        game = " ".join(map(str, streaming))
+        await self.bot.change_presence(game=discord.Game(name=game, type=1))
+        await ctx.send("Now streaming {}".format(game))
 
     @commands.command(hidden=True)
     @admin_only()
@@ -183,19 +208,34 @@ class AdminCommands:
     async def perms(self, ctx, command: str, level: str, *options):
         """Change permissions for other commands."""
         level = level.lower()
-        if command in self.bot.commands:
+        if command in self.bot.all_commands and level in self.LEVELS:
+            if len(options) < 2:
+                await ctx.send("I need more to go on.")
+                return
+
             if level == "user":
-                pass
-            elif level == "channel":
-                pass
+                spec = str(discord.utils.find(lambda u: u.name == options[0], ctx.guild.members))
             elif level == "role":
-                pass
-            elif level == "server":
-                pass
+                spec = str(discord.utils.find(lambda r: r.name == options[0], ctx.guild.roles))
+            elif level == "channel":
+                spec = str(discord.utils.find(lambda c: c.name == options[0], ctx.guild.channels))
             else:
-                await ctx.send("Unrecognized permission level.")
-        else:
+                spec = None
+
+            if "allow" in options:
+                set_perm(str(ctx.guild.id), command, level, spec, True)
+            elif "forbid" in options:
+                set_perm(str(ctx.guild.id), command, level, spec, False)
+            else:
+                await ctx.send("I don't recognize any options I can change in that.")
+                return
+            await self.bot.update_perms()
+            print(perms)
+            await ctx.send("Permissions updated.")
+        elif command not in self.bot.commands:
             await ctx.send("I don't recognize that command, so I can't set permissions for it!")
+        else:
+            await ctx.send("Unrecognized permission level.")
 
 
 def setup(bot):

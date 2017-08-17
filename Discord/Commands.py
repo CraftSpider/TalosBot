@@ -194,8 +194,16 @@ class Commands:
         await ctx.send(out)
 
     @commands.command()
+    async def favor(self, ctx):
+        await ctx.send("!East could I ask you for a favor? I need someone to verify my code.")
+        await asyncio.sleep(2)
+        async with ctx.typing():
+            await asyncio.sleep(1)
+            await ctx.send("Thanks, you're the best!")
+
+    @commands.command()
     async def my_perms(self, ctx):
-        """Has Talos print out their current permissions"""
+        """Has Talos print out your current permissions"""
         perms = ctx.author.guild_permissions
         out = "```Permissions:\n"
         out += "    Administrator: {}\n".format(perms.administrator)

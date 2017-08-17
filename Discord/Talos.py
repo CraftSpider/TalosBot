@@ -30,6 +30,7 @@ SAVE_FILE = "./TalosData.dat"
 is_sleeping = 0
 perms = {}
 
+
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = "Token.txt"
 
@@ -47,19 +48,24 @@ class Talos(commands.Bot):
 
     @asyncio.coroutine
     async def logout(self):
-        json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=perms)
+        json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=bot.extensions["AdminCommands"].perms)
         await super().logout()
 
     @asyncio.coroutine
     async def save(self):
-        json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=perms)
+        json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=bot.extensions["AdminCommands"].perms)
+
+    @asyncio.coroutine
+    async def update_perms(self):
+        bot.extensions["Commands"].perms = bot.extensions["AdminCommands"].perms
+        json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=bot.extensions["AdminCommands"].perms)
 
     @asyncio.coroutine
     async def on_ready(self):
         print('| Now logged in as')
         print('| {}'.format(self.user.name))
         print('| {}'.format(self.user.id))
-        await bot.change_presence(game=discord.Game(name="Taking over the World", type="0"))
+        await bot.change_presence(game=discord.Game(name="Taking over the World", type=0))
 
     @asyncio.coroutine
     def on_command_error(self, ctx, exception):
