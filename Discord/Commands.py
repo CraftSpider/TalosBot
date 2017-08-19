@@ -163,7 +163,7 @@ class Commands:
                 await ctx.send("Please specify a start time in the range of 0 to 59.")
                 return
 
-        if start:
+        if start is not "":
             dif = abs(datetime.datetime.utcnow() - datetime.datetime.utcnow().replace(minute=start, second=0))
             await ctx.send("Starting WW at :{0:02}".format(start))
             await asyncio.sleep(dif.total_seconds())
