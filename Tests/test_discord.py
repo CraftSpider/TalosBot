@@ -4,6 +4,7 @@ import os
 
 sys.path.append(os.getcwd().replace("\\Tests", ""))
 sys.path.append(os.getcwd().replace("\\Tests", "\\Discord"))
+print(sys.path)
 import Discord.Talos
 
 # Talos = importlib.import_module("Discord.Talos", "..")
