@@ -1,4 +1,6 @@
+sudo: false
 language: python3
+cache: pip
 python:
   - 3.6
 install:
