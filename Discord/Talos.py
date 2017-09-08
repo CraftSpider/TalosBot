@@ -43,8 +43,16 @@ class Talos(commands.Bot):
     VERSION = VERSION
     BOOT_TIME = BOOT_TIME
 
-    def __init__(self, command_prefix, **options):
-        super().__init__(command_prefix, **options)
+    def __init__(self, **options):
+        super().__init__("^", **options)
+
+    def load_extensions(self):
+        for extension in STARTUP_EXTENSIONS:
+            try:
+                self.load_extension(extension)
+            except Exception as err:
+                exc = '{}: {}'.format(type(err).__name__, err)
+                logging.info('Failed to load extension {}\n{}'.format(extension, exc))
 
     @asyncio.coroutine
     async def logout(self):
@@ -123,14 +131,9 @@ def json_save(filename, **options):
 if __name__ == "__main__":
 
     description = '''Greetings. I'm Talos, chat helper. My commands are:'''
-    bot = Talos(command_prefix='^', description=description)
+    bot = Talos(description=description)
+    bot.load_extensions()
 
-    for extension in STARTUP_EXTENSIONS:
-        try:
-            bot.load_extension(extension)
-        except Exception as err:
-            exc = '{}: {}'.format(type(err).__name__, err)
-            logging.info('Failed to load extension {}\n{}'.format(extension, exc))
     try:
         json_data = json_load(SAVE_FILE)
         if json_data is not None:
