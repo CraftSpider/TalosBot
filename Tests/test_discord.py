@@ -1,14 +1,16 @@
 import pytest
 import sys
 
+print(sys.path)
 sys.path.append("..")
+print(sys.path)
 import Discord.Talos
 
 # Talos = importlib.import_module("Discord.Talos", "..")
 
 
 def test_extension_load():
-    bot = Talos.Talos()
+    bot = Discord.Talos.Talos()
     bot.load_extensions()
     assert len(bot.extensions) == 3, "Didn't load 3 extensions"
     assert "Commands" in bot.extensions, "Didn't load Commands extension"
