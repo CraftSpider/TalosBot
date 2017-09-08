@@ -2,9 +2,8 @@ import pytest
 import sys
 import os
 
-print(sys.path)
 sys.path.append(os.getcwd().replace("\\Tests", ""))
-print(sys.path)
+sys.path.append(os.getcwd().replace("\\Tests", "\\Discord"))
 import Discord.Talos
 
 # Talos = importlib.import_module("Discord.Talos", "..")
@@ -17,3 +16,5 @@ def test_extension_load():
     assert "Commands" in bot.extensions, "Didn't load Commands extension"
     assert "UserCommands" in bot.extensions, "Didn't load UserCommands extension"
     assert "AdminCommands" in bot.extensions, "Didn't load AdminCommands extensions"
+
+test_extension_load()

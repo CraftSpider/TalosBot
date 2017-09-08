@@ -46,7 +46,7 @@ class Talos(commands.Bot):
     def __init__(self, **options):
         super().__init__("^", **options)
 
-    async def load_extensions(self):
+    def load_extensions(self):
         for extension in STARTUP_EXTENSIONS:
             try:
                 self.load_extension(extension)
