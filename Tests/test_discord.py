@@ -1,7 +1,10 @@
 import pytest
-import importlib
+import sys
 
-Talos = importlib.import_module("Discord.Talos", "..")
+sys.path.append("..")
+import Discord.Talos
+
+# Talos = importlib.import_module("Discord.Talos", "..")
 
 
 def test_extension_load():
