@@ -1,7 +1,7 @@
 import pytest
 import importlib
 
-Talos = importlib.import_module("Discord.Talos")
+Talos = importlib.import_module("Discord.Talos", "..")
 
 
 def test_extension_load():
