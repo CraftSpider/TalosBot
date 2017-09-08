@@ -46,7 +46,6 @@ class Talos(commands.Bot):
     def __init__(self, **options):
         super().__init__("^", **options)
 
-    @asyncio.coroutine
     async def load_extensions(self):
         for extension in STARTUP_EXTENSIONS:
             try:
