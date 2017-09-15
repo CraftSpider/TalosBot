@@ -145,7 +145,7 @@ class AdminCommands:
         """Purges messages from a channel. By default, this will be 10 (including the invoking command). Use 'all' to purge whole channel."""
         if number != "all":
             number = int(number)
-            if number > 100 and len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]:
+            if number > 100 and (len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]):
                 rand_key = key_generator()
                 secure_keys[str(ctx.guild.id)] = rand_key
                 await ctx.send("Are you sure? If so, re-invoke with {} on the end.".format(rand_key))
