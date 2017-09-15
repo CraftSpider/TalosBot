@@ -39,11 +39,11 @@ function randomNumber(min, max) {
  * @param {float} length Length of the WW, in minutes
  * @param {String} keyword Keyword for the WW, a string that is used as an identifier for the start and end
  */
-function startWW(length, KeyWord) {
+function startWW(length, keyword) {
     setTimeout(function() {
         NumWWs--;
         if (!IsSleeping) {
-            postMessage("[b]Word War " + (KeyWord? "'" + KeyWord + "' " : "") + "ends.[/b] How did you do?");
+            postMessage("[b]Word War " + (keyword? "'" + keyword + "' " : "") + "ends.[/b] How did you do?");
         }
     }, length * 60000);
 }
@@ -76,6 +76,9 @@ function parseArgs(str) {
         var delim = false;
         var arg = "";
         for (var char in str) {
+            if (!str.hasOwnProperty(char)) {
+                continue
+            }
             if (str[char] == "\"") {
                 delim = !delim;
                 if (arg) {
@@ -225,17 +228,17 @@ function getAdminNames() {
 function writingHour() {
     var d = new Date();
 
-    if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() == 50 && WHSwitch === 0) {
+    if (d.getUTCHours() === (WH_TIME === 0 ? 23 : WH_TIME - 1)  && d.getUTCMinutes() === 50 && WHSwitch === 0) {
         postMessage("[b][Alert][/b] 10 minutes until WH!");
         WHSwitch++;
-    } else if (d.getUTCHours() == (WH_TIME === 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() == 55 && WHSwitch == 1) {
+    } else if (d.getUTCHours() === (WH_TIME === 0 ? 23 : WH_TIME - 1) && d.getUTCMinutes() === 55 && WHSwitch === 1) {
         postMessage("[b][Alert][/b] 5 minutes until WH!");
         WHSwitch++;
-    } else if (d.getUTCHours() == WH_TIME && d.getUTCMinutes() === 0 && WHSwitch == 2) {
+    } else if (d.getUTCHours() === WH_TIME && d.getUTCMinutes() === 0 && WHSwitch === 2) {
         postMessage("[b]Writing Hour begins![/b] Time to write, good luck!");
         setTimeout(function(){closeChat();}, 1000);
         WHSwitch++;
-    } else if (d.getUTCHours() == (WH_TIME == 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() === 0 && WHSwitch == 3) {
+    } else if (d.getUTCHours() === (WH_TIME === 23 ? 0 : WH_TIME + 1) && d.getUTCMinutes() === 0 && WHSwitch === 3) {
         setTimeout(function() {postMessage("[b]Writing Hour is over.[/b]");}, 500);
         setTimeout(function(){openChat();}, 1000);
         WHSwitch = 0;
@@ -252,7 +255,7 @@ function readChat() {
     if ((!elementByID(messageContainer) ||
             !elementByID(messageTable) ||
             !elementByID(messageTable).children) &&
-            elementByID(messageTable).firstChild.innerHTML != "Previous messages parsed (press ESC to re-parse page)") {
+            elementByID(messageTable).firstChild.innerHTML !== "Previous messages parsed (press ESC to re-parse page)") {
         return;
     }
     try {
@@ -340,7 +343,6 @@ function readPMs() {
             window.ADMIN_COMMANDS[Command](Args);
         } else if (IsSleeping == 1 || (WHSwitch >= 3 && !isAdmin)) {
             closePopup();
-            return;
         } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
             log.warn("Admin command " + Command + " ignored from " + User + " via PM");
             log.debug("With arguments \"" + Args + "\"");
