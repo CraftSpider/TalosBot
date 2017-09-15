@@ -29,8 +29,10 @@ secure_keys = defaultdict(lambda: "")
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 
+
 def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
+
 
 def set_perm(guild, command, level, name, allow):
     if name is not None:
@@ -77,6 +79,7 @@ def admin_check():
 
         if str(ctx.author) in ADMINS or\
            len(ops[guild_id]) == 0 and ctx.author.guild_permissions.administrator or\
+           ctx.author == ctx.guild.owner or\
            str(ctx.author) in ops[guild_id]:
             return True
 
@@ -251,7 +254,8 @@ class AdminCommands:
     @admin_check()
     async def ops(self, ctx):
         """Operator related commands. By default, anyone on a server with admin privileges is an Op."""\
-            """ Adding someone to the list will override this behavior."""
+            """ Adding someone to the list will override this behavior.
+            The Server Owner is also always Op, and this behavior can't be overridden for security reasons."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'add', 'list', and 'remove'.")
 
