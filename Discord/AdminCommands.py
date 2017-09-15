@@ -161,6 +161,7 @@ class AdminCommands:
             elif key[0] == secure_keys[str(ctx.guild.id)]:
                 async for message in ctx.history(limit=None):
                     await message.delete()
+                    await asyncio.sleep(.5)
                 secure_keys[str(ctx.guild.id)] = ""
 
     @commands.command()
