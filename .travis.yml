@@ -4,7 +4,7 @@ cache: pip
 python:
   - 3.6
 install:
-  - pip3 install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
-  - pip3 install -U pytest
+  - python3 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
+  - python3 -m pip install -U pytest
 script:
   - pytest Tests
