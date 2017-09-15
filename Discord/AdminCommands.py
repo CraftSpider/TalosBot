@@ -6,6 +6,8 @@
 """
 import discord
 import logging
+import random
+import string
 import asyncio
 from discord.ext import commands
 from collections import defaultdict
@@ -21,10 +23,14 @@ ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "Hidd/Metallic#3
 ops = defaultdict(lambda: [])
 # Permissions list. Filled on bot load, altered by command
 perms = {}
+# Security keys, for security-locked commands.
+secure_keys = defaultdict(lambda: "")
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 
+def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 def set_perm(guild, command, level, name, allow):
     if name is not None:
@@ -132,6 +138,29 @@ class AdminCommands:
         """Causes Talos to repeat whatever you said"""
         if len(text) is not 0:
             await ctx.send(" ".join(text))
+
+    @commands.command(usage="[number=10]")
+    @admin_check()
+    async def purge(self, ctx, number: str="10", *key):
+        """Purges messages from a channel. By default, this will be 10 (including the invoking command). Use 'all' to purge whole channel."""
+        if number != "all":
+            number = int(number)
+            if number > 100 and len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]:
+                rand_key = key_generator()
+                secure_keys[str(ctx.guild.id)] = rand_key
+                await ctx.send("Are you sure? If so, re-invoke with {} on the end.".format(rand_key))
+            else:
+                async for message in ctx.history(limit=number):
+                    await message.delete()
+        else:
+            if len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]:
+                rand_key = key_generator()
+                secure_keys[str(ctx.guild.id)] = rand_key
+                await ctx.send("Are you sure? If so, re-invoke with {} on the end.".format(rand_key))
+            elif key[0] == secure_keys[str(ctx.guild.id)]:
+                async for message in ctx.history(limit=None):
+                    await message.delete()
+                secure_keys[str(ctx.guild.id)] = ""
 
     @commands.command()
     @admin_check()
