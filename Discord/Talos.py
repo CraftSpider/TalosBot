@@ -18,7 +18,7 @@ import asyncio
 #
 #   Constants
 #
-VERSION = "2.2.1"
+VERSION = "2.3.0"
 BOOT_TIME = datetime.datetime.now()
 EGG_DEV = "wundrweapon#4856"
 STARTUP_EXTENSIONS = ["Commands", "UserCommands", "AdminCommands"]

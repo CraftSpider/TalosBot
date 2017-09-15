@@ -104,6 +104,7 @@ class Commands:
     #
     
     @commands.command()
+    @perms_check()
     async def information(self, ctx):
         """Gives a short blurb about Talos."""
         await ctx.send("Hello! I'm Talos, official PtP mod-bot.\
@@ -111,6 +112,7 @@ class Commands:
                            \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.")
 
     @commands.command()
+    @perms_check()
     async def discord_tos(self, ctx):
         """Disclaimer for discord TOS"""
         await ctx.send("Talos will in the process of running possibly log your username and log commands that you give "
@@ -121,11 +123,13 @@ class Commands:
                        "help")
 
     @commands.command()
+    @perms_check()
     async def version(self, ctx):
         """Returns Talos version."""
         await ctx.send("Version: {0}".format(self.bot.VERSION))
 
     @commands.command()
+    @perms_check()
     async def roll(self, ctx, dice: str):
         """Rolls dice in NdN format."""
         try:
@@ -145,6 +149,7 @@ class Commands:
         
     @commands.command(description='For when you wanna settle the score some other way',
                       usage="[choice 1], [choice 2], ...")
+    @perms_check()
     async def choose(self, ctx, *choices: str):
         """Chooses between multiple choices."""
         choices = " ".join(choices)
@@ -162,11 +167,13 @@ class Commands:
         await ctx.send(out)
 
     @commands.command()
+    @perms_check()
     async def time(self, ctx):
         """Prints out the current time in UTC, HH:MM:SS format"""
         await ctx.send("It's time to get a watch. {0}".format(datetime.datetime.utcnow().strftime("%H:%M:%S")))
     
     @commands.command(aliases=["ww", "WW"])
+    @perms_check()
     async def wordwar(self, ctx, length: str="", start: str=""):
         """Runs an X minute long word-war"""
         try:
@@ -203,6 +210,7 @@ class Commands:
         await ctx.send("Word War Over")
 
     @commands.command()
+    @perms_check()
     async def credits(self, ctx):
         """Giving credit where it is due"""
         await ctx.send("Primary Developers: CraftSpider, Dino.\n"
@@ -210,11 +218,13 @@ class Commands:
                        "Artist: Misty Tynan")
     
     @commands.command()
+    @perms_check()
     async def joined(self, ctx, member: discord.Member):
         """Says when a member joined."""
         await ctx.send('{0.name} joined in {0.joined_at}'.format(member))
     
     @commands.command()
+    @perms_check()
     async def uptime(self, ctx):
         """To figure out how long the bot has been online."""
         boot_string = self.bot.BOOT_TIME.strftime("%b %d, %H:%M:%S")
@@ -224,6 +234,7 @@ class Commands:
         await ctx.send(out)
 
     @commands.command()
+    @perms_check()
     async def favor(self, ctx):
         await ctx.send("!East could I ask you for a favor? I need someone to verify my code.")
         await asyncio.sleep(2)
@@ -232,6 +243,7 @@ class Commands:
             await ctx.send("Oh my. Well, if you insist ;)")
 
     @commands.command()
+    @perms_check()
     async def my_perms(self, ctx):
         """Has Talos print out your current guild permissions"""
         perms = ctx.author.guild_permissions
@@ -268,6 +280,7 @@ class Commands:
         await ctx.send(out)
 
     @commands.command(name="Hi", hidden=True)
+    @perms_check()
     async def hi(self, ctx, *extra):
         if str(ctx.author) == "East#4048" and extra[0] == "there...":
             async with ctx.typing():
@@ -281,6 +294,7 @@ class Commands:
         await ctx.send("Hello there {}".format(ctx.author.name))
     
     @commands.group()
+    @perms_check()
     async def generate(self, ctx):
         """Generates a crawl or prompt"""
         if ctx.invoked_subcommand is None:
@@ -305,6 +319,7 @@ class Commands:
         await ctx.send("A story about a {} {} who must {} while {}.".format(adj, noun, goal, obstacle))
 
     @commands.group(aliases=["pw", "PW"])
+    @perms_check()
     async def productivitywar(self, ctx):
         """Commands for a productivity war."""
         if ctx.invoked_subcommand is None:
