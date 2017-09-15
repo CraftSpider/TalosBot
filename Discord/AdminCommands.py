@@ -151,7 +151,8 @@ class AdminCommands:
                 await ctx.send("Are you sure? If so, re-invoke with {} on the end.".format(rand_key))
             else:
                 async for message in ctx.history(limit=number):
-                    await message.delete()
+                    await message.delete(reason="Purged!")
+                    await asyncio.sleep(.5)
         else:
             if len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]:
                 rand_key = key_generator()
