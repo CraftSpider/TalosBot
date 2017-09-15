@@ -16,6 +16,36 @@ active_pw = defaultdict(lambda: None)
 perms = {}
 
 
+def perms_check():
+    """Determine whether the person calling the command is an operator or admin."""
+    def predicate(ctx):
+        guild_id = str(ctx.guild.id)
+        command = str(ctx.command)
+
+        if guild_id not in perms.keys():
+            return True
+        if command not in perms[guild_id].keys():
+            return True
+        if "user" in perms[guild_id][command].keys():
+            for key in perms[guild_id][command]["user"].keys():
+                if key == str(ctx.author):
+                    return perms[guild_id][command]["user"][key]
+        if "role" in perms[guild_id][command].keys():
+            for key in perms[guild_id][command]["role"].keys():
+                for role in ctx.author.roles:
+                    if key == str(role):
+                        return perms[guild_id][command]["role"][key]
+        if "channel" in perms[guild_id][command].keys():
+            for key in perms[guild_id][command]["channel"].keys():
+                if key == str(ctx.channel):
+                    return perms[guild_id][command]["channel"][key]
+        if "guild" in perms[guild_id][command].keys():
+            return perms[guild_id][command]["guild"]
+        return True
+
+    return commands.check(predicate)
+
+
 def sort_mem(member):
     """Function key for sorting PW_Member objects."""
     return member.end - member.start
@@ -97,7 +127,7 @@ class Commands:
 
     @commands.command()
     async def roll(self, ctx, dice: str):
-        """Rolls a dice in NdN format."""
+        """Rolls dice in NdN format."""
         try:
             rolls, limit = map(int, dice.lower().split('d'))
         except ValueError:
@@ -203,9 +233,9 @@ class Commands:
 
     @commands.command()
     async def my_perms(self, ctx):
-        """Has Talos print out your current permissions"""
+        """Has Talos print out your current guild permissions"""
         perms = ctx.author.guild_permissions
-        out = "```Permissions:\n"
+        out = "```Guild Permissions:\n"
         out += "    Administrator: {}\n".format(perms.administrator)
         out += "    Add Reactions: {}\n".format(perms.add_reactions)
         out += "    Attach Files: {}\n".format(perms.attach_files)

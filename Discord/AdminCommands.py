@@ -20,23 +20,44 @@ ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "Hidd/Metallic#3
 # Ops list. Filled on bot load, altered through the add and remove op commands.
 ops = defaultdict(lambda: [])
 # Permissions list. Filled on bot load, altered by command
-perms = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {})))
+perms = {}
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 
 
-def set_perm(guild, command, level, name, allow=None):
-    if allow is None:
-        if name is not None:
-            del perms[guild][command][level][name]
-        else:
-            del perms[guild][command][level]
-    else:
-        if name is not None:
+def set_perm(guild, command, level, name, allow):
+    if name is not None:
+        try:
             perms[guild][command][level][name] = allow
-        else:
+        except KeyError:
+            if guild not in perms.keys():
+                perms[guild] = {}
+            if command not in perms[guild].keys():
+                perms[guild][command] = {}
+            if level not in perms[guild][command].keys():
+                perms[guild][command][level] = {}
+            perms[guild][command][level][name] = allow
+    else:
+        try:
             perms[guild][command][level] = allow
+        except KeyError:
+            if guild not in perms.keys():
+                perms[guild] = {}
+            if command not in perms[guild].keys():
+                perms[guild][command] = {}
+            perms[guild][command][level] = allow
+
+
+def remove_perm(guild, command, level, name):
+    if name is not None:
+        del perms[guild][command][level][name]
+    elif level is not None:
+        del perms[guild][command][level]
+    elif command is not None:
+        del perms[guild][command]
+    else:
+        del perms[guild]
 
 
 #
@@ -45,8 +66,35 @@ def set_perm(guild, command, level, name, allow=None):
 def admin_check():
     """Determine whether the person calling the command is an operator or admin."""
     def predicate(ctx):
-        return str(ctx.author) in ADMINS or len(ops[str(ctx.guild.id)]) == 0\
-               or str(ctx.author) in ops[str(ctx.guild.id)]
+        guild_id = str(ctx.guild.id)
+        command = str(ctx.command)
+
+        if str(ctx.author) in ADMINS or\
+           len(ops[guild_id]) == 0 and ctx.author.guild_permissions.administrator or\
+           str(ctx.author) in ops[guild_id]:
+            return True
+
+        if guild_id not in perms.keys():
+            return False
+        if command not in perms[guild_id].keys():
+            return False
+        if "user" in perms[guild_id][command].keys():
+            for key in perms[guild_id][command]["user"].keys():
+                if key == str(ctx.author):
+                    return perms[guild_id][command]["user"][key]
+        if "role" in perms[guild_id][command].keys():
+            for key in perms[guild_id][command]["role"].keys():
+                for role in ctx.author.roles:
+                    if key == str(role):
+                        return perms[guild_id][command]["role"][key]
+        if "channel" in perms[guild_id][command].keys():
+            for key in perms[guild_id][command]["channel"].keys():
+                if key == str(ctx.channel):
+                    return perms[guild_id][command]["channel"][key]
+        if "guild" in perms[guild_id][command].keys():
+            return perms[guild_id][command]["guild"]
+        return False
+
     return commands.check(predicate)
 
 
@@ -66,7 +114,7 @@ class AdminCommands:
 
     __slots__ = ['bot']
 
-    LEVELS = ["server", "role", "channel", "user"]
+    LEVELS = ["guild", "role", "channel", "user"]
 
     def __init__(self, bot):
         self.bot = bot
@@ -88,9 +136,9 @@ class AdminCommands:
     @commands.command()
     @admin_check()
     async def talos_perms(self, ctx):
-        """Has Talos print out their current permissions"""
+        """Has Talos print out their current guild permissions"""
         perms = ctx.me.guild_permissions
-        out = "```Permissions:\n"
+        out = "```Guild Permissions:\n"
         out += "    Administrator: {}\n".format(perms.administrator)
         out += "    Add Reactions: {}\n".format(perms.add_reactions)
         out += "    Attach Files: {}\n".format(perms.attach_files)
@@ -168,9 +216,36 @@ class AdminCommands:
         else:
             await ctx.send("No ops currently")
 
-    @commands.command()
+    @commands.group()
     @admin_check()
-    async def oplist(self, ctx):
+    async def ops(self, ctx):
+        """Operator related commands. By default, anyone on a server with admin privileges is an Op."""\
+            """ Adding someone to the list will override this behavior."""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Valid options are 'add', 'list', and 'remove'.")
+
+    @ops.command(name="add")
+    async def _o_add(self, ctx, member: discord.Member):
+        """Adds a new operator user"""
+        if str(member) not in ops[str(ctx.guild.id)]:
+            ops[str(ctx.guild.id)].append(str(member))
+            await ctx.send("Opped {0.name}!".format(member))
+            await self.bot.save()
+        else:
+            await ctx.send("That user is already an op!")
+
+    @ops.command(name="remove")
+    async def _o_remove(self, ctx, member: discord.Member):
+        """Removes an operator user"""
+        try:
+            ops[str(ctx.guild.id)].remove(str(member))
+            await ctx.send("De-opped {0.name}".format(member))
+            await self.bot.save()
+        except ValueError:
+            await ctx.send("That person isn't an op!")
+
+    @ops.command(name="list")
+    async def _o_list(self, ctx):
         """Displays all operators for the current server"""
         if ops[str(ctx.guild.id)]:
             out = "```"
@@ -181,44 +256,49 @@ class AdminCommands:
         else:
             await ctx.send("This server currently has no operators.")
 
-    @commands.command()
+    @commands.group()
     @admin_check()
-    async def add_op(self, ctx, member: discord.Member):
-        """Adds a new operator user"""
-        if str(member) not in ops[str(ctx.guild.id)]:
-            ops[str(ctx.guild.id)].append(str(member))
-            await ctx.send("Opped {0.name}!".format(member))
-            await self.bot.save()
-        else:
-            await ctx.send("That user is already an op!")
+    async def perms(self, ctx):
+        """Permissions related commands. Talos permissions currently are divided into 4 levels, with each level """\
+           """overriding any lower one. The levels, in order from lowest to highest priority, are:
+           -Guild
+           -Channel
+           -Role
+           -User
+           One can 'allow' or 'forbid' specifics at each level, or simply 'allow' or 'forbid' the whole guild."""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Valid options are 'create', 'list', and 'remove'.")
 
-    @commands.command(aliases=["de_op"])
-    @admin_check()
-    async def remove_op(self, ctx, member: discord.Member):
-        """Removes an operator user"""
-        try:
-            ops[str(ctx.guild.id)].remove(str(member))
-            await ctx.send("De-opped {0.name}".format(member))
-            await self.bot.save()
-        except ValueError:
-            await ctx.send("That person isn't an op!")
-
-    @commands.command()
-    @admin_check()
-    async def perms(self, ctx, command: str, level: str, *options):
-        """Change permissions for other commands."""
+    @perms.command(name="create")
+    async def _p_create(self, ctx, command: str, level: str, *options):
+        """Create or alter a permissions rule"""
         level = level.lower()
         if command in self.bot.all_commands and level in self.LEVELS:
-            if len(options) < 2:
-                await ctx.send("I need more to go on.")
+            if len(options) < 2 and level != "guild":
+                await ctx.send("You need to include both a name and either 'allow' or 'forbid'")
+                return
+            elif len(options) < 1:
+                await ctx.send("You need to include an 'allow' or 'forbid'")
                 return
 
             if level == "user":
-                spec = str(discord.utils.find(lambda u: u.name == options[0], ctx.guild.members))
+                spec = discord.utils.find(lambda u: u.name == options[0], ctx.guild.members)
+                if spec is None:
+                    await ctx.send("Sorry, I couldn't find the user {}!".format(options[0]))
+                    return
+                spec = str(spec)
             elif level == "role":
-                spec = str(discord.utils.find(lambda r: r.name == options[0], ctx.guild.roles))
+                spec = discord.utils.find(lambda r: r.name == options[0], ctx.guild.roles)
+                if spec is None:
+                    await ctx.send("Sorry, I couldn't find the role {}!".format(options[0]))
+                    return
+                spec = str(spec)
             elif level == "channel":
-                spec = str(discord.utils.find(lambda c: c.name == options[0], ctx.guild.channels))
+                spec = discord.utils.find(lambda c: c.name == options[0], ctx.guild.channels)
+                if spec is None:
+                    await ctx.send("Sorry, I couldn't find the channel {}!".format(options[0]))
+                    return
+                spec = str(spec)
             else:
                 spec = None
 
@@ -230,12 +310,48 @@ class AdminCommands:
                 await ctx.send("I don't recognize any options I can change in that.")
                 return
             await self.bot.update_perms()
-            print(perms)
-            await ctx.send("Permissions updated.")
-        elif command not in self.bot.commands:
+            await ctx.send("Permissions for command **{}** at level **{}** updated.".format(command, level))
+        elif command not in self.bot.all_commands:
             await ctx.send("I don't recognize that command, so I can't set permissions for it!")
         else:
             await ctx.send("Unrecognized permission level.")
+
+    @perms.command(name="remove")
+    async def _p_remove(self, ctx, command: str, *options):
+        """Remove a permissions rule or set of rules."""
+        if len(options) > 0:
+            level = options[0]
+            level = level.lower()
+        else:
+            level = None
+        if command in self.bot.all_commands and (level in self.LEVELS or level is None):
+            if len(options) > 1:
+                if level == "user":
+                    spec = str(discord.utils.find(lambda u: u.name == options[1], ctx.guild.members))
+                elif level == "role":
+                    spec = str(discord.utils.find(lambda r: r.name == options[1], ctx.guild.roles))
+                elif level == "channel":
+                    spec = str(discord.utils.find(lambda c: c.name == options[1], ctx.guild.channels))
+                else:
+                    spec = None
+            else:
+                spec = None
+
+            remove_perm(str(ctx.guild.id), command, level, spec)
+            await self.bot.update_perms()
+            if level is None:
+                await ctx.send("Permissions for command **{}** at all levels cleared.".format(command))
+                return
+            await ctx.send("Permissions for command **{}** at level **{}** cleared.".format(command, level))
+        elif command not in self.bot.commands:
+            await ctx.send("I don't recognize that command, so I can't clear permissions for it!")
+        else:
+            await ctx.send("Unrecognized permission level.")
+
+    @perms.command(name="list")
+    async def _p_list(self, ctx):
+        """List current permissions rules"""
+        await ctx.send("`{}`".format(perms))
 
 
 def setup(bot):

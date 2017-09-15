@@ -65,7 +65,7 @@ class Talos(commands.Bot):
 
     @asyncio.coroutine
     async def update_perms(self):
-        bot.extensions["Commands"].perms = bot.extensions["AdminCommands"].perms
+        bot.extensions["Commands"].perms.update(bot.extensions["AdminCommands"].perms)
         json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=bot.extensions["AdminCommands"].perms)
 
     @asyncio.coroutine
@@ -79,6 +79,8 @@ class Talos(commands.Bot):
     def on_command_error(self, ctx, exception):
         if type(exception) == discord.ext.commands.CommandNotFound:
             yield from ctx.send("Sorry, I don't understand \"{}\". May I suggest ^help?".format(ctx.invoked_with))
+        elif type(exception) == discord.ext.commands.CheckFailure:
+            logging.info("Woah, {} tried to run a command without permissions!".format(ctx.author))
         else:
             print('Ignoring exception in command {}'.format(ctx.command), file=sys.stderr)
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
@@ -114,8 +116,10 @@ def json_load(filename):
 def build_trees(data):
     try:
         bot.extensions["AdminCommands"].ops.update(data['ops'])
+        bot.extensions["AdminCommands"].perms.update(data['perms'])
+        bot.extensions["Commands"].perms.update(data['perms'])
     except KeyError:
-        logging.warning("Admin Commands cog not loaded")
+        logging.warning("Cog not loaded")
 
 
 def json_save(filename, **options):
