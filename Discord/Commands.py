@@ -11,9 +11,12 @@ import random
 import datetime
 from collections import defaultdict
 
+# Dict to keep track of whatever the currently active PW iss
 active_pw = defaultdict(lambda: None)
-
-perms = {}
+# Permissions list. Filled on bot load, altered by command
+perms = defaultdict(lambda: {})
+# Options list. Filled on bot load, altered by command.
+options = defaultdict(lambda: {})
 
 
 def perms_check():
@@ -386,16 +389,34 @@ class Commands:
             await ctx.send("Ending PW.")
             active_pw[ctx.guild.id].finish()
             cur_pw = active_pw[ctx.guild.id]
-            out = "```"
-            out += "Start: {}\n".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
-            out += "End: {}\n".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
-            out += "Total: {}\n".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
-            out += "Times:\n"
             cur_pw.members.sort(key=sort_mem, reverse=True)
+            winner = discord.utils.find(lambda m: cur_pw.members[0].user == m, ctx.guild.members)
+            embed = discord.Embed(colour=winner.colour,
+                                  timestamp=datetime.datetime.now())
+            embed.set_author(name="{} won the PW!".format(winner.display_name), icon_url=winner.avatar_url)
+            embed.add_field(name="Start",
+                            value="{}".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
+                            inline=True)
+            embed.add_field(name="End",
+                            value="{}".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
+                            inline=True)
+            embed.add_field(name="Total",
+                            value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0)))
+            memberList = ""
             for member in cur_pw.members:
-                out += "    {0} - {1}\n".format(member.user, member.end.replace(microsecond=0) - member.start.replace(microsecond=0))
-            out += "```"
-            await ctx.send(out)
+                memberList += "{0} - {1}\n".format(member.user.display_name, member.end.replace(microsecond=0) - member.start.replace(microsecond=0))
+            embed.add_field(name="Times", value=memberList)
+            await ctx.send(embed=embed)
+            # out = "```"
+            # out += "Start: {}\n".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
+            # out += "End: {}\n".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
+            # out += "Total: {}\n".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
+            # out += "Times:\n"
+            # cur_pw.members.sort(key=sort_mem, reverse=True)
+            # for member in cur_pw.members:
+            #     out += "    {0} - {1}\n".format(member.user, member.end.replace(microsecond=0) - member.start.replace(microsecond=0))
+            # out += "```"
+            # await ctx.send(out)
             active_pw[ctx.guild.id] = None
 
     @productivitywar.command(name='dump', hidden=True)

@@ -18,4 +18,5 @@ def test_extension_load():
     assert "UserCommands" in bot.extensions, "Didn't load UserCommands extension"
     assert "AdminCommands" in bot.extensions, "Didn't load AdminCommands extensions"
 
+
 test_extension_load()

@@ -9,6 +9,7 @@ import logging
 import random
 import string
 import asyncio
+import datetime
 from discord.ext import commands
 from collections import defaultdict
 
@@ -22,7 +23,7 @@ ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "Hidd/Metallic#3
 # Ops list. Filled on bot load, altered through the add and remove op commands.
 ops = defaultdict(lambda: [])
 # Permissions list. Filled on bot load, altered by command
-perms = {}
+perms = defaultdict(lambda: {})
 # Security keys, for security-locked commands.
 secure_keys = defaultdict(lambda: "")
 
@@ -31,16 +32,16 @@ logging.basicConfig(level=logging.INFO)
 
 
 def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    """Generates random strings for things that need keys. Allows variable size and character lists, if desired."""
     return ''.join(random.choice(chars) for _ in range(size))
 
 
 def set_perm(guild, command, level, name, allow):
+    """Sets the permissions for given inputs"""
     if name is not None:
         try:
             perms[guild][command][level][name] = allow
         except KeyError:
-            if guild not in perms.keys():
-                perms[guild] = {}
             if command not in perms[guild].keys():
                 perms[guild][command] = {}
             if level not in perms[guild][command].keys():
@@ -50,18 +51,23 @@ def set_perm(guild, command, level, name, allow):
         try:
             perms[guild][command][level] = allow
         except KeyError:
-            if guild not in perms.keys():
-                perms[guild] = {}
             if command not in perms[guild].keys():
                 perms[guild][command] = {}
             perms[guild][command][level] = allow
 
 
 def remove_perm(guild, command, level, name):
+    """Clears the permissions, for given inputs."""
     if name is not None:
         del perms[guild][command][level][name]
+        if len(perms[guild][command][level]) == 0:
+            del perms[guild][command][level]
+        if len(perms[guild][command]) == 0:
+            del perms[guild][command]
     elif level is not None:
         del perms[guild][command][level]
+        if len(perms[guild][command]) == 0:
+            del perms[guild][command]
     elif command is not None:
         del perms[guild][command]
     else:
@@ -119,11 +125,12 @@ def admin_only():
 #
 class AdminCommands:
     """These commands can only be used by Admins or Ops, and will work at any time.
-    If no Ops exist, anyone can use op commands"""
+    If no Ops exist, anyone with admin can use op commands"""
 
     __slots__ = ['bot']
 
-    LEVELS = ["guild", "role", "channel", "user"]
+    LEVELS = ["guild", "channel", "role", "user"]
+    LEVELS_DICT = {"guild": 0, "channel": 1, "role": 2, "user": 3}
 
     def __init__(self, bot):
         self.bot = bot
@@ -145,7 +152,8 @@ class AdminCommands:
     @commands.command(usage="[number=10]")
     @admin_check()
     async def purge(self, ctx, number: str="10", *key):
-        """Purges messages from a channel. By default, this will be 10 (including the invoking command). Use 'all' to purge whole channel."""
+        """Purges messages from a channel. By default, this will be 10 (including the invoking command)."""\
+            """ Use 'all' to purge whole channel."""
         if number != "all":
             number = int(number)
             if number > 100 and (len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]):
@@ -154,7 +162,7 @@ class AdminCommands:
                 await ctx.send("Are you sure? If so, re-invoke with {} on the end.".format(rand_key))
             else:
                 async for message in ctx.history(limit=number):
-                    await message.delete(reason="Purged!")
+                    await message.delete()
                     await asyncio.sleep(.5)
         else:
             if len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]:
@@ -163,7 +171,7 @@ class AdminCommands:
                 await ctx.send("Are you sure? If so, re-invoke with {} on the end.".format(rand_key))
             elif key[0] == secure_keys[str(ctx.guild.id)]:
                 async for message in ctx.history(limit=None):
-                    await message.delete(reason="Purged!")
+                    await message.delete()
                     await asyncio.sleep(.5)
                 secure_keys[str(ctx.guild.id)] = ""
 
@@ -236,19 +244,19 @@ class AdminCommands:
         await ctx.send("Nickname universally changed to {}".format(nick))
 
     @commands.command(hidden=True)
-    @admin_only()
-    async def all_ops(self, ctx):
-        """Displays all operators everywhere"""
-        out = "```"
-        for key in ops:
-            out += "Server: {}\n".format(self.bot.get_guild(int(key)))
-            for user in ops[key]:
-                out += "    {}\n".format(user)
-        if out != "```":
-            out += "```"
-            await ctx.send(out)
-        else:
-            await ctx.send("No ops currently")
+    @admin_check()
+    async def embed(self, ctx):
+        """Testing with embeds"""
+        logging.info("Posting embed")
+        embed = discord.Embed(title="Productivity War", colour=ctx.author.colour,
+                              description="CraftSpider won the PW!",
+                              timestamp=datetime.datetime.now())
+        embed.add_field(name="Start", value="Sep 24 - 22:41:33", inline=True)
+        embed.add_field(name="End", value="Sep 24 - 22:41:37", inline=True)
+        embed.add_field(name="Total", value="00:00:04")
+        embed.add_field(name="Times", value="CraftSpider#0269 - 0:00:04\nhiddenstorys#3600 - 0:00:02")
+        # embed.set_footer(icon_url=ctx.author.avatar_url, text=ctx.author.display_name)
+        await ctx.send(embed=embed)
 
     @commands.group()
     @admin_check()
@@ -290,6 +298,21 @@ class AdminCommands:
             await ctx.send(out)
         else:
             await ctx.send("This server currently has no operators.")
+
+    @ops.command(hidden=True, name="all")
+    @admin_only()
+    async def _o_all(self, ctx):
+        """Displays all operators everywhere"""
+        out = "```"
+        for key in ops:
+            out += "Server: {}\n".format(self.bot.get_guild(int(key)))
+            for user in ops[key]:
+                out += "    {}\n".format(user)
+        if out != "```":
+            out += "```"
+            await ctx.send(out)
+        else:
+            await ctx.send("No ops currently")
 
     @commands.group()
     @admin_check()
@@ -386,6 +409,26 @@ class AdminCommands:
     @perms.command(name="list")
     async def _p_list(self, ctx):
         """List current permissions rules"""
+        serv_perms = perms[str(ctx.guild.id)]
+        if len(serv_perms) == 0:
+            await ctx.send("No permissions set for this server.")
+            return
+        out = "```"
+        for command in serv_perms:
+            out += "Command: {}\n".format(command)
+            for level in sorted(serv_perms[command], key=lambda a: self.LEVELS_DICT[a]):
+                out += "    Level: {}\n".format(level)
+                if level == "guild":
+                    out += "        {}\n".format(serv_perms[command][level])
+                else:
+                    for spec in serv_perms[command][level]:
+                        out += "        {}: {}\n".format(spec, serv_perms[command][level][spec])
+        out += "```"
+        await ctx.send(out)
+
+    @perms.command(name="all")
+    @admin_only()
+    async def _p_all(self, ctx):
         await ctx.send("`{}`".format(perms))
 
 
