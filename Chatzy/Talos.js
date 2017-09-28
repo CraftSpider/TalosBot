@@ -134,7 +134,7 @@ function setStorage(key, content) {
 /**
  * Returns the value of a specific key from the localStorage.
  * @param {String} key Key value to retrieve
- * @returns {String} Value of whatever was stored at that key location. undefined if nonextant.
+ * @returns {String} Value of whatever was stored at that key location. undefined if non-extant.
  */
 function getStorage(key) {
     return window.localStorage[key];
@@ -171,7 +171,7 @@ function reloadCommands() {
 /**
  * Retrieves a file over HTTP, from a given URL or address.
  * @param {String} file Full URL link of file to retrieve.
- * @returns {Promise} A promise for the text of the file. Will resolve on succesfull retrieval, reject otherwise.
+ * @returns {Promise} A promise for the text of the file. Will resolve on successful retrieval, reject otherwise.
  */
 function readFile(file) {
     return new Promise(function(resolve, reject) {
@@ -320,7 +320,7 @@ function readChat() {
 }
 
 /**
- * Reads received PMs, using the same command format as used for read chat messsages.
+ * Reads received PMs, using the same command format as used for read chat messages.
  */
 function readPMs() {
     var Popup = elementByID(popup);

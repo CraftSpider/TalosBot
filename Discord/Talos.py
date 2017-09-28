@@ -12,6 +12,7 @@ import json
 import logging
 import datetime
 import asyncio
+from collections import defaultdict
 # from concurrent.futures import ThreadPoolExecutor
 # import threading
 
@@ -28,7 +29,13 @@ SAVE_FILE = "./TalosData.dat"
 #   Command Vars
 #
 is_sleeping = 0
-perms = {}
+# Ops list. Filled on bot load, altered through the add and remove op commands.
+ops = defaultdict(lambda: [])
+# Permissions list. Filled on bot load, altered by command
+perms = defaultdict(lambda: {})
+# Options list. Filled on bot load, altered by command.
+options = defaultdict(lambda: {})
+
 
 
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
@@ -66,6 +73,7 @@ class Talos(commands.Bot):
     @asyncio.coroutine
     async def update_perms(self):
         bot.extensions["Commands"].perms.update(bot.extensions["AdminCommands"].perms)
+        bot.extensions["UserCommands"].perms.update(bot.extensions["AdminCommands"].perms)
         json_save(SAVE_FILE, ops=bot.extensions["AdminCommands"].ops, perms=bot.extensions["AdminCommands"].perms)
 
     @asyncio.coroutine
@@ -115,9 +123,13 @@ def json_load(filename):
 
 def build_trees(data):
     try:
+        ops.update(data['ops'])
+        perms.update(data['perms'])
+        options.update(data['options'])
         bot.extensions["AdminCommands"].ops.update(data['ops'])
-        bot.extensions["AdminCommands"].perms.update(data['perms'])
-        bot.extensions["Commands"].perms.update(data['perms'])
+        for extension in bot.extensions:
+            bot.extensions[extension].perms.update(data['perms'])
+            bot.extensions[extension].options.update(data['options'])
     except KeyError:
         logging.warning("Cog not loaded")
 
@@ -132,8 +144,8 @@ def json_save(filename, **options):
         except Exception as e:
             print(e)
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     description = '''Greetings. I'm Talos, chat helper. My commands are:'''
     bot = Talos(description=description)
     bot.load_extensions()

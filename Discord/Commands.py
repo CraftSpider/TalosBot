@@ -22,6 +22,9 @@ options = defaultdict(lambda: {})
 def perms_check():
     """Determine whether the person calling the command is an operator or admin."""
     def predicate(ctx):
+
+        if isinstance(ctx.channel, discord.abc.PrivateChannel):
+            return True
         guild_id = str(ctx.guild.id)
         command = str(ctx.command)
 
@@ -53,9 +56,10 @@ def sort_mem(member):
     """Function key for sorting PW_Member objects."""
     return member.end - member.start
 
-def strfdelta(tdelta, fmt):
-    d = {"d": tdelta.days}
-    d["h"], rem = divmod(tdelta.seconds, 3600)
+
+def strfdelta(time_delta, fmt):
+    d = {"d": time_delta.days}
+    d["h"], rem = divmod(time_delta.seconds, 3600)
     d["m"], d["s"] = divmod(rem, 60)
     return fmt.format(**d)
 
@@ -122,7 +126,7 @@ class Commands:
                        "it. Due to Discord TOS, you must be informed and consent to any storage of data you send here. "
                        "This data will never be publicly shared except at your request, and only used to help run Talos"
                        " and support features that require it. If you have any questions about this or problems with it"
-                       " , please talk to one of the Talos developers for information and we'll see what we can do to "
+                       ", please talk to one of the Talos developers for information and we'll see what we can do to "
                        "help")
 
     @commands.command()
@@ -181,7 +185,7 @@ class Commands:
         """Runs an X minute long word-war"""
         try:
             length = float(length)
-        except Exception:
+        except ValueError:
             await ctx.send("Please specify the length of your word war (in minutes).")
             return
         if length > 60 or length < 1:
@@ -195,8 +199,8 @@ class Commands:
                 elif start[0].isnumeric():
                     start = int(start)
                 else:
-                    raise Exception
-            except Exception:
+                    raise ValueError
+            except ValueError:
                 await ctx.send("Start time format broken. Starting now.")
                 start = ""
             if start != "" and (start > 59 or start < 0):
@@ -231,8 +235,8 @@ class Commands:
     async def uptime(self, ctx):
         """To figure out how long the bot has been online."""
         boot_string = self.bot.BOOT_TIME.strftime("%b %d, %H:%M:%S")
-        tdelta = datetime.datetime.now() - self.bot.BOOT_TIME
-        delta_string = strfdelta(tdelta, "{d} days, {h:02}:{m:02}:{s:02}")
+        time_delta = datetime.datetime.now() - self.bot.BOOT_TIME
+        delta_string = strfdelta(time_delta, "{d} days, {h:02}:{m:02}:{s:02}")
         out = "I've been online since {0}, a total of {1}".format(boot_string, delta_string)
         await ctx.send(out)
 
@@ -244,43 +248,6 @@ class Commands:
         async with ctx.typing():
             await asyncio.sleep(1)
             await ctx.send("Oh my. Well, if you insist ;)")
-
-    @commands.command()
-    @perms_check()
-    async def my_perms(self, ctx):
-        """Has Talos print out your current guild permissions"""
-        perms = ctx.author.guild_permissions
-        out = "```Guild Permissions:\n"
-        out += "    Administrator: {}\n".format(perms.administrator)
-        out += "    Add Reactions: {}\n".format(perms.add_reactions)
-        out += "    Attach Files: {}\n".format(perms.attach_files)
-        out += "    Ban Members: {}\n".format(perms.ban_members)
-        out += "    Change Nickname: {}\n".format(perms.change_nickname)
-        out += "    Connect: {}\n".format(perms.connect)
-        out += "    Deafen Members: {}\n".format(perms.deafen_members)
-        out += "    Embed Links: {}\n".format(perms.embed_links)
-        out += "    External Emojis: {}\n".format(perms.external_emojis)
-        out += "    Instant Invite: {}\n".format(perms.create_instant_invite)
-        out += "    Kick Members: {}\n".format(perms.kick_members)
-        out += "    Manage Channels: {}\n".format(perms.manage_channels)
-        out += "    Manage Emojis: {}\n".format(perms.manage_emojis)
-        out += "    Manage Guild: {}\n".format(perms.manage_guild)
-        out += "    Manage Messages: {}\n".format(perms.manage_messages)
-        out += "    Manage Nicknames: {}\n".format(perms.manage_nicknames)
-        out += "    Manage Roles: {}\n".format(perms.manage_roles)
-        out += "    Manage Webhooks: {}\n".format(perms.manage_webhooks)
-        out += "    Mention Everyone: {}\n".format(perms.mention_everyone)
-        out += "    Move Members: {}\n".format(perms.move_members)
-        out += "    Mute Members: {}\n".format(perms.mute_members)
-        out += "    Read Message History: {}\n".format(perms.read_message_history)
-        out += "    Read Messages: {}\n".format(perms.read_messages)
-        out += "    Send Messages: {}\n".format(perms.send_messages)
-        out += "    Send TTS: {}\n".format(perms.send_tts_messages)
-        out += "    Speak: {}\n".format(perms.speak)
-        out += "    Use Voice Activation: {}\n".format(perms.use_voice_activation)
-        out += "    View Audit: {}\n".format(perms.view_audit_log)
-        out += "```"
-        await ctx.send(out)
 
     @commands.command(name="Hi", hidden=True)
     @perms_check()
@@ -404,7 +371,9 @@ class Commands:
                             value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0)))
             memberList = ""
             for member in cur_pw.members:
-                memberList += "{0} - {1}\n".format(member.user.display_name, member.end.replace(microsecond=0) - member.start.replace(microsecond=0))
+                end = member.end.replace(microsecond=0)
+                start = member.start.replace(microsecond=0)
+                memberList += "{0} - {1}\n".format(member.user.display_name, end - start)
             embed.add_field(name="Times", value=memberList)
             await ctx.send(embed=embed)
             # out = "```"
@@ -414,7 +383,9 @@ class Commands:
             # out += "Times:\n"
             # cur_pw.members.sort(key=sort_mem, reverse=True)
             # for member in cur_pw.members:
-            #     out += "    {0} - {1}\n".format(member.user, member.end.replace(microsecond=0) - member.start.replace(microsecond=0))
+            #     end = member.end.replace(microsecond=0)
+            #     start = member.start.replace(microsecond=0)
+            #     out += "    {0} - {1}\n".format(member.user, end - start)
             # out += "```"
             # await ctx.send(out)
             active_pw[ctx.guild.id] = None

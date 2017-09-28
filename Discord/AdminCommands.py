@@ -24,6 +24,8 @@ ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "Hidd/Metallic#3
 ops = defaultdict(lambda: [])
 # Permissions list. Filled on bot load, altered by command
 perms = defaultdict(lambda: {})
+# Options list. Filled on bot load, altered by command.
+options = defaultdict(lambda: {})
 # Security keys, for security-locked commands.
 secure_keys = defaultdict(lambda: "")
 
@@ -80,6 +82,9 @@ def remove_perm(guild, command, level, name):
 def admin_check():
     """Determine whether the person calling the command is an operator or admin."""
     def predicate(ctx):
+
+        if isinstance(ctx.channel, discord.abc.PrivateChannel):
+            return True
         guild_id = str(ctx.guild.id)
         command = str(ctx.command)
 
@@ -179,36 +184,36 @@ class AdminCommands:
     @admin_check()
     async def talos_perms(self, ctx):
         """Has Talos print out their current guild permissions"""
-        perms = ctx.me.guild_permissions
+        talosPerms = ctx.me.guild_permissions
         out = "```Guild Permissions:\n"
-        out += "    Administrator: {}\n".format(perms.administrator)
-        out += "    Add Reactions: {}\n".format(perms.add_reactions)
-        out += "    Attach Files: {}\n".format(perms.attach_files)
-        out += "    Ban Members: {}\n".format(perms.ban_members)
-        out += "    Change Nickname: {}\n".format(perms.change_nickname)
-        out += "    Connect: {}\n".format(perms.connect)
-        out += "    Deafen Members: {}\n".format(perms.deafen_members)
-        out += "    Embed Links: {}\n".format(perms.embed_links)
-        out += "    External Emojis: {}\n".format(perms.external_emojis)
-        out += "    Instant Invite: {}\n".format(perms.create_instant_invite)
-        out += "    Kick Members: {}\n".format(perms.kick_members)
-        out += "    Manage Channels: {}\n".format(perms.manage_channels)
-        out += "    Manage Emojis: {}\n".format(perms.manage_emojis)
-        out += "    Manage Guild: {}\n".format(perms.manage_guild)
-        out += "    Manage Messages: {}\n".format(perms.manage_messages)
-        out += "    Manage Nicknames: {}\n".format(perms.manage_nicknames)
-        out += "    Manage Roles: {}\n".format(perms.manage_roles)
-        out += "    Manage Webhooks: {}\n".format(perms.manage_webhooks)
-        out += "    Mention Everyone: {}\n".format(perms.mention_everyone)
-        out += "    Move Members: {}\n".format(perms.move_members)
-        out += "    Mute Members: {}\n".format(perms.mute_members)
-        out += "    Read Message History: {}\n".format(perms.read_message_history)
-        out += "    Read Messages: {}\n".format(perms.read_messages)
-        out += "    Send Messages: {}\n".format(perms.send_messages)
-        out += "    Send TTS: {}\n".format(perms.send_tts_messages)
-        out += "    Speak: {}\n".format(perms.speak)
-        out += "    Use Voice Activation: {}\n".format(perms.use_voice_activation)
-        out += "    View Audit: {}\n".format(perms.view_audit_log)
+        out += "    Administrator: {}\n".format(talosPerms.administrator)
+        out += "    Add Reactions: {}\n".format(talosPerms.add_reactions)
+        out += "    Attach Files: {}\n".format(talosPerms.attach_files)
+        out += "    Ban Members: {}\n".format(talosPerms.ban_members)
+        out += "    Change Nickname: {}\n".format(talosPerms.change_nickname)
+        out += "    Connect: {}\n".format(talosPerms.connect)
+        out += "    Deafen Members: {}\n".format(talosPerms.deafen_members)
+        out += "    Embed Links: {}\n".format(talosPerms.embed_links)
+        out += "    External Emojis: {}\n".format(talosPerms.external_emojis)
+        out += "    Instant Invite: {}\n".format(talosPerms.create_instant_invite)
+        out += "    Kick Members: {}\n".format(talosPerms.kick_members)
+        out += "    Manage Channels: {}\n".format(talosPerms.manage_channels)
+        out += "    Manage Emojis: {}\n".format(talosPerms.manage_emojis)
+        out += "    Manage Guild: {}\n".format(talosPerms.manage_guild)
+        out += "    Manage Messages: {}\n".format(talosPerms.manage_messages)
+        out += "    Manage Nicknames: {}\n".format(talosPerms.manage_nicknames)
+        out += "    Manage Roles: {}\n".format(talosPerms.manage_roles)
+        out += "    Manage Webhooks: {}\n".format(talosPerms.manage_webhooks)
+        out += "    Mention Everyone: {}\n".format(talosPerms.mention_everyone)
+        out += "    Move Members: {}\n".format(talosPerms.move_members)
+        out += "    Mute Members: {}\n".format(talosPerms.mute_members)
+        out += "    Read Message History: {}\n".format(talosPerms.read_message_history)
+        out += "    Read Messages: {}\n".format(talosPerms.read_messages)
+        out += "    Send Messages: {}\n".format(talosPerms.send_messages)
+        out += "    Send TTS: {}\n".format(talosPerms.send_tts_messages)
+        out += "    Speak: {}\n".format(talosPerms.speak)
+        out += "    Use Voice Activation: {}\n".format(talosPerms.use_voice_activation)
+        out += "    View Audit: {}\n".format(talosPerms.view_audit_log)
         out += "```"
         await ctx.send(out)
 
@@ -409,20 +414,20 @@ class AdminCommands:
     @perms.command(name="list")
     async def _p_list(self, ctx):
         """List current permissions rules"""
-        serv_perms = perms[str(ctx.guild.id)]
-        if len(serv_perms) == 0:
+        guild_perms = perms[str(ctx.guild.id)]
+        if len(guild_perms) == 0:
             await ctx.send("No permissions set for this server.")
             return
         out = "```"
-        for command in serv_perms:
+        for command in guild_perms:
             out += "Command: {}\n".format(command)
-            for level in sorted(serv_perms[command], key=lambda a: self.LEVELS_DICT[a]):
+            for level in sorted(guild_perms[command], key=lambda a: self.LEVELS_DICT[a]):
                 out += "    Level: {}\n".format(level)
                 if level == "guild":
-                    out += "        {}\n".format(serv_perms[command][level])
+                    out += "        {}\n".format(guild_perms[command][level])
                 else:
-                    for spec in serv_perms[command][level]:
-                        out += "        {}: {}\n".format(spec, serv_perms[command][level][spec])
+                    for spec in guild_perms[command][level]:
+                        out += "        {}: {}\n".format(spec, guild_perms[command][level][spec])
         out += "```"
         await ctx.send(out)
 
