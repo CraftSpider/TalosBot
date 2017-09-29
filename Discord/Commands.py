@@ -13,10 +13,12 @@ from collections import defaultdict
 
 # Dict to keep track of whatever the currently active PW iss
 active_pw = defaultdict(lambda: None)
+# Ops list. Filled on bot load, altered through the add and remove op commands.
+ops = {}
 # Permissions list. Filled on bot load, altered by command
-perms = defaultdict(lambda: {})
+perms = {}
 # Options list. Filled on bot load, altered by command.
-options = defaultdict(lambda: {})
+options = {}
 
 
 def perms_check():
@@ -28,8 +30,8 @@ def perms_check():
         guild_id = str(ctx.guild.id)
         command = str(ctx.command)
 
-        if guild_id not in perms.keys():
-            return True
+        if not options[guild_id]["Commands"]:
+            return False
         if command not in perms[guild_id].keys():
             return True
         if "user" in perms[guild_id][command].keys():
@@ -110,13 +112,15 @@ class Commands:
     #   User Commands
     #
     
-    @commands.command()
+    @commands.command(aliases=["info"])
     @perms_check()
     async def information(self, ctx):
         """Gives a short blurb about Talos."""
-        await ctx.send("Hello! I'm Talos, official PtP mod-bot.\
-                           \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
-                           \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.")
+        out = "Hello! I'm Talos, official PtP mod-bot. `^help` for command details.\
+                  \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
+                  \nI am built using discord.py, version {}.\
+                  \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.".format(discord.__version__)
+        await ctx.send(out)
 
     @commands.command()
     @perms_check()
@@ -248,20 +252,6 @@ class Commands:
         async with ctx.typing():
             await asyncio.sleep(1)
             await ctx.send("Oh my. Well, if you insist ;)")
-
-    @commands.command(name="Hi", hidden=True)
-    @perms_check()
-    async def hi(self, ctx, *extra):
-        if str(ctx.author) == "East#4048" and extra[0] == "there...":
-            async with ctx.typing():
-                await asyncio.sleep(1)
-                await ctx.send("Hello East.")
-            await asyncio.sleep(1)
-            async with ctx.typing():
-                await asyncio.sleep(2)
-                await ctx.send("Thank you. The same to you.")
-            return
-        await ctx.send("Hello there {}".format(ctx.author.name))
     
     @commands.group()
     @perms_check()

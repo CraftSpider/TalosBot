@@ -1,0 +1,6 @@
+{
+  "FailMessage": false,
+  "Commands": true,
+  "UserCommands": true,
+  "JokeCommands": true
+}

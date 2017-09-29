@@ -8,13 +8,14 @@
 import discord
 import logging
 import asyncio
-from collections import defaultdict
 from discord.ext import commands
 
+# Ops list. Filled on bot load, altered through the add and remove op commands.
+ops = {}
 # Permissions list. Filled on bot load, altered by command
-perms = defaultdict(lambda: {})
+perms = {}
 # Options list. Filled on bot load, altered by command.
-options = defaultdict(lambda: {})
+options = {}
 
 
 def perms_check():
@@ -27,8 +28,8 @@ def perms_check():
         guild_id = str(ctx.guild.id)
         command = str(ctx.command)
 
-        if guild_id not in perms.keys():
-            return True
+        if not options[guild_id]["UserCommands"]:
+            return False
         if command not in perms[guild_id].keys():
             return True
         if "user" in perms[guild_id][command].keys():
@@ -63,7 +64,8 @@ class UserCommands:
     @commands.command()
     @perms_check()
     async def color(self, ctx, color: str):
-        """Changes the User's color, if Talos has role permissions. Input must be a hexadecimal color or the word 'clear' to remove all Talos colors."""
+        """Changes the User's color, if Talos has role permissions."""\
+            """ Input must be a hexadecimal color or the word 'clear' to remove all Talos colors."""
         color_role = None
         if color == "clear":
             for role in ctx.author.roles:
