@@ -8,7 +8,8 @@ import discord
 from discord.ext import commands
 import asyncio
 import random
-import datetime
+from datetime import datetime
+from datetime import timedelta
 from collections import defaultdict
 
 # Dict to keep track of whatever the currently active PW iss
@@ -60,10 +61,15 @@ def sort_mem(member):
 
 
 def strfdelta(time_delta, fmt):
+    """A way to convert time deltas to string formats easily."""
     d = {"d": time_delta.days}
     d["h"], rem = divmod(time_delta.seconds, 3600)
     d["m"], d["s"] = divmod(rem, 60)
     return fmt.format(**d)
+
+
+def values_greater(array, value):
+    return len([1 for i in array if i > value])
 
 
 class Commands:
@@ -181,7 +187,7 @@ class Commands:
     @perms_check()
     async def time(self, ctx):
         """Prints out the current time in UTC, HH:MM:SS format"""
-        await ctx.send("It's time to get a watch. {0}".format(datetime.datetime.utcnow().strftime("%H:%M:%S")))
+        await ctx.send("It's time to get a watch. {0}".format(datetime.utcnow().strftime("%H:%M:%S")))
     
     @commands.command(aliases=["ww", "WW"])
     @perms_check()
@@ -212,7 +218,7 @@ class Commands:
                 return
 
         if start is not "":
-            dif = abs(datetime.datetime.utcnow() - datetime.datetime.utcnow().replace(minute=start, second=0))
+            dif = abs(datetime.utcnow() - datetime.utcnow().replace(minute=start, second=0))
             await ctx.send("Starting WW at :{0:02}".format(start))
             await asyncio.sleep(dif.total_seconds())
         minutes = "minutes" if length != 1 else "minute"
@@ -239,9 +245,20 @@ class Commands:
     async def uptime(self, ctx):
         """To figure out how long the bot has been online."""
         boot_string = self.bot.BOOT_TIME.strftime("%b %d, %H:%M:%S")
-        time_delta = datetime.datetime.now() - self.bot.BOOT_TIME
-        delta_string = strfdelta(time_delta, "{d} days, {h:02}:{m:02}:{s:02}")
-        out = "I've been online since {0}, a total of {1}".format(boot_string, delta_string)
+        time_delta = datetime.now() - self.bot.BOOT_TIME
+        delta_string = strfdelta(time_delta, "{d} day"+("s" if time_delta.days != 1 else "")+", {h:02}:{m:02}:{s:02}")\
+            .format(x=("s" if time_delta.days == 1 else ""))
+        out = "I've been online since {0}, a total of {1}\n".format(boot_string, delta_string)
+        now = datetime.now().replace(microsecond=0)
+        day_total = 24*60
+        week_total = day_total*7
+        month_total = day_total*30
+        day_up = values_greater(self.bot.uptime, (now - timedelta(days=1)).timestamp()) / day_total
+        week_up = values_greater(self.bot.uptime, (now - timedelta(days=7)).timestamp()) / week_total
+        month_up = values_greater(self.bot.uptime, (now - timedelta(days=30)).timestamp()) / month_total
+        out += "Past uptime: {:02.2f}% of the past day, ".format(day_up)
+        out += "{:02.2f}% of the past week, ".format(week_up)
+        out += "{:02.2f}% of the past month".format(month_up)
         await ctx.send(out)
 
     @commands.command()
@@ -349,7 +366,7 @@ class Commands:
             cur_pw.members.sort(key=sort_mem, reverse=True)
             winner = discord.utils.find(lambda m: cur_pw.members[0].user == m, ctx.guild.members)
             embed = discord.Embed(colour=winner.colour,
-                                  timestamp=datetime.datetime.now())
+                                  timestamp=datetime.now())
             embed.set_author(name="{} won the PW!".format(winner.display_name), icon_url=winner.avatar_url)
             embed.add_field(name="Start",
                             value="{}".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
@@ -417,14 +434,14 @@ class PW:
 
     def begin(self):
         """Starts the PW, assumes it isn't started"""
-        self.start = datetime.datetime.utcnow()
+        self.start = datetime.utcnow()
         for member in self.members:
             if not member.get_started():
                 member.begin(self.start)
 
     def finish(self):
         """Ends the PW, assumes it isn't ended"""
-        self.end = datetime.datetime.utcnow()
+        self.end = datetime.utcnow()
         for member in self.members:
             if not member.get_finished():
                 member.finish(self.end)
@@ -434,7 +451,7 @@ class PW:
         if PW_Member(member) not in self.members:
             new_mem = PW_Member(member)
             if self.get_started():
-                new_mem.begin(datetime.datetime.utcnow())
+                new_mem.begin(datetime.utcnow())
             self.members.append(new_mem)
             return True
         else:
@@ -448,7 +465,7 @@ class PW:
                     if user.get_finished():
                         return 2
                     else:
-                        user.finish(datetime.datetime.utcnow())
+                        user.finish(datetime.utcnow())
             for user in self.members:
                 if not user.get_finished():
                     return 0

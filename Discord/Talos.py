@@ -5,12 +5,14 @@
     Author: CraftSpider
 """
 import discord
+from discord.ext import commands
 import traceback
 import sys
-from discord.ext import commands
+import asyncio
 import json
 import logging
-import datetime
+from datetime import datetime
+from datetime import timedelta
 
 #
 #   Constants
@@ -19,7 +21,7 @@ import datetime
 # Current Talos version. Loosely incremented.
 VERSION = "2.3.1"
 # Time Talos started
-BOOT_TIME = datetime.datetime.now()
+BOOT_TIME = datetime.now()
 # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
 STARTUP_EXTENSIONS = ["Commands", "UserCommands", "AdminCommands", "JokeCommands"]
 # Talos saves its data in this file. Don't touch it unless you understand what you're doing.
@@ -51,10 +53,13 @@ class Talos(commands.Bot):
 
     VERSION = VERSION
     BOOT_TIME = BOOT_TIME
+    # List of times when the bot was verified online.
+    uptime = []
 
     def __init__(self, **args):
         description = '''Greetings. I'm Talos, chat helper. My commands are:'''
         super().__init__("^", description=description, **args)
+        self.bg_task = self.loop.create_task(self.uptime_task())
 
     def load_extensions(self, extensions=None):
         """Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None."""
@@ -78,10 +83,9 @@ class Talos(commands.Bot):
     def get_default(option):
         return default_options[option]
 
-    @staticmethod
-    async def save():
+    async def save(self):
         """Saves current talos data to the save file"""
-        json_save(SAVE_FILE, ops=ops, perms=perms, options=options)
+        json_save(SAVE_FILE, ops=ops, perms=perms, options=options, uptime=self.uptime)
 
     async def logout(self):
         """Saves Talos data, then logs out the bot cleanly and safely"""
@@ -178,6 +182,23 @@ class Talos(commands.Bot):
             removed += 1
         await self.save()
         return added, removed
+
+    async def uptime_task(self):
+        """Called once a minute, to verify uptime. Also removes old values from the list."""
+        logging.info("Starting uptime task")
+        delta = datetime.now().replace(minute=(datetime.now().minute + 1), second=0, microsecond=0) -\
+            datetime.now().replace(microsecond=0)
+        await asyncio.sleep(delta.total_seconds())
+        while True:
+            self.uptime.append(datetime.now().replace(microsecond=0).timestamp())
+            old = []
+            for item in self.uptime:
+                if datetime.fromtimestamp(item) < datetime.now() - timedelta(days=30):
+                    old.append(item)
+            for item in old:
+                self.uptime.remove(item)
+            await self.save()
+            await asyncio.sleep(60)
 
     async def on_ready(self):
         """Called on bot ready, any time discord finishes connecting"""
@@ -282,6 +303,7 @@ if __name__ == "__main__":
     try:
         json_data = json_load(SAVE_FILE)
         default_options = json_load(DEFAULT_OPTIONS)
+        bot.uptime = json_data['uptime']
         if json_data is not None:
             build_trees(json_data)
         bot.run(load_token())
