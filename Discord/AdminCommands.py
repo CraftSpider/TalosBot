@@ -8,6 +8,7 @@ import discord
 import logging
 import random
 import string
+import re
 from discord.ext import commands
 from collections import defaultdict
 
@@ -71,6 +72,13 @@ def remove_perm(guild, command, level=None, name=None):
     else:
         del perms[guild][command]
 
+
+def space_replace(match):
+    print(match.group(1))
+    if match.group(1):
+        return "\\"*int(len(match.group(0)) / 2) + " "
+    else:
+        return " "
 
 #
 # Admin Command Checks
@@ -416,7 +424,7 @@ class AdminCommands:
 
     @options.command(name="set")
     @admin_check()
-    async def _opt_set(self, ctx, option, value):
+    async def _opt_set(self, ctx, option: str, value: str):
         """Set an option. Most options are true or false. See `^options list` for available options"""
         if isinstance(options[str(ctx.guild.id)][option], bool):
             if value.upper() == "ALLOW" or value.upper() == "TRUE":
@@ -426,9 +434,12 @@ class AdminCommands:
             else:
                 await ctx.send("Sorry, that option only accepts true or false values.")
                 return
+        if isinstance(options[str(ctx.guild.id)][option], str):
+            value = re.sub("(?<!\\\\)\\\\((?:\\\\\\\\)*)s", space_replace, value)
+            value = re.sub("\\\\\\\\", "\\\\", value)
         if option in options[str(ctx.guild.id)]:
             options[str(ctx.guild.id)][option] = value
-            await ctx.send("Option {} set to {}".format(option, value))
+            await ctx.send("Option {} set to `{}`".format(option, value))
             await self.bot.update(newOptions=options)
         else:
             await ctx.send("I don't recognize that option.")
@@ -436,7 +447,7 @@ class AdminCommands:
     @options.command(name="list")
     @admin_check()
     async def _opt_list(self, ctx):
-        """List of what options are currently set on the server."""
+        """List of what options are currently set on the server. Do `^help options [option name]` for details on an individual option"""
         out = "```"
         for key in options[str(ctx.guild.id)]:
             out += "{}: {}\n".format(key, options[str(ctx.guild.id)][key])

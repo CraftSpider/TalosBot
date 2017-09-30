@@ -4,5 +4,7 @@
   "Prefix": "^",
   "Commands": true,
   "UserCommands": true,
-  "JokeCommands": true
+  "JokeCommands": true,
+  "WritingPrompts": false,
+  "PromptsChannel": "prompts"
 }
