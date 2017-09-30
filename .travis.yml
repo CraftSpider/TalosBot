@@ -6,8 +6,8 @@ python: "3.6"
 
 install:
   - python3 --version
-  - pip -U install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
-  - pip -U install -U pytest
+  - pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
+  - pip install -U pytest
 
 script:
   - pytest Tests
