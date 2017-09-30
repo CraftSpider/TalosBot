@@ -136,7 +136,10 @@ class Talos(commands.Bot):
         super().__init__(prefix, description=description, **args)
         self.remove_command("help")
         self.command(**self.help_attrs)(_talos_help_command)
-        self.bg_task = self.loop.create_task(self.uptime_task())
+        self.bg_tasks = []
+
+    def start_uptime(self):
+        self.bg_tasks.append(self.loop.create_task(self.uptime_task()))
 
     def load_extensions(self, extensions=None):
         """Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None."""
@@ -383,6 +386,7 @@ if __name__ == "__main__":
         bot.uptime = json_data['uptime']
         if json_data is not None:
             build_trees(json_data)
+        bot.start_uptime()
         bot.run(load_token())
     finally:
         print("Talos Exiting")

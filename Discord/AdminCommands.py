@@ -219,7 +219,7 @@ class AdminCommands:
     async def streaming(self, ctx, *streaming: str):
         """Changes the game Talos is streaming"""
         game = " ".join(map(str, streaming))
-        await self.bot.change_presence(game=discord.Game(name=game, type=1))
+        await self.bot.change_presence(game=discord.Game(name=game, url="http://www.twitch.tv/CraftSpider",  type=1))
         await ctx.send("Now streaming {}".format(game))
 
     @commands.command(hidden=True)

@@ -256,9 +256,9 @@ class Commands:
         day_up = values_greater(self.bot.uptime, (now - timedelta(days=1)).timestamp()) / day_total
         week_up = values_greater(self.bot.uptime, (now - timedelta(days=7)).timestamp()) / week_total
         month_up = values_greater(self.bot.uptime, (now - timedelta(days=30)).timestamp()) / month_total
-        out += "Past uptime: {:02.2f}% of the past day, ".format(day_up)
-        out += "{:02.2f}% of the past week, ".format(week_up)
-        out += "{:02.2f}% of the past month".format(month_up)
+        out += "Past uptime: {:02.2f}% of the past day, ".format(day_up*100)
+        out += "{:02.2f}% of the past week, ".format(week_up*100)
+        out += "{:02.2f}% of the past month".format(month_up*100)
         await ctx.send(out)
 
     @commands.command()
