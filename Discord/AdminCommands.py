@@ -226,7 +226,7 @@ class AdminCommands:
     @admin_only()
     async def stop(self, ctx):
         """Stops Talos running and logs it out."""
-        await ctx.send("Et Tu, Brute?")
+        await ctx.send("Et tū, Brute?")
         await self.bot.logout()
 
     @commands.command(hidden=True)

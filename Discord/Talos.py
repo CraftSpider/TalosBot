@@ -180,6 +180,7 @@ class Talos(commands.Bot):
             logging.info("Cleaning options for {}".format(key))
             del options[key]
             removed += 1
+        await self.update(newOps=ops, newPerms=perms, newOptions=options)
         await self.save()
         return added, removed
 
