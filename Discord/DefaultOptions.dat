@@ -1,6 +1,7 @@
 {
   "FailMessage": false,
-  "PMHelp": false,
+  "PMHelp": true,
+  "Prefix": "^",
   "Commands": true,
   "UserCommands": true,
   "JokeCommands": true

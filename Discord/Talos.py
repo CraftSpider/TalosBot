@@ -113,6 +113,16 @@ async def _talos_help_command(ctx, *commands: str):
         await destination.send(page)
 
 
+def prefix(self, message):
+    if isinstance(message.channel, discord.abc.PrivateChannel):
+        return "^"
+    else:
+        try:
+            return options[str(message.guild.id)]["Prefix"]
+        except KeyError:
+            return "^"
+
+
 class Talos(commands.Bot):
     """Class for the Talos bot. Handles all sorts of things for inter-cog relations and bot wide data."""
 
@@ -123,7 +133,7 @@ class Talos(commands.Bot):
 
     def __init__(self, **args):
         description = '''Greetings. I'm Talos, chat helper. My commands are:'''
-        super().__init__("^", description=description, **args)
+        super().__init__(prefix, description=description, **args)
         self.remove_command("help")
         self.command(**self.help_attrs)(_talos_help_command)
         self.bg_task = self.loop.create_task(self.uptime_task())

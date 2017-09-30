@@ -36,7 +36,7 @@ def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def set_perm(guild, command, level, name=None, allow=False):
+def set_perm(guild, command, level, allow, name=None):
     """Sets the permissions for given inputs"""
     if name is not None:
         try:
@@ -313,11 +313,19 @@ class AdminCommands:
             await ctx.send("Valid options are 'create', 'list', and 'remove'.")
 
     @perms.command(name="create")
-    async def _p_create(self, ctx, command: str, level: str, allow: str, name=None):
+    async def _p_create(self, ctx, command: str, level: str, allow: str, name: str=None):
         """Create or alter a permissions rule. Provide a command, one of the four levels, whether to allow or """\
             """forbid, and if the level isn't guild, a name."""
         level = level.lower()
         allow = allow.lower()
+        if allow == "allow" or allow == "true":
+            allow = True
+        elif allow == "forbid" or allow == "false":
+            allow = False
+        else:
+            await ctx.send("I can only 'allow' or 'forbid', sorry!")
+            return
+
         if command in self.bot.all_commands and level in self.LEVELS:
             if name is None and level != "guild":
                 await ctx.send("You need to include both a name and either 'allow' or 'forbid'")
@@ -336,14 +344,7 @@ class AdminCommands:
                 await ctx.send("Sorry, I couldn't find the user {}!".format(oldName))
                 return
             name = str(name) if name != "" else None
-
-            if allow == "allow" or allow == "true":
-                set_perm(str(ctx.guild.id), command, level, name, True)
-            elif allow == "forbid" or allow == "false":
-                set_perm(str(ctx.guild.id), command, level, name, False)
-            else:
-                await ctx.send("I can only 'allow' or 'forbid', sorry!")
-                return
+            set_perm(str(ctx.guild.id), command, level, allow, name)
             await self.bot.update(newPerms=perms)
             await ctx.send("Permissions for command **{}** at level **{}** updated.".format(command, level))
         elif command not in self.bot.all_commands:
@@ -416,10 +417,10 @@ class AdminCommands:
     @options.command(name="set")
     @admin_check()
     async def _opt_set(self, ctx, option, value):
-        value = value.upper()
-        if value == "ALLOW" or value == "TRUE":
+        """Set an options value to true or false. See `^options list` for available options"""
+        if value.upper() == "ALLOW" or value.upper() == "TRUE":
             value = True
-        elif value == "FORBID" or value == "FALSE":
+        elif value.upper() == "FORBID" or value.upper() == "FALSE":
             value = False
         if option in options[str(ctx.guild.id)]:
             options[str(ctx.guild.id)][option] = value
@@ -431,6 +432,7 @@ class AdminCommands:
     @options.command(name="list")
     @admin_check()
     async def _opt_list(self, ctx):
+        """List of what options are currently set on the server."""
         out = "```"
         for key in options[str(ctx.guild.id)]:
             out += "{}: {}\n".format(key, options[str(ctx.guild.id)][key])
@@ -440,6 +442,7 @@ class AdminCommands:
     @options.command(name="default")
     @admin_check()
     async def _opt_default(self, ctx, option):
+        """Sets an option to its default value, as in a server Talos had just joined."""
         if option in options[str(ctx.guild.id)]:
             options[str(ctx.guild.id)][option] = self.bot.get_default(option)
             await ctx.send("Option {} set to default".format(option))
@@ -450,13 +453,13 @@ class AdminCommands:
     @options.command(name="all", hidden=True)
     @admin_only()
     async def _opt_all(self, ctx):
+        """Displays all options everywhere"""
         out = "```"
         for key in options:
             out += "Server: {}\n".format(self.bot.get_guild(int(key)))
             for option in options[key]:
                 out += "    {}\n".format(option)
         await ctx.send(out)
-
 
 
 def setup(bot):
