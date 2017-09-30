@@ -151,10 +151,10 @@ class Talos(commands.Bot):
         """Unloads all extensions in input, or all extensions currently loaded if None"""
         if extensions is None:
             while len(self.extensions) > 0:
-                bot.unload_extension(self.extensions[0])
+                self.unload_extension(self.extensions[0])
         else:
             for extension in extensions:
-                bot.unload_extension(extension)
+                self.unload_extension(extension)
 
     @staticmethod
     def get_default(option):
