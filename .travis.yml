@@ -6,7 +6,6 @@ cache: pip
 
 python:
   - "3.6"
-  - "3.5"
 
 install:
   - pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
