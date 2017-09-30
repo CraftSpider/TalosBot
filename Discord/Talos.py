@@ -23,7 +23,7 @@ VERSION = "2.3.1"
 # Time Talos started
 BOOT_TIME = datetime.now()
 # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
-STARTUP_EXTENSIONS = ["Commands", "UserCommands", "AdminCommands", "JokeCommands"]
+STARTUP_EXTENSIONS = ["Commands", "UserCommands", "JokeCommands", "AdminCommands"]
 # Talos saves its data in this file. Don't touch it unless you understand what you're doing.
 SAVE_FILE = "./TalosData.dat"
 # Default options for a new server. Don't touch it unless you understand what you're doing.
@@ -187,8 +187,7 @@ class Talos(commands.Bot):
     async def uptime_task(self):
         """Called once a minute, to verify uptime. Also removes old values from the list."""
         logging.info("Starting uptime task")
-        delta = datetime.now().replace(minute=(datetime.now().minute + 1), second=0, microsecond=0) -\
-            datetime.now().replace(microsecond=0)
+        delta = timedelta(seconds=60 - datetime.now().replace(microsecond=0).second)
         await asyncio.sleep(delta.total_seconds())
         while True:
             self.uptime.append(datetime.now().replace(microsecond=0).timestamp())
