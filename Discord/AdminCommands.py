@@ -417,11 +417,15 @@ class AdminCommands:
     @options.command(name="set")
     @admin_check()
     async def _opt_set(self, ctx, option, value):
-        """Set an options value to true or false. See `^options list` for available options"""
-        if value.upper() == "ALLOW" or value.upper() == "TRUE":
-            value = True
-        elif value.upper() == "FORBID" or value.upper() == "FALSE":
-            value = False
+        """Set an option. Most options are true or false. See `^options list` for available options"""
+        if isinstance(options[str(ctx.guild.id)][option], bool):
+            if value.upper() == "ALLOW" or value.upper() == "TRUE":
+                value = True
+            elif value.upper() == "FORBID" or value.upper() == "FALSE":
+                value = False
+            else:
+                await ctx.send("Sorry, that option only accepts true or false values.")
+                return
         if option in options[str(ctx.guild.id)]:
             options[str(ctx.guild.id)][option] = value
             await ctx.send("Option {} set to {}".format(option, value))
