@@ -284,7 +284,7 @@ class AdminCommands:
         else:
             await ctx.send("This server currently has no operators.")
 
-    @ops.command(hidden=True, name="all")
+    @ops.command(name="all", hidden=True)
     @admin_only()
     async def _ops_all(self, ctx):
         """Displays all operators everywhere"""
@@ -313,34 +313,33 @@ class AdminCommands:
             await ctx.send("Valid options are 'create', 'list', and 'remove'.")
 
     @perms.command(name="create")
-    async def _p_create(self, ctx, command: str, level: str, *args):
-        """Create or alter a permissions rule"""
+    async def _p_create(self, ctx, command: str, level: str, allow: str, name=None):
+        """Create or alter a permissions rule. Provide a command, one of the four levels, whether to allow or """\
+            """forbid, and if the level isn't guild, a name."""
         level = level.lower()
+        allow = allow.lower()
         if command in self.bot.all_commands and level in self.LEVELS:
-            if len(args) < 2 and level != "guild":
+            if name is None and level != "guild":
                 await ctx.send("You need to include both a name and either 'allow' or 'forbid'")
                 return
-            elif len(args) < 1:
-                await ctx.send("You need to include an 'allow' or 'forbid'")
-                return
 
-            name = None
+            oldName = name
             if level == "user":
-                name = discord.utils.find(lambda u: u.name == args[0], ctx.guild.members)
+                name = discord.utils.find(lambda u: u.name == name, ctx.guild.members)
             elif level == "role":
-                name = discord.utils.find(lambda r: r.name == args[0], ctx.guild.roles)
+                name = discord.utils.find(lambda r: r.name == name, ctx.guild.roles)
             elif level == "channel":
-                name = discord.utils.find(lambda c: c.name == args[0], ctx.guild.channels)
+                name = discord.utils.find(lambda c: c.name == name, ctx.guild.channels)
             elif level == "guild":
                 name = ""
             if name is None:
-                await ctx.send("Sorry, I couldn't find the user {}!".format(args[0]))
+                await ctx.send("Sorry, I couldn't find the user {}!".format(oldName))
                 return
             name = str(name) if name != "" else None
 
-            if "allow" in args:
+            if allow == "allow" or allow == "true":
                 set_perm(str(ctx.guild.id), command, level, name, True)
-            elif "forbid" in args:
+            elif allow == "forbid" or allow == "false":
                 set_perm(str(ctx.guild.id), command, level, name, False)
             else:
                 await ctx.send("I can only 'allow' or 'forbid', sorry!")
@@ -401,7 +400,7 @@ class AdminCommands:
         out += "```"
         await ctx.send(out)
 
-    @perms.command(name="all")
+    @perms.command(name="all", hidden=True)
     @admin_only()
     async def _p_all(self, ctx):
         """Displays all permissions everywhere"""
@@ -447,6 +446,17 @@ class AdminCommands:
             await self.bot.update(newOptions=options)
         else:
             await ctx.send("I don't recognize that option")
+
+    @options.command(name="all", hidden=True)
+    @admin_only()
+    async def _opt_all(self, ctx):
+        out = "```"
+        for key in options:
+            out += "Server: {}\n".format(self.bot.get_guild(int(key)))
+            for option in options[key]:
+                out += "    {}\n".format(option)
+        await ctx.send(out)
+
 
 
 def setup(bot):

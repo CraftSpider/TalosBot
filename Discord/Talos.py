@@ -11,6 +11,7 @@ import sys
 import asyncio
 import json
 import logging
+import re
 from datetime import datetime
 from datetime import timedelta
 
@@ -43,9 +44,73 @@ perms = {}
 options = {}
 # Default Options. Only used in Talos Base for setting up options for servers.
 default_options = {}
+# Help make it so mentions in the text don't actually mention people
+_mentions_transforms = {
+    '@everyone': '@\u200beveryone',
+    '@here': '@\u200bhere'
+}
+_mention_pattern = re.compile('|'.join(_mentions_transforms.keys()))
 
 # Initiate Logging
 logging.basicConfig(level=logging.INFO)
+
+
+async def _talos_help_command(ctx, *commands: str):
+    """Shows this message."""
+    bot = ctx.bot
+
+    if ctx.guild is not None:
+        destination = ctx.message.author if (options[str(ctx.guild.id)]["PMHelp"]) else ctx.message.channel
+    else:
+        destination = ctx.message.channel
+
+    def repl(obj):
+        return _mentions_transforms.get(obj.group(0), '')
+
+    # help by itself just lists our own commands.
+    if len(commands) == 0:
+        pages = await bot.formatter.format_help_for(ctx, bot)
+    elif len(commands) == 1:
+        # try to see if it is a cog name
+        name = _mention_pattern.sub(repl, commands[0])
+        command = None
+        if name in bot.cogs:
+            command = bot.cogs[name]
+        else:
+            command = bot.all_commands.get(name)
+            if command is None:
+                await destination.send(bot.command_not_found.format(name))
+                return
+
+        pages = await bot.formatter.format_help_for(ctx, command)
+    else:
+        name = _mention_pattern.sub(repl, commands[0])
+        command = bot.all_commands.get(name)
+        if command is None:
+            await destination.send(bot.command_not_found.format(name))
+            return
+
+        for key in commands[1:]:
+            try:
+                key = _mention_pattern.sub(repl, key)
+                command = command.all_commands.get(key)
+                if command is None:
+                    await destination.send(bot.command_not_found.format(key))
+                    return
+            except AttributeError:
+                await destination.send(bot.command_has_no_subcommands.format(command, key))
+                return
+
+        pages = await bot.formatter.format_help_for(ctx, command)
+
+    if bot.pm_help is None:
+        characters = sum(map(lambda l: len(l), pages))
+        # modify destination based on length of pages.
+        if characters > 1000:
+            destination = ctx.message.author
+
+    for page in pages:
+        await destination.send(page)
 
 
 class Talos(commands.Bot):
@@ -59,6 +124,8 @@ class Talos(commands.Bot):
     def __init__(self, **args):
         description = '''Greetings. I'm Talos, chat helper. My commands are:'''
         super().__init__("^", description=description, **args)
+        self.remove_command("help")
+        self.command(**self.help_attrs)(_talos_help_command)
         self.bg_task = self.loop.create_task(self.uptime_task())
 
     def load_extensions(self, extensions=None):

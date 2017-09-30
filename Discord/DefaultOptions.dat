@@ -1,5 +1,6 @@
 {
   "FailMessage": false,
+  "PMHelp": false,
   "Commands": true,
   "UserCommands": true,
   "JokeCommands": true
