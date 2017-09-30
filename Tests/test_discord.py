@@ -7,8 +7,6 @@ sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
 print(sys.path)
 import Discord.Talos
 
-# Talos = importlib.import_module("Discord.Talos", "..")
-
 
 def test_extension_load():
     bot = Discord.Talos.Talos()
@@ -24,6 +22,3 @@ def test_extension_load():
     assert "UserCommands" not in bot.extensions, "Didn't unload UserCommands extension"
     assert "AdminCommands" not in bot.extensions, "Didn't unload AdminCommands extension"
     assert "JokeCommands" not in bot.extensions, "Didn't unload JokeCommands extension"
-
-
-test_extension_load()
