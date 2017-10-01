@@ -219,7 +219,7 @@ class Commands:
 
         if start is not "":
             dif = abs(datetime.utcnow() -
-                      datetime.utcnow().replace(
+                      datetime.utcnow().replace(hour=(datetime.utcnow().hour if start != 0 else (datetime.utcnow().hour + 1) % 24),
                                                 minute=start,
                                                 second=0))
             await ctx.send("Starting WW at :{0:02}".format(start))
