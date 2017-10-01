@@ -381,7 +381,6 @@ class Talos(commands.Bot):
                                 "Form Responses 1!B{0}:E{0}".format(values.index(prompt) + 1))
             await asyncio.sleep(24*60*60)
 
-
     async def on_ready(self):
         """Called on bot ready, any time discord finishes connecting"""
         print('| Now logged in as')
