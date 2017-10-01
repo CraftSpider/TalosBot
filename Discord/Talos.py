@@ -24,7 +24,10 @@ from datetime import timedelta
 from datetime import date
 import argparse
 
-flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+try:
+    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+except Exception:
+    flags = None
 
 #
 #   Constants
