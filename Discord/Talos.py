@@ -368,6 +368,7 @@ class Talos(commands.Bot):
                     possibilities.append(item)
             prompt = random.choice(possibilities)
 
+            logging.info(prompt)
             out = "__Daily Prompt {}__\n\n".format(date.today().strftime("%m/%d"))
             out += "{}\n\n".format(prompt[0].strip("\""))
             out += "({} by {})".format(("Original prompt" if prompt[1] is "Yes" else "Submitted"), prompt[2])
