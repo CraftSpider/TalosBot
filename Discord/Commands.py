@@ -225,7 +225,7 @@ class Commands:
         await ctx.send("Word War for {0:g} {1}.".format(length, minutes))
         def wordsWritten = wpm * length
         await asyncio.sleep(length * 60)
-        await ctx.send("I wrote{} words. How many did you write?".format(wordsWrritten))
+        await ctx.send("I wrote{} words. How many did you write?".format(wordsWritten))
 
     @commands.command()
     @perms_check()
