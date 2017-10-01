@@ -191,7 +191,7 @@ class Commands:
     
     @commands.command(aliases=["ww", "WW"])
     @perms_check()
-    async def wordwar(self, ctx, length: str="", start: str="", wpm: int="30"):
+    async def wordwar(self, ctx, length: str="", start: str="", wpm: int=30):
         """Runs an X minute long word-war"""
         try:
             length = float(length)
@@ -219,7 +219,7 @@ class Commands:
 
         if start is not "":
             dif = abs(datetime.utcnow() -
-                      datetime.utcnow().replace(hour=(None if start != 0 else (datetime.utcnow().hour + 1) % 24),
+                      datetime.utcnow().replace(
                                                 minute=start,
                                                 second=0))
             await ctx.send("Starting WW at :{0:02}".format(start))
