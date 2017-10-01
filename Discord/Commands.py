@@ -191,7 +191,7 @@ class Commands:
     
     @commands.command(aliases=["ww", "WW"])
     @perms_check()
-    async def wordwar(self, ctx, length: str="", start: str=""):
+    async def wordwar(self, ctx, length: str="", start: str="", wpm: int="30"):
         """Runs an X minute long word-war"""
         try:
             length = float(length)
@@ -223,8 +223,9 @@ class Commands:
             await asyncio.sleep(dif.total_seconds())
         minutes = "minutes" if length != 1 else "minute"
         await ctx.send("Word War for {0:g} {1}.".format(length, minutes))
+        def wordsWritten = wpm * length
         await asyncio.sleep(length * 60)
-        await ctx.send("Word War Over")
+        await ctx.send("I wrote{} words. How many did you write?".format(wordsWritten))
 
     @commands.command()
     @perms_check()
