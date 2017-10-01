@@ -357,9 +357,10 @@ class Talos(commands.Bot):
         logging.info("Starting prompt task")
         now = datetime.now().replace(microsecond=0)
         delta = timedelta(hours=(24 - now.hour + (self.PROMPT_TIME-1)) % 24, minutes=60 - now.minute, seconds=60 - now.second)
-        await asyncio.sleep(delta.total_seconds())
+        # await asyncio.sleep(delta.total_seconds())
+        await asyncio.sleep(5)
         while True:
-            prompt_sheet_id = "1bL0mSDGK4ypn8wioQCBqkZH47HmYp6GnmJbXkIOg2fA"
+            prompt_sheet_id = "1FHvCApyr8oJB9KiO5Lh8Enr5XpRcq3_nKh6OwEC6cOk"
             values = bot.get_spreadsheet(prompt_sheet_id, "Form Responses 1!B:E")
             possibilities = []
             values = list(values)
@@ -371,7 +372,7 @@ class Talos(commands.Bot):
             logging.info(prompt)
             out = "__Daily Prompt {}__\n\n".format(date.today().strftime("%m/%d"))
             out += "{}\n\n".format(prompt[0].strip("\""))
-            out += "({} by {})".format(("Original prompt" if prompt[1] is "Yes" else "Submitted"), prompt[2])
+            out += "({} by {})".format(("Original prompt" if prompt[1].upper() == "YES" else "Submitted"), prompt[2])
             for guild in bot.guilds:
                 for channel in guild.channels:
                     if channel.name == options[str(guild.id)]["PromptsChannel"]:
