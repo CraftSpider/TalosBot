@@ -218,14 +218,17 @@ class Commands:
                 return
 
         if start is not "":
-            dif = abs(datetime.utcnow() - datetime.utcnow().replace(minute=start, second=0))
+            dif = abs(datetime.utcnow() -
+                      datetime.utcnow().replace(hour=(None if start != 0 else (datetime.utcnow().hour + 1) % 24),
+                                                minute=start,
+                                                second=0))
             await ctx.send("Starting WW at :{0:02}".format(start))
             await asyncio.sleep(dif.total_seconds())
         minutes = "minutes" if length != 1 else "minute"
         await ctx.send("Word War for {0:g} {1}.".format(length, minutes))
-        def wordsWritten = wpm * length
+        wordsWritten = wpm * length
         await asyncio.sleep(length * 60)
-        await ctx.send("I wrote{} words. How many did you write?".format(wordsWritten))
+        await ctx.send("I wrote {} words. How many did you write?".format(wordsWritten))
 
     @commands.command()
     @perms_check()
