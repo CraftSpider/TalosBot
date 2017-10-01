@@ -357,10 +357,9 @@ class Talos(commands.Bot):
         logging.info("Starting prompt task")
         now = datetime.now().replace(microsecond=0)
         delta = timedelta(hours=(24 - now.hour + (self.PROMPT_TIME-1)) % 24, minutes=60 - now.minute, seconds=60 - now.second)
-        # await asyncio.sleep(delta.total_seconds())
-        await asyncio.sleep(5)
+        await asyncio.sleep(delta.total_seconds())
         while True:
-            prompt_sheet_id = "1FHvCApyr8oJB9KiO5Lh8Enr5XpRcq3_nKh6OwEC6cOk"
+            prompt_sheet_id = "1bL0mSDGK4ypn8wioQCBqkZH47HmYp6GnmJbXkIOg2fA"
             values = bot.get_spreadsheet(prompt_sheet_id, "Form Responses 1!B:E")
             possibilities = []
             values = list(values)
