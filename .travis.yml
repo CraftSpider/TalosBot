@@ -10,7 +10,7 @@ python:
 install:
   - pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
   - pip install -U pytest
-  - pip install -update google-api-python-client
+  - pip install -U google-api-python-client
 
 script:
   - pytest Tests
