@@ -7,25 +7,11 @@
 import discord
 from discord.ext import commands
 import traceback
-import os
 import sys
-import asyncio
 import json
 import logging
 import re
-import httplib2
-import random
-from apiclient import discovery
-from oauth2client import client
-from oauth2client import tools
-from oauth2client.file import Storage
 from datetime import datetime
-from datetime import timedelta
-from datetime import date
-import argparse
-
-if __name__ == "__main__":
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
 
 #
 #   Constants
@@ -36,7 +22,7 @@ VERSION = "2.3.1"
 # Time Talos started
 BOOT_TIME = datetime.now()
 # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
-STARTUP_EXTENSIONS = ["Commands", "UserCommands", "JokeCommands", "AdminCommands"]
+STARTUP_EXTENSIONS = ["Commands", "UserCommands", "JokeCommands", "AdminCommands", "EventLoops"]
 # Talos saves its data in this file. Don't touch it unless you understand what you're doing.
 SAVE_FILE = "./TalosData.dat"
 # Default options for a new server. Don't touch it unless you understand what you're doing.
@@ -44,10 +30,6 @@ DEFAULT_OPTIONS = "./DefaultOptions.dat"
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = "Token.txt"
 
-# Google API values
-SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
-CLIENT_SECRET_FILE = 'client_secret.json'
-APPLICATION_NAME = 'TalosBot Prompt Reader'
 
 #
 #   Command Vars
@@ -130,39 +112,6 @@ async def _talos_help_command(ctx, *commands: str):
         await destination.send(page)
 
 
-def get_credentials():
-    """Gets valid user credentials from storage.
-
-    If nothing has been stored, or if the stored credentials are invalid,
-    the OAuth2 flow is completed to obtain the new credentials.
-
-    Returns:
-        Credentials, the obtained credential.
-    """
-    home_dir = os.path.expanduser('~')
-    credential_dir = os.path.join(home_dir, '.credentials')
-    if not os.path.exists(credential_dir):
-        os.makedirs(credential_dir)
-    credential_path = os.path.join(credential_dir,
-                                   'sheets.googleapis.com-python-quickstart.json')
-
-    store = Storage(credential_path)
-    credentials = store.get()
-    if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
-        flow.user_agent = APPLICATION_NAME
-        credentials = tools.run_flow(flow, store, flags)
-        print('Storing credentials to ' + credential_path)
-    return credentials
-
-
-credentials = get_credentials()
-http = credentials.authorize(httplib2.Http())
-discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
-                        'version=v4')
-service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discoveryUrl, cache_discovery=False)
-
-
 def prefix(self, message):
     if isinstance(message.channel, discord.abc.PrivateChannel):
         return "^"
@@ -187,11 +136,6 @@ class Talos(commands.Bot):
         super().__init__(prefix, description=description, **args)
         self.remove_command("help")
         self.command(**self.help_attrs)(_talos_help_command)
-        self.bg_tasks = []
-
-    def start_tasks(self):
-        self.bg_tasks.append(self.loop.create_task(self.uptime_task()))
-        self.bg_tasks.append(self.loop.create_task(self.prompt_task()))
 
     def load_extensions(self, extensions=None):
         """Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None."""
@@ -214,27 +158,6 @@ class Talos(commands.Bot):
     @staticmethod
     def get_default(option):
         return default_options[option]
-
-    @staticmethod
-    def get_spreadsheet(sheet_id, sheet_range):
-        result = service.spreadsheets().values().get(
-            spreadsheetId=sheet_id, range=sheet_range).execute()
-        return result.get('values', [])
-
-    @staticmethod
-    def set_spreadsheet(sheet_id, vals, sheet_range=None):
-        body = {
-            'values': vals
-        }
-        if sheet_range:
-            result = service.spreadsheets().values().update(
-                spreadsheetId=sheet_id, range=sheet_range,
-                valueInputOption="RAW", body=body).execute()
-        else:
-            result = service.spreadsheets().values().append(
-                spreadsheetId=sheet_id, range=sheet_range,
-                valueInputOption="RAW", body=body).execute()
-        return result
 
     async def save(self):
         """Saves current talos data to the save file"""
@@ -337,58 +260,14 @@ class Talos(commands.Bot):
         await self.save()
         return added, removed
 
-    async def uptime_task(self):
-        """Called once a minute, to verify uptime. Also removes old values from the list."""
-        logging.info("Starting uptime task")
-        delta = timedelta(seconds=60 - datetime.now().replace(microsecond=0).second)
-        await asyncio.sleep(delta.total_seconds())
-        while True:
-            self.uptime.append(datetime.now().replace(microsecond=0).timestamp())
-            old = []
-            for item in self.uptime:
-                if datetime.fromtimestamp(item) < datetime.now() - timedelta(days=30):
-                    old.append(item)
-            for item in old:
-                self.uptime.remove(item)
-            await self.save()
-            await asyncio.sleep(60)
-
-    async def prompt_task(self):
-        logging.info("Starting prompt task")
-        now = datetime.now().replace(microsecond=0)
-        delta = timedelta(hours=(24 - now.hour + (self.PROMPT_TIME-1)) % 24, minutes=60 - now.minute, seconds=60 - now.second)
-        await asyncio.sleep(delta.total_seconds())
-        while True:
-            prompt_sheet_id = "1bL0mSDGK4ypn8wioQCBqkZH47HmYp6GnmJbXkIOg2fA"
-            values = bot.get_spreadsheet(prompt_sheet_id, "Form Responses 1!B:E")
-            possibilities = []
-            values = list(values)
-            for item in values:
-                if len(item[3:]) == 0:
-                    possibilities.append(item)
-            prompt = random.choice(possibilities)
-
-            logging.info(prompt)
-            out = "__Daily Prompt {}__\n\n".format(date.today().strftime("%m/%d"))
-            out += "{}\n\n".format(prompt[0].strip("\""))
-            out += "({} by {})".format(("Original prompt" if prompt[1].upper() == "YES" else "Submitted"), prompt[2])
-            for guild in bot.guilds:
-                for channel in guild.channels:
-                    if channel.name == options[str(guild.id)]["PromptsChannel"]:
-                        if options[str(guild.id)]["WritingPrompts"]:
-                            await channel.send(out)
-
-            prompt.append("POSTED")
-            bot.set_spreadsheet(prompt_sheet_id, [prompt],
-                                "Form Responses 1!B{0}:E{0}".format(values.index(prompt) + 1))
-            await asyncio.sleep(24*60*60)
-
     async def on_ready(self):
         """Called on bot ready, any time discord finishes connecting"""
         print('| Now logged in as')
         print('| {}'.format(self.user.name))
         print('| {}'.format(self.user.id))
         await bot.change_presence(game=discord.Game(name="Taking over the World", type=0))
+        if __name__ == "__main__":
+            bot.cogs["EventLoops"].start_tasks()
 
     async def on_guild_join(self, guild):
         """Called upon Talos joining a guild. Populates ops, perms, and options"""
@@ -489,7 +368,6 @@ if __name__ == "__main__":
         bot.uptime = json_data['uptime']
         if json_data is not None:
             build_trees(json_data)
-        bot.start_tasks()
         bot.run(load_token())
     finally:
         print("Talos Exiting")
