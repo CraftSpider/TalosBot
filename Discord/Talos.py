@@ -18,7 +18,7 @@ from datetime import datetime
 #
 
 # Current Talos version. Loosely incremented.
-VERSION = "2.3.1"
+VERSION = "2.4.0"
 # Time Talos started
 BOOT_TIME = datetime.now()
 # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
@@ -51,75 +51,18 @@ _mentions_transforms = {
 _mention_pattern = re.compile('|'.join(_mentions_transforms.keys()))
 
 # Initiate Logging
-logging.basicConfig(level=logging.INFO)
-
-
-async def _talos_help_command(ctx, *commands: str):
-    """Shows this message."""
-    bot = ctx.bot
-
-    if ctx.guild is not None:
-        destination = ctx.message.author if (options[str(ctx.guild.id)]["PMHelp"]) else ctx.message.channel
-    else:
-        destination = ctx.message.channel
-
-    def repl(obj):
-        return _mentions_transforms.get(obj.group(0), '')
-
-    # help by itself just lists our own commands.
-    if len(commands) == 0:
-        pages = await bot.formatter.format_help_for(ctx, bot)
-    elif len(commands) == 1:
-        # try to see if it is a cog name
-        name = _mention_pattern.sub(repl, commands[0])
-        command = None
-        if name in bot.cogs:
-            command = bot.cogs[name]
-        else:
-            command = bot.all_commands.get(name)
-            if command is None:
-                await destination.send(bot.command_not_found.format(name))
-                return
-
-        pages = await bot.formatter.format_help_for(ctx, command)
-    else:
-        name = _mention_pattern.sub(repl, commands[0])
-        command = bot.all_commands.get(name)
-        if command is None:
-            await destination.send(bot.command_not_found.format(name))
-            return
-
-        for key in commands[1:]:
-            try:
-                key = _mention_pattern.sub(repl, key)
-                command = command.all_commands.get(key)
-                if command is None:
-                    await destination.send(bot.command_not_found.format(key))
-                    return
-            except AttributeError:
-                await destination.send(bot.command_has_no_subcommands.format(command, key))
-                return
-
-        pages = await bot.formatter.format_help_for(ctx, command)
-
-    if bot.pm_help is None:
-        characters = sum(map(lambda l: len(l), pages))
-        # modify destination based on length of pages.
-        if characters > 1000:
-            destination = ctx.message.author
-
-    for page in pages:
-        await destination.send(page)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging = logging.getLogger("talos")
 
 
 def prefix(self, message):
     if isinstance(message.channel, discord.abc.PrivateChannel):
-        return "^"
+        return self.DEFAULT_PREFIX
     else:
         try:
             return options[str(message.guild.id)]["Prefix"]
         except KeyError:
-            return "^"
+            return self.DEFAULT_PREFIX
 
 
 class Talos(commands.Bot):
@@ -128,6 +71,7 @@ class Talos(commands.Bot):
     VERSION = VERSION
     BOOT_TIME = BOOT_TIME
     PROMPT_TIME = 10
+    DEFAULT_PREFIX = "^"
     # List of times when the bot was verified online.
     uptime = []
 
@@ -135,7 +79,7 @@ class Talos(commands.Bot):
         description = '''Greetings. I'm Talos, chat helper. My commands are:'''
         super().__init__(prefix, description=description, **args)
         self.remove_command("help")
-        self.command(**self.help_attrs)(_talos_help_command)
+        self.command(name="help", aliases=["man"])(self._talos_help_command)
 
     def load_extensions(self, extensions=None):
         """Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None."""
@@ -174,16 +118,16 @@ class Talos(commands.Bot):
         """
         if newOps:
             ops.update(newOps)
-            for extension in bot.extensions:
-                bot.extensions[extension].ops.update(newOps)
+            for extension in self.extensions:
+                self.extensions[extension].ops.update(newOps)
         if newPerms:
             perms.update(newPerms)
-            for extension in bot.extensions:
-                bot.extensions[extension].perms.update(newPerms)
+            for extension in self.extensions:
+                self.extensions[extension].perms.update(newPerms)
         if newOptions:
             options.update(newOptions)
-            for extension in bot.extensions:
-                bot.extensions[extension].options.update(newOptions)
+            for extension in self.extensions:
+                self.extensions[extension].options.update(newOptions)
         await self.save()
 
     async def verify(self):
@@ -193,21 +137,26 @@ class Talos(commands.Bot):
         """
         added = 0
         removed = 0
+
+        # Create missing values
         for guild in self.guilds:
             guild_id = str(guild.id)
             try:
                 ops[guild_id]
             except KeyError:
+                logging.info("Building ops for {}".format(guild_id))
                 ops[guild_id] = {}
                 added += 1
             try:
                 perms[guild_id]
             except KeyError:
+                logging.info("Building perms for {}".format(guild_id))
                 perms[guild_id] = {}
                 added += 1
             try:
                 options[guild_id]
             except KeyError:
+                logging.info("Building options for {}".format(guild_id))
                 options[guild_id] = default_options.copy()
                 added += 1
             else:
@@ -215,6 +164,7 @@ class Talos(commands.Bot):
                     try:
                         options[guild_id][key]
                     except KeyError:
+                        logging.info("Building option {} for {}".format(key, guild_id))
                         options[guild_id][key] = default_options[key]
                         added += 1
         obsolete = []
@@ -256,18 +206,88 @@ class Talos(commands.Bot):
             logging.info("Cleaning options for {}".format(key))
             del options[key]
             removed += 1
+        obsolete = []
+        for key in options:
+            for option in options[key]:
+                if option not in default_options:
+                    obsolete.append(option)
+            break
+        for key in options:
+            for option in obsolete:
+                logging.info("Cleaning option {} for {}".format(option, key))
+                del options[key][option]
+                removed += 1
         await self.update(newOps=ops, newPerms=perms, newOptions=options)
         await self.save()
         return added, removed
 
+    async def _talos_help_command(self, ctx, *args: str):
+        """Shows this message."""
+        if ctx.guild is not None:
+            destination = ctx.message.author if (options[str(ctx.guild.id)]["PMHelp"]) else ctx.message.channel
+            if destination == ctx.message.author:
+                await ctx.send("I've DMed you some help.")
+        else:
+            destination = ctx.message.channel
+
+        def repl(obj):
+            return _mentions_transforms.get(obj.group(0), '')
+
+        # help by itself just lists our own commands.
+        if len(args) == 0:
+            pages = await self.formatter.format_help_for(ctx, self)
+        elif len(args) == 1:
+            # try to see if it is a cog name
+            name = _mention_pattern.sub(repl, args[0])
+            command = None
+            if name in self.cogs:
+                command = self.cogs[name]
+            else:
+                command = self.all_commands.get(name)
+                if command is None:
+                    await destination.send(self.command_not_found.format(name))
+                    return
+
+            pages = await self.formatter.format_help_for(ctx, command)
+        else:
+            name = _mention_pattern.sub(repl, args[0])
+            command = self.all_commands.get(name)
+            if command is None:
+                await destination.send(self.command_not_found.format(name))
+                return
+
+            for key in args[1:]:
+                try:
+                    key = _mention_pattern.sub(repl, key)
+                    command = command.all_commands.get(key)
+                    if command is None:
+                        await destination.send(self.command_not_found.format(key))
+                        return
+                except AttributeError:
+                    await destination.send(self.command_has_no_subcommands.format(command, key))
+                    return
+
+            pages = await self.formatter.format_help_for(ctx, command)
+
+        if self.pm_help is None:
+            characters = sum(map(lambda l: len(l), pages))
+            # modify destination based on length of pages.
+            if characters > 1000:
+                destination = ctx.message.author
+
+        for page in pages:
+            await destination.send(page)
+
     async def on_ready(self):
         """Called on bot ready, any time discord finishes connecting"""
-        print('| Now logged in as')
-        print('| {}'.format(self.user.name))
-        print('| {}'.format(self.user.id))
-        await bot.change_presence(game=discord.Game(name="Taking over the World", type=0))
+        logging.info('| Now logged in as')
+        logging.info('| {}'.format(self.user.name))
+        logging.info('| {}'.format(self.user.id))
+        await self.change_presence(game=discord.Game(name="Taking over the World", type=0))
+        added, removed = await self.verify()
+        logging.info("Added {} objects, Removed {} objects.".format(added, removed))
         if __name__ == "__main__":
-            bot.cogs["EventLoops"].start_tasks()
+            self.cogs["EventLoops"].start_all_tasks()
 
     async def on_guild_join(self, guild):
         """Called upon Talos joining a guild. Populates ops, perms, and options"""
@@ -276,6 +296,7 @@ class Talos(commands.Bot):
         ops[guild_id] = []
         perms[guild_id] = {}
         options[guild_id] = default_options.copy()
+        await self.update(newOps=ops, newPerms=perms, newOptions=options)
         await self.save()
 
     async def on_guild_remove(self, guild):
@@ -285,6 +306,7 @@ class Talos(commands.Bot):
         del ops[guild_id]
         del perms[guild_id]
         del options[guild_id]
+        await self.update(newOps=ops, newPerms=perms, newOptions=options)
         await self.save()
 
     async def on_command_error(self, ctx, exception):
@@ -293,9 +315,11 @@ class Talos(commands.Bot):
             if options[str(ctx.guild.id)]["FailMessage"]:
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest ^help?".format(ctx.invoked_with))
         elif type(exception) == discord.ext.commands.CheckFailure:
-            logging.info("Woah, {} tried to run a command without permissions!".format(ctx.author))
+            logging.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
+        elif type(exception) == discord.ext.commands.NoPrivateMessage:
+            await ctx.send("This command can only be used in a server. Apologies.")
         else:
-            print('Ignoring exception in command {}'.format(ctx.command), file=sys.stderr)
+            logging.warning('Ignoring exception in command {}'.format(ctx.command))
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
 
@@ -324,7 +348,7 @@ def json_load(filename):
             file.seek(0)
             data = json.load(file)
         except json.JSONDecodeError as e:
-            logging.warning(e)
+            logging.warning(e.__name__, e)
             data = None
     return data
 
@@ -335,10 +359,10 @@ def build_trees(data):
         ops.update(data['ops'])
         perms.update(data['perms'])
         options.update(data['options'])
-        for extension in bot.extensions:
-            bot.extensions[extension].ops.update(data['ops'])
-            bot.extensions[extension].perms.update(data['perms'])
-            bot.extensions[extension].options.update(data['options'])
+        for extension in talos.extensions:
+            talos.extensions[extension].ops.update(data['ops'])
+            talos.extensions[extension].perms.update(data['perms'])
+            talos.extensions[extension].options.update(data['options'])
     except KeyError as e:
         if str(e) in STARTUP_EXTENSIONS:
             logging.warning("Cog not loaded")
@@ -359,15 +383,18 @@ def json_save(filename, **kwargs):
 
 
 if __name__ == "__main__":
-    bot = Talos()
-    bot.load_extensions()
+    talos = Talos()
+    talos.load_extensions()
 
     try:
         json_data = json_load(SAVE_FILE)
         default_options = json_load(DEFAULT_OPTIONS)
-        bot.uptime = json_data['uptime']
+        if default_options is None:
+            logging.critical("Couldn't find default options")
+            exit(1)
         if json_data is not None:
+            talos.uptime = json_data['uptime']
             build_trees(json_data)
-        bot.run(load_token())
+        talos.run(load_token())
     finally:
         print("Talos Exiting")

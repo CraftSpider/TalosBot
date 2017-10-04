@@ -73,6 +73,16 @@ class JokeCommands:
             return
         await ctx.send("Hello there {}".format(ctx.author.name))
 
+    @commands.command()
+    @perms_check()
+    async def favor(self, ctx):
+        """If East is in the same server, ask them a favor..."""
+        await ctx.send("!East could I ask you for a favor? I need someone to verify my code.")
+        await asyncio.sleep(2)
+        async with ctx.typing():
+            await asyncio.sleep(1)
+            await ctx.send("Oh my. Well, if you insist ;)")
+
 
 def setup(bot):
     bot.add_cog(JokeCommands(bot))

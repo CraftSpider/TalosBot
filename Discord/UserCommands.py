@@ -17,6 +17,8 @@ perms = {}
 # Options list. Filled on bot load, altered by command.
 options = {}
 
+logging = logging.getLogger("talos.user")
+
 
 def perms_check():
     """Determine whether the person calling the command is an operator or admin."""
@@ -62,6 +64,7 @@ class UserCommands:
         self.bot = bot
 
     @commands.command()
+    @commands.guild_only()
     @perms_check()
     async def color(self, ctx, color: str):
         """Changes the User's color, if Talos has role permissions."""\
@@ -115,6 +118,7 @@ class UserCommands:
         await ctx.send("{0.name}'s color changed to {1}!".format(ctx.message.author, color))
 
     @commands.command()
+    @commands.guild_only()
     @perms_check()
     async def my_perms(self, ctx):
         """Has Talos print out your current guild permissions"""

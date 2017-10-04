@@ -265,15 +265,6 @@ class Commands:
         out += "{:02.2f}% of the past week, ".format(week_up*100)
         out += "{:02.2f}% of the past month".format(month_up*100)
         await ctx.send(out)
-
-    @commands.command()
-    @perms_check()
-    async def favor(self, ctx):
-        await ctx.send("!East could I ask you for a favor? I need someone to verify my code.")
-        await asyncio.sleep(2)
-        async with ctx.typing():
-            await asyncio.sleep(1)
-            await ctx.send("Oh my. Well, if you insist ;)")
     
     @commands.group()
     @perms_check()
@@ -301,6 +292,7 @@ class Commands:
         await ctx.send("A story about a {} {} who must {} while {}.".format(adj, noun, goal, obstacle))
 
     @commands.group(aliases=["pw", "PW"])
+    @commands.guild_only()
     @perms_check()
     async def productivitywar(self, ctx):
         """Commands for a productivity war."""

@@ -29,6 +29,8 @@ perms = {}
 # Options list. Filled on bot load, altered by command.
 options = {}
 
+logging = logging.getLogger("talos.events")
+
 
 class EventLoops:
 
@@ -38,17 +40,23 @@ class EventLoops:
         self.flags = None
         self.bg_tasks = []
 
-    def start_tasks(self):
+    def start_all_tasks(self):
         if len(self.bg_tasks) == 0:
-            self.flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-            credentials = self.get_credentials()
-            http = credentials.authorize(httplib2.Http())
-            discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
-                            'version=v4')
-            self.service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discoveryUrl, cache_discovery=False)
+            self.start_uptime()
+            self.start_prompt()
 
-            self.bg_tasks.append(self.bot.loop.create_task(self.uptime_task()))
-            self.bg_tasks.append(self.bot.loop.create_task(self.prompt_task()))
+    def start_uptime(self):
+        self.bg_tasks.append(self.bot.loop.create_task(self.uptime_task()))
+
+    def start_prompt(self):
+        self.flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+        credentials = self.get_credentials()
+        http = credentials.authorize(httplib2.Http())
+        discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                        'version=v4')
+        self.service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discoveryUrl,
+                                       cache_discovery=False)
+        self.bg_tasks.append(self.bot.loop.create_task(self.prompt_task()))
 
     def get_credentials(self):
         """Gets valid user credentials from storage.
@@ -80,9 +88,9 @@ class EventLoops:
             spreadsheetId=sheet_id, range=sheet_range).execute()
         return result.get('values', [])
 
-    def set_spreadsheet(self, sheet_id, vals, sheet_range=None):
+    def set_spreadsheet(self, sheet_id, values, sheet_range=None):
         body = {
-            'values': vals
+            'values': values
         }
         if sheet_range:
             result = self.service.spreadsheets().values().update(
@@ -113,9 +121,9 @@ class EventLoops:
     async def prompt_task(self):
         logging.info("Starting prompt task")
         now = datetime.now().replace(microsecond=0)
-        delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24, minutes=60 - now.minute, seconds=60 - now.second)
-        # await asyncio.sleep(delta.total_seconds())
-        await asyncio.sleep(5)
+        delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24, minutes=60 - now.minute,
+                          seconds=60 - now.second)
+        await asyncio.sleep(delta.total_seconds())
         while True:
             prompt_sheet_id = "1bL0mSDGK4ypn8wioQCBqkZH47HmYp6GnmJbXkIOg2fA"
             values = self.get_spreadsheet(prompt_sheet_id, "Form Responses 1!B:E")
@@ -138,7 +146,7 @@ class EventLoops:
 
             prompt.append("POSTED")
             self.set_spreadsheet(prompt_sheet_id, [prompt],
-                                     "Form Responses 1!B{0}:E{0}".format(values.index(prompt) + 1))
+                                 "Form Responses 1!B{0}:E{0}".format(values.index(prompt) + 1))
             await asyncio.sleep(24*60*60)
 
 
