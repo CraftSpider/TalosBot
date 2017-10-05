@@ -229,6 +229,13 @@ class Commands:
         wordsWritten = wpm * length
         advance2 = False  # do you have an advance variable already?
         while not advance2:
+            if wpm <= 0:
+                wpm = 30; 
+                #//craft  idk what you want /so/ here's the other code. Also, I do not know how to multi line comment and internet is not being helpful. 
+                # if wpm <= 0: 
+                #   await ctx.send ("Please choose a number that is more than zero.");
+                #   return
+                #//is it return
             wordsWritten = random.randrange(wordsWritten-100, wordsWritten+100)
             if wordsWritten >= 0:
                 advance2 = True
