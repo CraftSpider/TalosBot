@@ -201,6 +201,8 @@ class Commands:
         if length > 60 or length < 1:
             await ctx.send("Please choose a length between 1 and 60 minutes.")
             return
+        if wpm < 0:
+            await ctx.send("Please choose a non-negative WPM.")
 
         if start:
             try:
@@ -227,11 +229,11 @@ class Commands:
         minutes = "minutes" if length != 1 else "minute"
         await ctx.send("Word War for {0:g} {1}.".format(length, minutes))
         wordsWritten = wpm * length
-        advance2 = False  # do you have an advance variable already?
-        while not advance2:
+        advance = False  # do you have an advance variable already?
+        while not advance:
             wordsWritten = random.randrange(wordsWritten-100, wordsWritten+100)
             if wordsWritten >= 0:
-                advance2 = True
+                advance = True
            
         await asyncio.sleep(length * 60)
         await ctx.send("I wrote {} words. How many did you write?".format(wordsWritten))

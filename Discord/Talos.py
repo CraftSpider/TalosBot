@@ -313,7 +313,9 @@ class Talos(commands.Bot):
         """Called upon command error. Handles CommandNotFound and CheckFailure, other errors it simply logs"""
         if type(exception) == discord.ext.commands.CommandNotFound:
             if options[str(ctx.guild.id)]["FailMessage"]:
-                await ctx.send("Sorry, I don't understand \"{}\". May I suggest ^help?".format(ctx.invoked_with))
+                cur_pref = await self.get_prefix(ctx)
+                await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
+                                                                                                cur_pref))
         elif type(exception) == discord.ext.commands.CheckFailure:
             logging.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
         elif type(exception) == discord.ext.commands.NoPrivateMessage:
