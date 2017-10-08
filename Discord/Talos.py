@@ -12,6 +12,7 @@ import json
 import logging
 import re
 from datetime import datetime
+from collections import namedtuple
 
 #
 #   Constants
@@ -26,7 +27,7 @@ STARTUP_EXTENSIONS = ["Commands", "UserCommands", "JokeCommands", "AdminCommands
 # Talos saves its data in this file. Don't touch it unless you understand what you're doing.
 SAVE_FILE = "./TalosData.dat"
 # Default options for a new server. Don't touch it unless you understand what you're doing.
-DEFAULT_OPTIONS = "./DefaultOptions.dat"
+DEFAULT_OPTIONS = "./DefaultOptions.json"
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = "Token.txt"
 
@@ -35,12 +36,6 @@ TOKEN_FILE = "Token.txt"
 #   Command Vars
 #
 
-# Ops list. Filled on bot load, altered through the add and remove op commands.
-ops = {}
-# Permissions list. Filled on bot load, altered by command
-perms = {}
-# Options list. Filled on bot load, altered by command.
-options = {}
 # Default Options. Only used in Talos Base for setting up options for servers.
 default_options = {}
 # Help make it so mentions in the text don't actually mention people
@@ -60,7 +55,7 @@ def prefix(self, message):
         return self.DEFAULT_PREFIX
     else:
         try:
-            return options[str(message.guild.id)]["Prefix"]
+            return talos.data[str(message.guild.id)]["options"]["Prefix"]
         except KeyError:
             return self.DEFAULT_PREFIX
 
@@ -72,12 +67,19 @@ class Talos(commands.Bot):
     BOOT_TIME = BOOT_TIME
     PROMPT_TIME = 10
     DEFAULT_PREFIX = "^"
+    SERVER_FIELDS = namedtuple('Fields', ["ops", "perms", "options"])(list, dict, default_options.copy)
     # List of times when the bot was verified online.
     uptime = []
+    # Single unified data dict. Form data.guild_id.section.key or data.univ_val
+    data = {}
 
-    def __init__(self, **args):
+    def __init__(self, data=None, **args):
         description = '''Greetings. I'm Talos, chat helper. My commands are:'''
         super().__init__(prefix, description=description, **args)
+
+        if data is not None:
+            self.uptime = data.pop("uptime")
+            self.data = data
         self.remove_command("help")
         self.command(name="help", aliases=["man"])(self._talos_help_command)
 
@@ -105,30 +107,12 @@ class Talos(commands.Bot):
 
     async def save(self):
         """Saves current talos data to the save file"""
-        json_save(SAVE_FILE, ops=ops, perms=perms, options=options, uptime=self.uptime)
+        json_save(SAVE_FILE, uptime=self.uptime, **self.data)
 
     async def logout(self):
         """Saves Talos data, then logs out the bot cleanly and safely"""
         await self.save()
         await super().logout()
-
-    async def update(self, newOps=None, newPerms=None, newOptions=None):
-        """
-        Given a new set of values for ops, perms, or options, update Talos base and all extensions with those values.
-        """
-        if newOps:
-            ops.update(newOps)
-            for extension in self.extensions:
-                self.extensions[extension].ops.update(newOps)
-        if newPerms:
-            perms.update(newPerms)
-            for extension in self.extensions:
-                self.extensions[extension].perms.update(newPerms)
-        if newOptions:
-            options.update(newOptions)
-            for extension in self.extensions:
-                self.extensions[extension].options.update(newOptions)
-        await self.save()
 
     async def verify(self):
         """
@@ -142,89 +126,68 @@ class Talos(commands.Bot):
         for guild in self.guilds:
             guild_id = str(guild.id)
             try:
-                ops[guild_id]
+                self.data[guild_id]
             except KeyError:
-                logging.info("Building ops for {}".format(guild_id))
-                ops[guild_id] = {}
-                added += 1
-            try:
-                perms[guild_id]
-            except KeyError:
-                logging.info("Building perms for {}".format(guild_id))
-                perms[guild_id] = {}
-                added += 1
-            try:
-                options[guild_id]
-            except KeyError:
-                logging.info("Building options for {}".format(guild_id))
-                options[guild_id] = default_options.copy()
+                logging.info("Building {}".format(guild_id))
+                self.data[guild_id] = {}
+                self.data[guild_id]["ops"] = []
+                self.data[guild_id]["perms"] = {}
+                self.data[guild_id]["options"] = {}
                 added += 1
             else:
-                for key in default_options:
+                for item in self.SERVER_FIELDS._fields:
                     try:
-                        options[guild_id][key]
+                        self.data[guild_id][item]
                     except KeyError:
-                        logging.info("Building option {} for {}".format(key, guild_id))
-                        options[guild_id][key] = default_options[key]
+                        logging.info("Building {} for {}".format(item, guild_id))
+
+                        self.data[guild_id][item] = self.SERVER_FIELDS[item]()
                         added += 1
+                    else:
+                        if item != "options":
+                            continue
+                        for key in default_options:
+                            try:
+                                self.data[guild_id]["options"][key]
+                            except KeyError:
+                                logging.info("Building option {} for {}".format(key, guild_id))
+                                self.data[guild_id]["options"][key] = default_options[key]
+                                added += 1
+
+        # Destroy unnecessary values
+        # obsolete = []
+        # for key in self.data:
+        #     check = False
+        #     for guild in self.guilds:
+        #         guild_id = str(guild.id)
+        #         if key == guild_id:
+        #             check = True
+        #     if not check:
+        #         obsolete.append(key)
+        # for key in obsolete:
+        #     logging.info("Cleaning data for {}".format(key))
+        #     del self.data[key]
+        #     removed += 1
+
         obsolete = []
-        for key in ops:
-            check = False
-            for guild in self.guilds:
-                guild_id = str(guild.id)
-                if key == guild_id:
-                    check = True
-            if not check:
-                obsolete.append(key)
-        for key in obsolete:
-            logging.info("Cleaning ops for {}".format(key))
-            del ops[key]
-            removed += 1
-        obsolete = []
-        for key in perms:
-            check = False
-            for guild in self.guilds:
-                guild_id = str(guild.id)
-                if key == guild_id:
-                    check = True
-            if not check:
-                obsolete.append(key)
-        for key in obsolete:
-            logging.info("Cleaning perms for {}".format(key))
-            del perms[key]
-            removed += 1
-        obsolete = []
-        for key in options:
-            check = False
-            for guild in self.guilds:
-                guild_id = str(guild.id)
-                if key == guild_id:
-                    check = True
-            if not check:
-                obsolete.append(key)
-        for key in obsolete:
-            logging.info("Cleaning options for {}".format(key))
-            del options[key]
-            removed += 1
-        obsolete = []
-        for key in options:
-            for option in options[key]:
+        for guild in self.data:
+            for option in self.data[guild]["options"]:
                 if option not in default_options:
                     obsolete.append(option)
             break
-        for key in options:
+        for guild in self.data:
             for option in obsolete:
-                logging.info("Cleaning option {} for {}".format(option, key))
-                del options[key][option]
+                logging.info("Cleaning option {} for {}".format(option, guild))
+                del self.data[guild]["options"][option]
                 removed += 1
-        await self.update(newOps=ops, newPerms=perms, newOptions=options)
         await self.save()
         return added, removed
 
     async def _talos_help_command(self, ctx, *args: str):
         """Shows this message."""
         if ctx.guild is not None:
-            destination = ctx.message.author if (options[str(ctx.guild.id)]["PMHelp"]) else ctx.message.channel
+            destination = ctx.message.author if (self.data[str(ctx.guild.id)]["options"]["PMHelp"]) else \
+                          ctx.message.channel
             if destination == ctx.message.author:
                 await ctx.send("I've DMed you some help.")
         else:
@@ -278,6 +241,10 @@ class Talos(commands.Bot):
         for page in pages:
             await destination.send(page)
 
+    def run(self, token):
+        self.cogs["EventLoops"].start_all_tasks()
+        super().run(token)
+
     async def on_ready(self):
         """Called on bot ready, any time discord finishes connecting"""
         logging.info('| Now logged in as')
@@ -286,33 +253,28 @@ class Talos(commands.Bot):
         await self.change_presence(game=discord.Game(name="Taking over the World", type=0))
         added, removed = await self.verify()
         logging.info("Added {} objects, Removed {} objects.".format(added, removed))
-        if __name__ == "__main__":
-            self.cogs["EventLoops"].start_all_tasks()
 
     async def on_guild_join(self, guild):
         """Called upon Talos joining a guild. Populates ops, perms, and options"""
         logging.info("Joined Guild {}".format(guild.name))
         guild_id = str(guild.id)
-        ops[guild_id] = []
-        perms[guild_id] = {}
-        options[guild_id] = default_options.copy()
-        await self.update(newOps=ops, newPerms=perms, newOptions=options)
+        self.data[guild_id] = {}
+        self.data[guild_id]["ops"] = []
+        self.data[guild_id]["perms"] = {}
+        self.data[guild_id]["options"] = default_options.copy()
         await self.save()
 
     async def on_guild_remove(self, guild):
         """Called upon Talos leaving a guild. Populates ops, perms, and options"""
         logging.info("Left Guild {}".format(guild.name))
         guild_id = str(guild.id)
-        del ops[guild_id]
-        del perms[guild_id]
-        del options[guild_id]
-        await self.update(newOps=ops, newPerms=perms, newOptions=options)
+        del self.data[guild_id]
         await self.save()
 
     async def on_command_error(self, ctx, exception):
         """Called upon command error. Handles CommandNotFound and CheckFailure, other errors it simply logs"""
         if type(exception) == discord.ext.commands.CommandNotFound:
-            if options[str(ctx.guild.id)]["FailMessage"]:
+            if self.data[str(ctx.guild.id)]["options"]["FailMessage"]:
                 cur_pref = await self.get_prefix(ctx)
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
@@ -355,23 +317,6 @@ def json_load(filename):
     return data
 
 
-def build_trees(data):
-    """Builds Talos data from JSON read in from the save file"""
-    try:
-        ops.update(data['ops'])
-        perms.update(data['perms'])
-        options.update(data['options'])
-        for extension in talos.extensions:
-            talos.extensions[extension].ops.update(data['ops'])
-            talos.extensions[extension].perms.update(data['perms'])
-            talos.extensions[extension].options.update(data['options'])
-    except KeyError as e:
-        if str(e) in STARTUP_EXTENSIONS:
-            logging.warning("Cog not loaded")
-        else:
-            logging.warning("Data didn't have key {}".format(e))
-
-
 def json_save(filename, **kwargs):
     """Saves a file as valid JSON"""
     with open(filename, 'w+') as file:
@@ -385,18 +330,35 @@ def json_save(filename, **kwargs):
 
 
 if __name__ == "__main__":
-    talos = Talos()
-    talos.load_extensions()
-
     try:
         json_data = json_load(SAVE_FILE)
         default_options = json_load(DEFAULT_OPTIONS)
         if default_options is None:
             logging.critical("Couldn't find default options")
             exit(1)
-        if json_data is not None:
-            talos.uptime = json_data['uptime']
-            build_trees(json_data)
+    except Exception as ex:
+        logging.error(ex.__name__, ex)
+        json_data = None
+
+    if "options" in json_data:
+        new = {}
+        for identifier in json_data:
+            if identifier != "uptime":
+                for guild_i in json_data[identifier]:
+                    try:
+                        new[guild_i]
+                    except KeyError:
+                        new[guild_i] = {}
+                    finally:
+                        new[guild_i][identifier] = json_data[identifier][guild_i]
+        new["uptime"] = json_data["uptime"]
+        json_data = new
+
+    talos = Talos(json_data)
+    talos.load_extensions()
+
+    try:
         talos.run(load_token())
     finally:
         print("Talos Exiting")
+        talos.loop.run_until_complete(talos.save())

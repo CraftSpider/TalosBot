@@ -5,3 +5,8 @@
 
 # Python Cache
 */__pycache__/
+
+# Discord
+/Discord/*.bak
+/Discord/*.txt
+/Discord/*.dat

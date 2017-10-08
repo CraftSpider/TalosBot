@@ -1,11 +1,7 @@
-import pytest
 import sys
 import os
-import discord
-import discord.ext.commands as dc
 sys.path.append(os.getcwd().replace("\\Tests", ""))
 sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
-print(sys.path)
 import Discord.Talos
 import Discord.AdminCommands
 
@@ -27,7 +23,3 @@ def test_extension_load():
     assert "JokeCommands" not in bot.extensions, "Didn't unload JokeCommands extension"
     assert "EventLoops" not in bot.extensions, "Didn't unload EventLoops extension"
 
-
-def test_admin_commands():
-    bot = Discord.Talos.Talos()
-    ACs = Discord.AdminCommands.AdminCommands(bot)

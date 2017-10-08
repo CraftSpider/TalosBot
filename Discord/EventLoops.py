@@ -22,13 +22,6 @@ SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'TalosBot Prompt Reader'
 
-# Ops list. Filled on bot load, altered through the add and remove op commands.
-ops = {}
-# Permissions list. Filled on bot load, altered by command
-perms = {}
-# Options list. Filled on bot load, altered by command.
-options = {}
-
 logging = logging.getLogger("talos.events")
 
 
@@ -44,6 +37,7 @@ class EventLoops:
         if len(self.bg_tasks) == 0:
             self.start_uptime()
             self.start_prompt()
+            self.start_regulars()
 
     def start_uptime(self):
         self.bg_tasks.append(self.bot.loop.create_task(self.uptime_task()))
@@ -57,6 +51,10 @@ class EventLoops:
         self.service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discoveryUrl,
                                        cache_discovery=False)
         self.bg_tasks.append(self.bot.loop.create_task(self.prompt_task()))
+
+    def start_regulars(self):
+        self.bg_tasks.append(self.bot.loop.create_task(self.hourly_task()))
+        self.bg_tasks.append(self.bot.loop.create_task(self.daily_task()))
 
     def get_credentials(self):
         """Gets valid user credentials from storage.
@@ -102,25 +100,45 @@ class EventLoops:
                 valueInputOption="RAW", body=body).execute()
         return result
 
-    async def uptime_task(self):
-        """Called once a minute, to verify uptime. Also removes old values from the list."""
-        logging.info("Starting uptime task")
-        delta = timedelta(seconds=60 - datetime.now().replace(microsecond=0).second)
+    async def hourly_task(self):
+        """Called once at the top of every hour."""
+        logging.info("Starting hourly task")
+        now = datetime.now()
+        delta = timedelta(minutes=60 - now.minute, seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
-            self.bot.uptime.append(datetime.now().replace(microsecond=0).timestamp())
+            self.bot.save()
+            await asyncio.sleep(60*60)
+
+    async def daily_task(self):
+        """Called once every day at midnight, does most time-consuming tasks."""
+        logging.info("Starting daily task")
+        now = datetime.now()
+        delta = timedelta(hours=24 - now.hour, minutes=60 - now.minute, seconds=60 - now.second)
+        await asyncio.sleep(delta.total_seconds())
+        while True:
             old = []
             for item in self.bot.uptime:
                 if datetime.fromtimestamp(item) < datetime.now() - timedelta(days=30):
                     old.append(item)
             for item in old:
                 self.bot.uptime.remove(item)
-            await self.bot.save()
+            self.bot.verify()
+            await asyncio.sleep(24*60*60)
+
+    async def uptime_task(self):
+        """Called once a minute, to verify uptime. Old uptimes cleaned once a day."""
+        logging.info("Starting uptime task")
+        delta = timedelta(seconds=60 - datetime.now().replace(microsecond=0).second)
+        await asyncio.sleep(delta.total_seconds())
+        while True:
+            self.bot.uptime.append(datetime.now().replace(microsecond=0).timestamp())
             await asyncio.sleep(60)
 
     async def prompt_task(self):
+        """Once a day, grabs a prompt from google sheets and posts it to the defined prompts chat, if enabled."""
         logging.info("Starting prompt task")
-        now = datetime.now().replace(microsecond=0)
+        now = datetime.now()
         delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24, minutes=60 - now.minute,
                           seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
@@ -139,10 +157,11 @@ class EventLoops:
             out += "{}\n\n".format(prompt[0].strip("\""))
             out += "({} by {})".format(("Original prompt" if prompt[1].upper() == "YES" else "Submitted"), prompt[2])
             for guild in self.bot.guilds:
+                if not self.bot.data[str(guild.id)]["options"]["WritingPrompts"]:
+                    continue
                 for channel in guild.channels:
-                    if channel.name == options[str(guild.id)]["PromptsChannel"]:
-                        if options[str(guild.id)]["WritingPrompts"]:
-                            await channel.send(out)
+                    if channel.name == self.bot.data[str(guild.id)]["options"]["PromptsChannel"]:
+                        await channel.send(out)
 
             prompt.append("POSTED")
             self.set_spreadsheet(prompt_sheet_id, [prompt],

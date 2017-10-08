@@ -6,14 +6,10 @@
 """
 import discord
 import asyncio
+import logging
 from discord.ext import commands
 
-# Ops list. Filled on bot load, altered through the add and remove op commands.
-ops = {}
-# Permissions list. Filled on bot load, altered by command
-perms = {}
-# Options list. Filled on bot load, altered by command.
-options = {}
+logging = logging.getLogger("talos.joke")
 
 
 def perms_check():
@@ -26,25 +22,25 @@ def perms_check():
         guild_id = str(ctx.guild.id)
         command = str(ctx.command)
 
-        if not options[guild_id]["JokeCommands"]:
+        if not ctx.bot.data[guild_id]["options"]["Commands"]:
             return False
-        if command not in perms[guild_id].keys():
+        if command not in ctx.bot.data[guild_id]["perms"].keys():
             return True
-        if "user" in perms[guild_id][command].keys():
-            for key in perms[guild_id][command]["user"].keys():
+        if "user" in ctx.bot.data[guild_id]["perms"][command].keys():
+            for key in ctx.bot.data[guild_id]["perms"][command]["user"].keys():
                 if key == str(ctx.author):
-                    return perms[guild_id][command]["user"][key]
-        if "role" in perms[guild_id][command].keys():
-            for key in perms[guild_id][command]["role"].keys():
+                    return ctx.bot.data[guild_id]["perms"][command]["user"][key]
+        if "role" in ctx.bot.data[guild_id]["perms"][command].keys():
+            for key in ctx.bot.data[guild_id]["perms"][command]["role"].keys():
                 for role in ctx.author.roles:
                     if key == str(role):
-                        return perms[guild_id][command]["role"][key]
-        if "channel" in perms[guild_id][command].keys():
-            for key in perms[guild_id][command]["channel"].keys():
+                        return ctx.bot.data[guild_id]["perms"][command]["role"][key]
+        if "channel" in ctx.bot.data[guild_id]["perms"][command].keys():
+            for key in ctx.bot.data[guild_id]["perms"][command]["channel"].keys():
                 if key == str(ctx.channel):
-                    return perms[guild_id][command]["channel"][key]
-        if "guild" in perms[guild_id][command].keys():
-            return perms[guild_id][command]["guild"]
+                    return ctx.bot.data[guild_id]["perms"][command]["channel"][key]
+        if "guild" in ctx.bot.data[guild_id]["perms"][command].keys():
+            return ctx.bot.data[guild_id]["perms"][command]["guild"]
         return True
 
     return commands.check(predicate)
