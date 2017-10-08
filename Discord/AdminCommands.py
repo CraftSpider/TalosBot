@@ -417,7 +417,21 @@ class AdminCommands:
     @admin_check()
     async def _p_all(self, ctx):
         """Displays all permissions everywhere"""
-        await ctx.send("Unfinished implementation")
+        out = "```"
+        for guild in self.bot.data:
+            out += "Server: {}\n".format(self.bot.get_guild(int(guild)))
+            guild_perms = self.bot.data[guild]["perms"]
+            for command in guild_perms:
+                out += "    Command: {}\n".format(command)
+                for level in sorted(guild_perms[command], key=lambda a: self.LEVELS[a]):
+                    out += "        Level: {}\n".format(level)
+                    if level == "guild":
+                        out += "            {}\n".format(guild_perms[command][level])
+                    else:
+                        for spec in guild_perms[command][level]:
+                            out += "            {}: {}\n".format(spec, guild_perms[command][level][spec])
+        out += "```"
+        await ctx.send(out)
         # await ctx.send("`{}`".format(perms))
 
     @commands.group()

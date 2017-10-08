@@ -155,19 +155,19 @@ class Talos(commands.Bot):
                                 added += 1
 
         # Destroy unnecessary values
-        # obsolete = []
-        # for key in self.data:
-        #     check = False
-        #     for guild in self.guilds:
-        #         guild_id = str(guild.id)
-        #         if key == guild_id:
-        #             check = True
-        #     if not check:
-        #         obsolete.append(key)
-        # for key in obsolete:
-        #     logging.info("Cleaning data for {}".format(key))
-        #     del self.data[key]
-        #     removed += 1
+        obsolete = []
+        for key in self.data:
+            check = False
+            for guild in self.guilds:
+                guild_id = str(guild.id)
+                if key == guild_id:
+                    check = True
+            if not check:
+                obsolete.append(key)
+        for key in obsolete:
+            logging.info("Cleaning data for {}".format(key))
+            del self.data[key]
+            removed += 1
 
         obsolete = []
         for guild in self.data:
