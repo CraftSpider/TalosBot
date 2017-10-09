@@ -46,7 +46,7 @@ var Commands = {
     },
     "register": function(args) {
         if (args[0] && args[1]) {
-            if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/) && args[0] != "Logger") {
+            if (args[0].match(/[a-zA-Z]/) && args[1].match(/[a-zA-Z]/) && args[0] !== "Logger") {
                 var TalosUser = {"password":args[1], "words":0};
                 setStorage(args[0], stringify(TalosUser));
                 postMessage("User " + args[0] + " has been registered!");
@@ -128,7 +128,7 @@ var Commands = {
                             postMessage("User " + user + " was last seen " + time);
                         }
                     }, 500);
-                } else if (iterations > 60 || elementByID(popup).childNodes[0].innerText == "No Messages Found") {
+                } else if (iterations > 60 || elementByID(popup).childNodes[0].innerText === "No Messages Found") {
                     if (!IsSleeping) {
                         postMessage("I couldn't find " + user + ". Sorry.");
                     }
@@ -159,11 +159,11 @@ var Commands = {
         uptime -= minutes * 60;
         var seconds = Math.floor(uptime);
         
-        var upStr = (weeks?weeks + " week" + (weeks == 1?"":"s") + ", ":"") +
-                    (days?days + " day" + (days == 1?"":"s") + ", ":"") +
-                    (hours?hours + " hour" + (hours == 1?"":"s") + ", ":"") +
-                    (minutes?minutes + " minute" + (minutes == 1?"":"s") + ", and ":"") +
-                    seconds + " second" + (seconds == 1?"":"s") + ".";
+        var upStr = (weeks?weeks + " week" + (weeks === 1?"":"s") + ", ":"") +
+                    (days?days + " day" + (days === 1?"":"s") + ", ":"") +
+                    (hours?hours + " hour" + (hours === 1?"":"s") + ", ":"") +
+                    (minutes?minutes + " minute" + (minutes === 1?"":"s") + ", and ":"") +
+                    seconds + " second" + (seconds === 1?"":"s") + ".";
         
         postMessage("I've been online " + upStr);
     },
@@ -232,16 +232,17 @@ var Commands = {
         if (!args[0]) {
             var helpList = "Greetings. I'm Talos, chat helper. My commands are:\n";
             for (var C in Commands) {
-                if (C.toLowerCase() != "roulette") {
+                if (C.toLowerCase() !== "roulette") {
                     helpList += "^" + C + "\n";
                 }
             }
             helpList += "See user commands list by typing '^help users'\nSee admin commands list by typing '^help admins'";
             postMessage(helpList);
         } else {
+            var commandList;
             switch (args[0]) {
                 case "admins":
-                    var commandList = "Admin Commands are:\n";
+                    commandList = "Admin Commands are:\n";
                     for (var AC in ADMIN_COMMANDS) {
                         if (ADMIN_COMMANDS.hasOwnProperty(AC)) {
                             commandList += "^" + AC + "\n";
@@ -271,7 +272,7 @@ var Commands = {
                     postMessage("Use: ^uptime\nDescription: Gives how long, down to the second, that Talos has been running.");
                     break;
                 case "users":
-                    var commandList = "User commands are:\n";
+                    commandList = "User commands are:\n";
                     for (var UC in UserCommands) {
                         if (UserCommands.hasOwnProperty(UC)) {
                             commandList += "^" + UC + "\n";
@@ -310,7 +311,7 @@ var UserCommands = {
     "check": function(args, user) {
         if (loggedOn[user]) {
             var TalosUser = parse(getStorage(loggedOn[user]));
-            if (TalosUser[args[0]] != "undefined" && TalosUser[args[0]] != "null") {
+            if (TalosUser[args[0]] !== "undefined" && TalosUser[args[0]] !== "null") {
                 var curVal = TalosUser[args[0]];
                 postMessage(loggedOn[user] + " " + args[0] + " is currently " + curVal);
             } else {
@@ -327,10 +328,10 @@ var UserCommands = {
             postMessage("Sorry, I don't know any user named " + args[0]);
         } else {
             var TalosUser = parse(getStorage(args[0]));
-            if (args[1] == TalosUser.password && !loggedOn[user]) {
+            if (args[1] === TalosUser.password && !loggedOn[user]) {
                 loggedOn[user] = args[0];
                 postMessage(user + " has been succesfully logged in!");
-            } else if (args[1] == TalosUser.password) {
+            } else if (args[1] === TalosUser.password) {
                 postMessage("You appear to be already logged on as " + loggedOn[user]);
             } else {
                 postMessage("That password doesn't match what I remember.");
@@ -346,6 +347,7 @@ var UserCommands = {
         }
     },
     "pronouns": function(args, user) {
+        user = null;
         var TalosUser = parse(getStorage(args[0]));
         if (!TalosUser) {
             postMessage("Sorry, that user doesn't exist");
@@ -359,7 +361,7 @@ var UserCommands = {
         if (loggedOn[user] && args[0]) {
             var TalosUser = parse(getStorage(loggedOn[user]));
             for (var key in TalosUser) {
-                if (key == args[0]) {
+                if (key === args[0]) {
                     TalosUser[key] = undefined;
                 }
             }
@@ -395,7 +397,7 @@ var UserCommands = {
         } else {
             postMessage("Sorry, you need to be logged on to do that");
         }
-    },
+    }
 };
 
 var ADMIN_COMMANDS = {
@@ -412,7 +414,7 @@ var ADMIN_COMMANDS = {
     "listUsers": function() {
         var out = "Current list of all users:\n";
         for (var key in window.localStorage) {
-            if(key != "Logger" || isNaN(+getStorage(key))) {
+            if(window.localStorage.hasOwnProperty(key) && (key !== "Logger" || isNaN(+getStorage(key)))) {
                 out += key + "\n";
             }
         }
@@ -437,9 +439,9 @@ var ADMIN_COMMANDS = {
     "resetUser": function(args) {
         if (args[0]) {
             if (getStorage(args[0])) {
-                TalosUser = getStorage(args[0]);
+                var TalosUser = getStorage(args[0]);
                 for (var value in TalosUser) {
-                    if (value != "password") {
+                    if (value !== "password" && TalosUser.hasOwnProperty(value)) {
                         value = undefined;
                     }
                 }
@@ -467,5 +469,5 @@ var ADMIN_COMMANDS = {
                 ADMIN_COMMANDS.toggleSleep("");
             }, time[0] * 60000);
         }
-    },
+    }
 };

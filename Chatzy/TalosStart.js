@@ -1,32 +1,34 @@
 const MAIN_URL = "https://rawgit.com/CraftSpider/TalosBot/master/Chatzy/"; //URL to load Commands from
 const API_URL = "https://rawgit.com/CraftSpider/ChatzyAPI/master/"; //URL to load ChatzyAPI from
+var log;
+var localStorageAppender;
 
 var requirements = [
     {
         'src': MAIN_URL + 'log4javascript.js',
         'onload':'buildLogger()',
         'id':'LoggerScript',
-        'message': null,
+        'message': null
     },
     {
         'src': API_URL + 'ChatzyWrappers.js',
         'onload': null,
         'id':'ChatzyWrappers',
-        'message': 'ChatzyWrappers Loading',
+        'message': 'ChatzyWrappers Loading'
     },
     {
         'src': MAIN_URL + 'Talos.js',
         'onload': 'talosStart()',
         'id':'MainScript',
-        'message': 'Talos Loading',
+        'message': 'Talos Loading'
     },
     {
         'src': MAIN_URL + 'Commands.js',
         'onload':'CommandsLoaded = true',
         'id':'CommandScript',
-        'message': 'Commands Loading',
+        'message': 'Commands Loading'
     }
-]
+];
 
 /*
     ------------------
@@ -61,7 +63,7 @@ function init(req) {
         return;
     }
     
-    requirement = requirements[req];
+    var requirement = requirements[req];
     if (requirement.message) {
         log.debug(requirement.message);
     }

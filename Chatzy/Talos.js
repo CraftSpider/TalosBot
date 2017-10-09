@@ -55,13 +55,13 @@ function startWW(length, keyword) {
  * @returns {Array} Chatzy Admin IDs
  */
 function parseAdmins(str) {
-    str = str.split(/\r?\n/);
-    for (var i in str) {
-        if (str.hasOwnProperty(i)) {
-            str[i] = str[i].split(",")[1];
+    var admin_arr = str.split(/\r?\n/);
+    for (var i in admin_arr) {
+        if (admin_arr.hasOwnProperty(i)) {
+            admin_arr[i] = admin_arr[i].split(",")[1];
         }
     }
-    return str;
+    return admin_arr;
 }
 
 /**
@@ -79,13 +79,13 @@ function parseArgs(str) {
             if (!str.hasOwnProperty(char)) {
                 continue
             }
-            if (str[char] == "\"") {
+            if (str[char] === "\"") {
                 delim = !delim;
                 if (arg) {
                     out.push(arg);
                     arg = "";
                 }
-            } else if (str[char] == " " && !delim) {
+            } else if (str[char] === " " && !delim) {
                 if (arg) {
                     out.push(arg);
                     arg = "";
@@ -201,14 +201,14 @@ function getAdminNames() {
         adminAliases = [];
         for (var i = 0; i < visitorData.length; i++) {
             var visitor = visitorData[i];
-            if (visitor[1] == "(Email hidden)") {
+            if (visitor[1] === "(Email hidden)") {
                 continue;
             }
-            if (visitor[1][0] == "\"") {
+            if (visitor[1][0] === "\"") {
                 visitor[1] =  visitor[1].substr(1,visitor[1].length-2);
             }
             for (var j = 0; j < ADMINS.length; j++) {
-                if (ADMINS[j] == visitor[1]) {
+                if (ADMINS[j] === visitor[1]) {
                     adminAliases.push(visitor[0]);
                 }
             }
@@ -280,7 +280,7 @@ function readChat() {
                     
                     var isAdmin = false;
                     for (var U in adminAliases) {
-                        if (User == adminAliases[U]) {
+                        if (User === adminAliases[U]) {
                             isAdmin = true;
                             break;
                         }
@@ -292,7 +292,7 @@ function readChat() {
                         log.warn("Admin command " + Command + " called by " + User);
                         log.debug("With arguments \"" + Args + "\"");
                         window.ADMIN_COMMANDS[Command](Args, User);
-                    } else if (IsSleeping == 1) {
+                    } else if (IsSleeping === 1) {
                         break;
                     } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
                         log.warn("Admin command " + Command + " ignored from " + User);
@@ -331,7 +331,7 @@ function readPMs() {
         var Args = parseArgs(RegExp.$3);
         var isAdmin = false;
         for (var U in adminAliases) {
-            if (User == adminAliases[U]) {
+            if (User === adminAliases[U]) {
                 isAdmin = true;
                 break;
             }
@@ -341,7 +341,7 @@ function readPMs() {
             log.warn("Admin command " + Command + " called by " + User + " via PM");
             log.debug("With arguments \"" + Args + "\"");
             window.ADMIN_COMMANDS[Command](Args);
-        } else if (IsSleeping == 1 || (WHSwitch >= 3 && !isAdmin)) {
+        } else if (IsSleeping === 1 || (WHSwitch >= 3 && !isAdmin)) {
             closePopup();
         } else if (window.ADMIN_COMMANDS[Command] && !isAdmin) {
             log.warn("Admin command " + Command + " ignored from " + User + " via PM");
