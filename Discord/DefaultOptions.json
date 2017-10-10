@@ -6,5 +6,6 @@
   "UserCommands": true,
   "JokeCommands": true,
   "WritingPrompts": false,
-  "PromptsChannel": "prompts"
+  "PromptsChannel": "prompts",
+  "RichEmbeds": true
 }

@@ -11,6 +11,7 @@ import sys
 import json
 import logging
 import re
+import asyncio
 from datetime import datetime
 from collections import namedtuple
 
@@ -18,10 +19,6 @@ from collections import namedtuple
 #   Constants
 #
 
-# Current Talos version. Loosely incremented.
-VERSION = "2.4.0"
-# Time Talos started
-BOOT_TIME = datetime.now()
 # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
 STARTUP_EXTENSIONS = ["Commands", "UserCommands", "JokeCommands", "AdminCommands", "EventLoops"]
 # Talos saves its data in this file. Don't touch it unless you understand what you're doing.
@@ -63,8 +60,10 @@ def prefix(self, message):
 class Talos(commands.Bot):
     """Class for the Talos bot. Handles all sorts of things for inter-cog relations and bot wide data."""
 
-    VERSION = VERSION
-    BOOT_TIME = BOOT_TIME
+    # Current Talos version. Loosely incremented.
+    VERSION = "2.4.0"
+    # Time Talos started
+    BOOT_TIME = datetime.now()
     PROMPT_TIME = 10
     DEFAULT_PREFIX = "^"
     SERVER_FIELDS = namedtuple('Fields', ["ops", "perms", "options"])(list, dict, default_options.copy)
@@ -340,20 +339,6 @@ if __name__ == "__main__":
         logging.error(ex.__name__, ex)
         json_data = None
 
-    if "options" in json_data:
-        new = {}
-        for identifier in json_data:
-            if identifier != "uptime":
-                for guild_i in json_data[identifier]:
-                    try:
-                        new[guild_i]
-                    except KeyError:
-                        new[guild_i] = {}
-                    finally:
-                        new[guild_i][identifier] = json_data[identifier][guild_i]
-        new["uptime"] = json_data["uptime"]
-        json_data = new
-
     talos = Talos(json_data)
     talos.load_extensions()
 
@@ -361,4 +346,5 @@ if __name__ == "__main__":
         talos.run(load_token())
     finally:
         print("Talos Exiting")
-        talos.loop.run_until_complete(talos.save())
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(talos.save)

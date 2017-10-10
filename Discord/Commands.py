@@ -367,36 +367,42 @@ class Commands:
             cur_pw = active_pw[ctx.guild.id]
             cur_pw.members.sort(key=sort_mem, reverse=True)
             winner = discord.utils.find(lambda m: cur_pw.members[0].user == m, ctx.guild.members)
-            embed = discord.Embed(colour=winner.colour,
-                                  timestamp=datetime.now())
-            embed.set_author(name="{} won the PW!".format(winner.display_name), icon_url=winner.avatar_url)
-            embed.add_field(name="Start",
-                            value="{}".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
-                            inline=True)
-            embed.add_field(name="End",
-                            value="{}".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
-                            inline=True)
-            embed.add_field(name="Total",
-                            value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0)))
-            memberList = ""
-            for member in cur_pw.members:
-                end = member.end.replace(microsecond=0)
-                start = member.start.replace(microsecond=0)
-                memberList += "{0} - {1}\n".format(member.user.display_name, end - start)
-            embed.add_field(name="Times", value=memberList)
-            await ctx.send(embed=embed)
-            # out = "```"
-            # out += "Start: {}\n".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
-            # out += "End: {}\n".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
-            # out += "Total: {}\n".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
-            # out += "Times:\n"
-            # cur_pw.members.sort(key=sort_mem, reverse=True)
-            # for member in cur_pw.members:
-            #     end = member.end.replace(microsecond=0)
-            #     start = member.start.replace(microsecond=0)
-            #     out += "    {0} - {1}\n".format(member.user, end - start)
-            # out += "```"
-            # await ctx.send(out)
+
+            if self.bot.data[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
+               ctx.channel.permissions_for(ctx.me).embed_links:
+                embed = discord.Embed(colour=winner.colour,
+                                      timestamp=datetime.now())
+                embed.set_author(name="{} won the PW!".format(winner.display_name), icon_url=winner.avatar_url)
+                embed.add_field(name="Start",
+                                value="{}".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
+                                inline=True)
+                embed.add_field(name="End",
+                                value="{}".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
+                                inline=True)
+                embed.add_field(name="Total",
+                                value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0)))
+                memberList = ""
+                for member in cur_pw.members:
+                    end = member.end.replace(microsecond=0)
+                    start = member.start.replace(microsecond=0)
+                    memberList += "{0} - {1}\n".format(member.user.display_name, end - start)
+                embed.add_field(name="Times", value=memberList)
+                await ctx.send(embed=embed)
+            else:
+                out = "```"
+                out += "{} won the PW!\n".format(winner.display_name)
+                out += "Start: {}\n".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
+                out += "End: {}\n".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S"))
+                out += "Total: {}\n".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
+                out += "Times:\n"
+                cur_pw.members.sort(key=sort_mem, reverse=True)
+                for member in cur_pw.members:
+                    end = member.end.replace(microsecond=0)
+                    start = member.start.replace(microsecond=0)
+                    out += "    {0} - {1}\n".format(member.user, end - start)
+                out += "```"
+                await ctx.send(out)
+
             active_pw[ctx.guild.id] = None
 
     @productivitywar.command(name='dump', hidden=True)
