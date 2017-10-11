@@ -67,6 +67,8 @@ class Talos(commands.Bot):
     PROMPT_TIME = 10
     DEFAULT_PREFIX = "^"
     SERVER_FIELDS = namedtuple('Fields', ["ops", "perms", "options"])(list, dict, default_options.copy)
+    # Discordbots bot list token
+    discordbots_token = ""
     # List of times when the bot was verified online.
     uptime = []
     # Single unified data dict. Form data.guild_id.section.key or data.univ_val
@@ -74,8 +76,9 @@ class Talos(commands.Bot):
 
     def __init__(self, data=None, **args):
         description = '''Greetings. I'm Talos, chat helper. My commands are:'''
+        if "token" in args:
+            self.discordbots_token = args.pop("token")
         super().__init__(prefix, description=description, **args)
-
         if data is not None:
             self.uptime = data.pop("uptime")
             self.data = data
@@ -252,6 +255,16 @@ class Talos(commands.Bot):
         await self.change_presence(game=discord.Game(name="Taking over the World", type=0))
         added, removed = await self.verify()
         logging.info("Added {} objects, Removed {} objects.".format(added, removed))
+        if self.discordbots_token != "":
+            guild_count = len(self.guilds)
+            self.cogs["EventLoops"].last_server_count = guild_count
+            import aiohttp
+            headers = {
+                'Authorization': self.discordbots_token}
+            data = {'server_count': guild_count}
+            api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
+            async with aiohttp.ClientSession() as session:
+                await session.post(api_url, data=data, headers=headers)
 
     async def on_guild_join(self, guild):
         """Called upon Talos joining a guild. Populates ops, perms, and options"""
@@ -304,6 +317,14 @@ def load_token():
     return file[0].strip()
 
 
+def load_botlist_token():
+    file = string_load(TOKEN_FILE)
+    try:
+        return file[1].strip()
+    except KeyError:
+        return ""
+
+
 def json_load(filename):
     """Loads a file as a JSON object and returns that"""
     with open(filename, 'a+') as file:
@@ -339,7 +360,7 @@ if __name__ == "__main__":
         logging.error(ex.__name__, ex)
         json_data = None
 
-    talos = Talos(json_data)
+    talos = Talos(json_data, token=load_botlist_token())
     talos.load_extensions()
 
     try:

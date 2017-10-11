@@ -31,6 +31,7 @@ class EventLoops:
         self.bot = bot
         self.service = None
         self.flags = None
+        self.last_server_count = 0
         self.bg_tasks = []
 
     def start_all_tasks(self):
@@ -108,6 +109,15 @@ class EventLoops:
         await asyncio.sleep(delta.total_seconds())
         while True:
             self.bot.save()
+            guild_count = len(self.bot.guilds)
+            if self.bot.discordbots_token != "" and guild_count != self.last_server_count:
+                self.last_server_count = guild_count
+                import aiohttp
+                headers = {'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE5OTk2NTYxMjY5MTI5MjE2MCIsImJvdCI6dHJ1ZSwiaWF0IjoxNTA3NjEyMjk5fQ.TiZkKIrwux-gPuHSbXhK1RVIXLWdXxcRPihbYQMktz0'}
+                data = {'server_count': guild_count}
+                api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
+                async with aiohttp.ClientSession() as session:
+                    await session.post(api_url, data=data, headers=headers)
             await asyncio.sleep(60*60)
 
     async def daily_task(self):
