@@ -201,6 +201,7 @@ class Commands:
         if wpm < 0:
             await ctx.send("Please choose a non-negative WPM.")
             return
+            
 
         if start:
             try:
@@ -230,11 +231,16 @@ class Commands:
         wordsWritten = wpm * length
         advance2 = False  # do you have an advance variable already?
         while not advance2:
-            wordsWritten = random.randrange(wordsWritten-100, wordsWritten+100)
-            if wordsWritten >= 0:
+            if wordsWritten > 0:
+                wordsWritten = random.randrange(wordsWritten-100, wordsWritten+100)
                 advance2 = True
-        await asyncio.sleep(length * 60)
-        await ctx.send("I wrote {} words. How many did you write?".format(wordsWritten))
+                await asyncio.sleep(length * 60)
+                await ctx.send("I wrote {} words. How many did you write?".format(wordsWritten))
+            if wordsWritten == 0: 
+                advance2 = True
+                await asyncio.sleep(length*60)
+                await ctx.send("The word war is over. How did you do?")
+       
 
     @commands.command()
     @perms_check()
