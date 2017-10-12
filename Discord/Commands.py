@@ -231,7 +231,7 @@ class Commands:
         wordsWritten = wpm * length
         advance2 = False  # do you have an advance variable already?
         while not advance2:
-            if wordsWritten >= 0:
+            if wordsWritten > 0:
                 wordsWritten = random.randrange(wordsWritten-100, wordsWritten+100)
                 advance2 = True
                 await asyncio.sleep(length * 60)
