@@ -1,16 +1,25 @@
-
-import irc.bot
-import irc.events
 import json
+import logging
 import urllib.request as urlreq
 
+import Twitch.twitch_irc.bot as twirc
+import irc.events
+import irc.bot
+
 CLIENT_ID = "jt04pq09w3rui89eokt5ke2v1mveml"
-CLIENT_SECRET = "0ca2smudgx2wavlu4o2al48lijjhy0"
+CLIENT_SECRET = ""
 URL_BASE = "https://api.twitch.tv/kraken"
 
+logging.basicConfig(level=logging.DEBUG)
+logging = logging.getLogger("talos")
 
-def generate_user_token(client_ID, other_stuff):
-    pass
+def generate_user_token(client_ID, redirect="http://localhost"):
+    url = "{}/oauth2/authorize?client_id={}&redirect_uri={}&response_type=token&scope=chat_login".format(URL_BASE, client_ID, redirect)
+    request = urlreq.Request(url, method="GET")
+    request = urlreq.urlopen(request)
+    result = request.geturl()
+    print(result)
+    return result
 
 
 def generate_app_token(client_ID, client_secret):
@@ -31,34 +40,32 @@ def revoke_token(client_ID, token):
     return False
 
 
-class Talos(irc.bot.SingleServerIRCBot):
+class Talos(twirc.SingleServerBot):
+
+    prefix = "^"
+
     def __init__(self, servers, nick, name):
-        url = 'https://api.twitch.tv/kraken/users?login=' + "CraftSpider"
-        headers = {'Client-ID': CLIENT_ID, 'Accept': 'application/vnd.twitchtv.v5+json'}
-        request = urlreq.Request(url, headers=headers)
-        r = json.loads(urlreq.urlopen(request).read().decode())
-        self.channel_id = r['users'][0]['_id']
+        super().__init__(self.prefix, servers, nick, name)
 
-        super().__init__(servers, nick, name)
-        self.reactor.add_global_handler("all_events", self.printer, 0)
-
-    def printer(self, c, e):
-        print(e)
-
-    def on_pubmsg(self, c, e):
-        pass
-
-    def on_welcome(self, c, e):
-        pass
+    def on_welcome(self, conn, event):
+        conn.req_tags()
+        conn.req_commands()
+        conn.send_raw("JOIN #craftspider")
+        conn.send_raw("PRIVMSG #craftspider :[Talos Boot successful]")
 
 
-token_data = generate_user_token(CLIENT_ID, CLIENT_SECRET)
-token = token_data["access_token"]
-password = "oauth:{}".format(token)
-print(password)
-twitch_server = irc.bot.ServerSpec("irc.chat.twitch.tv", password=password)
+if __name__ == "__main__":
+    # token_data = generate_user_token(CLIENT_ID)
+    bot_token = ""  # input("Token > ")  # token_data["access_token"]
+    password = "oauth:{}".format(bot_token)
+    twitch_server = irc.bot.ServerSpec("irc.chat.twitch.tv", password=password)
 
-bot = Talos([twitch_server], "talosbot", "talosbot")
-bot.start()
+    bot = Talos([twitch_server], "talos_bot_", "talos_bot_")
 
-print(revoke_token(CLIENT_ID, token))
+    @bot.command()
+    def test(ctx):
+        ctx.send("Hello World!")
+
+    bot.start()
+
+    print(revoke_token(CLIENT_ID, bot_token))
