@@ -361,12 +361,24 @@ if __name__ == "__main__":
         logging.error(ex.__name__, ex)
         json_data = None
 
-    talos = Talos(json_data, token=load_botlist_token())
-    talos.load_extensions()
+    botlist_token = ""
+    try:
+        botlist_token = load_botlist_token()
+    except IndexError:
+        logging.warning("Botlist token missing, stats will not be posted.")
+
+    talos = Talos(json_data, token=botlist_token)
+
+    bot_token = ""
+    try:
+        bot_token = load_token()
+    except IndexError:
+        logging.fatal("Bot token missing, talos cannot start.")
+        exit(66)
 
     try:
-        talos.run(load_token())
+        talos.load_extensions()
+        talos.run(bot_token)
     finally:
         print("Talos Exiting")
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(talos.save)
+        json_save(SAVE_FILE, uptime=talos.uptime, **talos.data)

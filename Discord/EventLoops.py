@@ -108,12 +108,12 @@ class EventLoops:
         delta = timedelta(minutes=60 - now.minute, seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
-            self.bot.save()
+            await self.bot.save()
             guild_count = len(self.bot.guilds)
             if self.bot.discordbots_token != "" and guild_count != self.last_server_count:
                 self.last_server_count = guild_count
                 import aiohttp
-                headers = {'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE5OTk2NTYxMjY5MTI5MjE2MCIsImJvdCI6dHJ1ZSwiaWF0IjoxNTA3NjEyMjk5fQ.TiZkKIrwux-gPuHSbXhK1RVIXLWdXxcRPihbYQMktz0'}
+                headers = {'Authorization': self.bot.discordbots_token}
                 data = {'server_count': guild_count}
                 api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
                 async with aiohttp.ClientSession() as session:
