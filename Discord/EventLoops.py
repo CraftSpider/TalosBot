@@ -22,7 +22,7 @@ SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'TalosBot Prompt Reader'
 
-logging = logging.getLogger("talos.events")
+log = logging.getLogger("talos.events")
 
 
 class EventLoops:
@@ -35,25 +35,24 @@ class EventLoops:
         self.bg_tasks = []
 
     def start_all_tasks(self):
+        """Initializes and starts all event tasks"""
         if len(self.bg_tasks) == 0:
             self.start_uptime()
             self.start_prompt()
             self.start_regulars()
 
     def start_uptime(self):
+        """Starts uptime task"""
         self.bg_tasks.append(self.bot.loop.create_task(self.uptime_task()))
 
     def start_prompt(self):
+        """Starts prompts task"""
         self.flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-        credentials = self.get_credentials()
-        http = credentials.authorize(httplib2.Http())
-        discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
-                        'version=v4')
-        self.service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discoveryUrl,
-                                       cache_discovery=False)
+        self.service = self.create_service()
         self.bg_tasks.append(self.bot.loop.create_task(self.prompt_task()))
 
     def start_regulars(self):
+        """Starts regular tasks"""
         self.bg_tasks.append(self.bot.loop.create_task(self.hourly_task()))
         self.bg_tasks.append(self.bot.loop.create_task(self.daily_task()))
 
@@ -82,12 +81,24 @@ class EventLoops:
             print('Storing credentials to ' + credential_path)
         return credentials
 
+    def create_service(self):
+        """Creates and returns a google API service"""
+        credentials = self.get_credentials()
+        http = credentials.authorize(httplib2.Http())
+        discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                        'version=v4')
+        service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discoveryUrl,
+                                  cache_discovery=False)
+        return service
+
     def get_spreadsheet(self, sheet_id, sheet_range):
+        """Get a google spreadsheet range from service"""
         result = self.service.spreadsheets().values().get(
             spreadsheetId=sheet_id, range=sheet_range).execute()
         return result.get('values', [])
 
     def set_spreadsheet(self, sheet_id, values, sheet_range=None):
+        """Set a google spreadsheet range through service"""
         body = {
             'values': values
         }
@@ -103,11 +114,12 @@ class EventLoops:
 
     async def hourly_task(self):
         """Called once at the top of every hour."""
-        logging.info("Starting hourly task")
+        log.info("Starting hourly task")
         now = datetime.now()
         delta = timedelta(minutes=60 - now.minute, seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
+            log.debug("Hourly task runs")
             await self.bot.save()
             guild_count = len(self.bot.guilds)
             if self.bot.discordbots_token != "" and guild_count != self.last_server_count:
@@ -122,11 +134,12 @@ class EventLoops:
 
     async def daily_task(self):
         """Called once every day at midnight, does most time-consuming tasks."""
-        logging.info("Starting daily task")
+        log.info("Starting daily task")
         now = datetime.now()
         delta = timedelta(hours=24 - now.hour, minutes=60 - now.minute, seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
+            log.debug("Daily task runs")
             old = []
             for item in self.bot.uptime:
                 if datetime.fromtimestamp(item) < datetime.now() - timedelta(days=30):
@@ -138,21 +151,23 @@ class EventLoops:
 
     async def uptime_task(self):
         """Called once a minute, to verify uptime. Old uptimes cleaned once a day."""
-        logging.info("Starting uptime task")
+        log.info("Starting uptime task")
         delta = timedelta(seconds=60 - datetime.now().replace(microsecond=0).second)
         await asyncio.sleep(delta.total_seconds())
         while True:
+            log.debug("Uptime task runs")
             self.bot.uptime.append(datetime.now().replace(microsecond=0).timestamp())
             await asyncio.sleep(60)
 
     async def prompt_task(self):
         """Once a day, grabs a prompt from google sheets and posts it to the defined prompts chat, if enabled."""
-        logging.info("Starting prompt task")
+        log.info("Starting prompt task")
         now = datetime.now()
         delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24, minutes=60 - now.minute,
                           seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
+            log.debug("Prompt task runs")
             prompt_sheet_id = "1bL0mSDGK4ypn8wioQCBqkZH47HmYp6GnmJbXkIOg2fA"
             values = self.get_spreadsheet(prompt_sheet_id, "Form Responses 1!B:E")
             possibilities = []
@@ -162,7 +177,7 @@ class EventLoops:
                     possibilities.append(item)
             prompt = random.choice(possibilities)
 
-            logging.info(prompt)
+            log.info(prompt)
             out = "__Daily Prompt {}__\n\n".format(date.today().strftime("%m/%d"))
             out += "{}\n\n".format(prompt[0].strip("\""))
             out += "({} by {})".format(("Original prompt" if prompt[1].upper() == "YES" else "Submitted"), prompt[2])
