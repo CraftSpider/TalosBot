@@ -256,6 +256,7 @@ class Talos(commands.Bot):
         added, removed = await self.verify()
         logging.info("Added {} objects, Removed {} objects.".format(added, removed))
         if self.discordbots_token != "":
+            logging.info("Posting guilds to Discordbots")
             guild_count = len(self.guilds)
             self.cogs["EventLoops"].last_server_count = guild_count
             import aiohttp
