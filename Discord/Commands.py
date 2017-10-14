@@ -92,9 +92,9 @@ class Commands:
         day_total = 24 * 60
         week_total = day_total * 7
         month_total = day_total * 30
-        day_up = values_greater(self.bot.uptime, (now - timedelta(days=1)).timestamp()) / day_total
-        week_up = values_greater(self.bot.uptime, (now - timedelta(days=7)).timestamp()) / week_total
-        month_up = values_greater(self.bot.uptime, (now - timedelta(days=30)).timestamp()) / month_total
+        day_up = values_greater(self.bot.uptime, (now - timedelta(days=1)).timestamp()) / day_total * 100
+        week_up = values_greater(self.bot.uptime, (now - timedelta(days=7)).timestamp()) / week_total * 100
+        month_up = values_greater(self.bot.uptime, (now - timedelta(days=30)).timestamp()) / month_total * 100
         return day_up, week_up, month_up
 
     #
@@ -162,7 +162,6 @@ class Commands:
                                                                                *self.get_uptime_percent())
             embed.add_field(name="Uptime", value=uptime_str, inline=True)
             stats_str = "I'm in {} Guilds,\nWith {} Users.".format(len(self.bot.guilds), len(self.bot.users))
-            print(self.bot.users)
             embed.add_field(name="Statistics", value=stats_str, inline=True)
             await ctx.send(embed=embed)
         else:
@@ -308,9 +307,9 @@ class Commands:
         boot_string = self.bot.BOOT_TIME.strftime("%b %d, %H:%M:%S")
         out = "I've been online since {0}, a total of {1}\n".format(boot_string, self.get_uptime_days())
         day_up, week_up, month_up = self.get_uptime_percent()
-        out += "Past uptime: {:02.2f}% of the past day, ".format(day_up*100)
-        out += "{:02.2f}% of the past week, ".format(week_up*100)
-        out += "{:02.2f}% of the past month".format(month_up*100)
+        out += "Past uptime: {:02.2f}% of the past day, ".format(day_up)
+        out += "{:02.2f}% of the past week, ".format(week_up)
+        out += "{:02.2f}% of the past month".format(month_up)
         await ctx.send(out)
     
     @commands.group()
