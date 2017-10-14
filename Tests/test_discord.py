@@ -38,14 +38,13 @@ def test_extension_load():
 
 
 def get_unique_member(base_class):
-    # print(base_class.__class__)
     class_name = re.findall("'.*\\.(.*)'", str(base_class.__class__))[0]
 
     def predicate(member):
         if not (inspect.isroutine(member) or inspect.isawaitable(member)):
             return False
         match = re.compile("(?<!\\.){}\\.".format(class_name))
-        if isinstance(member, core.Command) or match.findall(repr(member)):
+        if isinstance(member, core.Command) or match.findall(object.__repr__(member)):
             return True
         return False
 

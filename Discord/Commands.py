@@ -28,25 +28,25 @@ def perms_check():
         guild_id = str(ctx.guild.id)
         command = str(ctx.command)
 
-        if not ctx.bot.data[guild_id]["options"]["Commands"]:
+        if not ctx.bot.servers[guild_id]["options"]["Commands"]:
             return False
-        if command not in ctx.bot.data[guild_id]["perms"].keys():
+        if command not in ctx.bot.servers[guild_id]["perms"].keys():
             return True
-        if "user" in ctx.bot.data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.data[guild_id]["perms"][command]["user"].keys():
+        if "user" in ctx.bot.servers[guild_id]["perms"][command].keys():
+            for key in ctx.bot.servers[guild_id]["perms"][command]["user"].keys():
                 if key == str(ctx.author):
-                    return ctx.bot.data[guild_id]["perms"][command]["user"][key]
-        if "role" in ctx.bot.data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.data[guild_id]["perms"][command]["role"].keys():
+                    return ctx.bot.servers[guild_id]["perms"][command]["user"][key]
+        if "role" in ctx.bot.servers[guild_id]["perms"][command].keys():
+            for key in ctx.bot.servers[guild_id]["perms"][command]["role"].keys():
                 for role in ctx.author.roles:
                     if key == str(role):
-                        return ctx.bot.data[guild_id]["perms"][command]["role"][key]
-        if "channel" in ctx.bot.data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.data[guild_id]["perms"][command]["channel"].keys():
+                        return ctx.bot.servers[guild_id]["perms"][command]["role"][key]
+        if "channel" in ctx.bot.servers[guild_id]["perms"][command].keys():
+            for key in ctx.bot.servers[guild_id]["perms"][command]["channel"].keys():
                 if key == str(ctx.channel):
-                    return ctx.bot.data[guild_id]["perms"][command]["channel"][key]
-        if "guild" in ctx.bot.data[guild_id]["perms"][command].keys():
-            return ctx.bot.data[guild_id]["perms"][command]["guild"]
+                    return ctx.bot.servers[guild_id]["perms"][command]["channel"][key]
+        if "guild" in ctx.bot.servers[guild_id]["perms"][command].keys():
+            return ctx.bot.servers[guild_id]["perms"][command]["guild"]
         return True
 
     return commands.check(predicate)
@@ -77,6 +77,25 @@ class Commands:
     def __init__(self, bot):
         """Initialize the Commands cog. Takes in an instance of bot to use while running."""
         self.bot = bot
+
+    def get_uptime_days(self):
+        """Gets the amount of time Talos has been online in days, hours, minutes, and seconds. Returns a string."""
+        time_delta = datetime.now() - self.bot.BOOT_TIME
+        delta_string = strfdelta(time_delta,
+                                 "{d} day" + ("s" if time_delta.days != 1 else "") + ", {h:02}:{m:02}:{s:02}") \
+            .format(x=("s" if time_delta.days == 1 else ""))
+        return delta_string
+
+    def get_uptime_percent(self):
+        """Gets the percentages of time Talos has been up over the past day, month, and week."""
+        now = datetime.now().replace(microsecond=0)
+        day_total = 24 * 60
+        week_total = day_total * 7
+        month_total = day_total * 30
+        day_up = values_greater(self.bot.uptime, (now - timedelta(days=1)).timestamp()) / day_total
+        week_up = values_greater(self.bot.uptime, (now - timedelta(days=7)).timestamp()) / week_total
+        month_up = values_greater(self.bot.uptime, (now - timedelta(days=30)).timestamp()) / month_total
+        return day_up, week_up, month_up
 
     #
     #   Generator Strings
@@ -111,6 +130,9 @@ class Commands:
               "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship",
               "learn math", "write a lot", "do gymnastics"]
 
+    phrases = ["Hello World!", "Hephaestus and Daedalus are my favorite people", "This is a footer message",
+               "I can't wait to see East again", "I'm here to help.", "My devs are all crazy"]
+
     #
     #   User Commands
     #
@@ -119,11 +141,36 @@ class Commands:
     @perms_check()
     async def information(self, ctx):
         """Gives a short blurb about Talos."""
-        out = "Hello! I'm Talos, official PtP mod-bot. `^help` for command details.\
-                  \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
-                  \nI am built using discord.py, version {}.\
-                  \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.".format(discord.__version__)
-        await ctx.send(out)
+        if self.bot.servers[str(ctx.guild.id)]["options"]["RichEmbeds"]:
+            description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
+                          "`{}help` to see a list of my commands."
+            embed = discord.Embed(
+                title="Talos Information",
+                colour=discord.Colour(0x202020),
+                description=description.format(await self.bot.get_prefix(ctx)),
+                timestamp=datetime.now()
+            )
+            embed.set_footer(text="{}".format(random.choice(self.phrases)))
+            embed.add_field(name="Developers", value="CraftSpider#0269\nDino\nHiddenStorys", inline=True)
+            embed.add_field(name="Library", value="Discord.py\nVersion {}".format(discord.__version__), inline=True)
+            embed.add_field(name="Contact/Documentation",
+                            value="[talos.ptp@gmail.com](mailto:talos.ptp@gmail.com)\n"
+                                  "[Github](http://github.com/CraftSpider/TalosBot)",
+                            inline=True)
+
+            uptime_str = "{}\n{:.0f}% Day, {:.0f}% Week, {:.0f}% Month".format(self.get_uptime_days(),
+                                                                               *self.get_uptime_percent())
+            embed.add_field(name="Uptime", value=uptime_str, inline=True)
+            stats_str = "I'm in {} Guilds,\nWith {} Users.".format(len(self.bot.guilds), len(self.bot.users))
+            print(self.bot.users)
+            embed.add_field(name="Statistics", value=stats_str, inline=True)
+            await ctx.send(embed=embed)
+        else:
+            out = "Hello! I'm Talos, official PtP mod-bot. `^help` for command details.\
+                    \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
+                    \nI am built using discord.py, version {}.\
+                    \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.".format(discord.__version__)
+            await ctx.send(out)
 
     @commands.command()
     @perms_check()
@@ -259,17 +306,8 @@ class Commands:
     async def uptime(self, ctx):
         """To figure out how long the bot has been online."""
         boot_string = self.bot.BOOT_TIME.strftime("%b %d, %H:%M:%S")
-        time_delta = datetime.now() - self.bot.BOOT_TIME
-        delta_string = strfdelta(time_delta, "{d} day"+("s" if time_delta.days != 1 else "")+", {h:02}:{m:02}:{s:02}")\
-            .format(x=("s" if time_delta.days == 1 else ""))
-        out = "I've been online since {0}, a total of {1}\n".format(boot_string, delta_string)
-        now = datetime.now().replace(microsecond=0)
-        day_total = 24*60
-        week_total = day_total*7
-        month_total = day_total*30
-        day_up = values_greater(self.bot.uptime, (now - timedelta(days=1)).timestamp()) / day_total
-        week_up = values_greater(self.bot.uptime, (now - timedelta(days=7)).timestamp()) / week_total
-        month_up = values_greater(self.bot.uptime, (now - timedelta(days=30)).timestamp()) / month_total
+        out = "I've been online since {0}, a total of {1}\n".format(boot_string, self.get_uptime_days())
+        day_up, week_up, month_up = self.get_uptime_percent()
         out += "Past uptime: {:02.2f}% of the past day, ".format(day_up*100)
         out += "{:02.2f}% of the past week, ".format(week_up*100)
         out += "{:02.2f}% of the past month".format(month_up*100)
@@ -372,7 +410,7 @@ class Commands:
             cur_pw.members.sort(key=sort_mem, reverse=True)
             winner = discord.utils.find(lambda m: cur_pw.members[0].user == m, ctx.guild.members)
 
-            if self.bot.data[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
+            if self.bot.servers[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
                ctx.channel.permissions_for(ctx.me).embed_links:
                 embed = discord.Embed(colour=winner.colour,
                                       timestamp=datetime.now())

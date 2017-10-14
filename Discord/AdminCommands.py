@@ -35,36 +35,36 @@ def set_perm(bot, guild, command, level, allow, name=None):
     """Sets the permissions for given inputs"""
     if name is not None:
         try:
-            bot.data[guild]["perms"][command][level][name] = allow
+            bot.servers[guild]["perms"][command][level][name] = allow
         except KeyError:
-            if command not in bot.data[guild]["perms"].keys():
-                bot.data[guild]["perms"][command] = {}
-            if level not in bot.data[guild]["perms"][command].keys():
-                bot.data[guild]["perms"][command][level] = {}
-            bot.data[guild]["perms"][command][level][name] = allow
+            if command not in bot.servers[guild]["perms"].keys():
+                bot.servers[guild]["perms"][command] = {}
+            if level not in bot.servers[guild]["perms"][command].keys():
+                bot.servers[guild]["perms"][command][level] = {}
+            bot.servers[guild]["perms"][command][level][name] = allow
     else:
         try:
-            bot.data[guild]["perms"][command][level] = allow
+            bot.servers[guild]["perms"][command][level] = allow
         except KeyError:
-            if command not in bot.data[guild]["perms"].keys():
-                bot.data[guild]["perms"][command] = {}
-            bot.data[guild]["perms"][command][level] = allow
+            if command not in bot.servers[guild]["perms"].keys():
+                bot.servers[guild]["perms"][command] = {}
+            bot.servers[guild]["perms"][command][level] = allow
 
 
 def remove_perm(bot, guild, command, level=None, name=None):
     """Clears the permissions, for given inputs."""
     if name is not None:
-        del bot.data[guild]["perms"][command][level][name]
-        if len(bot.data[guild]["perms"][command][level]) == 0:
-            del bot.data[guild]["perms"][command][level]
-        if len(bot.data[guild]["perms"][command]) == 0:
-            del bot.data[guild]["perms"][command]
+        del bot.servers[guild]["perms"][command][level][name]
+        if len(bot.servers[guild]["perms"][command][level]) == 0:
+            del bot.servers[guild]["perms"][command][level]
+        if len(bot.servers[guild]["perms"][command]) == 0:
+            del bot.servers[guild]["perms"][command]
     elif level is not None:
-        del bot.data[guild]["perms"][command][level]
-        if len(bot.data[guild]["perms"][command]) == 0:
-            del bot.data[guild]["perms"][command]
+        del bot.servers[guild]["perms"][command][level]
+        if len(bot.servers[guild]["perms"][command]) == 0:
+            del bot.servers[guild]["perms"][command]
     else:
-        del bot.data[guild]["perms"][command]
+        del bot.servers[guild]["perms"][command]
 
 
 def space_replace(match):
@@ -88,28 +88,28 @@ def op_check():
         command = str(ctx.command)
 
         if str(ctx.author) in ADMINS or\
-           len(ctx.bot.data[guild_id]["ops"]) == 0 and ctx.author.guild_permissions.administrator or\
+           len(ctx.bot.servers[guild_id]["ops"]) == 0 and ctx.author.guild_permissions.administrator or\
            ctx.author == ctx.guild.owner or\
-           str(ctx.author) in ctx.bot.data[guild_id]["ops"]:
+           str(ctx.author) in ctx.bot.servers[guild_id]["ops"]:
             return True
 
-        if command not in ctx.bot.data[guild_id]["perms"].keys():
+        if command not in ctx.bot.servers[guild_id]["perms"].keys():
             return False
-        if "user" in ctx.bot.data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.data[guild_id]["perms"][command]["user"].keys():
+        if "user" in ctx.bot.servers[guild_id]["perms"][command].keys():
+            for key in ctx.bot.servers[guild_id]["perms"][command]["user"].keys():
                 if key == str(ctx.author):
-                    return ctx.bot.data[guild_id]["perms"][command]["user"][key]
-        if "role" in ctx.bot.data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.data[guild_id]["perms"][command]["role"].keys():
+                    return ctx.bot.servers[guild_id]["perms"][command]["user"][key]
+        if "role" in ctx.bot.servers[guild_id]["perms"][command].keys():
+            for key in ctx.bot.servers[guild_id]["perms"][command]["role"].keys():
                 for role in ctx.author.roles:
                     if key == str(role):
-                        return ctx.bot.data[guild_id]["perms"][command]["role"][key]
-        if "channel" in ctx.bot.data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.data[guild_id]["perms"][command]["channel"].keys():
+                        return ctx.bot.servers[guild_id]["perms"][command]["role"][key]
+        if "channel" in ctx.bot.servers[guild_id]["perms"][command].keys():
+            for key in ctx.bot.servers[guild_id]["perms"][command]["channel"].keys():
                 if key == str(ctx.channel):
-                    return ctx.bot.data[guild_id]["perms"][command]["channel"][key]
-        if "guild" in ctx.bot.data[guild_id]["perms"][command].keys():
-            return ctx.bot.data[guild_id]["perms"][command]["guild"]
+                    return ctx.bot.servers[guild_id]["perms"][command]["channel"][key]
+        if "guild" in ctx.bot.servers[guild_id]["perms"][command].keys():
+            return ctx.bot.servers[guild_id]["perms"][command]["guild"]
         return False
 
     return commands.check(predicate)
@@ -264,8 +264,8 @@ class AdminCommands:
     @commands.guild_only()
     async def _ops_add(self, ctx, member: discord.Member):
         """Adds a new operator user"""
-        if str(member) not in ctx.bot.data[str(ctx.guild.id)]["ops"]:
-            ctx.bot.data[str(ctx.guild.id)]["ops"].append(str(member))
+        if str(member) not in ctx.bot.servers[str(ctx.guild.id)]["ops"]:
+            ctx.bot.servers[str(ctx.guild.id)]["ops"].append(str(member))
             await self.bot.save()
             await ctx.send("Opped {0.name}!".format(member))
         else:
@@ -276,7 +276,7 @@ class AdminCommands:
     async def _ops_remove(self, ctx, member: discord.Member):
         """Removes an operator user"""
         try:
-            ctx.bot.data[str(ctx.guild.id)]["ops"].remove(str(member))
+            ctx.bot.servers[str(ctx.guild.id)]["ops"].remove(str(member))
             await self.bot.save()
             await ctx.send("De-opped {0.name}".format(member))
         except ValueError:
@@ -286,9 +286,9 @@ class AdminCommands:
     @commands.guild_only()
     async def _ops_list(self, ctx):
         """Displays all operators for the current server"""
-        if len(ctx.bot.data[str(ctx.guild.id)]["ops"]) > 0:
+        if len(ctx.bot.servers[str(ctx.guild.id)]["ops"]) > 0:
             out = "```"
-            for op in ctx.bot.data[str(ctx.guild.id)]["ops"]:
+            for op in ctx.bot.servers[str(ctx.guild.id)]["ops"]:
                 out += "{}\n".format(op)
             out += "```"
             await ctx.send(out)
@@ -300,9 +300,9 @@ class AdminCommands:
     async def _ops_all(self, ctx):
         """Displays all operators everywhere"""
         out = "```"
-        for key in ctx.bot.data:
+        for key in ctx.bot.servers:
             out += "Server: {}\n".format(self.bot.get_guild(int(key)))
-            for user in ctx.bot.data[key]["ops"]:
+            for user in ctx.bot.servers[key]["ops"]:
                 out += "    {}\n".format(user)
         if out != "```":
             out += "```"
@@ -398,7 +398,7 @@ class AdminCommands:
     @commands.guild_only()
     async def _p_list(self, ctx):
         """Lists permissions rules for the current guild"""
-        guild_perms = ctx.bot.data[str(ctx.guild.id)]["perms"]
+        guild_perms = ctx.bot.servers[str(ctx.guild.id)]["perms"]
         if len(guild_perms) == 0:
             await ctx.send("No permissions set for this server.")
             return
@@ -420,9 +420,9 @@ class AdminCommands:
     async def _p_all(self, ctx):
         """Displays all permissions everywhere"""
         out = "```"
-        for guild in self.bot.data:
+        for guild in self.bot.servers:
             out += "Server: {}\n".format(self.bot.get_guild(int(guild)))
-            guild_perms = self.bot.data[guild]["perms"]
+            guild_perms = self.bot.servers[guild]["perms"]
             for command in guild_perms:
                 out += "    Command: {}\n".format(command)
                 for level in sorted(guild_perms[command], key=lambda a: self.LEVELS[a]):
@@ -447,7 +447,7 @@ class AdminCommands:
     @op_check()
     async def _opt_set(self, ctx, option: str, value: str):
         """Set an option. Most options are true or false. See `^options list` for available options"""
-        if isinstance(ctx.bot.data[str(ctx.guild.id)]["options"][option], bool):
+        if isinstance(ctx.bot.servers[str(ctx.guild.id)]["options"][option], bool):
             if value.upper() == "ALLOW" or value.upper() == "TRUE":
                 value = True
             elif value.upper() == "FORBID" or value.upper() == "FALSE":
@@ -455,11 +455,11 @@ class AdminCommands:
             else:
                 await ctx.send("Sorry, that option only accepts true or false values.")
                 return
-        if isinstance(ctx.bot.data[str(ctx.guild.id)]["options"][option], str):
+        if isinstance(ctx.bot.servers[str(ctx.guild.id)]["options"][option], str):
             value = re.sub("(?<!\\\\)\\\\((?:\\\\\\\\)*)s", space_replace, value)
             value = re.sub("\\\\\\\\", "\\\\", value)
-        if option in ctx.bot.data[str(ctx.guild.id)]["options"]:
-            ctx.bot.data[str(ctx.guild.id)]["options"][option] = value
+        if option in ctx.bot.servers[str(ctx.guild.id)]["options"]:
+            ctx.bot.servers[str(ctx.guild.id)]["options"][option] = value
             await ctx.send("Option {} set to `{}`".format(option, value))
             await self.bot.save()
         else:
@@ -471,8 +471,8 @@ class AdminCommands:
         """List of what options are currently set on the server. Do `^help options [option name]` for details on"""\
             """ an individual option"""
         out = "```"
-        for key in sorted(ctx.bot.data[str(ctx.guild.id)]["options"]):
-            out += "{}: {}\n".format(key, ctx.bot.data[str(ctx.guild.id)]["options"][key])
+        for key in sorted(ctx.bot.servers[str(ctx.guild.id)]["options"]):
+            out += "{}: {}\n".format(key, ctx.bot.servers[str(ctx.guild.id)]["options"][key])
         out += "```"
         await ctx.send(out)
 
@@ -481,8 +481,8 @@ class AdminCommands:
     @op_check()
     async def _opt_default(self, ctx, option):
         """Sets an option to its default value, as in a server Talos had just joined."""
-        if option in ctx.bot.data[str(ctx.guild.id)]["options"]:
-            ctx.bot.data[str(ctx.guild.id)]["options"][option] = self.bot.get_default(option)
+        if option in ctx.bot.servers[str(ctx.guild.id)]["options"]:
+            ctx.bot.servers[str(ctx.guild.id)]["options"][option] = self.bot.get_default(option)
             await ctx.send("Option {} set to default".format(option))
             await self.bot.save()
         else:
@@ -493,10 +493,10 @@ class AdminCommands:
     async def _opt_all(self, ctx):
         """Displays all options everywhere"""
         out = "```"
-        for guild in ctx.bot.data:
+        for guild in ctx.bot.servers:
             out += "Server: {}\n".format(self.bot.get_guild(int(guild)))
-            for option in sorted(ctx.bot.data[guild]["options"]):
-                out += "    {}: {}\n".format(option, ctx.bot.data[guild]["options"][option])
+            for option in sorted(ctx.bot.servers[guild]["options"]):
+                out += "    {}: {}\n".format(option, ctx.bot.servers[guild]["options"][option])
         out += "```"
         await ctx.send(out)
 
