@@ -246,6 +246,8 @@ class AdminCommands:
     @commands.command(hidden=True)
     @admin_check()
     async def verify(self, ctx):
+        """Verifies Talos data, making sure that all existing guilds have proper data and non-existent guilds don't"""\
+            """ have data."""
         added, removed = await self.bot.verify()
         await ctx.send("Data Verified. {} objects added, {} objects removed.".format(added, removed))
 

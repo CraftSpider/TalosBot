@@ -11,7 +11,6 @@ import sys
 import json
 import logging
 import re
-import asyncio
 from datetime import datetime
 from collections import namedtuple
 
@@ -99,14 +98,16 @@ class Talos(commands.Bot):
                 self.load_extension(extension)
             except Exception as err:
                 exc = '{}: {}'.format(type(err).__name__, err)
-                log.info('Failed to load extension {}\n{}'.format(extension, exc))
+                log.warning('Failed to load extension {}\n{}'.format(extension, exc))
 
     def unload_extensions(self, extensions=None):
         """Unloads all extensions in input, or all extensions currently loaded if None"""
         logging.debug("Unloading all extensions")
         if extensions is None:
             while len(self.extensions) > 0:
-                self.unload_extension(self.extensions.popitem())
+                extension = self.extensions.popitem()
+                log.debug("Unloading extension {}".format(extension))
+                self.unload_extension(extension)
         else:
             for extension in extensions:
                 log.debug("Unloading extension {}".format(extension))

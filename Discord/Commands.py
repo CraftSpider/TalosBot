@@ -383,8 +383,10 @@ class Commands:
                 embed.add_field(name="End",
                                 value="{}".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
                                 inline=True)
-                embed.add_field(name="Total",
-                                value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0)))
+                embed.add_field(
+                    name="Total",
+                    value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
+                )
                 memberList = ""
                 for member in cur_pw.members:
                     end = member.end.replace(microsecond=0)
