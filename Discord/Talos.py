@@ -134,8 +134,11 @@ class Talos(commands.Bot):
     @staticmethod
     def should_embed(ctx):
         """Determines whether Talos is allowed to use RichEmbeds in a given context."""
-        return ctx.bot.guild_data[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
-               ctx.channel.permissions_for(ctx.me).embed_links
+        if ctx.guild is not None:
+            return ctx.bot.guild_data[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
+                   ctx.channel.permissions_for(ctx.me).embed_links
+        else:
+            return ctx.channel.permissions_for(ctx.me).embed_links
 
     async def save(self):
         """Saves current talos data to the save file"""
