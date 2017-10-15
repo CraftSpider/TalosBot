@@ -151,17 +151,20 @@ class UserCommands:
     @commands.command()
     @perms_check()
     async def register(self, ctx):
+        """Registers you as a user with Talos. This creates a profile and options for you, and allows Talos to save info."""
         await ctx.send("Not yet implemented")
 
     @commands.command()
     @perms_check()
     async def profile(self, ctx, user: discord.User=None):
+        """Displays you or another user's profile, if it exists."""
         print(user)
         await ctx.send("Not yet implemented")
 
     @commands.group()
     @perms_check()
     async def user(self, ctx):
+        """TODO, No current use"""
         await ctx.send("Not yet implemented")
 
     
