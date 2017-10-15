@@ -147,7 +147,23 @@ class UserCommands:
         out += "    View Audit: {}\n".format(userPerms.view_audit_log)
         out += "```"
         await ctx.send(out)
-    
+
+    @commands.command()
+    @perms_check()
+    async def register(self, ctx):
+        await ctx.send("Not yet implemented")
+
+    @commands.command()
+    @perms_check()
+    async def profile(self, ctx, user: discord.User=None):
+        print(user)
+        await ctx.send("Not yet implemented")
+
+    @commands.group()
+    @perms_check()
+    async def user(self, ctx):
+        await ctx.send("Not yet implemented")
+
     
 def setup(bot):
     bot.add_cog(UserCommands(bot))

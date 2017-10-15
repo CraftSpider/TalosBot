@@ -44,15 +44,16 @@ logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 log = logging.getLogger("talos")
 
 
-def prefix(self, message):
+def prefix(self , message: discord.Message):
     """Return the Talos prefix, given Talos class object and a message"""
+    mention = self.user.mention + " "
     if isinstance(message.channel, discord.abc.PrivateChannel):
-        return self.DEFAULT_PREFIX
+        return [self.DEFAULT_PREFIX, mention]
     else:
         try:
-            return talos.guild_data[str(message.guild.id)]["options"]["Prefix"]
+            return [talos.guild_data[str(message.guild.id)]["options"]["Prefix"], mention]
         except KeyError:
-            return self.DEFAULT_PREFIX
+            return [self.DEFAULT_PREFIX, mention]
 
 
 class Talos(commands.Bot):
@@ -85,6 +86,7 @@ class Talos(commands.Bot):
         if "token" in args:
             self.discordbots_token = args.pop("token")
         super().__init__(prefix, description=description, **args)
+        self._skip_check = self.skip_check
         if data is not None:
             self.uptime = data.pop("uptime")
             if data.get("servers", "") == "":
@@ -118,10 +120,20 @@ class Talos(commands.Bot):
                 log.debug("Unloading extension {}".format(extension))
                 self.unload_extension(extension)
 
+    def skip_check(self, author_id, self_id):
+        if author_id == 339119069066297355:
+            return False
+        return author_id == self_id or (self.get_user(author_id) is not None and self.get_user(author_id).bot)
+
     @staticmethod
     def get_default(option):
         """Get the default value of an option"""
         return default_options[option]
+
+    @staticmethod
+    def should_embed(ctx):
+        return ctx.bot.guild_data[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
+               ctx.channel.permissions_for(ctx.me).embed_links
 
     async def save(self):
         """Saves current talos data to the save file"""
@@ -315,7 +327,7 @@ class Talos(commands.Bot):
         log.debug("OnCommandError Event")
         if type(exception) == discord.ext.commands.CommandNotFound:
             if self.guild_data[str(ctx.guild.id)]["options"]["FailMessage"]:
-                cur_pref = await self.get_prefix(ctx)
+                cur_pref = (await self.get_prefix(ctx))[0]
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
         elif type(exception) == discord.ext.commands.CheckFailure:

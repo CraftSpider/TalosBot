@@ -141,13 +141,13 @@ class Commands:
     @perms_check()
     async def information(self, ctx):
         """Gives a short blurb about Talos."""
-        if self.bot.guild_data[str(ctx.guild.id)]["options"]["RichEmbeds"]:
+        if self.bot.should_embed(ctx):
             description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
                           "`{}help` to see a list of my commands."
             embed = discord.Embed(
                 title="Talos Information",
                 colour=discord.Colour(0x202020),
-                description=description.format(await self.bot.get_prefix(ctx)),
+                description=description.format((await self.bot.get_prefix(ctx))[0]),
                 timestamp=datetime.now()
             )
             embed.set_footer(text="{}".format(random.choice(self.phrases)))
@@ -165,10 +165,11 @@ class Commands:
             embed.add_field(name="Statistics", value=stats_str, inline=True)
             await ctx.send(embed=embed)
         else:
-            out = "Hello! I'm Talos, official PtP mod-bot. `^help` for command details.\
+            out = "Hello! I'm Talos, official PtP mod-bot. `{}help` for command details.\
                     \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
                     \nI am built using discord.py, version {}.\
-                    \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.".format(discord.__version__)
+                    \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.".format(
+                (await self.bot.get_prefix())[0], discord.__version__)
             await ctx.send(out)
 
     @commands.command()
@@ -264,27 +265,25 @@ class Commands:
                 return
 
         if start is not "":
-            dif = abs(datetime.utcnow() -
-                      datetime.utcnow().replace(hour=(datetime.utcnow().hour if start != 0 else
-                                                      (datetime.utcnow().hour + 1) % 24),
-                                                minute=start,
-                                                second=0))
+            now = datetime.utcnow()
+            dif = abs(now - now.replace(hour=(now.hour if start > now.minute else (now.hour + 1) % 24), minute=start,
+                                        second=0))
             await ctx.send("Starting WW at :{0:02}".format(start))
             await asyncio.sleep(dif.total_seconds())
-        minutes = "minutes" if length != 1 else "minute"
-        await ctx.send("Word War for {0:g} {1}.".format(length, minutes))
+        await ctx.send("Word War for {:g} {}.".format(length, "minutes" if length != 1 else "minute"))
+        await asyncio.sleep(length * 60)
+
         wordsWritten = wpm * length
-        advance2 = False  # do you have an advance variable already?
-        while not advance2:
-            if wordsWritten != 0:
-                wordsWritten = random.randrange(wordsWritten-100, wordsWritten+100)
-                advance2 = True
-                await asyncio.sleep(length * 60)
-                await ctx.send("I wrote {} words. How many did you write?".format(wordsWritten))
-            if wordsWritten == 0: 
-                advance2 = True
-                await asyncio.sleep(length*60)
-                await ctx.send("The word war is over. How did you do?")
+        advance = False
+        while not advance and wpm != 0:
+            wordsWritten = random.randrange(wordsWritten-100, wordsWritten+100)
+            if wordsWritten >= 0:
+                advance = True
+        if wpm != 0:
+            await ctx.send("I wrote {} words. How many did you write?".format(wordsWritten))
+        else:
+            await ctx.send("The word war is over. How did you do?")
+
 
     @commands.command()
     @perms_check()
@@ -367,10 +366,23 @@ class Commands:
             await ctx.send("No PW to join. Maybe you want to **create** one?")
 
     @productivitywar.command(name='start')
-    async def _start(self, ctx):
+    async def _start(self, ctx, time=""):
         """Start a PW that isn't yet begun."""
         if active_pw[ctx.guild.id] is not None:
             if not active_pw[ctx.guild.id].get_started():
+                if time != "" and time[0] == ":":
+                    try:
+                        time = int(time[1:])
+                        if time < 0 or time > 59:
+                            ctx.send("Please give a time between 0 and 60.")
+                            return
+                        now = datetime.now()
+                        time_delta = abs(now - now.replace(hour=(now.hour if time > now.minute else (now.hour+1 % 24)),
+                                                           minute=time, second=0))
+                        await ctx.send("Starting PW at :{:02}".format(time))
+                        await asyncio.sleep(time_delta.total_seconds())
+                    except ValueError:
+                        ctx.send("Time needs to be a number.")
                 await ctx.send("Starting PW")
                 active_pw[ctx.guild.id].begin()
             else:
@@ -384,7 +396,7 @@ class Commands:
         if active_pw[ctx.guild.id] is not None:
             leave = active_pw[ctx.guild.id].leave(ctx.author)
             if leave == 0:
-                await ctx.send("User {} left the PW.".format(ctx.author))
+                await ctx.send("User {} left the PW.".format(ctx.author.display_name))
             elif leave == 1:
                 await ctx.send("You aren't in the PW! Would you like to **join**?")
             elif leave == 2:
@@ -409,8 +421,7 @@ class Commands:
             cur_pw.members.sort(key=sort_mem, reverse=True)
             winner = discord.utils.find(lambda m: cur_pw.members[0].user == m, ctx.guild.members)
 
-            if self.bot.guild_data[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
-               ctx.channel.permissions_for(ctx.me).embed_links:
+            if self.bot.should_embed(ctx):
                 embed = discord.Embed(colour=winner.colour,
                                       timestamp=datetime.now())
                 embed.set_author(name="{} won the PW!".format(winner.display_name), icon_url=winner.avatar_url)
