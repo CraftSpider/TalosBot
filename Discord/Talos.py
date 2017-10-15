@@ -50,7 +50,7 @@ def prefix(self, message):
         return self.DEFAULT_PREFIX
     else:
         try:
-            return talos.servers[str(message.guild.id)]["options"]["Prefix"]
+            return talos.guild_data[str(message.guild.id)]["options"]["Prefix"]
         except KeyError:
             return self.DEFAULT_PREFIX
 
@@ -75,9 +75,9 @@ class Talos(commands.Bot):
     # List of times when the bot was verified online.
     uptime = []
     # Server specific info dict. Form servers.guild_id.section.key
-    servers = {}
+    guild_data = {}
     # User specific info dict. Form users.user_id.section.key
-    users = {}
+    user_data = {}
 
     def __init__(self, data=None, **args):
         """Initialize Talos object. Safe to pass nothing in."""
@@ -88,9 +88,9 @@ class Talos(commands.Bot):
         if data is not None:
             self.uptime = data.pop("uptime")
             if data.get("servers", "") == "":
-                self.servers = data
+                self.guild_data = data
             else:
-                self.servers = data.pop("servers")
+                self.guild_data = data.pop("servers")
         self.remove_command("help")
         self.command(name="help", aliases=["man"])(self._talos_help_command)
 
@@ -126,7 +126,7 @@ class Talos(commands.Bot):
     async def save(self):
         """Saves current talos data to the save file"""
         log.debug("saving data")
-        json_save(SAVE_FILE, uptime=self.uptime, servers=self.servers)
+        json_save(SAVE_FILE, uptime=self.uptime, servers=self.guild_data)
 
     async def logout(self):
         """Saves Talos data, then logs out the bot cleanly and safely"""
@@ -146,37 +146,37 @@ class Talos(commands.Bot):
         for guild in self.guilds:
             guild_id = str(guild.id)
             try:
-                self.servers[guild_id]
+                self.guild_data[guild_id]
             except KeyError:
                 log.debug("Building {}".format(guild_id))
-                self.servers[guild_id] = {}
-                self.servers[guild_id]["ops"] = []
-                self.servers[guild_id]["perms"] = {}
-                self.servers[guild_id]["options"] = default_options.copy()
+                self.guild_data[guild_id] = {}
+                self.guild_data[guild_id]["ops"] = []
+                self.guild_data[guild_id]["perms"] = {}
+                self.guild_data[guild_id]["options"] = default_options.copy()
                 added += 1
             else:
                 for item in self.SERVER_FIELDS._fields:
                     try:
-                        self.servers[guild_id][item]
+                        self.guild_data[guild_id][item]
                     except KeyError:
                         log.debug("Building {} for {}".format(item, guild_id))
 
-                        self.servers[guild_id][item] = self.SERVER_FIELDS[item]()
+                        self.guild_data[guild_id][item] = self.SERVER_FIELDS[item]()
                         added += 1
                     else:
                         if item != "options":
                             continue
                         for key in default_options:
                             try:
-                                self.servers[guild_id]["options"][key]
+                                self.guild_data[guild_id]["options"][key]
                             except KeyError:
                                 log.debug("Building option {} for {}".format(key, guild_id))
-                                self.servers[guild_id]["options"][key] = default_options[key]
+                                self.guild_data[guild_id]["options"][key] = default_options[key]
                                 added += 1
 
         # Destroy unnecessary values
         obsolete = []
-        for key in self.servers:
+        for key in self.guild_data:
             check = False
             for guild in self.guilds:
                 guild_id = str(guild.id)
@@ -186,19 +186,19 @@ class Talos(commands.Bot):
                 obsolete.append(key)
         for key in obsolete:
             log.info("Cleaning data for {}".format(key))
-            del self.servers[key]
+            del self.guild_data[key]
             removed += 1
 
         obsolete = []
-        for guild in self.servers:
-            for option in self.servers[guild]["options"]:
+        for guild in self.guild_data:
+            for option in self.guild_data[guild]["options"]:
                 if option not in default_options:
                     obsolete.append(option)
             break
-        for guild in self.servers:
+        for guild in self.guild_data:
             for option in obsolete:
                 log.info("Cleaning option {} for {}".format(option, guild))
-                del self.servers[guild]["options"][option]
+                del self.guild_data[guild]["options"][option]
                 removed += 1
         await self.save()
         return added, removed
@@ -206,7 +206,7 @@ class Talos(commands.Bot):
     async def _talos_help_command(self, ctx, *args: str):
         """Shows this message."""
         if ctx.guild is not None:
-            destination = ctx.message.author if (self.servers[str(ctx.guild.id)]["options"]["PMHelp"]) else \
+            destination = ctx.message.author if (self.guild_data[str(ctx.guild.id)]["options"]["PMHelp"]) else \
                           ctx.message.channel
             if destination == ctx.message.author:
                 await ctx.send("I've DMed you some help.")
@@ -293,10 +293,10 @@ class Talos(commands.Bot):
         log.debug("OnGuildJoin Event")
         log.info("Joined Guild {}".format(guild.name))
         guild_id = str(guild.id)
-        self.servers[guild_id] = {}
-        self.servers[guild_id]["ops"] = []
-        self.servers[guild_id]["perms"] = {}
-        self.servers[guild_id]["options"] = default_options.copy()
+        self.guild_data[guild_id] = {}
+        self.guild_data[guild_id]["ops"] = []
+        self.guild_data[guild_id]["perms"] = {}
+        self.guild_data[guild_id]["options"] = default_options.copy()
         await self.save()
 
     async def on_guild_remove(self, guild):
@@ -304,7 +304,7 @@ class Talos(commands.Bot):
         log.debug("OnGuildRemove Event")
         log.info("Left Guild {}".format(guild.name))
         guild_id = str(guild.id)
-        del self.servers[guild_id]
+        del self.guild_data[guild_id]
         await self.save()
 
     async def on_command_error(self, ctx, exception):
@@ -314,7 +314,7 @@ class Talos(commands.Bot):
         """
         log.debug("OnCommandError Event")
         if type(exception) == discord.ext.commands.CommandNotFound:
-            if self.servers[str(ctx.guild.id)]["options"]["FailMessage"]:
+            if self.guild_data[str(ctx.guild.id)]["options"]["FailMessage"]:
                 cur_pref = await self.get_prefix(ctx)
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
@@ -414,4 +414,4 @@ if __name__ == "__main__":
         talos.run(bot_token)
     finally:
         print("Talos Exiting")
-        json_save(SAVE_FILE, uptime=talos.uptime, servers=talos.servers)
+        json_save(SAVE_FILE, uptime=talos.uptime, servers=talos.guild_data)
