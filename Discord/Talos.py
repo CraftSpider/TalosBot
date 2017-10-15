@@ -121,6 +121,7 @@ class Talos(commands.Bot):
                 self.unload_extension(extension)
 
     def skip_check(self, author_id, self_id):
+        """Determines whether Talos should skip trying to process a message"""
         if author_id == 339119069066297355:
             return False
         return author_id == self_id or (self.get_user(author_id) is not None and self.get_user(author_id).bot)
@@ -132,6 +133,7 @@ class Talos(commands.Bot):
 
     @staticmethod
     def should_embed(ctx):
+        """Determines whether Talos is allowed to use RichEmbeds in a given context."""
         return ctx.bot.guild_data[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
                ctx.channel.permissions_for(ctx.me).embed_links
 
