@@ -11,9 +11,12 @@ import inspect
 import re
 import sys
 import os
+from datetime import datetime
+from datetime import timedelta
 sys.path.append(os.getcwd().replace("\\Tests", ""))
 sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
-import Discord.Talos as dtalos
+import Discord.talos as dtalos
+import Discord.utils as utils
 
 
 bot_base = bot.Bot("^")
@@ -22,19 +25,15 @@ bot_base = bot.Bot("^")
 def test_extension_load():
     talos = dtalos.Talos()
     talos.load_extensions()
-    assert len(talos.extensions) == 5, "Didn't load 4 extensions"
-    assert "Commands" in talos.extensions, "Didn't load Commands extension"
-    assert "UserCommands" in talos.extensions, "Didn't load UserCommands extension"
-    assert "AdminCommands" in talos.extensions, "Didn't load AdminCommands extension"
-    assert "JokeCommands" in talos.extensions, "Didn't load JokeCommands extension"
-    assert "EventLoops" in talos.extensions, "Didn't load EventLoops extension"
+    assert len(talos.extensions) == len(talos.STARTUP_EXTENSIONS), "Didn't load  extensions"
+    for extension in talos.STARTUP_EXTENSIONS:
+        assert talos.EXTENSION_DIRECTORY + "." + extension in talos.extensions,\
+            "Didn't load {} extension".format(extension)
     talos.unload_extensions()
     assert len(talos.extensions) == 0, "Didn't unload all extensions"
-    assert "Commands" not in talos.extensions, "Didn't unload Commands extension"
-    assert "UserCommands" not in talos.extensions, "Didn't unload UserCommands extension"
-    assert "AdminCommands" not in talos.extensions, "Didn't unload AdminCommands extension"
-    assert "JokeCommands" not in talos.extensions, "Didn't unload JokeCommands extension"
-    assert "EventLoops" not in talos.extensions, "Didn't unload EventLoops extension"
+    for extension in talos.STARTUP_EXTENSIONS:
+        assert talos.EXTENSION_DIRECTORY + "." + extension not in talos.extensions,\
+            "Didn't unload {} extension".format(extension)
 
 
 def get_unique_member(base_class):
@@ -63,3 +62,38 @@ def test_method_docs():
                 assert inspect.getdoc(member.callback) is not None, "Cog command {} missing docstring".format(name)
                 continue
             assert inspect.getdoc(member) is not None, "Cog method {} missing docstring".format(name)
+
+
+def test_embed_paginator():
+    pass  # TODO
+
+
+def test_PW_member():
+    member1 = utils.PW_Member("Test#0001")
+    member2 = utils.PW_Member("Test#0002")
+    member3 = utils.PW_Member("Test#0002")
+
+    assert member1 != member2, "Failed difference"
+    assert member2 == member3, "Failed equivalence"
+
+    assert member1.get_started() is False, "Claims started before start"
+    assert member1.get_finished() is False, "Claims finished before finish"
+    assert member1.get_len() == -1, "Length should be -1 before finish"
+
+    time = datetime(year=2017, month=12, day=31)
+    member1.begin(time)
+
+    assert member1.get_started() is True, "Claims not started after start"
+    assert member1.get_finished() is False, "Claims finished before finish"
+    assert member1.get_len() == -1, "Length should be -1 before finish"
+
+    time = time.replace(minute=30)
+    member1.finish(time)
+
+    assert member1.get_started() is True, "Claims not started after start"
+    assert member1.get_finished() is True, "Claims not finished after finish"
+    assert member1.get_len() == timedelta(minutes=30), "Length should be 30 minutes after finish"
+
+
+def test_PW():
+    pass  # TODO
