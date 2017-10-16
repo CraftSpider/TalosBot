@@ -147,11 +147,21 @@ class TalosFormatter(dcommands.HelpFormatter):
         super().__init__(width=75)
 
     @property
-    def clean_prefix(self):
-        loop = asyncio.new_event_loop()
-        future = loop.create_task(self.context.bot.get_prefix(self.context))
-        loop.run_until_complete(future)
-        return future.result()[0]
+    async def clean_prefix(self):
+        return (await self.context.bot.get_prefix(self.context))[0]
+
+    async def get_command_signature(self):
+        """Retrieves the signature portion of the help page."""
+        prefix = await self.clean_prefix
+        cmd = self.command
+        return prefix + cmd.signature
+
+    async def get_ending_note(self):
+        command_name = self.context.invoked_with
+        return "Type {0}{1} command for more info on a command.\n" \
+               "You can also type {0}{1} category for more info on a category.".format(
+                   await self.clean_prefix, command_name
+               )
 
     @staticmethod
     def capital_split(text):
@@ -197,7 +207,7 @@ class TalosFormatter(dcommands.HelpFormatter):
 
         if isinstance(self.command, dcommands.Command):
             # <signature> section
-            signature = self.get_command_signature()
+            signature = await self.get_command_signature()
             self._paginator.add_field("Signature", signature)
 
             # <long doc> section
@@ -217,7 +227,7 @@ class TalosFormatter(dcommands.HelpFormatter):
         filtered = await self.filter_command_list()
         if self.is_bot():
             self._paginator.set_title("Talos Help")
-            self._paginator.set_description(description+"\n"+self.get_ending_note())
+            self._paginator.set_description(description+"\n"+await self.get_ending_note())
 
             data = sorted(filtered, key=category)
             for category, commands in itertools.groupby(data, key=category):
@@ -250,7 +260,7 @@ class TalosFormatter(dcommands.HelpFormatter):
 
         if isinstance(self.command, dcommands.Command):
             # <signature portion>
-            signature = self.get_command_signature()
+            signature = await self.get_command_signature()
             self._paginator.add_line(signature, empty=True)
 
             # <long doc> section
@@ -288,7 +298,7 @@ class TalosFormatter(dcommands.HelpFormatter):
 
         # add the ending note
         self._paginator.add_line()
-        ending_note = self.get_ending_note()
+        ending_note = await self.get_ending_note()
         self._paginator.add_line(ending_note)
         return self._paginator.pages
 
