@@ -12,6 +12,8 @@ import logging
 from datetime import datetime
 from datetime import timedelta
 from collections import defaultdict
+from utils import PW
+
 
 # Dict to keep track of whatever the currently active PW is
 active_pw = defaultdict(lambda: None)
@@ -169,7 +171,7 @@ class Commands:
                     \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
                     \nI am built using discord.py, version {}.\
                     \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.".format(
-                (await self.bot.get_prefix())[0], discord.__version__)
+                (await self.bot.get_prefix(ctx))[0], discord.__version__)
             await ctx.send(out)
 
     @commands.command()
@@ -284,7 +286,6 @@ class Commands:
         else:
             await ctx.send("The word war is over. How did you do?")
 
-
     @commands.command()
     @perms_check()
     async def credits(self, ctx):
@@ -359,7 +360,7 @@ class Commands:
         """Join a currently running PW, if you aren't already in it."""
         if active_pw[ctx.guild.id] is not None:
             if active_pw[ctx.guild.id].join(ctx.author):
-                await ctx.send("User {} joined the PW.".format(ctx.author))
+                await ctx.send("User {} joined the PW.".format(ctx.author.display_name))
             else:
                 await ctx.send("You're already in this PW.")
         else:
@@ -437,9 +438,7 @@ class Commands:
                 )
                 memberList = ""
                 for member in cur_pw.members:
-                    end = member.end.replace(microsecond=0)
-                    start = member.start.replace(microsecond=0)
-                    memberList += "{0} - {1}\n".format(member.user.display_name, end - start)
+                    memberList += "{0} - {1}\n".format(member.user.display_name, member.get_len())
                 embed.add_field(name="Times", value=memberList)
                 await ctx.send(embed=embed)
             else:
@@ -451,9 +450,7 @@ class Commands:
                 out += "Times:\n"
                 cur_pw.members.sort(key=sort_mem, reverse=True)
                 for member in cur_pw.members:
-                    end = member.end.replace(microsecond=0)
-                    start = member.start.replace(microsecond=0)
-                    out += "    {0} - {1}\n".format(member.user, end - start)
+                    out += "    {0} - {1}\n".format(member.user.display_name, member.get_len())
                 out += "```"
                 await ctx.send(out)
 
@@ -474,101 +471,6 @@ class Commands:
             out += "    {0} - {1} - {2}\n".format(member, member.start, member.end)
         out += "```"
         await ctx.send(out)
-
-
-class PW:
-
-    __slots__ = ['start', 'end', 'members']
-
-    def __init__(self):
-        """Creates a PW object, with empty variables."""
-        self.start = None
-        self.end = None
-        self.members = []
-
-    def get_started(self):
-        """Gets whether the PW is started"""
-        return self.start is not None
-
-    def get_finished(self):
-        """Gets whether the PW is ended"""
-        return self.end is not None
-
-    def begin(self):
-        """Starts the PW, assumes it isn't started"""
-        self.start = datetime.utcnow()
-        for member in self.members:
-            if not member.get_started():
-                member.begin(self.start)
-
-    def finish(self):
-        """Ends the PW, assumes it isn't ended"""
-        self.end = datetime.utcnow()
-        for member in self.members:
-            if not member.get_finished():
-                member.finish(self.end)
-
-    def join(self, member):
-        """Have a new member join the PW."""
-        if PW_Member(member) not in self.members:
-            new_mem = PW_Member(member)
-            if self.get_started():
-                new_mem.begin(datetime.utcnow())
-            self.members.append(new_mem)
-            return True
-        else:
-            return False
-
-    def leave(self, member):
-        """Have a member in the PW leave the PW."""
-        if PW_Member(member) in self.members:
-            for user in self.members:
-                if user == PW_Member(member):
-                    if user.get_finished():
-                        return 2
-                    else:
-                        user.finish(datetime.utcnow())
-            for user in self.members:
-                if not user.get_finished():
-                    return 0
-            self.finish()
-            return 0
-        else:
-            return 1
-
-
-class PW_Member:
-
-    __slots__ = ['user', 'start', 'end']
-
-    def __init__(self, user):
-        self.user = user
-        self.start = None
-        self.end = None
-
-    def __str__(self):
-        return str(self.user)
-
-    def __eq__(self, other):
-        return isinstance(other, PW_Member) and self.user == other.user
-
-    def get_len(self):
-        if self.end is None:
-            return -1
-        else:
-            return self.start - self.end
-
-    def get_started(self):
-        return self.start is not None
-
-    def get_finished(self):
-        return self.end is not None
-
-    def begin(self, time):
-        self.start = time
-
-    def finish(self, time):
-        self.end = time
 
 
 def setup(bot):

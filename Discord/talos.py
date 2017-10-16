@@ -5,7 +5,7 @@
     Author: CraftSpider
 """
 import discord
-from discord.ext import commands
+import discord.ext.commands as commands
 import traceback
 import sys
 import json
@@ -13,6 +13,11 @@ import logging
 import re
 from datetime import datetime
 from collections import namedtuple
+
+try:
+    from .utils import TalosFormatter
+except SystemError:
+    from utils import TalosFormatter
 
 #
 #   Constants
@@ -67,8 +72,10 @@ class Talos(commands.Bot):
     PROMPT_TIME = 10
     # Default Prefix, in case the options are borked.
     DEFAULT_PREFIX = "^"
+    # Folder which extensions are stored in
+    EXTENSION_DIRECTORY = "cogs"
     # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
-    STARTUP_EXTENSIONS = ["Commands", "UserCommands", "JokeCommands", "AdminCommands", "EventLoops"]
+    STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "event_loops"]
     # Fields that all servers should have in their data profile.
     SERVER_FIELDS = namedtuple('Fields', ["ops", "perms", "options"])(list, dict, default_options.copy)
     # Discordbots bot list token
@@ -82,10 +89,15 @@ class Talos(commands.Bot):
 
     def __init__(self, data=None, **args):
         """Initialize Talos object. Safe to pass nothing in."""
-        description = '''Greetings. I'm Talos, chat helper. My commands are:'''
-        if "token" in args:
-            self.discordbots_token = args.pop("token")
+        # Set default values to pass to super
+        description = '''Greetings. I'm Talos, chat helper. Here are my commands.'''
+        args["formatter"] = args.get("formatter", TalosFormatter())
         super().__init__(prefix, description=description, **args)
+
+        # Set talos specific things
+        self.discordbots_token = args.get("token", "")
+
+        # Override things set by super init that we don't want
         self._skip_check = self.skip_check
         if data is not None:
             self.uptime = data.pop("uptime")
@@ -102,7 +114,7 @@ class Talos(commands.Bot):
         for extension in (self.STARTUP_EXTENSIONS if extensions is None else extensions):
             try:
                 log.debug("Loading extension {}".format(extension))
-                self.load_extension(extension)
+                self.load_extension(self.EXTENSION_DIRECTORY + "." + extension)
             except Exception as err:
                 exc = '{}: {}'.format(type(err).__name__, err)
                 log.warning('Failed to load extension {}\n{}'.format(extension, exc))
@@ -225,8 +237,6 @@ class Talos(commands.Bot):
         if ctx.guild is not None:
             destination = ctx.message.author if (self.guild_data[str(ctx.guild.id)]["options"]["PMHelp"]) else \
                           ctx.message.channel
-            if destination == ctx.message.author:
-                await ctx.send("I've DMed you some help.")
         else:
             destination = ctx.message.channel
 
@@ -245,7 +255,8 @@ class Talos(commands.Bot):
             else:
                 command = self.all_commands.get(name)
                 if command is None:
-                    await destination.send(self.command_not_found.format(name))
+                    # Command not found always sent to invoke location
+                    await ctx.send(self.command_not_found.format(name))
                     return
 
             pages = await self.formatter.format_help_for(ctx, command)
@@ -253,7 +264,8 @@ class Talos(commands.Bot):
             name = _mention_pattern.sub(repl, args[0])
             command = self.all_commands.get(name)
             if command is None:
-                await destination.send(self.command_not_found.format(name))
+                # Command not found always sent to invoke location
+                await ctx.send(self.command_not_found.format(name))
                 return
 
             for key in args[1:]:
@@ -275,8 +287,13 @@ class Talos(commands.Bot):
             if characters > 1000:
                 destination = ctx.message.author
 
+        if destination == ctx.message.author:
+            await ctx.send("I've DMed you some help.")
         for page in pages:
-            await destination.send(page)
+            if isinstance(page, discord.Embed):
+                await destination.send(embed=page)
+            else:
+                await destination.send(page)
 
     def run(self, token):
         """Run Talos. Logs into discord and runs event loop forever."""

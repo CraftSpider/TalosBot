@@ -127,7 +127,7 @@ def admin_check():
 #
 class AdminCommands:
     """These commands can only be used by Admins or Ops, and will work at any time.
-    If no Ops exist, anyone with admin can use op commands"""
+    If no ops exist, anyone with admin role permission can use op commands"""
 
     __slots__ = ['bot']
 

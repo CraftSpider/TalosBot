@@ -54,7 +54,7 @@ class JokeCommands:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="Hi")
+    @commands.command(aliases=["Hi"])
     @perms_check()
     async def hi(self, ctx, *extra):
         """Say hi to Talos"""
