@@ -391,7 +391,6 @@ class TalosDatabase:
             raise ValueError("SQL Injection Detected!")
         query = "INSERT INTO guild_options (guild_id, {0}) VALUES (%s, %s) "\
                 "ON DUPLICATE KEY UPDATE "\
-                "guild_id = VALUES(guild_id),"\
                 "{0} = VALUES({0})".format(option_name)
         self.cursor.execute(query, [guild_id, value])
 

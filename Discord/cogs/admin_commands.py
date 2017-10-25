@@ -505,7 +505,7 @@ class AdminCommands:
         for options in all_options:
             for index in range(len(options)):
                 key = options[index]
-                if key == ctx.guild.id or key == -1:
+                if self.bot.get_guild(key) or key == -1:
                     out += "Server: {}\n".format(self.bot.get_guild(key))
                     continue
                 if key is not None:
