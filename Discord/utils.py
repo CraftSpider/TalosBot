@@ -4,13 +4,23 @@
     author: CraftSpider
 """
 
-import asyncio
 import inspect
 import itertools
 import math
+import re
 import discord
 import discord.ext.commands as dcommands
 from datetime import datetime
+
+
+# Dictionaries and other variables
+# Default priority levels
+_levels = {
+    "guild": 10,
+    "channel": 20,
+    "role": 30,
+    "user": 40
+}
 
 
 # Fundamental Talos classes
@@ -303,6 +313,186 @@ class TalosFormatter(dcommands.HelpFormatter):
         return self._paginator.pages
 
 
+class TalosDatabase:
+
+    def __init__(self, sql_conn):
+        if sql_conn is not None:
+            self.sql_conn = sql_conn
+            self.cursor = sql_conn.cursor()
+
+    def get_column_type(self, table_name, column_name):
+        if re.match("[^a-zA-Z0-9_-]", table_name) or re.match("[^a-zA-Z0-9_-]", column_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s"
+        self.cursor.execute(query, [table_name, column_name])
+        result = self.cursor.fetchone()
+        if result is not None:
+            result = result[0]
+        return result
+
+    def get_columns(self, table_name):
+        if re.match("[^a-zA-Z0-9_-]", table_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
+        self.cursor.execute(query, [table_name])
+        return self.cursor.fetchall()
+
+    def get_default(self, option_name):
+        """Get the default value of an option"""
+        if re.match("[^a-zA-Z0-9_-]", option_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "SELECT {} FROM guild_options WHERE guild_id = -1".format(option_name)
+        self.cursor.execute(query)
+        return self.cursor.fetchone()[0]
+
+    def get_defaults(self):
+        query = "SELECT * FROM guild_options WHERE guild_id = -1"
+        self.cursor.execute(query)
+        return self.cursor.fetchone()
+
+    def get_guild_option(self, guild_id, option_name):
+        if re.match("[^a-zA-Z0-9_-]", option_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "SELECT {} FROM guild_options WHERE guild_id = %s".format(option_name)
+        self.cursor.execute(query, [guild_id])
+        result = self.cursor.fetchone()
+        if result is None or result[0] is None:
+            result = self.get_default(option_name)
+        else:
+            result = result[0]
+        return result
+
+    def get_guild_options(self, guild_id):
+        query = "SELECT * FROM guild_options WHERE guild_id = %s"
+        self.cursor.execute(query, [guild_id])
+        result = self.cursor.fetchone()
+        out = []
+        if result is None:
+            out = self.get_defaults()
+        else:
+            rows = self.get_columns("guild_options")
+            for item in range(len(result)):
+                if result[item] is None:
+                    out.append(self.get_default(rows[item][0]))
+                else:
+                    out.append(result[item])
+        return out
+
+    def get_all_guild_options(self):
+        query = "SELECT * FROM guild_options"
+        self.cursor.execute(query)
+        out = []
+        for row in self.cursor:
+            out.append(row)
+        return out
+
+    def set_guild_option(self, guild_id, option_name, value):
+        if re.match("[^a-zA-Z0-9_-]", option_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "INSERT INTO guild_options (guild_id, {0}) VALUES (%s, %s) "\
+                "ON DUPLICATE KEY UPDATE "\
+                "guild_id = VALUES(guild_id),"\
+                "{0} = VALUES({0})".format(option_name)
+        self.cursor.execute(query, [guild_id, value])
+
+    def remove_guild_option(self, guild_id, option_name):
+        if re.match("[^a-zA-Z0-9_-]", option_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "UPDATE guild_options SET {} = null WHERE guild_id = %s".format(option_name)
+        self.cursor.execute(query, [guild_id])
+
+    def get_all_ops(self):
+        query = "SELECT guild_id, opname FROM ops"
+        self.cursor.execute(query)
+        out = []
+        for row in self.cursor:
+            out.append(row)
+        return out
+
+    def get_ops(self, guild_id):
+        query = "SELECT opname FROM ops WHERE guild_id = %s"
+        self.cursor.execute(query, [guild_id])
+        out = []
+        for row in self.cursor:
+            out.append(row[0])
+        return out
+
+    def add_op(self, guild_id, opname):
+        query = "INSERT INTO ops VALUES (%s, %s)"
+        self.cursor.execute(query, [guild_id, opname])
+
+    def remove_op(self, guild_id, opname):
+        query = "DELETE FROM ops WHERE guild_id = %s AND opname = %s"
+        self.cursor.execute(query, [guild_id, opname])
+
+    def get_perm_rule(self, guild_id, command, perm_type, target):
+        query = "SELECT priority, allow FROM perm_rules WHERE guild_id = %s AND command = %s AND perm_type = %s AND"\
+                " target = %s"
+        self.cursor.execute(query, [guild_id, command, perm_type, target])
+        return self.cursor.fetchone()
+
+    def get_perm_rules(self, guild_id=-1, command=None, perm_type=None, target=None):
+        query = "SELECT command, perm_type, target, priority, allow FROM perm_rules WHERE guild_id = %s"
+        args = []
+        if command or perm_type or target:
+            query += " AND "
+        if command:
+            query += "command = %s"
+            args.append(command)
+            if perm_type or target:
+                query += " AND "
+        if perm_type:
+            query += "perm_type = %s"
+            args.append(perm_type)
+            if target:
+                query += " AND "
+        if target:
+            query += "target = %s"
+            args.append(target)
+        self.cursor.execute(query, [guild_id] + args)
+        return self.cursor.fetchall()
+
+    def get_all_perm_rules(self):
+        query = "SELECT guild_id, command, perm_type, target, priority, allow FROM perm_rules"
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def set_perm_rule(self, guild_id, command, perm_type, allow, priority=None, target=None):
+        if priority is None:
+            priority = _levels[perm_type]
+        if target is None:
+            target = "SELF"
+        query = "INSERT INTO perm_rules VALUES (%s, %s, %s, %s, %s, %s)"\
+                "ON DUPLICATE KEY UPDATE "\
+                "guild_id = VALUES(guild_id),"\
+                "command = VALUES(command),"\
+                "perm_type = VALUES(perm_type),"\
+                "target = VALUES(target),"\
+                "priority = VALUES(priority),"\
+                "allow = VALUES(allow)"
+        self.cursor.execute(query, [guild_id, command, perm_type, target, priority, allow])
+
+    def remove_perm_rules(self, guild_id, command=None, perm_type=None, target=None):
+        query = "DELETE FROM perm_rules WHERE guild_id = %s"
+        if command or perm_type or target:
+            query += " AND "
+        args = []
+        if command:
+            query += "command = %s"
+            args.append(command)
+            if perm_type or target:
+                query += " AND "
+        if perm_type:
+            query += "perm_type = %s"
+            args.append(perm_type)
+            if target:
+                query += " AND "
+        if target:
+            query += "target = %s"
+            args.append(target)
+        self.cursor.execute(query, [guild_id] + args)
+
+
 # Command classes
 
 class PW:
@@ -340,8 +530,8 @@ class PW:
 
     def join(self, member):
         """Have a new member join the PW."""
-        if PW_Member(member) not in self.members:
-            new_mem = PW_Member(member)
+        if PWMember(member) not in self.members:
+            new_mem = PWMember(member)
             if self.get_started():
                 new_mem.begin(datetime.utcnow())
             self.members.append(new_mem)
@@ -351,13 +541,16 @@ class PW:
 
     def leave(self, member):
         """Have a member in the PW leave the PW."""
-        if PW_Member(member) in self.members:
+        if PWMember(member) in self.members:
             for user in self.members:
-                if user == PW_Member(member):
+                if user == PWMember(member):
                     if user.get_finished():
                         return 2
-                    else:
+                    elif user.get_started():
                         user.finish(datetime.utcnow())
+                    else:
+                        self.members.remove(user)
+                        break
             for user in self.members:
                 if not user.get_finished():
                     return 0
@@ -367,7 +560,7 @@ class PW:
             return 1
 
 
-class PW_Member:
+class PWMember:
     """Represents a single member of a PW"""
 
     __slots__ = ['user', 'start', 'end']
@@ -381,7 +574,7 @@ class PW_Member:
         return str(self.user)
 
     def __eq__(self, other):
-        return isinstance(other, PW_Member) and self.user == other.user
+        return isinstance(other, PWMember) and self.user == other.user
 
     def get_len(self):
         if self.end is None or self.start is None:

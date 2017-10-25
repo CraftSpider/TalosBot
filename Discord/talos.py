@@ -11,13 +11,15 @@ import sys
 import json
 import logging
 import re
+import mysql.connector
 from datetime import datetime
-from collections import namedtuple
 
 try:
     from .utils import TalosFormatter
+    from .utils import TalosDatabase
 except SystemError:
     from utils import TalosFormatter
+    from utils import TalosDatabase
 
 #
 #   Constants
@@ -36,7 +38,7 @@ TOKEN_FILE = "Token.txt"
 #
 
 # Default Options. Only used in Talos Base for setting up options for servers.
-default_options = {}
+# default_options = {}
 # Help make it so mentions in the text don't actually mention people
 _mentions_transforms = {
     '@everyone': '@\u200beveryone',
@@ -49,19 +51,19 @@ logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 log = logging.getLogger("talos")
 
 
-def prefix(self , message: discord.Message):
+def prefix(bot, message: discord.Message):
     """Return the Talos prefix, given Talos class object and a message"""
-    mention = self.user.mention + " "
+    mention = bot.user.mention + " "
     if isinstance(message.channel, discord.abc.PrivateChannel):
-        return [self.DEFAULT_PREFIX, mention]
+        return [bot.DEFAULT_PREFIX, mention]
     else:
         try:
-            return [talos.guild_data[str(message.guild.id)]["options"]["Prefix"], mention]
+            return [bot.get_guild_option(message.guild.id, "prefix"), mention]
         except KeyError:
-            return [self.DEFAULT_PREFIX, mention]
+            return [bot.DEFAULT_PREFIX, mention]
 
 
-class Talos(commands.Bot):
+class Talos(commands.Bot, TalosDatabase):
     """Class for the Talos bot. Handles all sorts of things for inter-cog relations and bot wide data."""
 
     # Current Talos version. Loosely incremented.
@@ -77,34 +79,27 @@ class Talos(commands.Bot):
     # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
     STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "event_loops"]
     # Fields that all servers should have in their data profile.
-    SERVER_FIELDS = namedtuple('Fields', ["ops", "perms", "options"])(list, dict, default_options.copy)
+    # SERVER_FIELDS = namedtuple('Fields', ["ops", "perms", "options"])(list, dict, default_options.copy)
     # Discordbots bot list token
     discordbots_token = ""
     # List of times when the bot was verified online.
-    uptime = []
-    # Server specific info dict. Form servers.guild_id.section.key
-    guild_data = {}
+    # uptime = []
     # User specific info dict. Form users.user_id.section.key
-    user_data = {}
+    # user_data = {}
 
-    def __init__(self, data=None, **args):
+    def __init__(self, sql_conn=None, **args):
         """Initialize Talos object. Safe to pass nothing in."""
         # Set default values to pass to super
         description = '''Greetings. I'm Talos, chat helper. Here are my commands.'''
         args["formatter"] = args.get("formatter", TalosFormatter())
         super().__init__(prefix, description=description, **args)
+        TalosDatabase.__init__(self, sql_conn)
 
         # Set talos specific things
         self.discordbots_token = args.get("token", "")
 
         # Override things set by super init that we don't want
         self._skip_check = self.skip_check
-        if data is not None:
-            self.uptime = data.pop("uptime")
-            if data.get("servers", "") == "":
-                self.guild_data = data
-            else:
-                self.guild_data = data.pop("servers")
         self.remove_command("help")
         self.command(name="help", aliases=["man"])(self._talos_help_command)
 
@@ -139,28 +134,23 @@ class Talos(commands.Bot):
         return author_id == self_id or (self.get_user(author_id) is not None and self.get_user(author_id).bot)
 
     @staticmethod
-    def get_default(option):
-        """Get the default value of an option"""
-        return default_options[option]
-
-    @staticmethod
     def should_embed(ctx):
         """Determines whether Talos is allowed to use RichEmbeds in a given context."""
         if ctx.guild is not None:
-            return ctx.bot.guild_data[str(ctx.guild.id)]["options"]["RichEmbeds"] and\
+            return ctx.bot.get_guild_option(ctx.guild.id, "rich_embeds") and\
                    ctx.channel.permissions_for(ctx.me).embed_links
         else:
             return ctx.channel.permissions_for(ctx.me).embed_links
 
-    async def save(self):
+    async def commit(self):
         """Saves current talos data to the save file"""
-        log.debug("saving data")
-        json_save(SAVE_FILE, uptime=self.uptime, servers=self.guild_data)
+        log.debug("Commiting data")
+        self.sql_conn.commit()
 
     async def logout(self):
         """Saves Talos data, then logs out the bot cleanly and safely"""
-        log.debug("logging out")
-        await self.save()
+        log.debug("Logging out")
+        await self.commit()
         await super().logout()
 
     async def verify(self):
@@ -168,74 +158,16 @@ class Talos(commands.Bot):
         Verify current Talos data to ensure no guilds are missing values and that no values exist without guilds.
         Returns number of added and removed values.
         """
-        added = 0
         removed = 0
-
-        # Create missing values
-        for guild in self.guilds:
-            guild_id = str(guild.id)
-            try:
-                self.guild_data[guild_id]
-            except KeyError:
-                log.debug("Building {}".format(guild_id))
-                self.guild_data[guild_id] = {}
-                self.guild_data[guild_id]["ops"] = []
-                self.guild_data[guild_id]["perms"] = {}
-                self.guild_data[guild_id]["options"] = default_options.copy()
-                added += 1
-            else:
-                for item in self.SERVER_FIELDS._fields:
-                    try:
-                        self.guild_data[guild_id][item]
-                    except KeyError:
-                        log.debug("Building {} for {}".format(item, guild_id))
-
-                        self.guild_data[guild_id][item] = self.SERVER_FIELDS[item]()
-                        added += 1
-                    else:
-                        if item != "options":
-                            continue
-                        for key in default_options:
-                            try:
-                                self.guild_data[guild_id]["options"][key]
-                            except KeyError:
-                                log.debug("Building option {} for {}".format(key, guild_id))
-                                self.guild_data[guild_id]["options"][key] = default_options[key]
-                                added += 1
-
         # Destroy unnecessary values
-        obsolete = []
-        for key in self.guild_data:
-            check = False
-            for guild in self.guilds:
-                guild_id = str(guild.id)
-                if key == guild_id:
-                    check = True
-            if not check:
-                obsolete.append(key)
-        for key in obsolete:
-            log.info("Cleaning data for {}".format(key))
-            del self.guild_data[key]
-            removed += 1
-
-        obsolete = []
-        for guild in self.guild_data:
-            for option in self.guild_data[guild]["options"]:
-                if option not in default_options:
-                    obsolete.append(option)
-            break
-        for guild in self.guild_data:
-            for option in obsolete:
-                log.info("Cleaning option {} for {}".format(option, guild))
-                del self.guild_data[guild]["options"][option]
-                removed += 1
-        await self.save()
-        return added, removed
+        query = ""
+        self.cursor.execute(query)
+        return removed
 
     async def _talos_help_command(self, ctx, *args: str):
         """Shows this message."""
         if ctx.guild is not None:
-            destination = ctx.message.author if (self.guild_data[str(ctx.guild.id)]["options"]["PMHelp"]) else \
+            destination = ctx.message.author if self.get_guild_option(ctx.guild.id, "pm_help") else \
                           ctx.message.channel
         else:
             destination = ctx.message.channel
@@ -308,8 +240,8 @@ class Talos(commands.Bot):
         log.info('| {}'.format(self.user.name))
         log.info('| {}'.format(self.user.id))
         await self.change_presence(game=discord.Game(name="Taking over the World", type=0))
-        added, removed = await self.verify()
-        log.info("Added {} objects, Removed {} objects.".format(added, removed))
+        removed = await self.verify()
+        log.info("Removed {} rows.".format(removed))
         if self.discordbots_token != "":
             log.info("Posting guilds to Discordbots")
             guild_count = len(self.guilds)
@@ -326,20 +258,11 @@ class Talos(commands.Bot):
         """Called upon Talos joining a guild. Populates ops, perms, and options"""
         log.debug("OnGuildJoin Event")
         log.info("Joined Guild {}".format(guild.name))
-        guild_id = str(guild.id)
-        self.guild_data[guild_id] = {}
-        self.guild_data[guild_id]["ops"] = []
-        self.guild_data[guild_id]["perms"] = {}
-        self.guild_data[guild_id]["options"] = default_options.copy()
-        await self.save()
 
     async def on_guild_remove(self, guild):
         """Called upon Talos leaving a guild. Populates ops, perms, and options"""
         log.debug("OnGuildRemove Event")
         log.info("Left Guild {}".format(guild.name))
-        guild_id = str(guild.id)
-        del self.guild_data[guild_id]
-        await self.save()
 
     async def on_command_error(self, ctx, exception):
         """
@@ -348,7 +271,7 @@ class Talos(commands.Bot):
         """
         log.debug("OnCommandError Event")
         if type(exception) == discord.ext.commands.CommandNotFound:
-            if self.guild_data[str(ctx.guild.id)]["options"]["FailMessage"]:
+            if self.get_guild_option(ctx.guild.id, "fail_message"):
                 cur_pref = (await self.get_prefix(ctx))[0]
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
@@ -411,14 +334,14 @@ def json_save(filename, **kwargs):
             print(ex)
 
 
-if __name__ == "__main__":
+def main():
     # Load Talos tokens
     bot_token = ""
     try:
         bot_token = load_token()
     except IndexError:
         log.fatal("Bot token missing, talos cannot start.")
-        exit(66)
+        exit(126)
 
     botlist_token = ""
     try:
@@ -426,26 +349,52 @@ if __name__ == "__main__":
     except IndexError:
         log.warning("Botlist token missing, stats will not be posted.")
 
-    # Load Talos files
-    json_data = None
+    # Load Talos files/dadtabases
+    cnx = None
     try:
+        cnx = mysql.connector.connect(user="root", password="***REMOVED***", host="127.0.0.1", database="talos_data",
+                                      autocommit=True)
         json_data = json_load(SAVE_FILE)
-        default_options = json_load(DEFAULT_OPTIONS)
-        if default_options is None:
-            log.fatal("Couldn't find default options, talos cannot start.")
-            exit(66)
-        if json_data is None:
-            log.warning("Talos data missing, new data set will be created.")
+        # default_options = json_load(DEFAULT_OPTIONS)
+        # if default_options is None:
+        #     log.fatal("Couldn't find default options, talos cannot start.")
+        #     exit(2)
+        if cnx is None:
+            log.warning("Talos database missing, no data will be saved this session.")
     except Exception as e:
         log.warning(e)
-        log.warning("Expected file missing, new file created.")
+        log.warning("Expected file or connection missing, new file created, connection dropped.")
 
     # Create and run Talos
-    talos = Talos(json_data, token=botlist_token)
+    talos = Talos(sql_conn=cnx, token=botlist_token)
 
     try:
         talos.load_extensions()
         talos.run(bot_token)
     finally:
         print("Talos Exiting")
-        json_save(SAVE_FILE, uptime=talos.uptime, servers=talos.guild_data)
+        talos.sql_conn.commit()
+        talos.sql_conn.close()
+
+
+if __name__ == "__main__":
+
+    # cursor = cnx.cursor()
+
+    # json_data = json_load(SAVE_FILE)
+    # json_data.pop("uptime")
+    # for item in json_data["servers"]:
+    #     opslist = json_data["servers"][item]["ops"]
+    #     for op in opslist:
+    #         print(int(item), op)
+    #         query = "INSERT INTO ops VALUES ({}, \"{}\")".format(int(item), op)
+    #         cursor.execute(query)
+
+    # query = "SELECT * FROM perm_rules"
+    # cursor.execute(query)
+    # for line in cursor:
+    #     print(line)
+    #
+    # cursor.close()
+
+    main()

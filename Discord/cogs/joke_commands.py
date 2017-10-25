@@ -19,28 +19,25 @@ def perms_check():
 
         if isinstance(ctx.channel, discord.abc.PrivateChannel):
             return True
-        guild_id = str(ctx.guild.id)
         command = str(ctx.command)
 
-        if not ctx.bot.guild_data[guild_id]["options"]["Commands"]:
+        if not ctx.bot.get_guild_option(ctx.guild.id, "joke_commands"):
             return False
-        if command not in ctx.bot.guild_data[guild_id]["perms"].keys():
+        perms = ctx.bot.get_perm_rules(ctx.guild.id, command)
+        if len(perms) == 0:
             return True
-        if "user" in ctx.bot.guild_data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.guild_data[guild_id]["perms"][command]["user"].keys():
-                if key == str(ctx.author):
-                    return ctx.bot.guild_data[guild_id]["perms"][command]["user"][key]
-        if "role" in ctx.bot.guild_data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.guild_data[guild_id]["perms"][command]["role"].keys():
+        perms.sort(key=lambda x: x[3])
+        for perm in perms:
+            if perm[1] == "user" and perm[2] == str(ctx.author):
+                return perm[4]
+            elif perm[1] == "role":
                 for role in ctx.author.roles:
-                    if key == str(role):
-                        return ctx.bot.guild_data[guild_id]["perms"][command]["role"][key]
-        if "channel" in ctx.bot.guild_data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.guild_data[guild_id]["perms"][command]["channel"].keys():
-                if key == str(ctx.channel):
-                    return ctx.bot.guild_data[guild_id]["perms"][command]["channel"][key]
-        if "guild" in ctx.bot.guild_data[guild_id]["perms"][command].keys():
-            return ctx.bot.guild_data[guild_id]["perms"][command]["guild"]
+                    if perm[2] == str(role):
+                        return perm[4]
+            elif perm[1] == "channel" and perm[2] == str(ctx.channel):
+                return perm[4]
+            elif perm[1] == "guild":
+                return perm[4]
         return True
 
     return commands.check(predicate)
@@ -52,6 +49,7 @@ class JokeCommands:
     __slots__ = ['bot']
 
     def __init__(self, bot):
+        """Initialize the JokeCommands cog. Takes in an instance of Talos to use while running."""
         self.bot = bot
 
     @commands.command(aliases=["Hi"])

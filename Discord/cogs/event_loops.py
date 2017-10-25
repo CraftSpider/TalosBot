@@ -19,7 +19,7 @@ from oauth2client.file import Storage
 
 # Google API values
 SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
-CLIENT_SECRET_FILE = 'client_secret.json'
+CLIENT_SECRET_FILE = 'client_secret.dat'
 APPLICATION_NAME = 'TalosBot Prompt Reader'
 
 log = logging.getLogger("talos.events")
@@ -28,6 +28,7 @@ log = logging.getLogger("talos.events")
 class EventLoops:
 
     def __init__(self, bot):
+        """Initialize the EventLoops cog. Takes in an instance of Talos to use while running."""
         self.bot = bot
         self.service = None
         self.flags = None
@@ -85,9 +86,8 @@ class EventLoops:
         """Creates and returns a google API service"""
         credentials = self.get_credentials()
         http = credentials.authorize(httplib2.Http())
-        discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
-                        'version=v4')
-        service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discoveryUrl,
+        discovery_url = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
+        service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discovery_url,
                                   cache_discovery=False)
         return service
 
@@ -182,10 +182,10 @@ class EventLoops:
             out += "{}\n\n".format(prompt[0].strip("\""))
             out += "({} by {})".format(("Original prompt" if prompt[1].upper() == "YES" else "Submitted"), prompt[2])
             for guild in self.bot.guilds:
-                if not self.bot.data[str(guild.id)]["options"]["WritingPrompts"]:
+                if not self.bot.get_guild_option(guild.id, "writing_prompts"):
                     continue
                 for channel in guild.channels:
-                    if channel.name == self.bot.data[str(guild.id)]["options"]["PromptsChannel"]:
+                    if channel.name == self.bot.get_guild_option(guild.id, "prompts_channel"):
                         await channel.send(out)
 
             prompt.append("POSTED")

@@ -20,28 +20,25 @@ def perms_check():
 
         if isinstance(ctx.channel, discord.abc.PrivateChannel):
             return True
-        guild_id = str(ctx.guild.id)
         command = str(ctx.command)
 
-        if not ctx.bot.guild_data[guild_id]["options"]["Commands"]:
+        if not ctx.bot.get_guild_option(ctx.guild.id, "user_commands"):
             return False
-        if command not in ctx.bot.guild_data[guild_id]["perms"].keys():
+        perms = ctx.bot.get_perm_rules(ctx.guild.id, command)
+        if len(perms) == 0:
             return True
-        if "user" in ctx.bot.guild_data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.guild_data[guild_id]["perms"][command]["user"].keys():
-                if key == str(ctx.author):
-                    return ctx.bot.guild_data[guild_id]["perms"][command]["user"][key]
-        if "role" in ctx.bot.guild_data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.guild_data[guild_id]["perms"][command]["role"].keys():
+        perms.sort(key=lambda x: x[3])
+        for perm in perms:
+            if perm[1] == "user" and perm[2] == str(ctx.author):
+                return perm[4]
+            elif perm[1] == "role":
                 for role in ctx.author.roles:
-                    if key == str(role):
-                        return ctx.bot.guild_data[guild_id]["perms"][command]["role"][key]
-        if "channel" in ctx.bot.guild_data[guild_id]["perms"][command].keys():
-            for key in ctx.bot.guild_data[guild_id]["perms"][command]["channel"].keys():
-                if key == str(ctx.channel):
-                    return ctx.bot.guild_data[guild_id]["perms"][command]["channel"][key]
-        if "guild" in ctx.bot.guild_data[guild_id]["perms"][command].keys():
-            return ctx.bot.guild_data[guild_id]["perms"][command]["guild"]
+                    if perm[2] == str(role):
+                        return perm[4]
+            elif perm[1] == "channel" and perm[2] == str(ctx.channel):
+                return perm[4]
+            elif perm[1] == "guild":
+                return perm[4]
         return True
 
     return commands.check(predicate)
@@ -54,6 +51,7 @@ class UserCommands:
     __slots__ = ['bot']
 
     def __init__(self, bot):
+        """Initialize the UserCommands cog. Takes in an instance of Talos to use while running."""
         self.bot = bot
 
     @commands.command()
@@ -115,36 +113,36 @@ class UserCommands:
     @perms_check()
     async def my_perms(self, ctx):
         """Has Talos print out your current guild permissions"""
-        userPerms = ctx.author.guild_permissions
+        user_perms = ctx.author.guild_permissions
         out = "```Guild Permissions:\n"
-        out += "    Administrator: {}\n".format(userPerms.administrator)
-        out += "    Add Reactions: {}\n".format(userPerms.add_reactions)
-        out += "    Attach Files: {}\n".format(userPerms.attach_files)
-        out += "    Ban Members: {}\n".format(userPerms.ban_members)
-        out += "    Change Nickname: {}\n".format(userPerms.change_nickname)
-        out += "    Connect: {}\n".format(userPerms.connect)
-        out += "    Deafen Members: {}\n".format(userPerms.deafen_members)
-        out += "    Embed Links: {}\n".format(userPerms.embed_links)
-        out += "    External Emojis: {}\n".format(userPerms.external_emojis)
-        out += "    Instant Invite: {}\n".format(userPerms.create_instant_invite)
-        out += "    Kick Members: {}\n".format(userPerms.kick_members)
-        out += "    Manage Channels: {}\n".format(userPerms.manage_channels)
-        out += "    Manage Emojis: {}\n".format(userPerms.manage_emojis)
-        out += "    Manage Guild: {}\n".format(userPerms.manage_guild)
-        out += "    Manage Messages: {}\n".format(userPerms.manage_messages)
-        out += "    Manage Nicknames: {}\n".format(userPerms.manage_nicknames)
-        out += "    Manage Roles: {}\n".format(userPerms.manage_roles)
-        out += "    Manage Webhooks: {}\n".format(userPerms.manage_webhooks)
-        out += "    Mention Everyone: {}\n".format(userPerms.mention_everyone)
-        out += "    Move Members: {}\n".format(userPerms.move_members)
-        out += "    Mute Members: {}\n".format(userPerms.mute_members)
-        out += "    Read Message History: {}\n".format(userPerms.read_message_history)
-        out += "    Read Messages: {}\n".format(userPerms.read_messages)
-        out += "    Send Messages: {}\n".format(userPerms.send_messages)
-        out += "    Send TTS: {}\n".format(userPerms.send_tts_messages)
-        out += "    Speak: {}\n".format(userPerms.speak)
-        out += "    Use Voice Activation: {}\n".format(userPerms.use_voice_activation)
-        out += "    View Audit: {}\n".format(userPerms.view_audit_log)
+        out += "    Administrator: {}\n".format(user_perms.administrator)
+        out += "    Add Reactions: {}\n".format(user_perms.add_reactions)
+        out += "    Attach Files: {}\n".format(user_perms.attach_files)
+        out += "    Ban Members: {}\n".format(user_perms.ban_members)
+        out += "    Change Nickname: {}\n".format(user_perms.change_nickname)
+        out += "    Connect: {}\n".format(user_perms.connect)
+        out += "    Deafen Members: {}\n".format(user_perms.deafen_members)
+        out += "    Embed Links: {}\n".format(user_perms.embed_links)
+        out += "    External Emojis: {}\n".format(user_perms.external_emojis)
+        out += "    Instant Invite: {}\n".format(user_perms.create_instant_invite)
+        out += "    Kick Members: {}\n".format(user_perms.kick_members)
+        out += "    Manage Channels: {}\n".format(user_perms.manage_channels)
+        out += "    Manage Emojis: {}\n".format(user_perms.manage_emojis)
+        out += "    Manage Guild: {}\n".format(user_perms.manage_guild)
+        out += "    Manage Messages: {}\n".format(user_perms.manage_messages)
+        out += "    Manage Nicknames: {}\n".format(user_perms.manage_nicknames)
+        out += "    Manage Roles: {}\n".format(user_perms.manage_roles)
+        out += "    Manage Webhooks: {}\n".format(user_perms.manage_webhooks)
+        out += "    Mention Everyone: {}\n".format(user_perms.mention_everyone)
+        out += "    Move Members: {}\n".format(user_perms.move_members)
+        out += "    Mute Members: {}\n".format(user_perms.mute_members)
+        out += "    Read Message History: {}\n".format(user_perms.read_message_history)
+        out += "    Read Messages: {}\n".format(user_perms.read_messages)
+        out += "    Send Messages: {}\n".format(user_perms.send_messages)
+        out += "    Send TTS: {}\n".format(user_perms.send_tts_messages)
+        out += "    Speak: {}\n".format(user_perms.speak)
+        out += "    Use Voice Activation: {}\n".format(user_perms.use_voice_activation)
+        out += "    View Audit: {}\n".format(user_perms.view_audit_log)
         out += "```"
         await ctx.send(out)
 
