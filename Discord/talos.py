@@ -25,20 +25,15 @@ except SystemError:
 #   Constants
 #
 
-# Talos saves its data in this file. Don't touch it unless you understand what you're doing.
-SAVE_FILE = "./TalosData.dat"
-# Default options for a new server. Don't touch it unless you understand what you're doing.
-DEFAULT_OPTIONS = "./DefaultOptions.json"
+# This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
+SQL_ADDRESS = "127.0.0.1:3306"
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = "Token.txt"
-
 
 #
 #   Command Vars
 #
 
-# Default Options. Only used in Talos Base for setting up options for servers.
-# default_options = {}
 # Help make it so mentions in the text don't actually mention people
 _mentions_transforms = {
     '@everyone': '@\u200beveryone',
@@ -78,8 +73,6 @@ class Talos(commands.Bot, TalosDatabase):
     EXTENSION_DIRECTORY = "cogs"
     # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
     STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "event_loops"]
-    # Fields that all servers should have in their data profile.
-    # SERVER_FIELDS = namedtuple('Fields', ["ops", "perms", "options"])(list, dict, default_options.copy)
     # Discordbots bot list token
     discordbots_token = ""
 
@@ -348,9 +341,9 @@ def main():
     # Load Talos files/dadtabases
     cnx = None
     try:
-        cnx = mysql.connector.connect(user="root", password="***REMOVED***", host="127.0.0.1", database="talos_data",
-                                      autocommit=True)
-        json_data = json_load(SAVE_FILE)
+        sql = SQL_ADDRESS.split(":")
+        cnx = mysql.connector.connect(user="root", password="***REMOVED***", host=sql[0], port=int(sql[1]),
+                                      database="talos_data", autocommit=True)
         if cnx is None:
             log.warning("Talos database missing, no data will be saved this session.")
     except Exception as e:
