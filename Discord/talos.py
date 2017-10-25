@@ -82,10 +82,6 @@ class Talos(commands.Bot, TalosDatabase):
     # SERVER_FIELDS = namedtuple('Fields', ["ops", "perms", "options"])(list, dict, default_options.copy)
     # Discordbots bot list token
     discordbots_token = ""
-    # List of times when the bot was verified online.
-    # uptime = []
-    # User specific info dict. Form users.user_id.section.key
-    # user_data = {}
 
     def __init__(self, sql_conn=None, **args):
         """Initialize Talos object. Safe to pass nothing in."""
@@ -355,10 +351,6 @@ def main():
         cnx = mysql.connector.connect(user="root", password="***REMOVED***", host="127.0.0.1", database="talos_data",
                                       autocommit=True)
         json_data = json_load(SAVE_FILE)
-        # default_options = json_load(DEFAULT_OPTIONS)
-        # if default_options is None:
-        #     log.fatal("Couldn't find default options, talos cannot start.")
-        #     exit(2)
         if cnx is None:
             log.warning("Talos database missing, no data will be saved this session.")
     except Exception as e:
@@ -378,23 +370,4 @@ def main():
 
 
 if __name__ == "__main__":
-
-    # cursor = cnx.cursor()
-
-    # json_data = json_load(SAVE_FILE)
-    # json_data.pop("uptime")
-    # for item in json_data["servers"]:
-    #     opslist = json_data["servers"][item]["ops"]
-    #     for op in opslist:
-    #         print(int(item), op)
-    #         query = "INSERT INTO ops VALUES ({}, \"{}\")".format(int(item), op)
-    #         cursor.execute(query)
-
-    # query = "SELECT * FROM perm_rules"
-    # cursor.execute(query)
-    # for line in cursor:
-    #     print(line)
-    #
-    # cursor.close()
-
     main()

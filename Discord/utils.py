@@ -492,6 +492,20 @@ class TalosDatabase:
             args.append(target)
         self.cursor.execute(query, [guild_id] + args)
 
+    def add_uptime(self, uptime):
+        query = "INSERT INTO uptime VALUES (%s)"
+        self.cursor.execute(query, [uptime])
+
+    def get_uptime(self, start):
+        query = "SELECT time FROM uptime WHERE time >= %s"
+        self.cursor.execute(query, [start])
+        result = self.cursor.fetchall()
+        return result
+
+    def remove_uptime(self, end):
+        query = "DELETE FROM uptime WHERE time < %s"
+        self.cursor.execute(query, [end])
+
 
 # Command classes
 

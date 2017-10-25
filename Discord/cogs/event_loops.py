@@ -140,12 +140,7 @@ class EventLoops:
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Daily task runs")
-            old = []
-            for item in self.bot.uptime:
-                if datetime.fromtimestamp(item) < datetime.now() - timedelta(days=30):
-                    old.append(item)
-            for item in old:
-                self.bot.uptime.remove(item)
+            self.bot.remove_uptime(int((datetime.now() - timedelta(days=30)).timestamp()))
             self.bot.verify()
             await asyncio.sleep(24*60*60)
 
@@ -156,7 +151,7 @@ class EventLoops:
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Uptime task runs")
-            self.bot.uptime.append(datetime.now().replace(microsecond=0).timestamp())
+            self.bot.add_uptime(int(datetime.now().replace(microsecond=0).timestamp()))
             await asyncio.sleep(60)
 
     async def prompt_task(self):

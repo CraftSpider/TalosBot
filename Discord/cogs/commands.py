@@ -91,9 +91,9 @@ class Commands:
         day_total = 24 * 60
         week_total = day_total * 7
         month_total = day_total * 30
-        day_up = values_greater(self.bot.uptime, (now - timedelta(days=1)).timestamp()) / day_total * 100
-        week_up = values_greater(self.bot.uptime, (now - timedelta(days=7)).timestamp()) / week_total * 100
-        month_up = values_greater(self.bot.uptime, (now - timedelta(days=30)).timestamp()) / month_total * 100
+        day_up = len(self.bot.get_uptime(int((now - timedelta(days=1)).timestamp()))) / day_total * 100
+        week_up = len(self.bot.get_uptime(int((now - timedelta(days=7)).timestamp()))) / week_total * 100
+        month_up = len(self.bot.get_uptime(int((now - timedelta(days=30)).timestamp()))) / month_total * 100
         return day_up, week_up, month_up
 
     #
