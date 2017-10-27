@@ -8,7 +8,6 @@ import discord
 import discord.ext.commands as commands
 import traceback
 import sys
-import json
 import logging
 import re
 import mysql.connector
@@ -131,27 +130,11 @@ class Talos(commands.Bot, TalosDatabase):
         else:
             return ctx.channel.permissions_for(ctx.me).embed_links
 
-    async def commit(self):
-        """Saves current talos data to the save file"""
-        log.debug("Commiting data")
-        self.sql_conn.commit()
-
     async def logout(self):
         """Saves Talos data, then logs out the bot cleanly and safely"""
         log.debug("Logging out")
         await self.commit()
         await super().logout()
-
-    async def verify(self):
-        """
-        Verify current Talos data to ensure no guilds are missing values and that no values exist without guilds.
-        Returns number of added and removed values.
-        """
-        removed = 0
-        # Destroy unnecessary values
-        query = ""
-        self.cursor.execute(query)
-        return removed
 
     async def _talos_help_command(self, ctx, *args: str):
         """Shows this message."""
@@ -229,8 +212,6 @@ class Talos(commands.Bot, TalosDatabase):
         log.info('| {}'.format(self.user.name))
         log.info('| {}'.format(self.user.id))
         await self.change_presence(game=discord.Game(name="Taking over the World", type=0))
-        removed = await self.verify()
-        log.info("Removed {} rows.".format(removed))
         if self.discordbots_token != "":
             log.info("Posting guilds to Discordbots")
             guild_count = len(self.guilds)
@@ -249,7 +230,7 @@ class Talos(commands.Bot, TalosDatabase):
         log.info("Joined Guild {}".format(guild.name))
 
     async def on_guild_remove(self, guild):
-        """Called upon Talos leaving a guild. Populates ops, perms, and options"""
+        """Called upon Talos leaving a guild. Depopulates ops, perms, and options"""
         log.debug("OnGuildRemove Event")
         log.info("Left Guild {}".format(guild.name))
 
@@ -300,29 +281,6 @@ def load_botlist_token():
         return ""
 
 
-def json_load(filename):
-    """Loads a file as a JSON object and returns that"""
-    with open(filename, 'a+') as file:
-        try:
-            file.seek(0)
-            data = json.load(file)
-        except json.JSONDecodeError:
-            data = None
-    return data
-
-
-def json_save(filename, **kwargs):
-    """Saves a file as valid JSON"""
-    with open(filename, 'w+') as file:
-        try:
-            out = dict()
-            for key in kwargs:
-                out[key] = kwargs[key]
-            json.dump(out, file, indent=2)
-        except Exception as ex:
-            print(ex)
-
-
 def main():
     # Load Talos tokens
     bot_token = ""
@@ -358,8 +316,8 @@ def main():
         talos.run(bot_token)
     finally:
         print("Talos Exiting")
-        talos.sql_conn.commit()
-        talos.sql_conn.close()
+        cnx.commit()
+        cnx.close()
 
 
 if __name__ == "__main__":

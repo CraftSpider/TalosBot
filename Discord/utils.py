@@ -9,8 +9,9 @@ import itertools
 import math
 import re
 import discord
+import logging
 import discord.ext.commands as dcommands
-from datetime import datetime
+import datetime as dt
 
 
 # Dictionaries and other variables
@@ -21,6 +22,8 @@ _levels = {
     "role": 30,
     "user": 40
 }
+
+log = logging.getLogger("talos.utils")
 
 
 # Fundamental Talos classes
@@ -317,15 +320,23 @@ class TalosDatabase:
 
     def __init__(self, sql_conn):
         if sql_conn is not None:
-            self.sql_conn = sql_conn
-            self.cursor = sql_conn.cursor()
+            self._sql_conn = sql_conn
+            self._cursor = sql_conn.cursor()
+        else:
+            self._sql_conn = None
+            self._cursor = None
+
+    async def commit(self):
+        """Saves current talos data to the save file"""
+        log.debug("Committing data")
+        self._sql_conn.commit()
 
     def get_column_type(self, table_name, column_name):
         if re.match("[^a-zA-Z0-9_-]", table_name) or re.match("[^a-zA-Z0-9_-]", column_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s"
-        self.cursor.execute(query, [table_name, column_name])
-        result = self.cursor.fetchone()
+        self._cursor.execute(query, [table_name, column_name])
+        result = self._cursor.fetchone()
         if result is not None:
             result = result[0]
         return result
@@ -334,28 +345,28 @@ class TalosDatabase:
         if re.match("[^a-zA-Z0-9_-]", table_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
-        self.cursor.execute(query, [table_name])
-        return self.cursor.fetchall()
+        self._cursor.execute(query, [table_name])
+        return self._cursor.fetchall()
 
     def get_default(self, option_name):
         """Get the default value of an option"""
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM guild_options WHERE guild_id = -1".format(option_name)
-        self.cursor.execute(query)
-        return self.cursor.fetchone()[0]
+        self._cursor.execute(query)
+        return self._cursor.fetchone()[0]
 
     def get_defaults(self):
         query = "SELECT * FROM guild_options WHERE guild_id = -1"
-        self.cursor.execute(query)
-        return self.cursor.fetchone()
+        self._cursor.execute(query)
+        return self._cursor.fetchone()
 
     def get_guild_option(self, guild_id, option_name):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM guild_options WHERE guild_id = %s".format(option_name)
-        self.cursor.execute(query, [guild_id])
-        result = self.cursor.fetchone()
+        self._cursor.execute(query, [guild_id])
+        result = self._cursor.fetchone()
         if result is None or result[0] is None:
             result = self.get_default(option_name)
         else:
@@ -364,8 +375,8 @@ class TalosDatabase:
 
     def get_guild_options(self, guild_id):
         query = "SELECT * FROM guild_options WHERE guild_id = %s"
-        self.cursor.execute(query, [guild_id])
-        result = self.cursor.fetchone()
+        self._cursor.execute(query, [guild_id])
+        result = self._cursor.fetchone()
         out = []
         if result is None:
             out = self.get_defaults()
@@ -380,9 +391,9 @@ class TalosDatabase:
 
     def get_all_guild_options(self):
         query = "SELECT * FROM guild_options"
-        self.cursor.execute(query)
+        self._cursor.execute(query)
         out = []
-        for row in self.cursor:
+        for row in self._cursor:
             out.append(row)
         return out
 
@@ -392,43 +403,43 @@ class TalosDatabase:
         query = "INSERT INTO guild_options (guild_id, {0}) VALUES (%s, %s) "\
                 "ON DUPLICATE KEY UPDATE "\
                 "{0} = VALUES({0})".format(option_name)
-        self.cursor.execute(query, [guild_id, value])
+        self._cursor.execute(query, [guild_id, value])
 
     def remove_guild_option(self, guild_id, option_name):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "UPDATE guild_options SET {} = null WHERE guild_id = %s".format(option_name)
-        self.cursor.execute(query, [guild_id])
+        self._cursor.execute(query, [guild_id])
 
     def get_all_ops(self):
         query = "SELECT guild_id, opname FROM ops"
-        self.cursor.execute(query)
+        self._cursor.execute(query)
         out = []
-        for row in self.cursor:
+        for row in self._cursor:
             out.append(row)
         return out
 
     def get_ops(self, guild_id):
         query = "SELECT opname FROM ops WHERE guild_id = %s"
-        self.cursor.execute(query, [guild_id])
+        self._cursor.execute(query, [guild_id])
         out = []
-        for row in self.cursor:
+        for row in self._cursor:
             out.append(row[0])
         return out
 
     def add_op(self, guild_id, opname):
         query = "INSERT INTO ops VALUES (%s, %s)"
-        self.cursor.execute(query, [guild_id, opname])
+        self._cursor.execute(query, [guild_id, opname])
 
     def remove_op(self, guild_id, opname):
         query = "DELETE FROM ops WHERE guild_id = %s AND opname = %s"
-        self.cursor.execute(query, [guild_id, opname])
+        self._cursor.execute(query, [guild_id, opname])
 
     def get_perm_rule(self, guild_id, command, perm_type, target):
         query = "SELECT priority, allow FROM perm_rules WHERE guild_id = %s AND command = %s AND perm_type = %s AND"\
                 " target = %s"
-        self.cursor.execute(query, [guild_id, command, perm_type, target])
-        return self.cursor.fetchone()
+        self._cursor.execute(query, [guild_id, command, perm_type, target])
+        return self._cursor.fetchone()
 
     def get_perm_rules(self, guild_id=-1, command=None, perm_type=None, target=None):
         query = "SELECT command, perm_type, target, priority, allow FROM perm_rules WHERE guild_id = %s"
@@ -448,13 +459,13 @@ class TalosDatabase:
         if target:
             query += "target = %s"
             args.append(target)
-        self.cursor.execute(query, [guild_id] + args)
-        return self.cursor.fetchall()
+        self._cursor.execute(query, [guild_id] + args)
+        return self._cursor.fetchall()
 
     def get_all_perm_rules(self):
         query = "SELECT guild_id, command, perm_type, target, priority, allow FROM perm_rules"
-        self.cursor.execute(query)
-        return self.cursor.fetchall()
+        self._cursor.execute(query)
+        return self._cursor.fetchall()
 
     def set_perm_rule(self, guild_id, command, perm_type, allow, priority=None, target=None):
         if priority is None:
@@ -469,7 +480,7 @@ class TalosDatabase:
                 "target = VALUES(target),"\
                 "priority = VALUES(priority),"\
                 "allow = VALUES(allow)"
-        self.cursor.execute(query, [guild_id, command, perm_type, target, priority, allow])
+        self._cursor.execute(query, [guild_id, command, perm_type, target, priority, allow])
 
     def remove_perm_rules(self, guild_id, command=None, perm_type=None, target=None):
         query = "DELETE FROM perm_rules WHERE guild_id = %s"
@@ -489,21 +500,21 @@ class TalosDatabase:
         if target:
             query += "target = %s"
             args.append(target)
-        self.cursor.execute(query, [guild_id] + args)
+        self._cursor.execute(query, [guild_id] + args)
 
     def add_uptime(self, uptime):
         query = "INSERT INTO uptime VALUES (%s)"
-        self.cursor.execute(query, [uptime])
+        self._cursor.execute(query, [uptime])
 
     def get_uptime(self, start):
         query = "SELECT time FROM uptime WHERE time >= %s"
-        self.cursor.execute(query, [start])
-        result = self.cursor.fetchall()
+        self._cursor.execute(query, [start])
+        result = self._cursor.fetchall()
         return result
 
     def remove_uptime(self, end):
         query = "DELETE FROM uptime WHERE time < %s"
-        self.cursor.execute(query, [end])
+        self._cursor.execute(query, [end])
 
 
 # Command classes
@@ -529,14 +540,14 @@ class PW:
 
     def begin(self):
         """Starts the PW, assumes it isn't started"""
-        self.start = datetime.utcnow()
+        self.start = dt.datetime.utcnow()
         for member in self.members:
             if not member.get_started():
                 member.begin(self.start)
 
     def finish(self):
         """Ends the PW, assumes it isn't ended"""
-        self.end = datetime.utcnow()
+        self.end = dt.datetime.utcnow()
         for member in self.members:
             if not member.get_finished():
                 member.finish(self.end)
@@ -546,7 +557,7 @@ class PW:
         if PWMember(member) not in self.members:
             new_mem = PWMember(member)
             if self.get_started():
-                new_mem.begin(datetime.utcnow())
+                new_mem.begin(dt.datetime.utcnow())
             self.members.append(new_mem)
             return True
         else:
@@ -560,13 +571,15 @@ class PW:
                     if user.get_finished():
                         return 2
                     elif user.get_started():
-                        user.finish(datetime.utcnow())
+                        user.finish(dt.datetime.utcnow())
                     else:
                         self.members.remove(user)
                         break
+            # check if anyone isn't finished
             for user in self.members:
                 if not user.get_finished():
                     return 0
+            # if everyone is finished, end the pw
             self.finish()
             return 0
         else:
@@ -602,11 +615,11 @@ class PWMember:
         return self.end is not None
 
     def begin(self, time):
-        if not isinstance(time, (datetime, time)):
+        if not isinstance(time, (dt.datetime, dt.time)):
             raise ValueError("Time must be a datetime or time instance")
         self.start = time.replace(microsecond=0)
 
     def finish(self, time):
-        if not isinstance(time, (datetime, time)):
+        if not isinstance(time, (dt.datetime, dt.time)):
             raise ValueError("Time must be a datetime or time instance")
         self.end = time.replace(microsecond=0)

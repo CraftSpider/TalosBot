@@ -11,6 +11,7 @@ import inspect
 import re
 import sys
 import os
+import pytest
 from datetime import datetime
 from datetime import timedelta
 sys.path.append(os.getcwd().replace("\\Tests", ""))
@@ -25,10 +26,14 @@ bot_base = bot.Bot("^")
 def test_extension_load():
     talos = dtalos.Talos()
     talos.load_extensions()
+
     assert len(talos.extensions) == len(talos.STARTUP_EXTENSIONS), "Didn't load  extensions"
     for extension in talos.STARTUP_EXTENSIONS:
         assert talos.EXTENSION_DIRECTORY + "." + extension in talos.extensions,\
             "Didn't load {} extension".format(extension)
+
+    talos.unload_extensions(["Commands", "AdminCommands"])
+
     talos.unload_extensions()
     assert len(talos.extensions) == 0, "Didn't unload all extensions"
     for extension in talos.STARTUP_EXTENSIONS:
@@ -43,7 +48,7 @@ def get_unique_member(base_class):
         if not (inspect.isroutine(member) or inspect.isawaitable(member)):
             return False
         match = re.compile("(?<!\\.){}\\.".format(class_name))
-        if isinstance(member, core.Command) or match.findall(object.__repr__(member)):
+        if isinstance(member, core.Command) or match.findall(object.__str__(member)):
             return True
         return False
 
@@ -68,10 +73,12 @@ def test_embed_paginator():
     pass  # TODO
 
 
-def test_PW_member():
-    member1 = utils.PW_Member("Test#0001")
-    member2 = utils.PW_Member("Test#0002")
-    member3 = utils.PW_Member("Test#0002")
+def test_pw_member():
+    member1 = utils.PWMember("Test#0001")
+    member2 = utils.PWMember("Test#0002")
+    member3 = utils.PWMember("Test#0002")
+
+    assert str(member1) == "Test#0001", "Failed string conversion"
 
     assert member1 != member2, "Failed difference"
     assert member2 == member3, "Failed equivalence"
@@ -80,6 +87,8 @@ def test_PW_member():
     assert member1.get_finished() is False, "Claims finished before finish"
     assert member1.get_len() == -1, "Length should be -1 before finish"
 
+    with pytest.raises(ValueError, message="Allowed non-time beginning"):
+        member1.begin("Hello World!")
     time = datetime(year=2017, month=12, day=31)
     member1.begin(time)
 
@@ -87,6 +96,8 @@ def test_PW_member():
     assert member1.get_finished() is False, "Claims finished before finish"
     assert member1.get_len() == -1, "Length should be -1 before finish"
 
+    with pytest.raises(ValueError, message="Allowed non-time ending"):
+        member1.finish(2017.3123)
     time = time.replace(minute=30)
     member1.finish(time)
 
@@ -95,5 +106,17 @@ def test_PW_member():
     assert member1.get_len() == timedelta(minutes=30), "Length should be 30 minutes after finish"
 
 
-def test_PW():
-    pass  # TODO
+def test_pw():
+    pw = utils.PW()
+
+    assert pw.get_started() is False, "Claims started before start"
+    assert pw.get_finished() is False, "Claims finished before finish"
+
+    assert pw.join("Test#0001") is True, "New member not successfully added"
+    assert pw.join("Test#0001") is False, "Member already in PW still added"
+    assert pw.leave("Test#0001") is 0, "Existing member couldn't leave"
+    assert "Test#0001" not in pw.members, "Member leaving before start is not deleted"
+    assert pw.leave("Test#0001") is 1, "Member successfully left twice"
+    assert pw.leave("Test#0002") is 1, "Member left before joining"
+
+    pw = utils.PW()

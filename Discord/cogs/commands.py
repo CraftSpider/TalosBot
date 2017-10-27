@@ -308,6 +308,16 @@ class Commands:
         out += "{:02.2f}% of the past week, ".format(week_up)
         out += "{:02.2f}% of the past month".format(month_up)
         await ctx.send(out)
+
+    @commands.command()
+    @perms_check()
+    async def ping(self, ctx):
+        """Checks the Talos delay. (Not round trip. Time between putting message and gateway acknowledgement.)"""
+        start = datetime.now()
+        message = await ctx.send("Current Ping: `{}`")
+        end = datetime.now()
+        milliseconds = (end - start).microseconds/1000
+        await message.edit(content=message.content.format(milliseconds))
     
     @commands.group()
     @perms_check()
