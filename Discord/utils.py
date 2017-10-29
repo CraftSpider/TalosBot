@@ -34,7 +34,7 @@ class EmbedPaginator:
     A single field being too long becomes Field, Field continued. A whole embed then each field becomes its own embed.
     """
 
-    __slots__ = ["max_size", "title", "description", "fields", "footer", "pages", "colour"]
+    __slots__ = ["max_size", "title", "description", "fields", "footer", "pages", "colours", "colour_pos"]
 
     MAX_TOTAL = 6000
     MAX_TITLE = 256
@@ -45,17 +45,18 @@ class EmbedPaginator:
     MAX_FOOTER = 2048
     MAX_AUTHOR = 256
 
-    def __init__(self, max_size=0, colour=discord.Color(0x000000)):
-        self.max_size = max_size if max_size > 0 else self.MAX_TOTAL
+    def __init__(self, max_size=MAX_TOTAL, colour=discord.Color(0x000000)):
+        self.max_size = max_size
         self.title = ""
         self.description = ""
         self.fields = []
-        self.footer = "Page {}/{}"
+        self.footer = "Page {0}/{1}"
         self.pages = []
+        self.colour_pos = 0
         if isinstance(colour, (list, tuple)):
-            self.colour = colour
+            self.colours = colour
         else:
-            self.colour = [colour]
+            self.colours = [colour]
 
     @property
     def size(self):
@@ -69,10 +70,10 @@ class EmbedPaginator:
                 size += (title + 6)*(value//1024)
         # Ignore this mess (for calculating footer size, which will depend on number of pages)
         old_size = size
-        cur_pages = int(math.ceil(size/self.max_size))
+        cur_pages = int(math.ceil(size/self.max_size)) if size > 0 else 1
         for i in range(cur_pages):
             size += len(self.footer.format(i, cur_pages))
-        while cur_pages != int(math.ceil(size/self.max_size)):
+        while cur_pages != (int(math.ceil(size/self.max_size)) if size > 0 else 1):
             cur_pages = int(math.ceil(size/self.max_size))
             size = old_size
             for i in range(cur_pages):
@@ -82,11 +83,12 @@ class EmbedPaginator:
 
     @property
     def page_number(self):
-        return math.ceil(self.size / self.max_size)
+        size = self.size
+        return math.ceil(size / self.max_size) if size > 0 else 1
 
     def next_colour(self):
-        colour = self.colour.pop(0)
-        self.colour.append(colour)
+        colour = self.colours[self.colour_pos]
+        self.colour_pos = (self.colour_pos + 1) % len(self.colours)
         return colour
 
     @property
@@ -150,7 +152,8 @@ class EmbedPaginator:
                 self.pages = out
         else:
             # TODO
-            return discord.Embed(title="Not Implemented Yet")
+            return discord.Embed(title="Not Implemented Yet",
+                                 description="Please contact admins if this is not an expected result")
 
 
 class TalosFormatter(dcommands.HelpFormatter):
@@ -554,7 +557,7 @@ class PW:
 
     def join(self, member):
         """Have a new member join the PW."""
-        if PWMember(member) not in self.members:
+        if PWMember(member) not in self.members and self.get_finished() is not True:
             new_mem = PWMember(member)
             if self.get_started():
                 new_mem.begin(dt.datetime.utcnow())

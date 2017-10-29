@@ -70,6 +70,14 @@ def test_method_docs():
 
 
 def test_embed_paginator():
+    page = utils.EmbedPaginator()
+
+    assert page.size is 8, "Base size is not 8"
+    page.set_footer("")
+    assert page.size is 0, "Empty Embed isn't size 0"
+    page.close_pages()
+    assert len(page.pages) is 1, "Empty embed has more than one page"
+
     pass  # TODO
 
 
@@ -120,3 +128,32 @@ def test_pw():
     assert pw.leave("Test#0002") is 1, "Member left before joining"
 
     pw = utils.PW()
+
+    pw.join("Test#0001")
+    pw.begin()
+    assert pw.get_started() is True, "Isn't started after start"
+    assert pw.get_finished() is False, "Finished before finish"
+    pw.join("Test#0002")
+    for member in pw.members:
+        assert member.get_started() is True, "Member not started after start"
+    pw.leave("Test#0001")
+    pw.leave("Test#0002")
+    assert pw.get_started() is True, "Isn't started after start"
+    assert pw.get_finished() is True, "Isn't finished after all leave"
+    for member in pw.members:
+        assert member.get_finished() is True, "Member not finished after finish"
+    assert pw.leave("Test#0001") is 2, "Member leaving after join not reporting "
+    assert pw.join("Test#0003") is False, "Allowed join after finish"
+
+    pw = utils.PW()
+
+    pw.join("Test#0001")
+    pw.begin()
+    pw.join("Test#0002")
+    for member in pw.members:
+        assert member.get_started() is True, "Member not started after start"
+    pw.finish()
+    assert pw.get_started() is True, "Isn't started after start"
+    assert pw.get_finished() is True, "Isn't finished after finish called"
+    for member in pw.members:
+        assert member.get_finished() is True, "Member not finished after finish"

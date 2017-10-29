@@ -5,6 +5,7 @@
 
 # Python Cache
 */__pycache__/
+Tests/.cache
 
 # Discord
 /Discord/*.bak
