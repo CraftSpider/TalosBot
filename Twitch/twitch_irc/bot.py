@@ -61,12 +61,10 @@ class SingleServerBot(irc.bot.SingleServerIRCBot):
         return Context(self, conn, event)
 
     def on_pubmsg(self, conn, event):
-        print(self.channels)
-        ctx = self.generate_context(conn, event)
-        if ctx.command is not "":
-            self.handle_command(ctx)
+        self.handle_command(conn, event)
 
-    def handle_command(self, ctx):
+    def handle_command(self, conn, event):
+        ctx = self.generate_context(conn, event)
         # ctx.server.send_raw(" ".join(ctx.arguments))
         if ctx.command in self.all_commands:
             self.all_commands[ctx.command].invoke(ctx)
@@ -83,7 +81,9 @@ class Context(client.Messageable):
         self.command = ""
         if self.message.startswith(self.prefix):
             self.command = remove_prefix(self.message.split(" ")[0], self.prefix)
-        self.arguments = self.message.split(" ")[1:]
+        self.raw_args =
+        self.args = []
+        self.kwargs = {}
         self.channel = bot.channels[event.target]
 
     def __str__(self):
@@ -105,6 +105,11 @@ class Command:
         self.active = attrs.get("active", True)
         self.hidden = attrs.get("hidden", False)
         self.aliases = attrs.get("aliases", [])
+        signature = inspect.signature(callback)
+        self.params = signature.parameters.copy()
+
+    def _parse_arguments(self, ctx):
+
 
     def invoke(self, ctx):
         if not self.can_run(ctx):
