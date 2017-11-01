@@ -543,7 +543,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
         with async_timeout.timeout(10):
             async with self.get(self.NANO_URL + "participants/{}".format(username)) as response:
                 if response.status == 200:
-                    if response.url != "https://nanowrimo.org":
+                    print(response.url)
+                    if not str(response.url).startswith("https://nanowrimo.org/participants"):
                         return None
                     return await response.text()
                 elif response.status == 403:
