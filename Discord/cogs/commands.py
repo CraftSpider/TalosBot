@@ -347,7 +347,11 @@ class Commands:
             if author_bio is not None:
                 author_bio = author_bio.group(1)
                 author_bio = re.sub("<p>", "", author_bio)
-                author_bio = re.sub("</p>", "\n", author_bio)
+                author_bio = re.sub("</p>|<br>", "\n", author_bio)
+                author_bio = re.sub("<strong>|</strong>", "**", author_bio)
+                if len(member_age) + len(author_bio) > 2048:
+                    author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
+                    print(len(author_bio) + len(member_age))
             else:
                 author_bio = ""
             avatar = "https:" + re.search("<img alt=\".*?\" class=\"img-responsive\" src=\"(.*?)\" />", page).group(1)
