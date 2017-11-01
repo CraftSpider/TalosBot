@@ -10,6 +10,8 @@ import math
 import re
 import discord
 import logging
+import aiohttp
+import async_timeout
 import discord.ext.commands as dcommands
 import datetime as dt
 
@@ -518,6 +520,55 @@ class TalosDatabase:
     def remove_uptime(self, end):
         query = "DELETE FROM uptime WHERE time < %s"
         self._cursor.execute(query, [end])
+
+
+class TalosHTTPClient(aiohttp.ClientSession):
+
+    NANO_URL = "https://nanowrimo.org/"
+
+    def __init__(self, *args, **kwargs):
+
+        self.username = kwargs.pop("username", "")
+        self.password = kwargs.pop("password", "")
+
+        super().__init__(*args, **kwargs)
+
+    async def get_site(self, url, **kwargs):
+        with async_timeout.timeout(10):
+            async with self.get(url, **kwargs) as response:
+                return await response.text()
+
+    async def nano_get_user(self, username):
+        """Returns a given NaNo user profile, if it can be found. If not, returns None"""
+        with async_timeout.timeout(10):
+            async with self.get(self.NANO_URL + "participants/{}".format(username)) as response:
+                if response.status == 200:
+                    if response.url != "https://nanowrimo.org":
+                        return None
+                    return await response.text()
+                elif response.status == 403:
+                    response = await self.nano_login_client()
+                    log.debug("Login Status: {}".format(response))
+                    return await self.nano_get_user(username)
+                else:
+                    print(response.status)
+                    return None
+
+    async def nano_login_client(self):
+        login_page = await self.get_site(self.NANO_URL + "sign_in")
+        pattern = re.compile("<input name=\"authenticity_token\" .*? value=\"(.*?)\" />")
+        auth_key = pattern.search(login_page).group(1)
+        params = {
+            "utf8": "✓",
+            "authenticity_token": auth_key,
+            "user_session[name]": self.username,
+            "user_session[password]": self.password,
+            "user_session[remember_me]": "0",
+            "commit": "Sign+in"
+        }
+        with async_timeout.timeout(10):
+            async with self.post(self.NANO_URL + "sign_in", data=params) as response:
+                return response.status
 
 
 # Command classes

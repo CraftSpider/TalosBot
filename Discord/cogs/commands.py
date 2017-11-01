@@ -9,6 +9,7 @@ from discord.ext import commands
 import asyncio
 import random
 import logging
+import re
 from datetime import datetime
 from datetime import timedelta
 from collections import defaultdict
@@ -314,10 +315,62 @@ class Commands:
     async def ping(self, ctx):
         """Checks the Talos delay. (Not round trip. Time between putting message and gateway acknowledgement.)"""
         start = datetime.now()
-        message = await ctx.send("Current Ping: `{}`")
+        await self.bot.get_user_info(101091070904897536)
         end = datetime.now()
         milliseconds = (end - start).microseconds/1000
-        await message.edit(content=message.content.format(milliseconds))
+        await ctx.send("Current Ping: `{}`".format(milliseconds))
+
+    @commands.group(aliases=["nano"])
+    @perms_check()
+    async def nanowrimo(self, ctx):
+        """Fetches info from the NaNo site"""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Valid options are 'novel' and 'profile'.")
+
+    @nanowrimo.command(name="novel")
+    async def _novel(self, ctx, username: str):
+        """Currently WIP"""
+        # TODO
+        print(await self.bot.session.get_site("https://nanowrimo.org/participants/{}"))
+
+    @nanowrimo.command(name="profile")
+    async def _profile(self, ctx, username: str):
+        """Fetches a given username's profile from the nano site"""
+        page = await self.bot.session.nano_get_user(username)
+        if page is None:
+            await ctx.send("Sorry, I couldn't find that user on the NaNo site.")
+            return
+        if self.bot.should_embed(ctx):
+            # Get member info
+            member_age = re.search("<div class='member_for'>(.*?)</div>", page).group(1)
+            author_bio = re.search("<h3>Author Bio</h3>.*?<div class='panel-body'>(.*?)</div>", page, re.S)
+            if author_bio is not None:
+                author_bio = author_bio.group(1)
+                author_bio = re.sub("<p>", "", author_bio)
+                author_bio = re.sub("</p>", "\n", author_bio)
+            else:
+                author_bio = ""
+            avatar = "https:" + re.search("<img alt=\".*?\" class=\"img-responsive\" src=\"(.*?)\" />", page).group(1)
+            # Get basic novel stats
+            novel_title = re.search("<strong>Novel:</strong>\n(.*)", page)
+            if novel_title is not None:
+                novel_title = novel_title.group(1)
+                novel_genre = re.search("<strong>Genre:</strong>\n(.*)", page).group(1)
+                novel_words = re.search("<strong>(\d*)</strong>\nwords so far", page).group(1)
+            else:
+                novel_genre = None
+                novel_words = None
+
+            # Build Embed
+            embed = discord.Embed(title="__Author Info__", description="*{}*\n\n".format(member_age) + author_bio)
+            embed.set_author(name=username, icon_url=avatar)
+            embed.set_thumbnail(url=avatar)
+            if novel_title is not None:
+                embed.add_field(
+                    name="__Novel Info__",
+                    value="**Title:** {}\n**Genre:** {}\n**Words:** {}".format(novel_title, novel_genre, novel_words)
+                )
+            await ctx.send(embed=embed)
     
     @commands.group()
     @perms_check()

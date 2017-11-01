@@ -16,9 +16,11 @@ from datetime import datetime
 try:
     from .utils import TalosFormatter
     from .utils import TalosDatabase
+    from .utils import TalosHTTPClient
 except SystemError:
     from utils import TalosFormatter
     from utils import TalosDatabase
+    from utils import TalosHTTPClient
 
 #
 #   Constants
@@ -85,6 +87,13 @@ class Talos(commands.Bot, TalosDatabase):
 
         # Set talos specific things
         self.discordbots_token = args.get("token", "")
+        nano_login = args.get("nano_login", ["", ""])
+
+        async def open_session():
+            log.info("Opened Talos HTTP Client")
+            self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1])
+
+        self.loop.create_task(open_session())
 
         # Override things set by super init that we don't want
         self._skip_check = self.skip_check
@@ -281,6 +290,14 @@ def load_botlist_token():
         return ""
 
 
+def load_nano_login():
+    file = string_load(TOKEN_FILE)
+    try:
+        return file[2].strip().split(":")
+    except KeyError:
+        return []
+
+
 def main():
     # Load Talos tokens
     bot_token = ""
@@ -296,7 +313,13 @@ def main():
     except IndexError:
         log.warning("Botlist token missing, stats will not be posted.")
 
-    # Load Talos files/dadtabases
+    nano_login = []
+    try:
+        nano_login = load_nano_login()
+    except IndexError:
+        log.warning("Nano Login missing, nano commands will likely fail")
+
+    # Load Talos files/databases
     cnx = None
     try:
         sql = SQL_ADDRESS.split(":")
@@ -309,7 +332,7 @@ def main():
         log.warning("Expected file or connection missing, new file created, connection dropped.")
 
     # Create and run Talos
-    talos = Talos(sql_conn=cnx, token=botlist_token)
+    talos = Talos(sql_conn=cnx, token=botlist_token, nano_login=nano_login)
 
     try:
         talos.load_extensions()
