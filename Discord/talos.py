@@ -93,6 +93,7 @@ class Talos(commands.Bot, TalosDatabase):
             log.info("Opened Talos HTTP Client")
             self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1])
 
+        self.session = None
         self.loop.create_task(open_session())
 
         # Override things set by super init that we don't want
@@ -142,6 +143,7 @@ class Talos(commands.Bot, TalosDatabase):
     async def logout(self):
         """Saves Talos data, then logs out the bot cleanly and safely"""
         log.debug("Logging out")
+        await self.session.close()
         await self.commit()
         await super().logout()
 
