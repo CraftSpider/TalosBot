@@ -65,8 +65,13 @@ def strfdelta(time_delta, fmt):
     return fmt.format(**d)
 
 
-def values_greater(array, value):
-    return len([1 for i in array if i > value])
+def html_to_markdown(html):
+    html = re.sub(r"<p>", "", html)
+    html = re.sub(r"</p>|<br>", "\n", html)
+    html = re.sub(r"<strong>|</strong>", "**", html)
+    html = re.sub(r"<em>|</em>", "*", html)
+    html = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", html)
+    return html
 
 
 class Commands:
@@ -328,55 +333,98 @@ class Commands:
             await ctx.send("Valid options are 'novel' and 'profile'.")
 
     @nanowrimo.command(name="novel")
-    async def _novel(self, ctx, username: str):
-        """Currently WIP"""
-        # TODO
-        print(await self.bot.session.get_site("https://nanowrimo.org/participants/{}"))
+    async def _novel(self, ctx, username: str, novel_name: str=""):
+        """Fetches detailed info on a user's novel from the NaNo site"""
+        novel_page, novel_stats = await self.bot.session.nano_get_novel(username, novel_name)
+        if novel_page is None:
+            await ctx.send("Sorry, I couldn't find that user or novel.")
+            return
+        # Get basic novel info
+        avatar = "https:" + re.search("<img alt=\".*?\" class=\"img-responsive\" src=\"(.*?)\" />", novel_page).group(1)
+        novel_title = re.search(r"<strong>Novel:</strong>\n(.*)", novel_page).group(1)
+        novel_cover = re.search(r"<img .*?id=\"novel_cover_thumb\".*?src=\"(.*?)\" />", novel_page)
+        if novel_cover is not None:
+            novel_cover = "https:" +  novel_cover.group(1)
+        novel_genre = re.search(r"<strong>Genre:</strong>\n(.*)", novel_page).group(1)
+        novel_synopsis = html_to_markdown(re.search(r"<div id='novel_synopsis'>(.*?)</div>", novel_page, re.S).group(1))
+        if novel_synopsis.strip() == "":
+            novel_synopsis = None
+        elif len(novel_synopsis) > 1024:
+            novel_synopsis = novel_synopsis[:1021] + "..."
+        novel_excerpt = html_to_markdown(re.search(r"<div id='novel_excerpt'>(.*?)</div>", novel_page, re.S).group(1))
+        if novel_excerpt.strip() == "":
+            novel_excerpt = None
+        elif len(novel_excerpt) > 1024:
+            novel_excerpt = novel_excerpt[:1021] + "..."
+        # Get novel statistics
+        base_regex = r"<div class='title'>{}</div>\n<div class='value'>\n?(.*?)(?:\n|</div>)"
+        titles = ["Your Average Per Day", "Words Written Today", "Total Words Written",
+                  "Target Average Words Per Day", "Words Remaining"]
+        stats = []
+        for item in titles:
+            stats.append(
+                int(re.search(base_regex.format(item), novel_stats).group(1).replace(",", ""))
+            )
+        stats[3] = stats[3] - stats[1]
+        if self.bot.should_embed(ctx):
+            # Construct Embed
+            description = "*Title:* {} *Genre:* {}\n**Wordcount Details**\n".format(novel_title, novel_genre)
+            description += "Daily Avg: {:,}\n".format(stats[0])
+            description += "Words Today: {:,}\n".format(stats[1])
+            description += "Words Total: {:,}\n".format(stats[2])
+            description += "Remaining Today: {:,}\n".format(stats[3])
+            description += "Remaining Total: {:,}\n".format(stats[4])
+            embed = discord.Embed(title="__Novel Details__", description=description)
+            embed.set_author(name=username, icon_url=avatar)
+            if novel_cover is not None:
+                embed.set_thumbnail(url=novel_cover)
+            if novel_synopsis is not None:
+                embed.add_field(name="__Synopsis__", value=novel_synopsis)
+            if novel_excerpt is not None:
+                embed.add_field(name="__Excerpt__", value=novel_excerpt)
+            await ctx.send(embed=embed)
 
     @nanowrimo.command(name="profile")
     async def _profile(self, ctx, username: str):
-        """Fetches a given username's profile from the nano site"""
+        """Fetches a given username's profile from the NaNo site"""
         page = await self.bot.session.nano_get_user(username)
         if page is None:
             await ctx.send("Sorry, I couldn't find that user on the NaNo site.")
             return
+        # Get member info
+        member_age = re.search(r"<div class='member_for'>(.*?)</div>", page).group(1)
+        author_bio = re.search(r"<h3>Author Bio</h3>.*?<div class='panel-body'>(.*?)</div>", page, re.S)
+        if author_bio is not None:
+            author_bio = author_bio.group(1)
+            author_bio = html_to_markdown(author_bio)
+            if len(member_age) + len(author_bio) > 2048:
+                author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
+                print(len(author_bio) + len(member_age))
+        else:
+            author_bio = ""
+        avatar = "https:" + re.search("<img alt=\".*?\" class=\"img-responsive\" src=\"(.*?)\" />", page).group(1)
+        # Get basic novel stats
+        novel_title = re.search(r"<strong>Novel:</strong>\n(.*)", page)
+        if novel_title is not None:
+            novel_title = novel_title.group(1)
+            novel_genre = re.search(r"<strong>Genre:</strong>\n(.*)", page).group(1)
+            novel_words = re.search(r"<strong>(\d*)</strong>\nwords so far", page).group(1)
+        else:
+            novel_genre = None
+            novel_words = None
+        # Get fact sheet
+        fact_sheet = re.search(r"<dl>(.*?)</dl>", page, flags=re.S).group(1)
+        if fact_sheet.strip() != "":
+            fact_sheet = re.sub(r"<dd>|</dd>", "", fact_sheet)
+            fact_sheet = re.sub(r"<dt>|</dt>", "**", fact_sheet)
+            fact_sheet = re.sub(r"\*\*Website:\*\*\n<.*?href=\"http://\".*?>.*?</a>\n?", "", fact_sheet)
+            fact_sheet = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", fact_sheet)
+        else:
+            fact_sheet = None
         if self.bot.should_embed(ctx):
-            # Get member info
-            member_age = re.search("<div class='member_for'>(.*?)</div>", page).group(1)
-            author_bio = re.search("<h3>Author Bio</h3>.*?<div class='panel-body'>(.*?)</div>", page, re.S)
-            if author_bio is not None:
-                author_bio = author_bio.group(1)
-                author_bio = re.sub("<p>", "", author_bio)
-                author_bio = re.sub("</p>|<br>", "\n", author_bio)
-                author_bio = re.sub("<strong>|</strong>", "**", author_bio)
-                if len(member_age) + len(author_bio) > 2048:
-                    author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
-                    print(len(author_bio) + len(member_age))
-            else:
-                author_bio = ""
-            avatar = "https:" + re.search("<img alt=\".*?\" class=\"img-responsive\" src=\"(.*?)\" />", page).group(1)
-            # Get basic novel stats
-            novel_title = re.search("<strong>Novel:</strong>\n(.*)", page)
-            if novel_title is not None:
-                novel_title = novel_title.group(1)
-                novel_genre = re.search(r"<strong>Genre:</strong>\n(.*)", page).group(1)
-                novel_words = re.search(r"<strong>(\d*)</strong>\nwords so far", page).group(1)
-            else:
-                novel_genre = None
-                novel_words = None
-            # Get fact sheet
-            fact_sheet = re.search(r"<dl>(.*?)</dl>", page, flags=re.S).group(1)
-            if fact_sheet.strip() != "":
-                fact_sheet = re.sub(r"<dd>|</dd>", "", fact_sheet)
-                fact_sheet = re.sub(r"<dt>|</dt>", "**", fact_sheet)
-                fact_sheet = re.sub(r"\*\*Website:\*\*\n<.*?href=\"http://\".*?>.*?</a>\n?", "", fact_sheet)
-                fact_sheet = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", fact_sheet)
-            else:
-                fact_sheet = None
-
             # Build Embed
             embed = discord.Embed(title="__Author Info__", description="*{}*\n\n".format(member_age) + author_bio)
-            embed.set_author(name=username, icon_url=avatar)
+            embed.set_author(name=username, url="http://nanowrimo.org/participants/" + username, icon_url=avatar)
             embed.set_thumbnail(url=avatar)
             if novel_title is not None:
                 embed.add_field(
@@ -389,6 +437,19 @@ class Commands:
                     value=fact_sheet
                 )
             await ctx.send(embed=embed)
+        else:
+            out = "__**{}**__\n".format(username)
+            while len(author_bio) > 200:
+                match = re.search(r"\.[^.]*?(?!\.)$", author_bio)
+                if match is not None:
+                    author_bio = author_bio[:match.start()] + out[match.end():]
+                else:
+                    author_bio = author_bio[:197] + "..."
+            out += "*{}*\n{}\n".format(member_age, author_bio)
+            out += "__**Novel Info**__\n"
+            out += "**Title:** {} **Genre:** {} **Words:** {}".format(novel_title, novel_genre, novel_words)
+            # TODO Add fact sheet
+            await ctx.send(out)
     
     @commands.group()
     @perms_check()
