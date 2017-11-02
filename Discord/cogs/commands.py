@@ -335,6 +335,9 @@ class Commands:
     @nanowrimo.command(name="novel")
     async def _novel(self, ctx, username: str, novel_name: str=""):
         """Fetches detailed info on a user's novel from the NaNo site"""
+        username = username.lower().replace(" ", "-")
+        novel_name = novel_name.lower().replace(" ", "-")
+
         novel_page, novel_stats = await self.bot.session.nano_get_novel(username, novel_name)
         if novel_page is None:
             await ctx.send("Sorry, I couldn't find that user or novel.")
@@ -387,6 +390,8 @@ class Commands:
     @nanowrimo.command(name="profile")
     async def _profile(self, ctx, username: str):
         """Fetches a given username's profile from the NaNo site"""
+        username = username.lower().replace(" ", "-")
+
         page = await self.bot.session.nano_get_user(username)
         if page is None:
             await ctx.send("Sorry, I couldn't find that user on the NaNo site.")
