@@ -391,9 +391,10 @@ class Commands:
     @nanowrimo.command(name="profile")
     async def _profile(self, ctx, username: str):
         """Fetches a given username's profile from the NaNo site"""
-        username = username.lower().replace(" ", "-")
+        sitename = username.lower().replace(" ", "-")
+        sitename = sitename.lower().replace(".", "-")
 
-        page = await self.bot.session.nano_get_user(username)
+        page = await self.bot.session.nano_get_user(sitename)
         if page is None:
             await ctx.send("Sorry, I couldn't find that user on the NaNo site.")
             return
@@ -430,7 +431,7 @@ class Commands:
         if self.bot.should_embed(ctx):
             # Build Embed
             embed = discord.Embed(title="__Author Info__", description="*{}*\n\n".format(member_age) + author_bio)
-            embed.set_author(name=username, url="http://nanowrimo.org/participants/" + username, icon_url=avatar)
+            embed.set_author(name=username, url="http://nanowrimo.org/participants/" + sitename, icon_url=avatar)
             embed.set_thumbnail(url=avatar)
             if novel_title is not None:
                 embed.add_field(

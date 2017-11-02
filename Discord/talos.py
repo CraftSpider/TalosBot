@@ -215,8 +215,6 @@ class Talos(commands.Bot, TalosDatabase):
         if self.cogs.get("EventLoops", None) is not None:
             self.cogs["EventLoops"].start_all_tasks()
         super().run(token)
-        if not sys.platform == 'win32':
-            self._do_cleanup()
 
     async def on_ready(self):
         """Called on bot ready, any time discord finishes connecting"""
