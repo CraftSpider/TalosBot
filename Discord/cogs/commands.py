@@ -359,11 +359,20 @@ class Commands:
             novel_title = re.search("<strong>Novel:</strong>\n(.*)", page)
             if novel_title is not None:
                 novel_title = novel_title.group(1)
-                novel_genre = re.search("<strong>Genre:</strong>\n(.*)", page).group(1)
-                novel_words = re.search("<strong>(\d*)</strong>\nwords so far", page).group(1)
+                novel_genre = re.search(r"<strong>Genre:</strong>\n(.*)", page).group(1)
+                novel_words = re.search(r"<strong>(\d*)</strong>\nwords so far", page).group(1)
             else:
                 novel_genre = None
                 novel_words = None
+            # Get fact sheet
+            fact_sheet = re.search(r"<dl>(.*?)</dl>", page, flags=re.S).group(1)
+            if fact_sheet.strip() != "":
+                fact_sheet = re.sub(r"<dd>|</dd>", "", fact_sheet)
+                fact_sheet = re.sub(r"<dt>|</dt>", "**", fact_sheet)
+                fact_sheet = re.sub(r"\*\*Website:\*\*\n<.*?href=\"http://\".*?>.*?</a>\n?", "", fact_sheet)
+                fact_sheet = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\2](\1)", fact_sheet)
+            else:
+                fact_sheet = None
 
             # Build Embed
             embed = discord.Embed(title="__Author Info__", description="*{}*\n\n".format(member_age) + author_bio)
@@ -373,6 +382,11 @@ class Commands:
                 embed.add_field(
                     name="__Novel Info__",
                     value="**Title:** {}\n**Genre:** {}\n**Words:** {}".format(novel_title, novel_genre, novel_words)
+                )
+            if fact_sheet is not None:
+                embed.add_field(
+                    name="__Fact Sheet__",
+                    value=fact_sheet
                 )
             await ctx.send(embed=embed)
     
