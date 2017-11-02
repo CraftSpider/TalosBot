@@ -370,7 +370,7 @@ class Commands:
                 fact_sheet = re.sub(r"<dd>|</dd>", "", fact_sheet)
                 fact_sheet = re.sub(r"<dt>|</dt>", "**", fact_sheet)
                 fact_sheet = re.sub(r"\*\*Website:\*\*\n<.*?href=\"http://\".*?>.*?</a>\n?", "", fact_sheet)
-                fact_sheet = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\2](\1)", fact_sheet)
+                fact_sheet = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", fact_sheet)
             else:
                 fact_sheet = None
 
