@@ -66,11 +66,12 @@ def strfdelta(time_delta, fmt):
 
 
 def html_to_markdown(html):
-    html = re.sub(r"<p>", "", html)
     html = re.sub(r"</p>|<br>", "\n", html)
     html = re.sub(r"<strong>|</strong>", "**", html)
     html = re.sub(r"<em>|</em>", "*", html)
     html = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", html)
+    html = re.sub(r"<li>", "- ", html)
+    html = re.sub(r"<.*?>\n?", "", html)
     return html
 
 
