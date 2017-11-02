@@ -11,7 +11,6 @@ import re
 import discord
 import logging
 import aiohttp
-import async_timeout
 import discord.ext.commands as dcommands
 import datetime as dt
 
@@ -534,67 +533,64 @@ class TalosHTTPClient(aiohttp.ClientSession):
         super().__init__(*args, **kwargs)
 
     async def get_site(self, url, **kwargs):
-        with async_timeout.timeout(10):
-            async with self.get(url, **kwargs) as response:
-                return await response.text()
+        async with self.get(url, **kwargs) as response:
+            return await response.text()
 
     async def nano_get_user(self, username):
         """Returns a given NaNo user profile, if it can be found. If not, returns None"""
-        with async_timeout.timeout(10):
-            async with self.get(self.NANO_URL + "participants/{}".format(username)) as response:
-                if response.status == 200:
-                    if not str(response.url).startswith("https://nanowrimo.org/participants"):
-                        return None
-                    return await response.text()
-                elif response.status == 403:
-                    response = await self.nano_login_client()
-                    log.debug("Login Status: {}".format(response))
-                    return await self.nano_get_user(username)
-                else:
-                    print(response.status)
+        async with self.get(self.NANO_URL + "participants/{}".format(username)) as response:
+            if response.status == 200:
+                if not str(response.url).startswith("https://nanowrimo.org/participants"):
                     return None
+                return await response.text()
+            elif response.status == 403:
+                response = await self.nano_login_client()
+                log.debug("Login Status: {}".format(response))
+                return await self.nano_get_user(username)
+            else:
+                print(response.status)
+                return None
 
     async def nano_get_novel(self, username, novel_name=""):
-        with async_timeout.timeout(1000):
-            if novel_name == "":
-                user_page = await self.nano_get_user(username)
-                if user_page is None:
+        if novel_name == "":
+            user_page = await self.nano_get_user(username)
+            if user_page is None:
+                return None, None
+            novel_name = re.search(r"<a href=\"/participants/{}/novels/(.*?)/stats\">".format(username), user_page)
+            if novel_name is None:
+                return None, None
+            novel_name = novel_name.group(1)
+        # Get novel page for return
+        async with self.get(self.NANO_URL + "participants/{}/novels/{}".format(username, novel_name)) as response:
+            if response.status == 200:
+                if not str(response.url).startswith("https://nanowrimo.org/participants"):
                     return None, None
-                novel_name = re.search(r"<a href=\"/participants/{}/novels/(.*?)/stats\">".format(username), user_page)
-                if novel_name is None:
+                novel_page = await response.text()
+            elif response.status == 403:
+                response = await self.nano_login_client()
+                log.debug("Login Status: {}".format(response))
+                return await self.nano_get_novel(username, novel_name)
+            elif response.status == 404:
+                return None, None
+            else:
+                log.warning("Got unexpected response status {}".format(response.status))
+                return None, None
+        # Get novel stats for return
+        async with self.get(self.NANO_URL + "participants/{}/novels/{}/stats".format(username, novel_name)) as response:
+            if response.status == 200:
+                if not str(response.url).startswith("https://nanowrimo.org/participants"):
                     return None, None
-                novel_name = novel_name.group(1)
-            # Get novel page for return
-            async with self.get(self.NANO_URL + "participants/{}/novels/{}".format(username, novel_name)) as response:
-                if response.status == 200:
-                    if not str(response.url).startswith("https://nanowrimo.org/participants"):
-                        return None, None
-                    novel_page = await response.text()
-                elif response.status == 403:
-                    response = await self.nano_login_client()
-                    log.debug("Login Status: {}".format(response))
-                    return await self.nano_get_novel(username, novel_name)
-                elif response.status == 404:
-                    return None, None
-                else:
-                    log.warning("Got unexpected response status {}".format(response.status))
-                    return None, None
-            # Get novel stats for return
-            async with self.get(self.NANO_URL + "participants/{}/novels/{}/stats".format(username, novel_name)) as response:
-                if response.status == 200:
-                    if not str(response.url).startswith("https://nanowrimo.org/participants"):
-                        return None, None
-                    novel_stats = await response.text()
-                elif response.status == 403:
-                    response = await self.nano_login_client()
-                    log.debug("Login Status: {}".format(response))
-                    return await self.nano_get_novel(username, novel_name)
-                elif response.status == 404:
-                    return None, None
-                else:
-                    log.warning("Got unexpected response status {}".format(response.status))
-                    return None, None
-            return novel_page, novel_stats
+                novel_stats = await response.text()
+            elif response.status == 403:
+                response = await self.nano_login_client()
+                log.debug("Login Status: {}".format(response))
+                return await self.nano_get_novel(username, novel_name)
+            elif response.status == 404:
+                return None, None
+            else:
+                log.warning("Got unexpected response status {}".format(response.status))
+                return None, None
+        return novel_page, novel_stats
 
     async def nano_login_client(self):
         login_page = await self.get_site(self.NANO_URL + "sign_in")
@@ -608,9 +604,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
             "user_session[remember_me]": "0",
             "commit": "Sign+in"
         }
-        with async_timeout.timeout(10):
-            async with self.post(self.NANO_URL + "sign_in", data=params) as response:
-                return response.status
+        async with self.post(self.NANO_URL + "sign_in", data=params) as response:
+            return response.status
 
 
 # Command classes

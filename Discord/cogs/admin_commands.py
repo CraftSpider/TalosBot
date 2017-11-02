@@ -213,6 +213,31 @@ class AdminCommands:
         added, removed = await self.bot.verify()
         await ctx.send("Data Verified. {} objects added, {} objects removed.".format(added, removed))
 
+    @commands.command(hidden=True)
+    @admin_check()
+    async def eval(self, ctx, *text):
+        program = ' '.join(text)
+        try:
+            result = str(eval(program))
+            if result is not None and result is not "":
+                print(result)
+                result = re.sub(r"([\\_*~])", r"\\\g<1>", result)
+                print(result)
+                await ctx.send(result)
+        except Exception as e:
+            await ctx.send("Program failed with {}: {}".format(e.__class__.__name__, e))
+
+    @commands.command(hidden=True)
+    @admin_check()
+    async def exec(self, ctx, *text):
+        program = ' '.join(text)
+        program = re.sub(r"(?<!\\)((?:\\\\)*);", "\n", program)
+        program = re.sub(r"(?<!\\)\\((?:\\\\)*)t", "\t", program)
+        try:
+            exec(program)
+        except Exception as e:
+            await ctx.send("Program failed with {}: {}".format(e.__class__.__name__, e))
+
     @commands.group()
     @op_check()
     async def ops(self, ctx):
@@ -455,8 +480,8 @@ class AdminCommands:
                 await ctx.send("Sorry, that option only accepts true or false values.")
                 return
         if option_type == "varchar":
-            value = re.sub("(?<!\\\\)\\\\((?:\\\\\\\\)*)s", space_replace, value)
-            value = re.sub("\\\\\\\\", "\\\\", value)
+            value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
+            value = re.sub(r"\\\\", r"\\", value)
         if option_type is not None:
             ctx.bot.set_guild_option(ctx.guild.id, option, value)
             await ctx.send("Option {} set to `{}`".format(option, value))
@@ -508,10 +533,9 @@ class AdminCommands:
                 if self.bot.get_guild(key) or key == -1:
                     out += "Server: {}\n".format(self.bot.get_guild(key))
                     continue
-                if key is not None:
-                    option = key if name_types[index][1] == "varchar" else bool(key)
-                else:
-                    option = key
+                if key is None:
+                    continue
+                option = key if name_types[index][1] == "varchar" else bool(key)
                 out += "    {}: {}\n".format(name_types[index][0], option)
         out += "```"
         await ctx.send(out)

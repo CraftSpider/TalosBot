@@ -91,7 +91,7 @@ class Talos(commands.Bot, TalosDatabase):
 
         async def open_session():
             log.info("Opened Talos HTTP Client")
-            self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1])
+            self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], read_timeout=60)
 
         self.session = None
         self.loop.create_task(open_session())
@@ -104,13 +104,16 @@ class Talos(commands.Bot, TalosDatabase):
     def load_extensions(self, extensions=None):
         """Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None."""
         logging.debug("Loading all extensions")
+        clean = 0
         for extension in (self.STARTUP_EXTENSIONS if extensions is None else extensions):
             try:
                 log.debug("Loading extension {}".format(extension))
                 self.load_extension(self.EXTENSION_DIRECTORY + "." + extension)
             except Exception as err:
+                clean = 1
                 exc = '{}: {}'.format(type(err).__name__, err)
                 log.warning('Failed to load extension {}\n{}'.format(extension, exc))
+        return clean
 
     def unload_extensions(self, extensions=None):
         """Unloads all extensions in input, or all extensions currently loaded if None"""
@@ -124,6 +127,7 @@ class Talos(commands.Bot, TalosDatabase):
             for extension in extensions:
                 log.debug("Unloading extension {}".format(extension))
                 self.unload_extension(extension)
+        return 0
 
     def skip_check(self, author_id, self_id):
         """Determines whether Talos should skip trying to process a message"""
