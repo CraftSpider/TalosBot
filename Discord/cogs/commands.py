@@ -161,7 +161,8 @@ class Commands:
             embed.add_field(name="Library", value="Discord.py\nVersion {}".format(discord.__version__), inline=True)
             embed.add_field(name="Contact/Documentation",
                             value="[talos.ptp@gmail.com](mailto:talos.ptp@gmail.com)\n"
-                                  "[Github](http://github.com/CraftSpider/TalosBot)",
+                                  "[Github](http://github.com/CraftSpider/TalosBot)\n"
+                                  "[Discord](http://discord.gg/VxUdS6H)",
                             inline=True)
 
             uptime_str = "{}\n{:.0f}% Day, {:.0f}% Week, {:.0f}% Month".format(self.get_uptime_days(),
@@ -348,7 +349,7 @@ class Commands:
         novel_title = re.search(r"<strong>Novel:</strong>\n(.*)", novel_page).group(1)
         novel_cover = re.search(r"<img .*?id=\"novel_cover_thumb\".*?src=\"(.*?)\" />", novel_page)
         if novel_cover is not None:
-            novel_cover = "https:" +  novel_cover.group(1)
+            novel_cover = "https:" + novel_cover.group(1)
         novel_genre = re.search(r"<strong>Genre:</strong>\n(.*)", novel_page).group(1)
         novel_synopsis = html_to_markdown(re.search(r"<div id='novel_synopsis'>(.*?)</div>", novel_page, re.S).group(1))
         if novel_synopsis.strip() == "":

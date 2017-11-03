@@ -216,13 +216,12 @@ class AdminCommands:
     @commands.command(hidden=True)
     @admin_check()
     async def eval(self, ctx, *text):
+        """Evaluate a given string as python code. Prints the return, if not empty."""
         program = ' '.join(text)
         try:
             result = str(eval(program))
             if result is not None and result is not "":
-                print(result)
                 result = re.sub(r"([\\_*~])", r"\\\g<1>", result)
-                print(result)
                 await ctx.send(result)
         except Exception as e:
             await ctx.send("Program failed with {}: {}".format(e.__class__.__name__, e))
@@ -230,6 +229,7 @@ class AdminCommands:
     @commands.command(hidden=True)
     @admin_check()
     async def exec(self, ctx, *text):
+        """Execute a given string as python code. replaces ';' with newlines and \t with tabs, for multiline."""
         program = ' '.join(text)
         program = re.sub(r"(?<!\\)((?:\\\\)*);", "\n", program)
         program = re.sub(r"(?<!\\)\\((?:\\\\)*)t", "\t", program)

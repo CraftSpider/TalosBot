@@ -8,6 +8,7 @@ import discord
 import asyncio
 import logging
 from discord.ext import commands
+from utils import fullwidth_transform
 
 logging = logging.getLogger("talos.joke")
 
@@ -76,6 +77,16 @@ class JokeCommands:
         async with ctx.typing():
             await asyncio.sleep(1)
             await ctx.send("Oh my. Well, if you insist ;)")
+
+    @commands.command()
+    @perms_check()
+    async def aesthetic(self, ctx, *text):
+        """For when you just need it in large"""
+        text = ' '.join(text)
+        out = ""
+        for char in text:
+            out += fullwidth_transform.get(char, char)
+        await ctx.send(out)
 
 
 def setup(bot):
