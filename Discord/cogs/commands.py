@@ -382,7 +382,7 @@ class Commands:
             description += "Remaining Today: {:,}\n".format(stats[3])
             description += "Remaining Total: {:,}\n".format(stats[4])
             embed = discord.Embed(title="__Novel Details__", description=description)
-            embed.set_author(name=username, icon_url=avatar)
+            embed.set_author(name=username)
             if novel_cover is not None:
                 embed.set_thumbnail(url=novel_cover)
             if novel_synopsis is not None:
