@@ -345,7 +345,7 @@ class Commands:
             await ctx.send("Sorry, I couldn't find that user or novel.")
             return
         # Get basic novel info
-        avatar = "https:" + re.search(r"<img alt=\".*?\" class=\"img-responsive avatar_thumb\" src=\"(.*?)\" />", novel_page).group(1)
+        avatar = "https:" + re.search(r"<img alt=\".*?\" class=\".*?avatar_thumb.*?\" src=\"(.*?)\" />", novel_page).group(1)
         novel_title = re.search(r"<strong>Novel:</strong>\n(.*)", novel_page).group(1)
         novel_cover = re.search(r"<img .*?id=\"novel_cover_thumb\".*?src=\"(.*?)\" />", novel_page)
         if novel_cover is not None:
@@ -410,7 +410,7 @@ class Commands:
                 print(len(author_bio) + len(member_age))
         else:
             author_bio = ""
-        avatar = "https:" + re.search(r"<img alt=\".*?\" class=\"img-responsive avatar_thumb\" src=\"(.*?)\" />", page).group(1)
+        avatar = "https:" + re.search(r"<img alt=\".*?\" class=\".*?avatar_thumb.*?\" src=\"(.*?)\" />", page).group(1)
         # Get basic novel stats
         novel_title = re.search(r"<strong>Novel:</strong>\n(.*)", page)
         if novel_title is not None:

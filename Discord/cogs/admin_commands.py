@@ -259,8 +259,11 @@ class AdminCommands:
 
     @ops.command(name="remove")
     @commands.guild_only()
-    async def _ops_remove(self, ctx, member: discord.Member):
+    async def _ops_remove(self, ctx, member):
         """Removes an operator user"""
+        member_object = discord.utils.find(lambda x: x.name == member, ctx.guild.members)
+        if member_object is not None:
+            member = member_object
         if str(member) in ctx.bot.get_ops(ctx.guild.id):
             ctx.bot.remove_op(ctx.guild.id, str(member))
             await ctx.send("De-opped {0.name}".format(member))
