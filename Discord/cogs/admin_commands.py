@@ -251,8 +251,8 @@ class AdminCommands:
     @commands.guild_only()
     async def _ops_add(self, ctx, member: discord.Member):
         """Adds a new operator user"""
-        if str(member) not in ctx.bot.get_ops(ctx.guild.id):
-            ctx.bot.add_op(ctx.guild.id, str(member))
+        if member.id not in ctx.bot.get_ops(ctx.guild.id):
+            ctx.bot.add_op(ctx.guild.id, member.id)
             await ctx.send("Opped {0.name}!".format(member))
         else:
             await ctx.send("That user is already an op!")
@@ -263,11 +263,11 @@ class AdminCommands:
         """Removes an operator user"""
         member_object = discord.utils.find(lambda x: x.name == member or str(x) == member, ctx.guild.members)
         if member_object is not None:
-            member = member_object
-        if str(member) in ctx.bot.get_ops(ctx.guild.id):
-            ctx.bot.remove_op(ctx.guild.id, str(member))
-            if isinstance(member, discord.Member):
-                await ctx.send("De-opped {0.name}".format(member))
+            member = member_object.id
+        if member in ctx.bot.get_ops(ctx.guild.id):
+            ctx.bot.remove_op(ctx.guild.id, member)
+            if member_object:
+                await ctx.send("De-opped {0.name}".format(member_object))
             else:
                 await ctx.send("De-opped invalid user")
         else:
@@ -281,7 +281,8 @@ class AdminCommands:
         if len(opslist) > 0:
             out = "```"
             for op in opslist:
-                out += "{}\n".format(op)
+                opname = self.bot.get_user(op)
+                out += "{}\n".format(str(opname) if opname is not None else op)
             out += "```"
             await ctx.send(out)
         else:
@@ -298,7 +299,8 @@ class AdminCommands:
             if key[0] not in consumed:
                 out += "Server: {}\n".format(self.bot.get_guild(key[0]))
                 consumed.append(key[0])
-            out += "    {}\n".format(key[1])
+            op = self.bot.get_user(key[1])
+            out += "    {}\n".format(str(op) if op is not None else key[1])
         if out != "```":
             out += "```"
             await ctx.send(out)
