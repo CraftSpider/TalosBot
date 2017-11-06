@@ -394,7 +394,7 @@ class TalosDatabase:
         self._cursor.execute(query)
         result = self._cursor.fetchone()
         if result:
-            return self._cursor.fetchone()[0]
+            return result[0]
         else:
             raise KeyError
 
