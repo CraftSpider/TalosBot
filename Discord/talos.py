@@ -73,7 +73,9 @@ class Talos(commands.Bot, TalosDatabase):
     # Folder which extensions are stored in
     EXTENSION_DIRECTORY = "cogs"
     # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
-    STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "event_loops"]
+    STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops"]
+    # Hardcoded Admin List
+    ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "Hidd/Metallic#3008", "hiddenstorys#3008"]
     # Discordbots bot list token
     discordbots_token = ""
 
@@ -131,14 +133,13 @@ class Talos(commands.Bot, TalosDatabase):
 
     def skip_check(self, author_id, self_id):
         """Determines whether Talos should skip trying to process a message"""
-        if author_id == 339119069066297355:
+        if author_id == 339119069066297355 or author_id == 376161594570178562:
             return False
         return author_id == self_id or (self.get_user(author_id) is not None and self.get_user(author_id).bot)
 
-    @staticmethod
-    def should_embed(ctx):
+    def should_embed(self, ctx):
         """Determines whether Talos is allowed to use RichEmbeds in a given context."""
-        if ctx.guild is not None:
+        if ctx.guild is not None and self._sql_conn:
             return ctx.bot.get_guild_option(ctx.guild.id, "rich_embeds") and\
                    ctx.channel.permissions_for(ctx.me).embed_links
         else:
@@ -153,7 +154,7 @@ class Talos(commands.Bot, TalosDatabase):
 
     async def _talos_help_command(self, ctx, *args: str):
         """Shows this message."""
-        if ctx.guild is not None:
+        if ctx.guild is not None and self._sql_conn:
             destination = ctx.message.author if self.get_guild_option(ctx.guild.id, "pm_help") else \
                           ctx.message.channel
         else:
@@ -325,7 +326,7 @@ def main():
     except IndexError:
         log.warning("Nano Login missing, nano commands will likely fail")
 
-    # Load Talos files/databases
+    # Load Talos database
     cnx = None
     try:
         sql = SQL_ADDRESS.split(":")
@@ -335,7 +336,7 @@ def main():
             log.warning("Talos database missing, no data will be saved this session.")
     except Exception as e:
         log.warning(e)
-        log.warning("Expected file or connection missing, new file created, connection dropped.")
+        log.warning("Database connection missing, connection dropped. No data will be saved.")
 
     # Create and run Talos
     talos = Talos(sql_conn=cnx, token=botlist_token, nano_login=nano_login)

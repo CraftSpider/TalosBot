@@ -332,6 +332,28 @@ class TalosFormatter(dcommands.HelpFormatter):
         return self._paginator.pages
 
 
+class EmptyCursor:
+
+    DEFAULT_ONE = None
+    DEFAULT_ALL = tuple()
+
+    def __iter__(self):
+        """Iterator stub"""
+        return iter(self.fetchone, self.DEFAULT_ONE)
+
+    def execute(self, query, params=None, multi=False):
+        """Execute stub"""
+        pass
+
+    def fetchone(self):
+        """Fetchone stub"""
+        return self.DEFAULT_ONE
+
+    def fetchall(self):
+        """Fetchall stub"""
+        return self.DEFAULT_ALL
+
+
 class TalosDatabase:
 
     def __init__(self, sql_conn):
@@ -340,7 +362,7 @@ class TalosDatabase:
             self._cursor = sql_conn.cursor()
         else:
             self._sql_conn = None
-            self._cursor = None
+            self._cursor = EmptyCursor()
 
     async def commit(self):
         """Saves current talos data to the save file"""
@@ -370,12 +392,22 @@ class TalosDatabase:
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM guild_options WHERE guild_id = -1".format(option_name)
         self._cursor.execute(query)
-        return self._cursor.fetchone()[0]
+        result = self._cursor.fetchone()
+        if result:
+            return self._cursor.fetchone()[0]
+        else:
+            raise KeyError
 
     def get_defaults(self):
         query = "SELECT * FROM guild_options WHERE guild_id = -1"
         self._cursor.execute(query)
-        return self._cursor.fetchone()
+        result = self._cursor.fetchone()
+        if isinstance(result, (tuple, list)):
+            return result
+        elif result:
+            return [result]
+        else:
+            return []
 
     def get_guild_option(self, guild_id, option_name):
         if re.match("[^a-zA-Z0-9_-]", option_name):

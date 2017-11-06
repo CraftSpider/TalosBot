@@ -71,7 +71,11 @@ class JokeCommands:
     @commands.command()
     @perms_check()
     async def favor(self, ctx):
-        """If East is in the same server, ask them a favor..."""
+        """If East is in the same server, ask them a favor... Otherwise, Talos isn't doing it"""
+        east = ctx.guild.get_member(339119069066297355)
+        if not east or east.status != discord.Status.online:
+            await ctx.send("I'm afraid I can't do that, {}.".format(ctx.author.display_name))
+            return
         await ctx.send("!East could I ask you for a favor? I need someone to verify my code.")
         await asyncio.sleep(2)
         async with ctx.typing():

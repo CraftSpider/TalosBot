@@ -1,6 +1,6 @@
 """
     Admin Commands cog for Talos.
-    Holds all commands relevant to administrator function, be it server specific or all of Talos.
+    Holds all commands relevant to administrator function, server specific stuff.
 
     Author: CraftSpider
 """
@@ -17,8 +17,6 @@ from collections import defaultdict
 # Admin Command Variables
 #
 
-# Hardcoded Admin List
-ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "Hidd/Metallic#3008", "hiddenstorys#3008"]
 # Security keys, for security-locked commands.
 secure_keys = defaultdict(lambda: "")
 
@@ -50,7 +48,7 @@ def op_check():
             return True
         command = str(ctx.command)
 
-        if str(ctx.author) in ADMINS or\
+        if str(ctx.author) in ctx.bot.ADMINS or\
            len(ctx.bot.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
            ctx.author == ctx.guild.owner or\
            str(ctx.author) in ctx.bot.get_ops(ctx.guild.id):
@@ -79,7 +77,7 @@ def op_check():
 def admin_check():
     """Determine whether the person calling the command is an admin."""
     def predicate(ctx):
-        return str(ctx.author) in ADMINS
+        return str(ctx.author) in ctx.bot.ADMINS
     return commands.check(predicate)
 
 
@@ -173,70 +171,6 @@ class AdminCommands:
         out += "    View Audit: {}\n".format(talos_perms.view_audit_log)
         out += "```"
         await ctx.send(out)
-
-    @commands.command(hidden=True)
-    @admin_check()
-    async def playing(self, ctx, *playing: str):
-        """Changes the game Talos is playing"""
-        game = " ".join(map(str, playing))
-        await self.bot.change_presence(game=discord.Game(name=game))
-        await ctx.send("Now playing {}".format(game))
-
-    @commands.command(hidden=True)
-    @admin_check()
-    async def streaming(self, ctx, *streaming: str):
-        """Changes the game Talos is streaming"""
-        game = " ".join(map(str, streaming))
-        await self.bot.change_presence(game=discord.Game(name=game, url="http://www.twitch.tv/CraftSpider",  type=1))
-        await ctx.send("Now streaming {}".format(game))
-
-    @commands.command(hidden=True)
-    @admin_check()
-    async def stop(self, ctx):
-        """Stops Talos running and logs it out."""
-        await ctx.send("Et tū, Brute?")
-        await self.bot.logout()
-
-    @commands.command(hidden=True)
-    @admin_check()
-    async def master_nick(self, ctx, nick: str):
-        """Changes Talos nickname in all servers"""
-        for guild in self.bot.guilds:
-            await guild.me.edit(nick=nick)
-        await ctx.send("Nickname universally changed to {}".format(nick))
-
-    @commands.command(hidden=True)
-    @admin_check()
-    async def verify(self, ctx):
-        """Verifies Talos data, making sure that all existing guilds have proper data and non-existent guilds don't"""\
-            """ have data."""
-        added, removed = await self.bot.verify()
-        await ctx.send("Data Verified. {} objects added, {} objects removed.".format(added, removed))
-
-    @commands.command(hidden=True)
-    @admin_check()
-    async def eval(self, ctx, *text):
-        """Evaluate a given string as python code. Prints the return, if not empty."""
-        program = ' '.join(text)
-        try:
-            result = str(eval(program))
-            if result is not None and result is not "":
-                result = re.sub(r"([\\_*~])", r"\\\g<1>", result)
-                await ctx.send(result)
-        except Exception as e:
-            await ctx.send("Program failed with {}: {}".format(e.__class__.__name__, e))
-
-    @commands.command(hidden=True)
-    @admin_check()
-    async def exec(self, ctx, *text):
-        """Execute a given string as python code. replaces ';' with newlines and \t with tabs, for multiline."""
-        program = ' '.join(text)
-        program = re.sub(r"(?<!\\)((?:\\\\)*);", "\n", program)
-        program = re.sub(r"(?<!\\)\\((?:\\\\)*)t", "\t", program)
-        try:
-            exec(program)
-        except Exception as e:
-            await ctx.send("Program failed with {}: {}".format(e.__class__.__name__, e))
 
     @commands.group()
     @op_check()
@@ -510,6 +444,9 @@ class AdminCommands:
             option = options[index] if name_types[index][1] == "varchar" else bool(options[index])
             out += "{}: {}\n".format(name_types[index][0], option)
         out += "```"
+        if out == "``````":
+            await ctx.send("No options available.")
+            return
         await ctx.send(out)
 
     @options.command(name="default")
