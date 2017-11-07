@@ -39,6 +39,7 @@ class EventLoops:
         self.bg_tasks = []
 
     def __unload(self):
+        """Cleans up the cog on unload, cancelling all tasks."""
         for task in self.bg_tasks:
             task.cancel()
 

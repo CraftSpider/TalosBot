@@ -10,6 +10,7 @@ import traceback
 import sys
 import logging
 import re
+import asyncio
 import mysql.connector
 from datetime import datetime
 
@@ -105,7 +106,7 @@ class Talos(commands.Bot):
 
     def load_extensions(self, extensions=None):
         """Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None."""
-        logging.debug("Loading all extensions")
+        log.debug("Loading all extensions")
         clean = 0
         for extension in (self.STARTUP_EXTENSIONS if extensions is None else extensions):
             try:
@@ -147,10 +148,15 @@ class Talos(commands.Bot):
 
     async def logout(self):
         """Saves Talos data, then logs out the bot cleanly and safely"""
-        log.debug("Logging out")
-        await self.session.close()
+        log.debug("Logging out Talos")
         await self.database.commit()
         await super().logout()
+
+    async def close(self):
+        """Closes connections that Talos has open on shutdown"""
+        log.debug("Closing Talos")
+        await self.session.close()
+        await super().close()
 
     async def _talos_help_command(self, ctx, *args: str):
         """Shows this message."""
