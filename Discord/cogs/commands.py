@@ -30,9 +30,12 @@ def perms_check():
             return True
         command = str(ctx.command)
 
-        if not ctx.bot.get_guild_option(ctx.guild.id, "commands"):
-            return False
-        perms = ctx.bot.get_perm_rules(ctx.guild.id, command)
+        try:
+            if not ctx.bot.database.get_guild_option(ctx.guild.id, "commands"):
+                return False
+        except KeyError:
+            pass
+        perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
         if len(perms) == 0:
             return True
         perms.sort(key=lambda x: x[3])
@@ -78,11 +81,14 @@ def html_to_markdown(html):
 class Commands:
     """These commands can be used by anyone, as long as Talos is awake.\nThey don't care who is using them."""
 
-    __slots__ = ['bot']
+    __slots__ = ['bot', 'database']
 
     def __init__(self, bot):
         """Initialize the Commands cog. Takes in an instance of Talos to use while running."""
         self.bot = bot
+        self.database = None
+        if hasattr(bot, "database"):
+            self.database = bot.database
 
     def get_uptime_days(self):
         """Gets the amount of time Talos has been online in days, hours, minutes, and seconds. Returns a string."""
@@ -98,9 +104,9 @@ class Commands:
         day_total = 24 * 60
         week_total = day_total * 7
         month_total = day_total * 30
-        day_up = len(self.bot.get_uptime(int((now - timedelta(days=1)).timestamp()))) / day_total * 100
-        week_up = len(self.bot.get_uptime(int((now - timedelta(days=7)).timestamp()))) / week_total * 100
-        month_up = len(self.bot.get_uptime(int((now - timedelta(days=30)).timestamp()))) / month_total * 100
+        day_up = len(self.database.get_uptime(int((now - timedelta(days=1)).timestamp()))) / day_total * 100
+        week_up = len(self.database.get_uptime(int((now - timedelta(days=7)).timestamp()))) / week_total * 100
+        month_up = len(self.database.get_uptime(int((now - timedelta(days=30)).timestamp()))) / month_total * 100
         return day_up, week_up, month_up
 
     #

@@ -22,9 +22,12 @@ def perms_check():
             return True
         command = str(ctx.command)
 
-        if not ctx.bot.get_guild_option(ctx.guild.id, "joke_commands"):
-            return False
-        perms = ctx.bot.get_perm_rules(ctx.guild.id, command)
+        try:
+            if not ctx.bot.database.get_guild_option(ctx.guild.id, "joke_commands"):
+                return False
+        except KeyError:
+            pass
+        perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
         if len(perms) == 0:
             return True
         perms.sort(key=lambda x: x[3])
@@ -47,11 +50,14 @@ def perms_check():
 class JokeCommands:
     """These commands can be used by anyone, as long as Talos is awake.\nThey are really just for fun."""
 
-    __slots__ = ['bot']
+    __slots__ = ['bot', 'database']
 
     def __init__(self, bot):
         """Initialize the JokeCommands cog. Takes in an instance of Talos to use while running."""
         self.bot = bot
+        self.database = None
+        if hasattr(bot, "database"):
+            self.database = bot.database
 
     @commands.command(aliases=["Hi"])
     @perms_check()

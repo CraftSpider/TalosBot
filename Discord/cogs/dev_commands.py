@@ -20,7 +20,7 @@ log = logging.getLogger("talos.dev")
 def admin_check():
     """Determine whether the person calling the command is an admin."""
     def predicate(ctx):
-        return str(ctx.author) in ctx.bot.ADMINS
+        return ctx.author.id in ctx.bot.ADMINS
     return commands.check(predicate)
 
 
@@ -77,7 +77,7 @@ class DevCommands:
     @commands.command(hidden=True)
     @admin_check()
     async def eval(self, ctx, *text):
-        """Evaluate a given string as python code. Prints the return, if not empty."""
+        """Evaluate a given string as python code. Prints the return, if not empty. This is not dangerous."""
         program = ' '.join(text)
         try:
             result = str(eval(program))
@@ -90,7 +90,8 @@ class DevCommands:
     @commands.command(hidden=True)
     @admin_check()
     async def exec(self, ctx, *text):
-        """Execute a given string as python code. replaces ';' with newlines and \t with tabs, for multiline."""
+        """Execute a given string as python code. replaces ';' with newlines and \t with tabs, for multiline."""\
+            """ I laugh in the face of danger."""
         program = ' '.join(text)
         program = re.sub(r"(?<!\\)((?:\\\\)*);", "\n", program)
         program = re.sub(r"(?<!\\)\\((?:\\\\)*)t", "\t", program)

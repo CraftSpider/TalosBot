@@ -11,6 +11,7 @@ import re
 import discord
 import logging
 import aiohttp
+import mysql.connector.abstracts as mysql_abstracts
 import discord.ext.commands as dcommands
 import datetime as dt
 
@@ -332,26 +333,57 @@ class TalosFormatter(dcommands.HelpFormatter):
         return self._paginator.pages
 
 
-class EmptyCursor:
+class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
 
     DEFAULT_ONE = None
-    DEFAULT_ALL = tuple()
+    DEFAULT_ALL = list()
+
+    def __init__(self):
+        super().__init__()
 
     def __iter__(self):
         """Iterator stub"""
         return iter(self.fetchone, self.DEFAULT_ONE)
 
+    def callproc(self, procname, args=()):
+        """Callproc stub"""
+        pass
+
+    def close(self):
+        """Close stub"""
+        pass
+
     def execute(self, query, params=None, multi=False):
         """Execute stub"""
+        pass
+
+    def executemany(self, operation, seqparams):
+        """Executemany stub"""
         pass
 
     def fetchone(self):
         """Fetchone stub"""
         return self.DEFAULT_ONE
 
+    def fetchmany(self, size=1):
+        """Fetchmany stub"""
+        return self.DEFAULT_ALL
+
     def fetchall(self):
         """Fetchall stub"""
         return self.DEFAULT_ALL
+
+    @property
+    def description(self):
+        return tuple()
+
+    @property
+    def rowcount(self):
+        return 0
+
+    @property
+    def lastrowid(self):
+        return None
 
 
 class TalosDatabase:

@@ -22,9 +22,12 @@ def perms_check():
             return True
         command = str(ctx.command)
 
-        if not ctx.bot.get_guild_option(ctx.guild.id, "user_commands"):
-            return False
-        perms = ctx.bot.get_perm_rules(ctx.guild.id, command)
+        try:
+            if not ctx.bot.database.get_guild_option(ctx.guild.id, "user_commands"):
+                return False
+        except KeyError:
+            pass
+        perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
         if len(perms) == 0:
             return True
         perms.sort(key=lambda x: x[3])
@@ -48,11 +51,14 @@ class UserCommands:
     """These commands can be used by anyone, as long as Talos is awake.\n"""\
         """The effects will apply to the person using the command."""
 
-    __slots__ = ['bot']
+    __slots__ = ['bot', 'database']
 
     def __init__(self, bot):
         """Initialize the UserCommands cog. Takes in an instance of Talos to use while running."""
         self.bot = bot
+        self.database = None
+        if hasattr(bot, "database"):
+            self.database = bot.database
 
     @commands.command()
     @commands.guild_only()

@@ -48,13 +48,13 @@ def op_check():
             return True
         command = str(ctx.command)
 
-        if str(ctx.author) in ctx.bot.ADMINS or\
-           len(ctx.bot.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
+        if ctx.author.id in ctx.bot.ADMINS or\
+           len(ctx.bot.database.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
            ctx.author == ctx.guild.owner or\
-           str(ctx.author) in ctx.bot.get_ops(ctx.guild.id):
+           ctx.author.id in ctx.bot.database.get_ops(ctx.guild.id):
             return True
 
-        perms = ctx.bot.get_perm_rules(ctx.guild.id, command)
+        perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
         if len(perms) == 0:
             return False
         perms.sort(key=lambda x: x[3])
@@ -77,7 +77,7 @@ def op_check():
 def admin_check():
     """Determine whether the person calling the command is an admin."""
     def predicate(ctx):
-        return str(ctx.author) in ctx.bot.ADMINS
+        return ctx.author.id in ctx.bot.ADMINS
     return commands.check(predicate)
 
 
@@ -88,13 +88,16 @@ class AdminCommands:
     """These commands can only be used by Admins or Ops, and will work at any time.
     If no ops exist, anyone with admin role permission can use op commands"""
 
-    __slots__ = ['bot']
+    __slots__ = ['bot', 'database']
 
     LEVELS = {"guild": 0, "channel": 1, "role": 2, "user": 3}
 
     def __init__(self, bot):
         """Initializes the AdminCommands cog. Takes an instance of Talos to use while running."""
         self.bot = bot
+        self.database = None
+        if hasattr(bot, "database"):
+            self.database = bot.database
 
     @commands.command()
     @commands.guild_only()
@@ -185,8 +188,8 @@ class AdminCommands:
     @commands.guild_only()
     async def _ops_add(self, ctx, member: discord.Member):
         """Adds a new operator user"""
-        if member.id not in ctx.bot.get_ops(ctx.guild.id):
-            ctx.bot.add_op(ctx.guild.id, member.id)
+        if member.id not in self.database.get_ops(ctx.guild.id):
+            self.database.add_op(ctx.guild.id, member.id)
             await ctx.send("Opped {0.name}!".format(member))
         else:
             await ctx.send("That user is already an op!")
@@ -198,8 +201,8 @@ class AdminCommands:
         member_object = discord.utils.find(lambda x: x.name == member or str(x) == member, ctx.guild.members)
         if member_object is not None:
             member = member_object.id
-        if member in ctx.bot.get_ops(ctx.guild.id):
-            ctx.bot.remove_op(ctx.guild.id, member)
+        if member in self.database.get_ops(ctx.guild.id):
+            self.database.remove_op(ctx.guild.id, member)
             if member_object:
                 await ctx.send("De-opped {0.name}".format(member_object))
             else:
@@ -211,7 +214,7 @@ class AdminCommands:
     @commands.guild_only()
     async def _ops_list(self, ctx):
         """Displays all operators for the current server"""
-        opslist = ctx.bot.get_ops(ctx.guild.id)
+        opslist = self.database.get_ops(ctx.guild.id)
         if len(opslist) > 0:
             out = "```"
             for op in opslist:
@@ -226,7 +229,7 @@ class AdminCommands:
     @admin_check()
     async def _ops_all(self, ctx):
         """Displays all operators everywhere"""
-        all_ops = ctx.bot.get_all_ops()
+        all_ops = self.database.get_all_ops()
         consumed = []
         out = "```"
         for key in all_ops:
@@ -289,7 +292,7 @@ class AdminCommands:
                 await ctx.send("Sorry, I couldn't find the user {}!".format(old_name))
                 return
             name = str(name) if name != "" else None
-            self.bot.set_perm_rule(ctx.guild.id, command, level, allow, priority, name)
+            self.database.set_perm_rule(ctx.guild.id, command, level, allow, priority, name)
             await ctx.send("Permissions for command **{}** at level **{}** updated.".format(command, level))
         elif command not in self.bot.all_commands:
             await ctx.send("I don't recognize that command, so I can't set permissions for it!")
@@ -319,7 +322,7 @@ class AdminCommands:
                 elif level == "channel":
                     target = str(discord.utils.find(lambda c: c.name == args[2], ctx.guild.channels))
 
-            self.bot.remove_perm_rules(ctx.guild.id, command, level, target)
+            self.database.remove_perm_rules(ctx.guild.id, command, level, target)
             if command is None:
                 await ctx.send("Permissions for guild cleared")
                 return
@@ -338,7 +341,7 @@ class AdminCommands:
     @commands.guild_only()
     async def _p_list(self, ctx):
         """Lists permissions rules for the current guild"""
-        result = self.bot.get_perm_rules(ctx.guild.id)
+        result = self.database.get_perm_rules(ctx.guild.id)
         if len(result) == 0:
             await ctx.send("No permissions set for this server.")
             return
@@ -367,7 +370,7 @@ class AdminCommands:
     @admin_check()
     async def _p_all(self, ctx):
         """Displays all permissions everywhere"""
-        result = self.bot.get_all_perm_rules()
+        result = self.database.get_all_perm_rules()
         if len(result) == 0:
             await ctx.send("All permissions default")
             return
@@ -409,7 +412,7 @@ class AdminCommands:
     async def _opt_set(self, ctx, option: str, value: str):
         """Set an option. Most options are true or false. See `^options list` for available options"""
         try:
-            option_type = self.bot.get_column_type("guild_options", option)
+            option_type = self.database.get_column_type("guild_options", option)
         except ValueError:
             await ctx.send("Eh eh eh, letters and numbers only.")
             return
@@ -425,7 +428,7 @@ class AdminCommands:
             value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
             value = re.sub(r"\\\\", r"\\", value)
         if option_type is not None:
-            ctx.bot.set_guild_option(ctx.guild.id, option, value)
+            self.database.set_guild_option(ctx.guild.id, option, value)
             await ctx.send("Option {} set to `{}`".format(option, value))
         else:
             await ctx.send("I don't recognize that option.")
@@ -436,8 +439,8 @@ class AdminCommands:
         """List of what options are currently set on the server. Do `^help options [option name]` for details on"""\
             """ an individual option"""
         out = "```"
-        name_types = self.bot.get_columns("guild_options")
-        options = self.bot.get_guild_options(ctx.guild.id)
+        name_types = self.database.get_columns("guild_options")
+        options = self.database.get_guild_options(ctx.guild.id)
         for index in range(len(options)):
             if options[index] == ctx.guild.id or options[index] == -1:
                 continue
@@ -455,12 +458,12 @@ class AdminCommands:
     async def _opt_default(self, ctx, option):
         """Sets an option to its default value, as in a server Talos had just joined."""
         try:
-            data_type = self.bot.get_column_type("guild_options", option)
+            data_type = self.database.get_column_type("guild_options", option)
         except ValueError:
             await ctx.send("Eh eh eh, letters and numbers only.")
             return
         if data_type is not None:
-            ctx.bot.set_guild_option(ctx.guild.id, option, None)
+            self.database.set_guild_option(ctx.guild.id, option, None)
             await ctx.send("Option {} set to default".format(option))
         else:
             await ctx.send("I don't recognize that option.")
@@ -469,8 +472,8 @@ class AdminCommands:
     @admin_check()
     async def _opt_all(self, ctx):
         """Displays all options everywhere"""
-        all_options = self.bot.get_all_guild_options()
-        name_types = self.bot.get_columns("guild_options")
+        all_options = self.database.get_all_guild_options()
+        name_types = self.database.get_columns("guild_options")
         out = "```"
         for options in all_options:
             for index in range(len(options)):
@@ -483,6 +486,9 @@ class AdminCommands:
                 option = key if name_types[index][1] == "varchar" else bool(key)
                 out += "    {}: {}\n".format(name_types[index][0], option)
         out += "```"
+        if out == "``````":
+            await ctx.send("No options available.")
+            return
         await ctx.send(out)
 
 

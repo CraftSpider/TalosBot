@@ -30,10 +30,17 @@ class EventLoops:
     def __init__(self, bot):
         """Initialize the EventLoops cog. Takes in an instance of Talos to use while running."""
         self.bot = bot
+        self.database = None
+        if hasattr(bot, "database"):
+            self.database = bot.database
         self.service = None
         self.flags = None
         self.last_server_count = 0
         self.bg_tasks = []
+
+    def __unload(self):
+        for task in self.bg_tasks:
+            task.cancel()
 
     def start_all_tasks(self):
         """Initializes and starts all event tasks"""
@@ -120,7 +127,6 @@ class EventLoops:
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Hourly task runs")
-            await self.bot.save()
             guild_count = len(self.bot.guilds)
             if self.bot.discordbots_token != "" and guild_count != self.last_server_count:
                 self.last_server_count = guild_count
@@ -140,7 +146,7 @@ class EventLoops:
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Daily task runs")
-            self.bot.remove_uptime(int((datetime.now() - timedelta(days=30)).timestamp()))
+            self.database.remove_uptime(int((datetime.now() - timedelta(days=30)).timestamp()))
             self.bot.verify()
             await asyncio.sleep(24*60*60)
 
@@ -151,7 +157,7 @@ class EventLoops:
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Uptime task runs")
-            self.bot.add_uptime(int(datetime.now().replace(microsecond=0).timestamp()))
+            self.database.add_uptime(int(datetime.now().replace(microsecond=0).timestamp()))
             await asyncio.sleep(60)
 
     async def prompt_task(self):
@@ -177,10 +183,10 @@ class EventLoops:
             out += "{}\n\n".format(prompt[0].strip("\""))
             out += "({} by {})".format(("Original prompt" if prompt[1].upper() == "YES" else "Submitted"), prompt[2])
             for guild in self.bot.guilds:
-                if not self.bot.get_guild_option(guild.id, "writing_prompts"):
+                if not self.database.get_guild_option(guild.id, "writing_prompts"):
                     continue
                 for channel in guild.channels:
-                    if channel.name == self.bot.get_guild_option(guild.id, "prompts_channel"):
+                    if channel.name == self.database.get_guild_option(guild.id, "prompts_channel"):
                         await channel.send(out)
 
             prompt.append("POSTED")

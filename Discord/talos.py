@@ -54,12 +54,12 @@ def prefix(bot, message: discord.Message):
         return [bot.DEFAULT_PREFIX, mention]
     else:
         try:
-            return [bot.get_guild_option(message.guild.id, "prefix"), mention]
+            return [bot.database.get_guild_option(message.guild.id, "prefix"), mention]
         except KeyError:
             return [bot.DEFAULT_PREFIX, mention]
 
 
-class Talos(commands.Bot, TalosDatabase):
+class Talos(commands.Bot):
     """Class for the Talos bot. Handles all sorts of things for inter-cog relations and bot wide data."""
 
     # Current Talos version. Loosely incremented.
@@ -72,10 +72,10 @@ class Talos(commands.Bot, TalosDatabase):
     DEFAULT_PREFIX = "^"
     # Folder which extensions are stored in
     EXTENSION_DIRECTORY = "cogs"
-    # Extensions to load on Talos boot. Extensions for Talos should possess 'ops', 'perms', and 'options' variables.
+    # Extensions to load on Talos boot. Can be standard discord.py extensions, though Talos also allows some more stuff.
     STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops"]
-    # Hardcoded Admin List
-    ADMINS = ["CraftSpider#0269", "Tero#9063", "hiddenstorys#4900", "Hidd/Metallic#3008", "hiddenstorys#3008"]
+    # Hardcoded Admin List. Craft, Dino, Hidd, Hidd
+    ADMINS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
     # Discordbots bot list token
     discordbots_token = ""
 
@@ -85,9 +85,9 @@ class Talos(commands.Bot, TalosDatabase):
         description = '''Greetings. I'm Talos, chat helper. Here are my commands.'''
         args["formatter"] = args.get("formatter", TalosFormatter())
         super().__init__(prefix, description=description, **args)
-        TalosDatabase.__init__(self, sql_conn)
 
         # Set talos specific things
+        self.database = TalosDatabase(sql_conn)
         self.discordbots_token = args.get("token", "")
         nano_login = args.get("nano_login", ["", ""])
 
@@ -139,7 +139,7 @@ class Talos(commands.Bot, TalosDatabase):
 
     def should_embed(self, ctx):
         """Determines whether Talos is allowed to use RichEmbeds in a given context."""
-        if ctx.guild is not None and self._sql_conn:
+        if ctx.guild is not None and self.database._sql_conn:
             return ctx.bot.get_guild_option(ctx.guild.id, "rich_embeds") and\
                    ctx.channel.permissions_for(ctx.me).embed_links
         else:
@@ -149,13 +149,13 @@ class Talos(commands.Bot, TalosDatabase):
         """Saves Talos data, then logs out the bot cleanly and safely"""
         log.debug("Logging out")
         await self.session.close()
-        await self.commit()
+        await self.database.commit()
         await super().logout()
 
     async def _talos_help_command(self, ctx, *args: str):
         """Shows this message."""
-        if ctx.guild is not None and self._sql_conn:
-            destination = ctx.message.author if self.get_guild_option(ctx.guild.id, "pm_help") else \
+        if ctx.guild is not None and self.database._sql_conn:
+            destination = ctx.message.author if self.database.get_guild_option(ctx.guild.id, "pm_help") else \
                           ctx.message.channel
         else:
             destination = ctx.message.channel
@@ -243,12 +243,12 @@ class Talos(commands.Bot, TalosDatabase):
     async def on_guild_join(self, guild):
         """Called upon Talos joining a guild. Populates ops, perms, and options"""
         log.debug("OnGuildJoin Event")
-        log.info("Joined Guild {}".format(guild.name))
+        log.info("Joined Guild {}, {} after boot".format(guild.name, datetime.now() - self.BOOT_TIME))
 
     async def on_guild_remove(self, guild):
         """Called upon Talos leaving a guild. Depopulates ops, perms, and options"""
         log.debug("OnGuildRemove Event")
-        log.info("Left Guild {}".format(guild.name))
+        log.info("Left Guild {}, {} after boot".format(guild.name, datetime.now() - self.BOOT_TIME))
 
     async def on_command_error(self, ctx, exception):
         """
@@ -257,7 +257,7 @@ class Talos(commands.Bot, TalosDatabase):
         """
         log.debug("OnCommandError Event")
         if type(exception) == discord.ext.commands.CommandNotFound:
-            if self.get_guild_option(ctx.guild.id, "fail_message"):
+            if self.database.get_guild_option(ctx.guild.id, "fail_message"):
                 cur_pref = (await self.get_prefix(ctx))[0]
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
@@ -336,7 +336,7 @@ def main():
             log.warning("Talos database missing, no data will be saved this session.")
     except Exception as e:
         log.warning(e)
-        log.warning("Database connection missing, connection dropped. No data will be saved.")
+        log.warning("Database connection dropped, no data will be saved this session.")
 
     # Create and run Talos
     talos = Talos(sql_conn=cnx, token=botlist_token, nano_login=nano_login)

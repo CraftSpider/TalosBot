@@ -23,6 +23,8 @@ import Discord.utils as utils
 bot_base = bot.Bot("^")
 
 
+# Test Talos and cogs
+
 def test_extension_load():
     talos = dtalos.Talos()
     talos.load_extensions()
@@ -69,6 +71,8 @@ def test_method_docs():
             assert inspect.getdoc(member) is not None, "Cog method {} missing docstring".format(name)
 
 
+# Test utils classes
+
 def test_embed_paginator():
     page = utils.EmbedPaginator()
 
@@ -79,6 +83,17 @@ def test_embed_paginator():
     assert len(page.pages) is 1, "Empty embed has more than one page"
 
     pass  # TODO
+
+
+def test_empty_cursor():
+    cursor = utils.EmptyCursor()
+
+    assert cursor.fetchone() is None, "fetchone not None"
+    assert cursor.fetchmany() == list(), "fetchmany not empty list"
+    assert cursor.fetchall() == list(), "fetchall not empty list"
+    assert cursor.description == tuple(), "description not empty tuple"
+    assert cursor.rowcount == 0, "rowcount not 0"
+    assert cursor.lastrowid is None, "lastrowid not None"
 
 
 def test_pw_member():
