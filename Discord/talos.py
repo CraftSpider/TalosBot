@@ -140,7 +140,7 @@ class Talos(commands.Bot):
     def should_embed(self, ctx):
         """Determines whether Talos is allowed to use RichEmbeds in a given context."""
         if ctx.guild is not None and self.database._sql_conn:
-            return ctx.bot.get_guild_option(ctx.guild.id, "rich_embeds") and\
+            return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
                    ctx.channel.permissions_for(ctx.me).embed_links
         else:
             return ctx.channel.permissions_for(ctx.me).embed_links
