@@ -401,6 +401,9 @@ class TalosDatabase:
         log.debug("Committing data")
         self._sql_conn.commit()
 
+    def is_connected(self):
+        return self._sql_conn is not None and not isinstance(self._cursor, EmptyCursor)
+
     def get_column_type(self, table_name, column_name):
         if re.match("[^a-zA-Z0-9_-]", table_name) or re.match("[^a-zA-Z0-9_-]", column_name):
             raise ValueError("SQL Injection Detected!")
@@ -600,17 +603,32 @@ class TalosDatabase:
 class TalosHTTPClient(aiohttp.ClientSession):
 
     NANO_URL = "https://nanowrimo.org/"
+    BTN_URL = "https://www.behindthename.com/"
 
     def __init__(self, *args, **kwargs):
 
         self.username = kwargs.pop("username", "")
         self.password = kwargs.pop("password", "")
+        self.btn_key = kwargs.pop("btn_key", "")
 
         super().__init__(*args, **kwargs)
 
     async def get_site(self, url, **kwargs):
         async with self.get(url, **kwargs) as response:
             return await response.text()
+
+    async def btn_get_names(self, gender="", usage="", number=1, surname=False):
+        surname = "yes" if surname else "no"
+        gender = "&gender="+gender if gender else gender
+        usage = "&usage="+usage if usage else usage
+        url = self.BTN_URL + "api/random.php?key={}&randomsurname={}&number={}{}{}".format(self.btn_key, surname, number, gender, usage)
+        async with self.get(url) as response:
+            if response.status == 200:
+                text = await response.text()
+                return re.findall(r"<name>(.*?)</name>", text)
+            else:
+                log.warning("BTN returned {}".format(response.status))
+                return None
 
     async def nano_get_user(self, username):
         """Returns a given NaNo user profile, if it can be found. If not, returns None"""

@@ -470,7 +470,7 @@ class Commands:
     async def generate(self, ctx):
         """Generates a crawl or prompt"""
         if ctx.invoked_subcommand is None:
-            await ctx.send("Valid options are 'prompt' and 'crawl'.")
+            await ctx.send("Valid options are 'prompt', 'crawl', and 'name'.")
     
     @generate.command(name='crawl')
     async def _crawl(self, ctx):
@@ -489,6 +489,18 @@ class Commands:
         goal = random.choice(self.goal)
         obstacle = random.choice(self.obstacle)
         await ctx.send("A story about a {} {} who must {} while {}.".format(adj, noun, goal, obstacle))
+
+    @generate.command(name="name")
+    async def _name(self, ctx, number=1):
+        """Generates a name or names. Number must be between 1 and 6"""
+        if number < 1 or number > 6:
+            await ctx.send("Number must be between 1 and 6 inclusive.")
+            return
+        names = await self.bot.session.btn_get_names(number=number)
+        out = ""
+        for name in names:
+            out += "{}\n".format(name)
+        await ctx.send(out)
 
     @commands.group(aliases=["pw", "PW"])
     @commands.guild_only()

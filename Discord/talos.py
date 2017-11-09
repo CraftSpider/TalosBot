@@ -91,10 +91,11 @@ class Talos(commands.Bot):
         self.database = TalosDatabase(sql_conn)
         self.discordbots_token = args.get("token", "")
         nano_login = args.get("nano_login", ["", ""])
+        btn_key = args.get("btn_key", "")
 
         async def open_session():
             log.info("Opened Talos HTTP Client")
-            self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], read_timeout=60)
+            self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key, read_timeout=60)
 
         self.session = None
         self.loop.create_task(open_session())
@@ -140,7 +141,7 @@ class Talos(commands.Bot):
 
     def should_embed(self, ctx):
         """Determines whether Talos is allowed to use RichEmbeds in a given context."""
-        if ctx.guild is not None and self.database._sql_conn:
+        if ctx.guild is not None and self.database.is_connected():
             return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
                    ctx.channel.permissions_for(ctx.me).embed_links
         else:
@@ -160,7 +161,7 @@ class Talos(commands.Bot):
 
     async def _talos_help_command(self, ctx, *args: str):
         """Shows this message."""
-        if ctx.guild is not None and self.database._sql_conn:
+        if ctx.guild is not None and self.database.is_connected():
             destination = ctx.message.author if self.database.get_guild_option(ctx.guild.id, "pm_help") else \
                           ctx.message.channel
         else:
@@ -311,6 +312,14 @@ def load_nano_login():
         return []
 
 
+def load_btn_key():
+    file = string_load(TOKEN_FILE)
+    try:
+        return file[3].strip()
+    except KeyError:
+        return ""
+
+
 def main():
     # Load Talos tokens
     bot_token = ""
@@ -332,6 +341,12 @@ def main():
     except IndexError:
         log.warning("Nano Login missing, nano commands will likely fail")
 
+    btn_key = ""
+    try:
+        btn_key = load_btn_key()
+    except IndexError:
+        log.warning("Behind The Name key missing, name commands will fail.")
+
     # Load Talos database
     cnx = None
     try:
@@ -345,7 +360,7 @@ def main():
         log.warning("Database connection dropped, no data will be saved this session.")
 
     # Create and run Talos
-    talos = Talos(sql_conn=cnx, token=botlist_token, nano_login=nano_login)
+    talos = Talos(sql_conn=cnx, token=botlist_token, nano_login=nano_login, btn_key=btn_key)
 
     try:
         talos.load_extensions()
