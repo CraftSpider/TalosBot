@@ -10,7 +10,6 @@ import traceback
 import sys
 import logging
 import re
-import asyncio
 import mysql.connector
 from datetime import datetime
 
@@ -44,7 +43,9 @@ _mentions_transforms = {
 _mention_pattern = re.compile('|'.join(_mentions_transforms.keys()))
 
 # Initiate Logging
-logging.basicConfig(level=logging.INFO, stream=sys.stderr)
+fh = logging.FileHandler("talos.log")
+sh = logging.StreamHandler(sys.stderr)
+logging.basicConfig(level=logging.INFO, handlers=[fh, sh])
 log = logging.getLogger("talos")
 
 
@@ -80,22 +81,23 @@ class Talos(commands.Bot):
     # Discordbots bot list token
     discordbots_token = ""
 
-    def __init__(self, sql_conn=None, **args):
+    def __init__(self, sql_conn=None, **kwargs):
         """Initialize Talos object. Safe to pass nothing in."""
         # Set default values to pass to super
         description = '''Greetings. I'm Talos, chat helper. Here are my commands.'''
-        args["formatter"] = args.get("formatter", TalosFormatter())
-        super().__init__(prefix, description=description, **args)
+        kwargs["formatter"] = kwargs.get("formatter", TalosFormatter())
+        super().__init__(prefix, description=description, **kwargs)
 
         # Set talos specific things
         self.database = TalosDatabase(sql_conn)
-        self.discordbots_token = args.get("token", "")
-        nano_login = args.get("nano_login", ["", ""])
-        btn_key = args.get("btn_key", "")
+        self.discordbots_token = kwargs.get("token", "")
+        nano_login = kwargs.get("nano_login", ["", ""])
+        btn_key = kwargs.get("btn_key", "")
 
         async def open_session():
             log.info("Opened Talos HTTP Client")
-            self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key, read_timeout=60)
+            self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key,
+                                           read_timeout=60, loop=self.loop)
 
         self.session = None
         self.loop.create_task(open_session())

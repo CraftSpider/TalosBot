@@ -5,13 +5,19 @@
     Author: CraftSpider
 """
 
-import discord.ext.commands.core as core
-import discord.ext.commands.bot as bot
+import discord.ext.commands as commands
+import discord.gateway
 import inspect
 import re
 import sys
 import os
 import pytest
+import logging
+import asyncio
+import asyncio.queues
+import time
+import json
+import websockets
 from datetime import datetime
 from datetime import timedelta
 sys.path.append(os.getcwd().replace("\\Tests", ""))
@@ -19,27 +25,93 @@ sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
 import Discord.talos as dtalos
 import Discord.utils as utils
 
+log = logging.getLogger("tests.talos")
 
-bot_base = bot.Bot("^")
+
+# class TestWebSocket(discord.gateway.DiscordWebSocket):
+#
+#     shard_id = None
+#     state = 1
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#
+#         self.sent = asyncio.queues.Queue(2**5, loop=self.loop)
+#
+#         async def run():
+#             while not self.connection_closed.done():
+#                 await asyncio.sleep(5, loop=self.loop)
+#
+#         self.worker_task = asyncio.ensure_future(run(), loop=self.loop)
+#
+#     async def send_as_json(self, data):
+#         try:
+#             await self.send(json.dumps(data, separators=(',', ':'), ensure_ascii=True))
+#         except websockets.exceptions.ConnectionClosed as e:
+#             if not self._can_handle_close(e.code):
+#                 raise discord.errors.ConnectionClosed(e, shard_id=self.shard_id) from e
+#
+#     async def send(self, data):
+#         await self.ensure_open()
+#
+#         await self.sent.put(data)
+#
+#     @classmethod
+#     async def from_client(cls, client, *, shard_id=None, session=None, sequence=None, resume=False, loop=None):
+#
+#         ws = cls(loop=loop)
+#         ws._max_heartbeat_timeout = client._connection.heartbeat_timeout
+#
+#         return ws
+#
+#
+# class Testlos(dtalos.Talos):
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#
+#     async def login(self, token, *, bot=True):
+#         log.info('logging in using static token')
+#         self._connection.is_bot = bot
+#
+#     async def _connect(self):
+#         self.ws = await TestWebSocket.from_client(self, loop=self.loop)
+#         while True:
+#             try:
+#                 await self.ws.poll_event()
+#             except discord.gateway.ResumeWebSocket:
+#                 self.ws = TestWebSocket(loop=self.loop)
+#             except json.decoder.JSONDecodeError as e:
+#                 log.error(e)
+#
+#     async def add_message(self, message):
+#         while self.ws is None:
+#             await asyncio.sleep(1)
+#         await self.ws.messages.put(message)
+#
+#     async def get_response(self):
+#         while self.ws is None:
+#             await asyncio.sleep(1)
+#         return await self.ws.sent.get()
 
 
 # Test Talos and cogs
 
 def test_extension_load():
-    talos = dtalos.Talos()
-    talos.load_extensions()
+    testlos = dtalos.Talos()
+    testlos.load_extensions()
 
-    assert len(talos.extensions) == len(talos.STARTUP_EXTENSIONS), "Didn't load  extensions"
-    for extension in talos.STARTUP_EXTENSIONS:
-        assert talos.EXTENSION_DIRECTORY + "." + extension in talos.extensions,\
+    assert len(testlos.extensions) == len(testlos.STARTUP_EXTENSIONS), "Didn't load  extensions"
+    for extension in testlos.STARTUP_EXTENSIONS:
+        assert testlos.EXTENSION_DIRECTORY + "." + extension in testlos.extensions,\
             "Didn't load {} extension".format(extension)
 
-    talos.unload_extensions(["Commands", "AdminCommands"])
+    testlos.unload_extensions(["Commands", "AdminCommands"])
 
-    talos.unload_extensions()
-    assert len(talos.extensions) == 0, "Didn't unload all extensions"
-    for extension in talos.STARTUP_EXTENSIONS:
-        assert talos.EXTENSION_DIRECTORY + "." + extension not in talos.extensions,\
+    testlos.unload_extensions()
+    assert len(testlos.extensions) == 0, "Didn't unload all extensions"
+    for extension in testlos.STARTUP_EXTENSIONS:
+        assert testlos.EXTENSION_DIRECTORY + "." + extension not in testlos.extensions,\
             "Didn't unload {} extension".format(extension)
 
 
@@ -50,7 +122,7 @@ def get_unique_member(base_class):
         if not (inspect.isroutine(member) or inspect.isawaitable(member)):
             return False
         match = re.compile("(?<!\\.){}\\.".format(class_name))
-        if isinstance(member, core.Command) or match.findall(object.__str__(member)):
+        if isinstance(member, commands.Command) or match.findall(object.__str__(member)):
             return True
         return False
 
@@ -65,11 +137,27 @@ def test_method_docs():
     for cog in talos.cogs:
         cog = talos.cogs[cog]
         for name, member in inspect.getmembers(cog, get_unique_member(cog)):
-            if isinstance(member, core.Command):
+            if isinstance(member, commands.Command):
                 assert inspect.getdoc(member.callback) is not None, "Cog command {} missing docstring".format(name)
                 continue
             assert inspect.getdoc(member) is not None, "Cog method {} missing docstring".format(name)
 
+
+# def test_commands():
+#     loop = asyncio.get_event_loop()
+#     testlos = Testlos(loop=loop)
+#     task = loop.run_in_executor(None, lambda: testlos.run(""))
+#     loop.create_task(test_commands_async(testlos))
+#     while not task.done():
+#         pass
+#
+#
+# async def test_commands_async(testlos):
+#     await testlos.add_message('{"t":null,"s":null,"op": 10,"d":{"heartbeat_interval":41250,"_trace":["gateway-prd-main-v5x4"]}}')
+#     print(await testlos.get_response())
+#     await testlos.add_message('{"t":null,"s":null,"op":11,"d":null}')
+#     await testlos.add_message('{"op": 0, "t": "READY", "s": 1, "d": {"user": {"verified": true, "id": "330061997842628623", "avatar": null, "bot": true, "email": null, "mfa_enabled": true, "username": "Testlos", "discriminator": "2178"}, "user_settings": {}, "relationships": [], "session_id": "40d9e80d259005d648606e0739c340a8", "_trace": ["gateway-prd-main-7cr7", "discord-sessions-prd-1-15"], "v": 6, "guilds": [{"unavailable": true, "id": "338137396820443137"}, {"unavailable": true, "id": "346423616881295360"}, {"unavailable": true, "id": "367647133077340162"}], "presences": [], "private_channels": []}}')
+#     print(await testlos.get_response())
 
 # Test utils classes
 
@@ -88,9 +176,18 @@ def test_embed_paginator():
 def test_empty_cursor():
     cursor = utils.EmptyCursor()
 
+    with pytest.raises(StopIteration):
+        cursor.__iter__().__next__()
+
+    assert cursor.callproc(None) is None, "callproc did something"
+    assert cursor.close() is None, "close did something"
+    assert cursor.execute(None) is None, "execute did something"
+    assert cursor.executemany(None, None) is None, "executemany did something"
+
     assert cursor.fetchone() is None, "fetchone not None"
     assert cursor.fetchmany() == list(), "fetchmany not empty list"
     assert cursor.fetchall() == list(), "fetchall not empty list"
+
     assert cursor.description == tuple(), "description not empty tuple"
     assert cursor.rowcount == 0, "rowcount not 0"
     assert cursor.lastrowid is None, "lastrowid not None"

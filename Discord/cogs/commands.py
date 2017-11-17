@@ -351,7 +351,8 @@ class Commands:
             await ctx.send("Sorry, I couldn't find that user or novel.")
             return
         # Get basic novel info
-        avatar = "https:" + re.search(r"<img alt=\".*?\" class=\".*?avatar_thumb.*?\" src=\"(.*?)\" />", novel_page).group(1)
+        avatar = "https:" + re.search(r"<img alt=\".*?\" class=\".*?avatar_thumb.*?\" src=\"(.*?)\" />",
+                                      novel_page).group(1)
         novel_title = re.search(r"<strong>Novel:</strong>\n(.*)", novel_page).group(1)
         novel_cover = re.search(r"<img .*?id=\"novel_cover_thumb\".*?src=\"(.*?)\" />", novel_page)
         if novel_cover is not None:

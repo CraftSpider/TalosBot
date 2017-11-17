@@ -97,16 +97,19 @@ class EmbedPaginator:
 
     @property
     def page_number(self):
+        """The number of pages in the embed, in other words, the minimum number of embeds to fit the content."""
         size = self.size
         return math.ceil(size / self.max_size) if size > 0 else 1
 
-    def next_colour(self):
+    def _next_colour(self):
+        """Gets the next colour in the colour queue. Queue loops."""
         colour = self.colours[self.colour_pos]
         self.colour_pos = (self.colour_pos + 1) % len(self.colours)
         return colour
 
     @property
     def real_fields(self):
+        """Gets the actual number of fields in the embed, given fields split on max length."""
         out = []
         for field in self.fields:
             if len(field[1]) > self.MAX_FIELD_VALUE:
@@ -121,33 +124,38 @@ class EmbedPaginator:
         return out
 
     def set_title(self, title: str):
+        """Sets the embed title. Title length must be less than MAX_TITLE"""
         if len(title) > self.MAX_TITLE:
             raise ValueError("Title length must be less than or equal to {}".format(self.MAX_TITLE))
         self.title = title
         return self
 
     def set_description(self, description: str):
+        """Sets the embed description. Description length must be less than MAX_DESCRIPTION"""
         if len(description) > self.MAX_DESCRIPTION:
             raise ValueError("Description length must be less than or equal to {}".format(self.MAX_DESCRIPTION))
         self.description = description
         return self
 
     def set_footer(self, footer: str):
+        """Sets the embed footer. Footer length must be less than MAX_FOOTER"""
         if len(footer) > self.MAX_FOOTER:
             raise ValueError("Footer length must be less than or equal to {}".format(self.MAX_FOOTER))
         self.footer = footer
         return self
 
     def add_field(self, title, value, inline=False):
+        """Adds an embed field. Title length must be less than MAX_FIELD_NAMe"""
         if len(title) > self.MAX_FIELD_NAME:
             raise ValueError("Field title length must be less than or equal to {}".format(self.MAX_FIELD_NAME))
         self.fields.append([title, value, inline])
         return self
 
     def close_pages(self):
+        """Closes the embed, and builds the self.pages variable. If subsequent changes are made, must be re-called."""
         out = []
         if self.page_number == 1:
-            embed = discord.Embed(title=self.title, description=self.description, colour=self.next_colour())
+            embed = discord.Embed(title=self.title, description=self.description, colour=self._next_colour())
             real_fields = self.real_fields
             if len(real_fields) > self.MAX_FIELDS:
                 for i in range(len(real_fields)):
@@ -155,7 +163,7 @@ class EmbedPaginator:
                     if i % 25 == 0:
                         embed.set_footer(text=self.footer.format(math.ceil(i/25), self.page_number))
                         out.append(embed)
-                        embed = discord.Embed(colour=self.next_colour())
+                        embed = discord.Embed(colour=self._next_colour())
                     embed.add_field(name=field[0], value=field[1], inline=field[2])
                 self.pages = out
             else:
@@ -375,14 +383,17 @@ class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
 
     @property
     def description(self):
+        """Description stub"""
         return tuple()
 
     @property
     def rowcount(self):
+        """Rowcount stub"""
         return 0
 
     @property
     def lastrowid(self):
+        """Lastrowid stub"""
         return None
 
 
@@ -621,7 +632,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
         surname = "yes" if surname else "no"
         gender = "&gender="+gender if gender else gender
         usage = "&usage="+usage if usage else usage
-        url = self.BTN_URL + "api/random.php?key={}&randomsurname={}&number={}{}{}".format(self.btn_key, surname, number, gender, usage)
+        url = self.BTN_URL + "api/random.php?key={}&randomsurname={}&number={}{}{}".format(self.btn_key, surname,
+                                                                                           number, gender, usage)
         async with self.get(url) as response:
             if response.status == 200:
                 text = await response.text()
@@ -788,23 +800,28 @@ class PWMember:
         return isinstance(other, PWMember) and self.user == other.user
 
     def get_len(self):
+        """Get the length of time this member was in the PW"""
         if self.end is None or self.start is None:
             return -1
         else:
             return self.end - self.start
 
     def get_started(self):
+        """Get whether this member has started a PW"""
         return self.start is not None
 
     def get_finished(self):
+        """Get whether this member has finished a PW"""
         return self.end is not None
 
     def begin(self, time):
+        """Set this member as having started a PW"""
         if not isinstance(time, (dt.datetime, dt.time)):
             raise ValueError("Time must be a datetime or time instance")
         self.start = time.replace(microsecond=0)
 
     def finish(self, time):
+        """Set this member as having finished a PW"""
         if not isinstance(time, (dt.datetime, dt.time)):
             raise ValueError("Time must be a datetime or time instance")
         self.end = time.replace(microsecond=0)
