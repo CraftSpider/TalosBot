@@ -109,10 +109,9 @@ class AdminCommands:
 
     @commands.command()
     @op_check()
-    async def repeat(self, ctx, *text):
+    async def repeat(self, ctx, *, text):
         """Causes Talos to repeat whatever you said"""
-        if len(text) is not 0:
-            await ctx.send(" ".join(text))
+        await ctx.send(text)
 
     @commands.command(usage="[number=10]")
     @commands.guild_only()

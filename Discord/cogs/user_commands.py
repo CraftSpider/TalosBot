@@ -8,6 +8,8 @@
 import discord
 import logging
 import asyncio
+import utils
+import re
 from discord.ext import commands
 
 logging = logging.getLogger("talos.user")
@@ -45,6 +47,14 @@ def perms_check():
         return True
 
     return commands.check(predicate)
+
+
+def space_replace(match):
+    print(match.group(1))
+    if match.group(1):
+        return "\\"*int(len(match.group(0)) / 2) + " "
+    else:
+        return " "
 
 
 class UserCommands:
@@ -155,22 +165,138 @@ class UserCommands:
     @commands.command()
     @perms_check()
     async def register(self, ctx):
-        """TODO, Registers you as a user with Talos. This creates a profile and options for you, and allows Talos to"""\
+        """Registers you as a user with Talos. This creates a profile and options for you, and allows Talos to"""\
             """save info."""
-        await ctx.send("Not yet implemented")
+        if not self.database.get_user(ctx.author.id):
+            self.database.register_user(ctx.author.id)
+            await ctx.send("Registered new user!")
+        else:
+            await ctx.send("You're already a registered user.")
+
+    @commands.command()
+    @perms_check()
+    async def deregister(self, ctx):
+        """Deregisters you from Talos. All collected data is wiped, no info will be saved until you re-register."""
+        if self.database.get_user(ctx.author.id):
+            self.database.deregister_user(ctx.author.id)
+            await ctx.send("Deregistered user")
+        else:
+            raise utils.NotRegistered(ctx.author)
 
     @commands.command()
     @perms_check()
     async def profile(self, ctx, user: discord.User=None):
-        """TODO, Displays you or another user's profile, if it exists."""
-        print(user)
-        await ctx.send("Not yet implemented")
+        """Displays you or another user's profile, if it exists."""
+        if user is None:
+            user = ctx.author
+        profile = self.database.get_user(user.id)
+        if not profile:
+            raise utils.NotRegistered(user)
+        total_commands = profile[2]
+        favorite_command = self.database.get_favorite_command(user.id)
+        if self.bot.should_embed(ctx):
+            embed = discord.Embed(description=profile[1] if profile[1] else "User has not set a description")
+            embed.set_author(name=user.name, icon_url=user.avatar_url)
+            value = "Total Invoked Commands: {0}\nFavorite Command: `{1[0]}`, invoked {1[1]} times.".format(
+                total_commands, favorite_command
+            )
+            embed.add_field(name="Command Stats", value=value)
+            await ctx.send(embed=embed)
+        else:
+            out = "```md\n"
+            out += "{}\n".format(user.name)
+            out += "{}\n".format(profile[1] if profile[1] else "User has not set a description")
+            out += "# Command Stats:\n"
+            out += "-  Total Invoked: {}\n".format(total_commands)
+            out += "-  Favorite Command: {0[0]}, invoked {0[1]} times.".format(favorite_command)
+            out += "```"
+            await ctx.send(out)
 
     @commands.group()
     @perms_check()
     async def user(self, ctx):
-        """TODO, No current use"""
-        await ctx.send("Not yet implemented")
+        """For checking or setting your own profile"""
+        if not self.database.get_user(ctx.author.id):
+            raise utils.NotRegistered(ctx.author)
+        elif ctx.invoked_subcommand is None:
+            await ctx.send("Valid options are 'options', 'stats', 'description', 'set', and 'remove'")
+            return
+
+    @user.command(name="options")
+    async def _options(self, ctx):
+        """List your current user options"""
+        out = "```"
+        name_types = self.database.get_columns("user_options")
+        options = self.database.get_user_options(ctx.author.id)
+        for index in range(len(options)):
+            if options[index] == ctx.author.id or options[index] == -1:
+                continue
+            option = options[index] if name_types[index][1] == "varchar" else bool(options[index])
+            out += "{}: {}\n".format(name_types[index][0], option)
+        out += "```"
+        if out == "``````":
+            await ctx.send("No options available.")
+            return
+        await ctx.send(out)
+
+    @user.command(name="stats")
+    async def _stats(self, ctx):
+        """List your current user stats"""
+        profile = self.database.get_user(ctx.author.id)
+        stats = self.database.get_command_data(ctx.author.id)
+        out = "```"
+        out += "Desc: {}\n".format(profile[1])
+        out += "Total Invoked: {}\n".format(profile[2])
+        out += "Command Stats:\n"
+        for command in stats:
+            out += "    {}: {}\n".format(command[0], command[1])
+        out += "```"
+        await ctx.send(out)
+
+    @user.command(name="description")
+    async def _description(self, ctx, *text):
+        """Set your user description"""
+        self.database.set_description(ctx.author.id, ' '.join(text))
+        await ctx.send("Description set.")
+
+    @user.command(name="set")
+    async def _set(self, ctx, option: str, value: str):
+        """Set your user options"""
+        try:
+            option_type = self.database.get_column_type("user_options", option)
+        except ValueError:
+            await ctx.send("Eh eh eh, letters and numbers only.")
+            return
+        if option_type == "tinyint":
+            if value.upper() == "ALLOW" or value.upper() == "TRUE":
+                value = True
+            elif value.upper() == "FORBID" or value.upper() == "FALSE":
+                value = False
+            else:
+                await ctx.send("Sorry, that option only accepts true or false values.")
+                return
+        if option_type == "varchar":
+            value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
+            value = re.sub(r"\\\\", r"\\", value)
+        if option_type is not None:
+            self.database.set_user_option(ctx.author.id, option, value)
+            await ctx.send("Option {} set to `{}` for {}".format(option, value, ctx.author.display_name))
+        else:
+            await ctx.send("I don't recognize that option.")
+
+    @user.command(name="remove")
+    async def _remove(self, ctx, option):
+        """Reset your user options to default"""
+        try:
+            data_type = self.database.get_column_type("user_options", option)
+        except ValueError:
+            await ctx.send("Eh eh eh, letters and numbers only.")
+            return
+        if data_type is not None:
+            self.database.set_user_option(ctx.author.id, option, None)
+            await ctx.send("Option {} set to default for {}".format(option, ctx.author.display_name))
+        else:
+            await ctx.send("I don't recognize that option.")
 
     
 def setup(bot):

@@ -40,6 +40,14 @@ fullwidth_transform = {
     "{": "｛", "|": "｜", "}": "｝", "~": "～", " ": "　"
 }
 
+
+class NotRegistered(dcommands.CommandError):
+    """Error raised when a Talos command requires a registered user, and the given user isn't."""
+    def __init__(self, message, *args):
+        if type(message) == discord.Member or type(message) == discord.User:
+            message = str(message)
+        super().__init__(message, *args)
+
 # Fundamental Talos classes
 
 
@@ -415,6 +423,8 @@ class TalosDatabase:
     def is_connected(self):
         return self._sql_conn is not None and not isinstance(self._cursor, EmptyCursor)
 
+    # Meta methods
+
     def get_column_type(self, table_name, column_name):
         if re.match("[^a-zA-Z0-9_-]", table_name) or re.match("[^a-zA-Z0-9_-]", column_name):
             raise ValueError("SQL Injection Detected!")
@@ -432,7 +442,9 @@ class TalosDatabase:
         self._cursor.execute(query, [table_name])
         return self._cursor.fetchall()
 
-    def get_default(self, option_name):
+    # Guild option methods
+
+    def get_guild_default(self, option_name):
         """Get the default value of an option"""
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
@@ -444,7 +456,7 @@ class TalosDatabase:
         else:
             raise KeyError
 
-    def get_defaults(self):
+    def get_guild_defaults(self):
         query = "SELECT * FROM guild_options WHERE guild_id = -1"
         self._cursor.execute(query)
         result = self._cursor.fetchone()
@@ -462,7 +474,7 @@ class TalosDatabase:
         self._cursor.execute(query, [guild_id])
         result = self._cursor.fetchone()
         if result is None or result[0] is None:
-            result = self.get_default(option_name)
+            result = self.get_guild_default(option_name)
         else:
             result = result[0]
         return result
@@ -473,12 +485,12 @@ class TalosDatabase:
         result = self._cursor.fetchone()
         out = []
         if result is None:
-            out = self.get_defaults()
+            out = self.get_guild_defaults()
         else:
             rows = self.get_columns("guild_options")
             for item in range(len(result)):
                 if result[item] is None:
-                    out.append(self.get_default(rows[item][0]))
+                    out.append(self.get_guild_default(rows[item][0]))
                 else:
                     out.append(result[item])
         return out
@@ -505,6 +517,131 @@ class TalosDatabase:
         query = "UPDATE guild_options SET {} = null WHERE guild_id = %s".format(option_name)
         self._cursor.execute(query, [guild_id])
 
+    # User option methods
+
+    def get_user_default(self, option_name):
+        if re.match("[^a-zA-Z0-9_-]", option_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "SELECT {} FROM user_options WHERE user_id = -1".format(option_name)
+        self._cursor.execute(query)
+        result = self._cursor.fetchone()
+        if result:
+            return result[0]
+        else:
+            raise KeyError
+
+    def get_user_defaults(self):
+        query = "SELECT * FROM user_options WHERE user_id = -1"
+        self._cursor.execute(query)
+        result = self._cursor.fetchone()
+        if isinstance(result, (tuple, list)):
+            return result
+        elif result:
+            return [result]
+        else:
+            return []
+
+    def get_user_option(self, user_id, option_name):
+        if re.match("[^a-zA-Z0-9_-]", option_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "SELECT {} FROM user_options WHERE user_id = %s".format(option_name)
+        self._cursor.execute(query, [user_id])
+        result = self._cursor.fetchone()
+        if result is None or result[0] is None:
+            result = self.get_user_default(option_name)
+        else:
+            result = result[0]
+        return result
+
+    def get_user_options(self, user_id):
+        query = "SELECT * FROM user_options WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+        result = self._cursor.fetchone()
+        out = []
+        if result is None:
+            out = self.get_user_defaults()
+        else:
+            rows = self.get_columns("user_options")
+            for item in range(len(result)):
+                if result[item] is None:
+                    out.append(self.get_user_default(rows[item][0]))
+                else:
+                    out.append(result[item])
+        return out
+
+    def get_all_user_options(self):
+        query = "SELECT * FROM user_options"
+        self._cursor.execute(query)
+        out = []
+        for row in self._cursor:
+            out.append(row)
+        return out
+
+    def set_user_option(self, user_id, option_name, value):
+        if re.match("[^a-zA-Z0-9_-]", option_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "INSERT INTO user_options (user_id, {0}) VALUES (%s, %s) "\
+                "ON DUPLICATE KEY UPDATE "\
+                "{0} = VALUES({0})".format(option_name)
+        self._cursor.execute(query, [user_id, value])
+
+    def remove_user_option(self, user_id, option_name):
+        if re.match("[^a-zA-Z0-9_-]", option_name):
+            raise ValueError("SQL Injection Detected!")
+        query = "UPDATE user_options SET {} = null WHERE user_id = %s".format(option_name)
+        self._cursor.execute(query, [user_id])
+
+    # User profile methods
+
+    def register_user(self, user_id):
+        query = "INSERT INTO user_options (user_id) VALUES (%s)"
+        self._cursor.execute(query, [user_id])
+        query = "INSERT INTO user_profiles (user_id) VALUES (%s)"
+        self._cursor.execute(query, [user_id])
+
+    def deregister_user(self, user_id):
+        query = "DELETE FROM user_options WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+        query = "DELETE FROM user_profiles WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+        query = "DELETE FROM invoked_commands WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+
+    def get_user(self, user_id):
+        query = "SELECT * FROM user_profiles WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+        return self._cursor.fetchone()
+
+    def get_description(self, user_id):
+        query = "SELECT description FROM user_profiles WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+        return self._cursor.fetchone()
+
+    def set_description(self, user_id, desc):
+        query = "UPDATE user_profiles SET description = %s WHERE user_id = %s"
+        self._cursor.execute(query, [desc, user_id])
+
+    def user_invoked_command(self, user_id, command):
+        query = "UPDATE user_profiles SET commands_invoked = commands_invoked + 1 WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+        query = "INSERT INTO invoked_commands (user_id, command_name) VALUES (%s, %s) " \
+                "ON DUPLICATE KEY UPDATE " \
+                "times_invoked = times_invoked + 1"
+        self._cursor.execute(query, [user_id, command])
+
+    def get_command_data(self, user_id):
+        query = "SELECT command_name, times_invoked FROM invoked_commands WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+        return self._cursor.fetchall()
+
+    def get_favorite_command(self, user_id):
+        query = "SELECT command_name, times_invoked FROM invoked_commands WHERE user_id = %s " \
+                "ORDER BY times_invoked DESC LIMIT 1"
+        self._cursor.execute(query, [user_id])
+        return self._cursor.fetchone()
+
+    # Ops methods
+
     def get_all_ops(self):
         query = "SELECT guild_id, opname FROM ops"
         self._cursor.execute(query)
@@ -528,6 +665,8 @@ class TalosDatabase:
     def remove_op(self, guild_id, opname):
         query = "DELETE FROM ops WHERE guild_id = %s AND opname = %s"
         self._cursor.execute(query, [guild_id, opname])
+
+    # Perms methods
 
     def get_perm_rule(self, guild_id, command, perm_type, target):
         query = "SELECT priority, allow FROM perm_rules WHERE guild_id = %s AND command = %s AND perm_type = %s AND"\
@@ -595,6 +734,8 @@ class TalosDatabase:
             query += "target = %s"
             args.append(target)
         self._cursor.execute(query, [guild_id] + args)
+
+    # Uptime methods
 
     def add_uptime(self, uptime):
         query = "INSERT INTO uptime VALUES (%s)"

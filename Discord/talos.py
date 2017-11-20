@@ -17,10 +17,12 @@ try:
     from .utils import TalosFormatter
     from .utils import TalosDatabase
     from .utils import TalosHTTPClient
+    from .utils import NotRegistered
 except SystemError:
     from utils import TalosFormatter
     from utils import TalosDatabase
     from utils import TalosHTTPClient
+    from utils import NotRegistered
 
 #
 #   Constants
@@ -50,10 +52,18 @@ log = logging.getLogger("talos")
 
 
 def prefix(bot, message: discord.Message):
-    """Return the Talos prefix, given Talos class object and a message"""
+    """
+        Return the Talos prefix, given Talos class object and a message
+    :param bot: Talos object to find prefix for
+    :param message: Discord message object for context
+    :return: List of valid prefixes for given bot and message
+    """
     mention = bot.user.mention + " "
     if isinstance(message.channel, discord.abc.PrivateChannel):
-        return [bot.DEFAULT_PREFIX, mention]
+        try:
+            return [bot.DEFAULT_PREFIX, mention]
+        except KeyError:
+            return [bot.DEFAULT_PREFIX, mention]
     else:
         try:
             return [bot.database.get_guild_option(message.guild.id, "prefix"), mention]
@@ -62,10 +72,12 @@ def prefix(bot, message: discord.Message):
 
 
 class Talos(commands.Bot):
-    """Class for the Talos bot. Handles all sorts of things for inter-cog relations and bot wide data."""
+    """
+        Class for the Talos bot. Handles all sorts of things for inter-cog relations and bot wide data.
+    """
 
     # Current Talos version. Loosely incremented.
-    VERSION = "2.4.0"
+    VERSION = "2.5.0"
     # Time Talos started
     BOOT_TIME = datetime.now()
     # Time, in UTC, that the prompt task kicks off each day.
@@ -82,7 +94,12 @@ class Talos(commands.Bot):
     discordbots_token = ""
 
     def __init__(self, sql_conn=None, **kwargs):
-        """Initialize Talos object. Safe to pass nothing in."""
+        """
+            Initialize Talos object. Safe to pass nothing in.
+        :param sql_conn: MySQL Database connection object
+        :param kwargs: Keyword Args for Talos and all its parent classes
+        :return: None
+        """
         # Set default values to pass to super
         description = '''Greetings. I'm Talos, chat helper. Here are my commands.'''
         kwargs["formatter"] = kwargs.get("formatter", TalosFormatter())
@@ -108,7 +125,11 @@ class Talos(commands.Bot):
         self.command(name="help", aliases=["man"])(self._talos_help_command)
 
     def load_extensions(self, extensions=None):
-        """Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None."""
+        """
+            Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None.
+            :param extensions: extensions to load, None if all in STARTUP_EXTENSIONS
+            :return: None
+        """
         log.debug("Loading all extensions")
         clean = 0
         for extension in (self.STARTUP_EXTENSIONS if extensions is None else extensions):
@@ -122,7 +143,11 @@ class Talos(commands.Bot):
         return clean
 
     def unload_extensions(self, extensions=None):
-        """Unloads all extensions in input, or all extensions currently loaded if None"""
+        """
+            Unloads all extensions in input, or all extensions currently loaded if None
+            :param extensions: List of extensions to unload, or None if all
+            :return: None
+        """
         logging.debug("Unloading all extensions")
         if extensions is None:
             while len(self.extensions) > 0:
@@ -136,13 +161,24 @@ class Talos(commands.Bot):
         return 0
 
     def skip_check(self, author_id, self_id):
-        """Determines whether Talos should skip trying to process a message"""
+        """
+            Determines whether Talos should skip trying to process a message
+            :param author_id: integer ID of the message author
+            :param self_id: integer ID of Talos client
+            :return: Whether to skip processing a given message
+        """
         if author_id == 339119069066297355 or author_id == 376161594570178562:
             return False
         return author_id == self_id or (self.get_user(author_id) is not None and self.get_user(author_id).bot)
 
     def should_embed(self, ctx):
-        """Determines whether Talos is allowed to use RichEmbeds in a given context."""
+        """
+            Determines whether Talos is allowed to use RichEmbeds in a given context.
+            :param ctx: commands.Context object
+            :return: Whether Talos should embed message
+        """
+        if not self.database.get_user_option(ctx.author.id, "rich_embeds"):
+            return False
         if ctx.guild is not None and self.database.is_connected():
             return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
                    ctx.channel.permissions_for(ctx.me).embed_links
@@ -150,13 +186,19 @@ class Talos(commands.Bot):
             return ctx.channel.permissions_for(ctx.me).embed_links
 
     async def logout(self):
-        """Saves Talos data, then logs out the bot cleanly and safely"""
+        """
+            Saves Talos data, then logs out the bot cleanly and safely
+            :return None:
+        """
         log.debug("Logging out Talos")
         await self.database.commit()
         await super().logout()
 
     async def close(self):
-        """Closes connections that Talos has open on shutdown"""
+        """
+            Closes connections that Talos has open on shutdown
+            :return None:
+        """
         log.debug("Closing Talos")
         await self.session.close()
         await super().close()
@@ -225,13 +267,20 @@ class Talos(commands.Bot):
                 await destination.send(page)
 
     def run(self, token):
-        """Run Talos. Logs into discord and runs event loop forever."""
+        """
+            Run Talos. Logs into discord and runs event loop forever.
+        :param token: Discord bot token to log in with
+        :return: None
+        """
         if self.cogs.get("EventLoops", None) is not None:
             self.cogs["EventLoops"].start_all_tasks()
         super().run(token)
 
     async def on_ready(self):
-        """Called on bot ready, any time discord finishes connecting"""
+        """
+            Called on bot ready, any time discord finishes connecting
+        :return: None
+        """
         log.debug("OnReady Event")
         log.info('| Now logged in as')
         log.info('| {}'.format(self.user.name))
@@ -250,30 +299,57 @@ class Talos(commands.Bot):
                 await session.post(api_url, data=data, headers=headers)
 
     async def on_guild_join(self, guild):
-        """Called upon Talos joining a guild. Populates ops, perms, and options"""
+        """
+            Called upon Talos joining a guild. Populates ops, perms, and options
+        :param guild: discord.Guild object
+        :return: None
+        """
         log.debug("OnGuildJoin Event")
         log.info("Joined Guild {}, {} after boot".format(guild.name, datetime.now() - self.BOOT_TIME))
 
     async def on_guild_remove(self, guild):
-        """Called upon Talos leaving a guild. Depopulates ops, perms, and options"""
+        """
+            Called upon Talos leaving a guild. Depopulates ops, perms, and options
+        :param guild: discord.Guild object
+        :return: None
+        """
         log.debug("OnGuildRemove Event")
         log.info("Left Guild {}, {} after boot".format(guild.name, datetime.now() - self.BOOT_TIME))
 
+    async def on_command(self, ctx):
+        """
+            Called when any command is executed. Handles command tracking for users.
+        :param ctx: commands.Context object
+        :return: None
+        """
+        user = self.database.get_user(ctx.author.id)
+        if user:
+            self.database.user_invoked_command(ctx.author.id, str(ctx.command))
+
     async def on_command_error(self, ctx, exception):
         """
-        Called upon command error. Handles CommandNotFound, CheckFailure, and NoPrivateMessage.
-        other errors it simply logs
+            Called upon command error. Handles most things that extend CommandError.
+            any un-handled errors it simply logs
+        :param ctx: commands.Context object
+        :param exception: commands.CommandError child object
+        :return: None
         """
         log.debug("OnCommandError Event")
-        if type(exception) == discord.ext.commands.CommandNotFound:
+        if type(exception) == commands.CommandNotFound:
             if self.database.get_guild_option(ctx.guild.id, "fail_message"):
                 cur_pref = (await self.get_prefix(ctx))[0]
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
-        elif type(exception) == discord.ext.commands.CheckFailure:
+        elif type(exception) == commands.CheckFailure:
             log.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
-        elif type(exception) == discord.ext.commands.NoPrivateMessage:
+        elif type(exception) == commands.NoPrivateMessage:
             await ctx.send("This command can only be used in a server. Apologies.")
+        elif type(exception) == commands.BadArgument:
+            await ctx.send(exception)
+        elif type(exception) == commands.MissingRequiredArgument:
+            await ctx.send("Missing parameter `{}`".format(exception.param))
+        elif type(exception) == NotRegistered:
+            await ctx.send("User {} isn't registered, command could not be executed.".format(exception))
         else:
             log.warning('Ignoring exception in command {}'.format(ctx.command))
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
@@ -292,13 +368,19 @@ def string_load(filename):
 
 
 def load_token():
-    """Loads the token file and returns the token"""
+    """
+        Loads the token file and returns the token
+    :return: Talos client Token
+    """
     file = string_load(TOKEN_FILE)
     return file[0].strip()
 
 
 def load_botlist_token():
-    """Load the discord-botlist token from the token file."""
+    """
+        Load the discord-botlist token from the token file.
+    :return: Talos discord botlist token
+    """
     file = string_load(TOKEN_FILE)
     try:
         return file[1].strip()
@@ -307,6 +389,10 @@ def load_botlist_token():
 
 
 def load_nano_login():
+    """
+        Load the NaNoWriMo login info from the token file.
+    :return: Talos NaNoWriMo login info
+    """
     file = string_load(TOKEN_FILE)
     try:
         return file[2].strip().split(":")
@@ -315,6 +401,10 @@ def load_nano_login():
 
 
 def load_btn_key():
+    """
+        Load the BehindTheName key from the token file.
+    :return: Talos BehindTheName token
+    """
     file = string_load(TOKEN_FILE)
     try:
         return file[3].strip()
@@ -323,6 +413,10 @@ def load_btn_key():
 
 
 def main():
+    """
+        Run Talos as main process. Say hello to our new robot overlord.
+    :return: None
+    """
     # Load Talos tokens
     bot_token = ""
     try:

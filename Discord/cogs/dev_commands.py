@@ -37,19 +37,17 @@ class DevCommands:
 
     @commands.command(hidden=True)
     @admin_check()
-    async def playing(self, ctx, *playing: str):
+    async def playing(self, ctx, *, playing: str):
         """Changes the game Talos is playing"""
-        game = " ".join(map(str, playing))
-        await self.bot.change_presence(game=discord.Game(name=game))
-        await ctx.send("Now playing {}".format(game))
+        await self.bot.change_presence(game=discord.Game(name=playing))
+        await ctx.send("Now playing {}".format(playing))
 
     @commands.command(hidden=True)
     @admin_check()
-    async def streaming(self, ctx, *streaming: str):
+    async def streaming(self, ctx, *, streaming: str):
         """Changes the game Talos is streaming"""
-        game = " ".join(map(str, streaming))
-        await self.bot.change_presence(game=discord.Game(name=game, url="http://www.twitch.tv/CraftSpider", type=1))
-        await ctx.send("Now streaming {}".format(game))
+        await self.bot.change_presence(game=discord.Game(name=streaming, url="http://www.twitch.tv/talos_bot_", type=1))
+        await ctx.send("Now streaming {}".format(streaming))
 
     @commands.command(hidden=True)
     @admin_check()
@@ -76,9 +74,8 @@ class DevCommands:
 
     @commands.command(hidden=True)
     @admin_check()
-    async def eval(self, ctx, *text):
+    async def eval(self, ctx, *, program):
         """Evaluate a given string as python code. Prints the return, if not empty. This is not dangerous."""
-        program = ' '.join(text)
         try:
             result = str(eval(program))
             if result is not None and result is not "":
@@ -89,10 +86,9 @@ class DevCommands:
 
     @commands.command(hidden=True)
     @admin_check()
-    async def exec(self, ctx, *text):
+    async def exec(self, ctx, *, program):
         """Execute a given string as python code. replaces ';' with newlines and \t with tabs, for multiline."""\
             """ I laugh in the face of danger."""
-        program = ' '.join(text)
         program = re.sub(r"(?<!\\)((?:\\\\)*);", "\n", program)
         program = re.sub(r"(?<!\\)\\((?:\\\\)*)t", "\t", program)
         try:
@@ -102,9 +98,8 @@ class DevCommands:
 
     @commands.command(hidden=True)
     @admin_check()
-    async def sql(self, ctx, *text):
+    async def sql(self, ctx, *, statement):
         """Execute arbitrary SQL code. Weeh, injection."""
-        statement = ' '.join(text)
         try:
             self.bot._cursor.execute(statement)
             await ctx.send(self.bot._cursor.fetchall())

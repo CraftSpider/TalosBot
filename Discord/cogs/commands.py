@@ -142,8 +142,12 @@ class Commands:
               "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship",
               "learn math", "write a lot", "do gymnastics"]
 
-    phrases = ["Hello World!", "Hephaestus and Daedalus are my favorite people", "This is a footer message",
-               "I can't wait to see East again", "I'm here to help.", "My devs are all crazy"]
+    phrases = [
+        "Hello World!", "Hephaestus and Daedalus are my favorite people", "This is a footer message",
+        "I can't wait to see East again", "I'm here to help", "My devs are all crazy", "The Absolute Love Of Styx",
+        "I'm just a glorified Turing machine", "If I was a ship AI I might be called Stalo",
+        "Terrific Artificial Logarithmic Operation Solver", "Top Amorous Locking Oversight Submersible",
+        "Terminator After Love Or Salt", "Technically A Literary Operations Sentinel"]
 
     #
     #   User Commands
@@ -224,9 +228,8 @@ class Commands:
     @commands.command(description='For when you wanna settle the score some other way',
                       usage="[choice 1], [choice 2], ...")
     @perms_check()
-    async def choose(self, ctx, *choices: str):
+    async def choose(self, ctx, *, choices: str):
         """Chooses between multiple choices."""
-        choices = " ".join(choices)
         if "," not in choices:
             await ctx.send("I need at least two choices to choose between!")
             return

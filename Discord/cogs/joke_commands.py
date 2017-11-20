@@ -61,9 +61,9 @@ class JokeCommands:
 
     @commands.command(aliases=["Hi"])
     @perms_check()
-    async def hi(self, ctx, *extra):
+    async def hi(self, ctx, *, extra):
         """Say hi to Talos"""
-        if str(ctx.author) == "East#4048" and extra[0] == "there...":
+        if str(ctx.author) == "East#4048" and extra.startswith("there..."):
             async with ctx.typing():
                 await asyncio.sleep(1)
                 await ctx.send("Hello East.")
