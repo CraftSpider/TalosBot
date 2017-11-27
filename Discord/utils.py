@@ -621,6 +621,15 @@ class TalosDatabase:
         query = "UPDATE user_profiles SET description = %s WHERE user_id = %s"
         self._cursor.execute(query, [desc, user_id])
 
+    def get_title(self, user_id):
+        query = "SELECT title FROM user_profiles WHERE user_id = %s"
+        self._cursor.execute(query, [user_id])
+        return self._cursor.fetchone()
+
+    def set_title(self, user_id, title):
+        query = "UPDATE user_profiles SET title = %s WHERE user_id = %s"
+        self._cursor.execute(query, [title, user_id])
+
     def user_invoked_command(self, user_id, command):
         query = "UPDATE user_profiles SET commands_invoked = commands_invoked + 1 WHERE user_id = %s"
         self._cursor.execute(query, [user_id])

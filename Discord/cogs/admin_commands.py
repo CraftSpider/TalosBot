@@ -102,10 +102,10 @@ class AdminCommands:
     @commands.command()
     @commands.guild_only()
     @op_check()
-    async def nick(self, ctx, nick: str):
-        """Changes Talos nickname"""
-        await ctx.me.edit(nick=nick)
-        await ctx.send("Nickname changed to {}".format(nick))
+    async def nick(self, ctx, *, nickname: str):
+        """Changes Talos' nickname"""
+        await ctx.me.edit(nick=nickname)
+        await ctx.send("Nickname changed to {}".format(nickname))
 
     @commands.command()
     @op_check()

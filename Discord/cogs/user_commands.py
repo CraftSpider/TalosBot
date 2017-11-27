@@ -70,7 +70,7 @@ class UserCommands:
         if hasattr(bot, "database"):
             self.database = bot.database
 
-    @commands.command()
+    @commands.command(signature="color <hex-code>")
     @commands.guild_only()
     @perms_check()
     async def color(self, ctx, color: str):
@@ -165,7 +165,7 @@ class UserCommands:
     @commands.command()
     @perms_check()
     async def register(self, ctx):
-        """Registers you as a user with Talos. This creates a profile and options for you, and allows Talos to"""\
+        """Registers you as a user with Talos. This creates a profile and options for you, and allows Talos to """\
             """save info."""
         if not self.database.get_user(ctx.author.id):
             self.database.register_user(ctx.author.id)
@@ -176,7 +176,8 @@ class UserCommands:
     @commands.command()
     @perms_check()
     async def deregister(self, ctx):
-        """Deregisters you from Talos. All collected data is wiped, no info will be saved until you re-register."""
+        """Deregisters you from Talos. All collected data is wiped, no account info will be saved until """\
+            """you re-register."""
         if self.database.get_user(ctx.author.id):
             self.database.deregister_user(ctx.author.id)
             await ctx.send("Deregistered user")
@@ -195,7 +196,8 @@ class UserCommands:
         total_commands = profile[2]
         favorite_command = self.database.get_favorite_command(user.id)
         if self.bot.should_embed(ctx):
-            embed = discord.Embed(description=profile[1] if profile[1] else "User has not set a description")
+            embed = discord.Embed(title=profile[3] if profile[3] else False,
+                                  description=profile[1] if profile[1] else "User has not set a description")
             embed.set_author(name=user.name, icon_url=user.avatar_url)
             value = "Total Invoked Commands: {0}\nFavorite Command: `{1[0]}`, invoked {1[1]} times.".format(
                 total_commands, favorite_command

@@ -170,7 +170,8 @@ class Commands:
             embed.add_field(name="Developers", value="CraftSpider#0269\nDino\nHiddenStorys", inline=True)
             embed.add_field(name="Library", value="Discord.py\nVersion {}".format(discord.__version__), inline=True)
             embed.add_field(name="Contact/Documentation",
-                            value="[talos.ptp@gmail.com](mailto:talos.ptp@gmail.com)\n"
+                            value="[Main Website](http://talosbot.tk)\n"
+                                  "[talos.ptp@gmail.com](mailto:talos.ptp@gmail.com)\n"
                                   "[Github](http://github.com/CraftSpider/TalosBot)\n"
                                   "[Discord](http://discord.gg/VxUdS6H)",
                             inline=True)
@@ -185,13 +186,14 @@ class Commands:
             out = "Hello! I'm Talos, official PtP mod-bot. `{}help` for command details.\
                     \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
                     \nI am built using discord.py, version {}.\
-                    \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.".format(
+                    \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.\
+                    \nMy primary website is located at http://talosbot.tk".format(
                 (await self.bot.get_prefix(ctx))[0], discord.__version__)
             await ctx.send(out)
 
     @commands.command()
     @perms_check()
-    async def discord_tos(self, ctx):
+    async def tos(self, ctx):
         """Disclaimer for discord TOS"""
         await ctx.send("Talos will in the process of running possibly log your username and log commands that you give "
                        "it. Due to Discord TOS, you must be informed and consent to any storage of data you send here. "
@@ -203,7 +205,7 @@ class Commands:
     @commands.command()
     @perms_check()
     async def version(self, ctx):
-        """Returns Talos version."""
+        """Prints out Talos version."""
         await ctx.send("Version: {0}".format(self.bot.VERSION))
 
     @commands.command()
@@ -287,15 +289,11 @@ class Commands:
             await ctx.send("Starting WW at :{0:02}".format(start))
             await asyncio.sleep(dif.total_seconds())
         await ctx.send("Word War for {:g} {}.".format(length, "minutes" if length != 1 else "minute"))
+
         await asyncio.sleep(length * 60)
 
-        words_written = wpm * length
-        advance = False
-        while not advance and wpm != 0:
-            words_written = random.randrange(words_written-100, words_written+100)
-            if words_written >= 0:
-                advance = True
         if wpm != 0:
+            words_written = int(wpm * length + random.randint(-2 * length, 2 * length))
             await ctx.send("I wrote {} words. How many did you write?".format(words_written))
         else:
             await ctx.send("The word war is over. How did you do?")
@@ -317,7 +315,7 @@ class Commands:
     @commands.command()
     @perms_check()
     async def uptime(self, ctx):
-        """To figure out how long the bot has been online."""
+        """Prints out how long the bot has been online, with details."""
         boot_string = self.bot.BOOT_TIME.strftime("%b %d, %H:%M:%S")
         out = "I've been online since {0}, a total of {1}\n".format(boot_string, self.get_uptime_days())
         day_up, week_up, month_up = self.get_uptime_percent()
@@ -472,7 +470,7 @@ class Commands:
     @commands.group()
     @perms_check()
     async def generate(self, ctx):
-        """Generates a crawl or prompt"""
+        """Generates a crawl, prompt, or name."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'prompt', 'crawl', and 'name'.")
     

@@ -148,7 +148,7 @@ class EventLoops:
         while True:
             log.debug("Daily task runs")
             self.database.remove_uptime(int((datetime.now() - timedelta(days=30)).timestamp()))
-            self.bot.verify()
+            # self.bot.verify()
             await asyncio.sleep(24*60*60)
 
     async def uptime_task(self):

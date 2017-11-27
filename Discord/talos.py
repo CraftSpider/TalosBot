@@ -61,7 +61,7 @@ def prefix(bot, message: discord.Message):
     mention = bot.user.mention + " "
     if isinstance(message.channel, discord.abc.PrivateChannel):
         try:
-            return [bot.DEFAULT_PREFIX, mention]
+            return [bot.database.get_user_option(message.author.id, "prefix"), mention]
         except KeyError:
             return [bot.DEFAULT_PREFIX, mention]
     else:

@@ -61,7 +61,7 @@ class JokeCommands:
 
     @commands.command(aliases=["Hi"])
     @perms_check()
-    async def hi(self, ctx, *, extra):
+    async def hi(self, ctx, *, extra=""):
         """Say hi to Talos"""
         if str(ctx.author) == "East#4048" and extra.startswith("there..."):
             async with ctx.typing():
@@ -90,9 +90,8 @@ class JokeCommands:
 
     @commands.command()
     @perms_check()
-    async def aesthetic(self, ctx, *text):
+    async def aesthetic(self, ctx, *, text):
         """For when you just need it in large"""
-        text = ' '.join(text)
         out = ""
         for char in text:
             out += fullwidth_transform.get(char, char)
