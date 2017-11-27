@@ -12,6 +12,7 @@ install:
   - pip install -U pytest
   - pip install -U google-api-python-client
   - pip install -U mysql-connector-python-rf
+  - pip install -U pillow
 
 script:
   - pytest Tests

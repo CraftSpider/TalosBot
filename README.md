@@ -27,9 +27,11 @@ If prompted, allow popups- the window is the log4js console.
 
 10. Install the discord.py library using the command `python3 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]`
 
-20. Install the google API library with `pip install -U google-api-python-client`
+20. Install the google API library with `python3 -m pip install -U google-api-python-client`
 
-30. Install the mysql connector with `pip install -U mysql-connector-python-rf`
+30. Install the mysql connector with `python3 -m pip install -U mysql-connector-python-rf`
+
+35. Install the pillow library with `python3 -m pip install pillow`
 
 40. Navigate into the discord\ file. Create a file named exactly `Token.txt` and place your discord bot token in that file.
 

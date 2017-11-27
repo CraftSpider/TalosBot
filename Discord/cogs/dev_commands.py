@@ -83,6 +83,7 @@ class DevCommands:
     @commands.command(hidden=True)
     @admin_check()
     async def grant_title(self, ctx, user: discord.User, *, title):
+        """Give someone access to a title (currently just sets their title)"""
         profile = self.database.get_user(user.id)
         if not profile:
             raise utils.NotRegistered(user)
@@ -127,6 +128,7 @@ class DevCommands:
 
     @commands.command(hidden=True)
     async def image(self, ctx, red=0, green=0, blue=0):
+        """Image testing. Smile!"""
         start = datetime.now()
         image = Image.new("RGB", (250, 250), (red, green, blue))
         draw = ImageDraw.Draw(image)
