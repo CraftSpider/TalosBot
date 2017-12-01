@@ -51,26 +51,6 @@ logging.basicConfig(level=logging.INFO, handlers=[fh, sh])
 log = logging.getLogger("talos")
 
 
-def prefix(bot, message: discord.Message):
-    """
-        Return the Talos prefix, given Talos class object and a message
-    :param bot: Talos object to find prefix for
-    :param message: Discord message object for context
-    :return: List of valid prefixes for given bot and message
-    """
-    mention = bot.user.mention + " "
-    if isinstance(message.channel, discord.abc.PrivateChannel):
-        try:
-            return [bot.database.get_user_option(message.author.id, "prefix"), mention]
-        except KeyError:
-            return [bot.DEFAULT_PREFIX, mention]
-    else:
-        try:
-            return [bot.database.get_guild_option(message.guild.id, "prefix"), mention]
-        except KeyError:
-            return [bot.DEFAULT_PREFIX, mention]
-
-
 class Talos(commands.Bot):
     """
         Class for the Talos bot. Handles all sorts of things for inter-cog relations and bot wide data.
@@ -128,7 +108,7 @@ class Talos(commands.Bot):
         """
             Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None.
             :param extensions: extensions to load, None if all in STARTUP_EXTENSIONS
-            :return: None
+            :return: 0 if successful, 1 if unsuccessful
         """
         log.debug("Loading all extensions")
         clean = 0
@@ -146,7 +126,7 @@ class Talos(commands.Bot):
         """
             Unloads all extensions in input, or all extensions currently loaded if None
             :param extensions: List of extensions to unload, or None if all
-            :return: None
+            :return: 0
         """
         logging.debug("Unloading all extensions")
         if extensions is None:
@@ -171,19 +151,19 @@ class Talos(commands.Bot):
             return False
         return author_id == self_id or (self.get_user(author_id) is not None and self.get_user(author_id).bot)
 
-    def should_embed(self, ctx):
+    def should_embed(self, ctx: commands.Context):
         """
             Determines whether Talos is allowed to use RichEmbeds in a given context.
             :param ctx: commands.Context object
             :return: Whether Talos should embed message
         """
-        if not self.database.get_user_option(ctx.author.id, "rich_embeds"):
-            return False
-        if ctx.guild is not None and self.database.is_connected():
-            return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
-                   ctx.channel.permissions_for(ctx.me).embed_links
-        else:
-            return ctx.channel.permissions_for(ctx.me).embed_links
+        if self.database.is_connected():
+            if not self.database.get_user_option(ctx.author.id, "rich_embeds"):
+                return False
+            if ctx.guild is not None:
+                return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
+                       ctx.channel.permissions_for(ctx.me).embed_links
+        return ctx.channel.permissions_for(ctx.me).embed_links
 
     async def logout(self):
         """
@@ -220,7 +200,6 @@ class Talos(commands.Bot):
         elif len(args) == 1:
             # try to see if it is a cog name
             name = _mention_pattern.sub(repl, args[0])
-            # command = None
             if name in self.cogs:
                 command = self.cogs[name]
             else:
@@ -326,7 +305,7 @@ class Talos(commands.Bot):
         if user:
             self.database.user_invoked_command(ctx.author.id, str(ctx.command))
 
-    async def on_command_error(self, ctx, exception):
+    async def on_command_error(self, ctx: commands.Context, exception: commands.CommandError):
         """
             Called upon command error. Handles most things that extend CommandError.
             any un-handled errors it simply logs
@@ -335,24 +314,47 @@ class Talos(commands.Bot):
         :return: None
         """
         log.debug("OnCommandError Event")
-        if type(exception) == commands.CommandNotFound:
-            if self.database.get_guild_option(ctx.guild.id, "fail_message"):
-                cur_pref = (await self.get_prefix(ctx))[0]
-                await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
-                                                                                                cur_pref))
-        elif type(exception) == commands.CheckFailure:
+        if isinstance(exception, commands.CommandNotFound):
+            try:
+                if self.database.get_guild_option(ctx.guild.id, "fail_message"):
+                    cur_pref = (await self.get_prefix(ctx.message))[0]
+                    await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
+                                                                                                    cur_pref))
+            except KeyError:
+                pass
+        elif isinstance(exception, commands.CheckFailure):
             log.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
-        elif type(exception) == commands.NoPrivateMessage:
+        elif isinstance(exception, commands.NoPrivateMessage):
             await ctx.send("This command can only be used in a server. Apologies.")
-        elif type(exception) == commands.BadArgument:
+        elif isinstance(exception, commands.BadArgument):
             await ctx.send(exception)
-        elif type(exception) == commands.MissingRequiredArgument:
+        elif isinstance(exception, commands.MissingRequiredArgument):
             await ctx.send("Missing parameter `{}`".format(exception.param))
-        elif type(exception) == NotRegistered:
+        elif isinstance(exception, NotRegistered):
             await ctx.send("User {} isn't registered, command could not be executed.".format(exception))
         else:
             log.warning('Ignoring exception in command {}'.format(ctx.command))
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
+
+
+def prefix(bot: Talos, message: discord.Message):
+    """
+        Return the Talos prefix, given Talos class object and a message
+    :param bot: Talos object to find prefix for
+    :param message: Discord message object for context
+    :return: List of valid prefixes for given bot and message
+    """
+    mention = bot.user.mention + " "
+    if isinstance(message.channel, discord.abc.PrivateChannel):
+        try:
+            return [bot.database.get_user_option(message.author.id, "prefix"), mention]
+        except KeyError:
+            return [bot.DEFAULT_PREFIX, mention]
+    else:
+        try:
+            return [bot.database.get_guild_option(message.guild.id, "prefix"), mention]
+        except KeyError:
+            return [bot.DEFAULT_PREFIX, mention]
 
 
 def string_load(filename):
@@ -412,6 +414,18 @@ def load_btn_key():
         return ""
 
 
+def load_sql_data():
+    """
+        Load the SQL database login.
+    :return:  Talos SQL login info, list.
+    """
+    file = string_load(TOKEN_FILE)
+    try:
+        return file[4].strip().split(":")
+    except KeyError:
+        return []
+
+
 def main():
     """
         Run Talos as main process. Say hello to our new robot overlord.
@@ -447,8 +461,9 @@ def main():
     cnx = None
     try:
         sql = SQL_ADDRESS.split(":")
-        cnx = mysql.connector.connect(user="root", password="***REMOVED***", host=sql[0], port=int(sql[1]),
-                                      database="talos_data", autocommit=True)
+        login = load_sql_data()
+        cnx = mysql.connector.connect(user=login[0], password=login[1], host=sql[0], port=int(sql[1]),
+                                      database=login[2], autocommit=True)
         if cnx is None:
             log.warning("Talos database missing, no data will be saved this session.")
     except Exception as e:

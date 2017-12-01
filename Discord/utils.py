@@ -67,7 +67,7 @@ class EmbedPaginator:
     MAX_FOOTER = 2048
     MAX_AUTHOR = 256
 
-    def __init__(self, max_size=MAX_TOTAL, colour=discord.Color(0x000000)):
+    def __init__(self, max_size: int=MAX_TOTAL, colour=discord.Colour(0x000000)):
         self.max_size = max_size
         self.title = ""
         self.description = ""
@@ -152,7 +152,7 @@ class EmbedPaginator:
         self.footer = footer
         return self
 
-    def add_field(self, title, value, inline=False):
+    def add_field(self, title: str, value: str, inline: bool=False):
         """Adds an embed field. Title length must be less than MAX_FIELD_NAMe"""
         if len(title) > self.MAX_FIELD_NAME:
             raise ValueError("Field title length must be less than or equal to {}".format(self.MAX_FIELD_NAME))
@@ -210,7 +210,7 @@ class TalosFormatter(dcommands.HelpFormatter):
                )
 
     @staticmethod
-    def capital_split(text):
+    def capital_split(text: str):
         out = ""
         for char in text:
             if char.isupper():
@@ -219,7 +219,7 @@ class TalosFormatter(dcommands.HelpFormatter):
                 out += char
         return out.strip(" ")
 
-    def embed_shorten(self, text):
+    def embed_shorten(self, text: str):
         if len(text) > self.width:
             return text[:self.width - 3] + '...\n'
         return text
@@ -425,7 +425,7 @@ class TalosDatabase:
 
     # Meta methods
 
-    def get_column_type(self, table_name, column_name):
+    def get_column_type(self, table_name: str, column_name: str):
         if re.match("[^a-zA-Z0-9_-]", table_name) or re.match("[^a-zA-Z0-9_-]", column_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s"
@@ -435,7 +435,7 @@ class TalosDatabase:
             result = result[0]
         return result
 
-    def get_columns(self, table_name):
+    def get_columns(self, table_name: str):
         if re.match("[^a-zA-Z0-9_-]", table_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
@@ -444,7 +444,7 @@ class TalosDatabase:
 
     # Guild option methods
 
-    def get_guild_default(self, option_name):
+    def get_guild_default(self, option_name: str):
         """Get the default value of an option"""
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
@@ -467,7 +467,7 @@ class TalosDatabase:
         else:
             return []
 
-    def get_guild_option(self, guild_id, option_name):
+    def get_guild_option(self, guild_id: int, option_name: str):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM guild_options WHERE guild_id = %s".format(option_name)
@@ -479,7 +479,7 @@ class TalosDatabase:
             result = result[0]
         return result
 
-    def get_guild_options(self, guild_id):
+    def get_guild_options(self, guild_id: int):
         query = "SELECT * FROM guild_options WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
         result = self._cursor.fetchone()
@@ -503,7 +503,7 @@ class TalosDatabase:
             out.append(row)
         return out
 
-    def set_guild_option(self, guild_id, option_name, value):
+    def set_guild_option(self, guild_id: int, option_name: str, value):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "INSERT INTO guild_options (guild_id, {0}) VALUES (%s, %s) "\
@@ -511,7 +511,7 @@ class TalosDatabase:
                 "{0} = VALUES({0})".format(option_name)
         self._cursor.execute(query, [guild_id, value])
 
-    def remove_guild_option(self, guild_id, option_name):
+    def remove_guild_option(self, guild_id: int, option_name: str):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "UPDATE guild_options SET {} = null WHERE guild_id = %s".format(option_name)
@@ -519,7 +519,7 @@ class TalosDatabase:
 
     # User option methods
 
-    def get_user_default(self, option_name):
+    def get_user_default(self, option_name: str):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM user_options WHERE user_id = -1".format(option_name)
@@ -541,7 +541,7 @@ class TalosDatabase:
         else:
             return []
 
-    def get_user_option(self, user_id, option_name):
+    def get_user_option(self, user_id: int, option_name: str):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM user_options WHERE user_id = %s".format(option_name)
@@ -553,7 +553,7 @@ class TalosDatabase:
             result = result[0]
         return result
 
-    def get_user_options(self, user_id):
+    def get_user_options(self, user_id: int):
         query = "SELECT * FROM user_options WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         result = self._cursor.fetchone()
@@ -577,7 +577,7 @@ class TalosDatabase:
             out.append(row)
         return out
 
-    def set_user_option(self, user_id, option_name, value):
+    def set_user_option(self, user_id: int, option_name: str, value):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "INSERT INTO user_options (user_id, {0}) VALUES (%s, %s) "\
@@ -585,7 +585,7 @@ class TalosDatabase:
                 "{0} = VALUES({0})".format(option_name)
         self._cursor.execute(query, [user_id, value])
 
-    def remove_user_option(self, user_id, option_name):
+    def remove_user_option(self, user_id: int, option_name: str):
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "UPDATE user_options SET {} = null WHERE user_id = %s".format(option_name)
@@ -593,13 +593,13 @@ class TalosDatabase:
 
     # User profile methods
 
-    def register_user(self, user_id):
+    def register_user(self, user_id: int):
         query = "INSERT INTO user_options (user_id) VALUES (%s)"
         self._cursor.execute(query, [user_id])
         query = "INSERT INTO user_profiles (user_id) VALUES (%s)"
         self._cursor.execute(query, [user_id])
 
-    def deregister_user(self, user_id):
+    def deregister_user(self, user_id: int):
         query = "DELETE FROM user_options WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         query = "DELETE FROM user_profiles WHERE user_id = %s"
@@ -607,30 +607,30 @@ class TalosDatabase:
         query = "DELETE FROM invoked_commands WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
 
-    def get_user(self, user_id):
+    def get_user(self, user_id: int):
         query = "SELECT * FROM user_profiles WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         return self._cursor.fetchone()
 
-    def get_description(self, user_id):
+    def get_description(self, user_id: int):
         query = "SELECT description FROM user_profiles WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         return self._cursor.fetchone()
 
-    def set_description(self, user_id, desc):
+    def set_description(self, user_id: int, desc: str):
         query = "UPDATE user_profiles SET description = %s WHERE user_id = %s"
         self._cursor.execute(query, [desc, user_id])
 
-    def get_title(self, user_id):
+    def get_title(self, user_id: int):
         query = "SELECT title FROM user_profiles WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         return self._cursor.fetchone()
 
-    def set_title(self, user_id, title):
+    def set_title(self, user_id: int, title: str):
         query = "UPDATE user_profiles SET title = %s WHERE user_id = %s"
         self._cursor.execute(query, [title, user_id])
 
-    def user_invoked_command(self, user_id, command):
+    def user_invoked_command(self, user_id: int, command: str):
         query = "UPDATE user_profiles SET commands_invoked = commands_invoked + 1 WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         query = "INSERT INTO invoked_commands (user_id, command_name) VALUES (%s, %s) " \
@@ -638,12 +638,12 @@ class TalosDatabase:
                 "times_invoked = times_invoked + 1"
         self._cursor.execute(query, [user_id, command])
 
-    def get_command_data(self, user_id):
+    def get_command_data(self, user_id: int):
         query = "SELECT command_name, times_invoked FROM invoked_commands WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         return self._cursor.fetchall()
 
-    def get_favorite_command(self, user_id):
+    def get_favorite_command(self, user_id: int):
         query = "SELECT command_name, times_invoked FROM invoked_commands WHERE user_id = %s " \
                 "ORDER BY times_invoked DESC LIMIT 1"
         self._cursor.execute(query, [user_id])
@@ -659,7 +659,7 @@ class TalosDatabase:
             out.append(row)
         return out
 
-    def get_ops(self, guild_id):
+    def get_ops(self, guild_id: int):
         query = "SELECT opname FROM ops WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
         out = []
@@ -667,23 +667,23 @@ class TalosDatabase:
             out.append(row[0])
         return out
 
-    def add_op(self, guild_id, opname):
+    def add_op(self, guild_id: int, opname: str):
         query = "INSERT INTO ops VALUES (%s, %s)"
         self._cursor.execute(query, [guild_id, opname])
 
-    def remove_op(self, guild_id, opname):
+    def remove_op(self, guild_id: int, opname: str):
         query = "DELETE FROM ops WHERE guild_id = %s AND opname = %s"
         self._cursor.execute(query, [guild_id, opname])
 
     # Perms methods
 
-    def get_perm_rule(self, guild_id, command, perm_type, target):
+    def get_perm_rule(self, guild_id: int, command: str, perm_type: str, target: str):
         query = "SELECT priority, allow FROM perm_rules WHERE guild_id = %s AND command = %s AND perm_type = %s AND"\
                 " target = %s"
         self._cursor.execute(query, [guild_id, command, perm_type, target])
         return self._cursor.fetchone()
 
-    def get_perm_rules(self, guild_id=-1, command=None, perm_type=None, target=None):
+    def get_perm_rules(self, guild_id: int=-1, command=None, perm_type=None, target=None):
         query = "SELECT command, perm_type, target, priority, allow FROM perm_rules WHERE guild_id = %s"
         args = []
         if command or perm_type or target:
@@ -709,7 +709,7 @@ class TalosDatabase:
         self._cursor.execute(query)
         return self._cursor.fetchall()
 
-    def set_perm_rule(self, guild_id, command, perm_type, allow, priority=None, target=None):
+    def set_perm_rule(self, guild_id: int, command: str, perm_type: str, allow: bool, priority=None, target=None):
         if priority is None:
             priority = _levels[perm_type]
         if target is None:
@@ -724,7 +724,7 @@ class TalosDatabase:
                 "allow = VALUES(allow)"
         self._cursor.execute(query, [guild_id, command, perm_type, target, priority, allow])
 
-    def remove_perm_rules(self, guild_id, command=None, perm_type=None, target=None):
+    def remove_perm_rules(self, guild_id: int, command=None, perm_type=None, target=None):
         query = "DELETE FROM perm_rules WHERE guild_id = %s"
         if command or perm_type or target:
             query += " AND "

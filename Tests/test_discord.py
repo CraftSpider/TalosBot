@@ -106,7 +106,7 @@ def test_extension_load():
         assert testlos.EXTENSION_DIRECTORY + "." + extension in testlos.extensions,\
             "Didn't load {} extension".format(extension)
 
-    testlos.unload_extensions(["Commands", "AdminCommands"])
+    testlos.unload_extensions(["Commands", "AdminCommands", "DubDub"])
 
     testlos.unload_extensions()
     assert len(testlos.extensions) == 0, "Didn't unload all extensions"

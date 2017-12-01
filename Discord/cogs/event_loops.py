@@ -26,6 +26,7 @@ log = logging.getLogger("talos.events")
 
 
 class EventLoops:
+    """Handles the Talos regulated events, Time based loops. How did you even figure out this help page existed?"""
 
     def __init__(self, bot):
         """Initialize the EventLoops cog. Takes in an instance of Talos to use while running."""

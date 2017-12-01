@@ -80,6 +80,19 @@ class DevCommands:
             await guild.me.edit(nick=nick)
         await ctx.send("Nickname universally changed to {}".format(nick))
 
+    @commands.command()
+    @admin_check()
+    async def idlist(self, ctx):
+        out = "```\n"
+        out += "Roles:\n"
+        for role in ctx.guild.roles:
+            out += "  {}: {}\n".format(role.name, role.id).replace("@everyone", "@\u200beveryone")
+        out += "Channels:\n"
+        for channel in ctx.guild.channels:
+            out += "  {}: {}\n".format(channel.name, channel.id)
+        out += "```"
+        await ctx.send(out)
+
     @commands.command(hidden=True)
     @admin_check()
     async def grant_title(self, ctx, user: discord.User, *, title):
