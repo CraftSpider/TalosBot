@@ -10,10 +10,10 @@ import asyncio
 import random
 import logging
 import re
+import utils
 from datetime import datetime
 from datetime import timedelta
 from collections import defaultdict
-from utils import PW
 
 
 # Dict to keep track of whatever the currently active PW is
@@ -22,37 +22,7 @@ active_pw = defaultdict(lambda: None)
 logging = logging.getLogger("talos.command")
 
 
-def perms_check():
-    """Determine whether the person calling the command is an operator or admin."""
-    def predicate(ctx):
 
-        if isinstance(ctx.channel, discord.abc.PrivateChannel):
-            return True
-        command = str(ctx.command)
-
-        try:
-            if not ctx.bot.database.get_guild_option(ctx.guild.id, "commands"):
-                return False
-        except KeyError:
-            pass
-        perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
-        if len(perms) == 0:
-            return True
-        perms.sort(key=lambda x: x[3])
-        for perm in perms:
-            if perm[1] == "user" and perm[2] == str(ctx.author):
-                return perm[4]
-            elif perm[1] == "role":
-                for role in ctx.author.roles:
-                    if perm[2] == str(role):
-                        return perm[4]
-            elif perm[1] == "channel" and perm[2] == str(ctx.channel):
-                return perm[4]
-            elif perm[1] == "guild":
-                return perm[4]
-        return True
-
-    return commands.check(predicate)
 
 
 def sort_mem(member):
@@ -78,17 +48,8 @@ def html_to_markdown(html):
     return html
 
 
-class Commands:
+class Commands(utils.TalosCog):
     """These commands can be used by anyone, as long as Talos is awake.\nThey don't care who is using them."""
-
-    __slots__ = ['bot', 'database']
-
-    def __init__(self, bot):
-        """Initialize the Commands cog. Takes in an instance of Talos to use while running."""
-        self.bot = bot
-        self.database = None
-        if hasattr(bot, "database"):
-            self.database = bot.database
 
     def get_uptime_days(self):
         """Gets the amount of time Talos has been online in days, hours, minutes, and seconds. Returns a string."""
@@ -153,10 +114,9 @@ class Commands:
     #   User Commands
     #
     
-    @commands.command(aliases=["info"])
-    @perms_check()
+    @commands.command(aliases=["info"], description="Displays a short blurb about Talos")
     async def information(self, ctx):
-        """Gives a short blurb about Talos."""
+        """Displays such information as who made me, how I'm built, where you can contact me, and more."""
         if self.bot.should_embed(ctx):
             description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
                           "`{}help` to see a list of my commands."
@@ -191,10 +151,9 @@ class Commands:
                 (await self.bot.get_prefix(ctx))[0], discord.__version__)
             await ctx.send(out)
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Disclaimer for discord TOS")
     async def tos(self, ctx):
-        """Disclaimer for discord TOS"""
+        """Also known as the 'don't report me' command"""
         await ctx.send("Talos will in the process of running possibly log your username and log commands that you give "
                        "it. Due to Discord TOS, you must be informed and consent to any storage of data you send here. "
                        "This data will never be publicly shared except at your request, and only used to help run Talos"
@@ -202,16 +161,14 @@ class Commands:
                        ", please talk to one of the Talos developers for information and we'll see what we can do to "
                        "help")
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Display Talos version")
     async def version(self, ctx):
-        """Prints out Talos version."""
+        """Version is formatted in [major-minor-patch] style."""
         await ctx.send("Version: {0}".format(self.bot.VERSION))
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Allows the rolling of dice")
     async def roll(self, ctx, dice: str):
-        """Rolls dice in NdN format."""
+        """Dice are rolled in NdN format, Number of dice first, then how many sides they have."""
         try:
             rolls, limit = map(int, dice.lower().split('d'))
         except ValueError:
@@ -229,9 +186,8 @@ class Commands:
         
     @commands.command(description='For when you wanna settle the score some other way',
                       usage="[choice 1], [choice 2], ...")
-    @perms_check()
     async def choose(self, ctx, *, choices: str):
-        """Chooses between multiple choices."""
+        """Chooses between multiple choices, as a comma-separated list."""
         if "," not in choices:
             await ctx.send("I need at least two choices to choose between!")
             return
@@ -245,16 +201,15 @@ class Commands:
             out += random.choice(choices).strip()
         await ctx.send(out)
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="It's time to get a watch")
     async def time(self, ctx):
         """Prints out the current time in UTC, HH:MM:SS format"""
         await ctx.send("It's time to get a watch. {0}".format(datetime.utcnow().strftime("%H:%M:%S")))
     
-    @commands.command(aliases=["ww", "WW"])
-    @perms_check()
+    @commands.command(aliases=["ww", "WW"], description="Have Talos help run a Word War")
     async def wordwar(self, ctx, length: str="", start: str="", wpm: int=30):
-        """Runs an X minute long word-war"""
+        """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
+            """number of words in the given time period"""
         try:
             length = float(length)
         except ValueError:
@@ -298,24 +253,17 @@ class Commands:
         else:
             await ctx.send("The word war is over. How did you do?")
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Credit where it is due")
     async def credits(self, ctx):
-        """Giving credit where it is due"""
+        """Displays credits for Talos, who made what."""
         await ctx.send("Primary Developers: CraftSpider, Dino.\n"
                        "Other contributors: Wundrweapon, HiddenStorys\n"
                        "Artist: Misty Tynan")
     
-    @commands.command()
-    @perms_check()
-    async def joined(self, ctx, member: discord.Member):
-        """Says when a member joined."""
-        await ctx.send('{0.name} joined in {0.joined_at}'.format(member))
-    
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Displays how long the bot has been online")
     async def uptime(self, ctx):
-        """Prints out how long the bot has been online, with details."""
+        """Displays details of uptime. Current uptime length and percentages with """\
+            """precision"""
         boot_string = self.bot.BOOT_TIME.strftime("%b %d, %H:%M:%S")
         out = "I've been online since {0}, a total of {1}\n".format(boot_string, self.get_uptime_days())
         day_up, week_up, month_up = self.get_uptime_percent()
@@ -324,8 +272,7 @@ class Commands:
         out += "{:02.2f}% of the past month".format(month_up)
         await ctx.send(out)
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Pong!")
     async def ping(self, ctx):
         """Checks the Talos delay. (Not round trip. Time between putting message and gateway acknowledgement.)"""
         start = datetime.now()
@@ -334,16 +281,16 @@ class Commands:
         milliseconds = (end - start).microseconds/1000
         await ctx.send("Current Ping: `{}`".format(milliseconds))
 
-    @commands.group(aliases=["nano"])
-    @perms_check()
+    @commands.group(aliases=["nano"], description="Fetch data from the NaNo site")
     async def nanowrimo(self, ctx):
-        """Fetches info from the NaNo site"""
+        """Can fetch novels or profiles, with possibly more features coming in time."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'novel' and 'profile'.")
 
-    @nanowrimo.command(name="novel")
+    @nanowrimo.command(name="novel", description="Fetch a user's nano novel.")
     async def _novel(self, ctx, username: str, novel_name: str=""):
-        """Fetches detailed info on a user's novel from the NaNo site"""
+        """Fetches detailed info on a user's novel from the NaNo site. If no novel name is given, it grabs the most """\
+            """recent."""
         username = username.lower().replace(" ", "-")
         novel_name = novel_name.lower().replace(" ", "-")
 
@@ -397,9 +344,9 @@ class Commands:
                 embed.add_field(name="__Excerpt__", value=novel_excerpt)
             await ctx.send(embed=embed)
 
-    @nanowrimo.command(name="profile")
+    @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
     async def _profile(self, ctx, username: str):
-        """Fetches a given username's profile from the NaNo site"""
+        """Fetches detailed info on a user's profile from the NaNo website."""
         sitename = username.lower().replace(" ", "-")
         sitename = sitename.lower().replace(".", "-")
 
@@ -467,34 +414,41 @@ class Commands:
             # TODO Add fact sheet
             await ctx.send(out)
     
-    @commands.group()
-    @perms_check()
+    @commands.group(description="Host to all your random generator needs.")
     async def generate(self, ctx):
-        """Generates a crawl, prompt, or name."""
+        """Can generate a crawl, prompt, or name."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'prompt', 'crawl', and 'name'.")
     
-    @generate.command(name='crawl')
+    @generate.command(name='crawl', description="Generates a writing crawl prompt")
     async def _crawl(self, ctx):
-        """Generates a crawl"""
+        """Generates a writing crawl prompt. Possibly a word count challenge or a WW challenge."""
+        form = random.randint(0, 1)
         place_adj = random.choice(self.place_adjective)
         place = random.choice(self.place)
-        words = str(random.randint(50, 500))
         action = random.choice(self.action)
-        await ctx.send("You enter the {} {}. Write {} words as you {}.".format(place_adj, place, words, action))
+        out = ""
+        if form == 0:
+            words = str(random.randint(50, 500))
+            out = "You enter the {} {}. Write {} words as you {}.".format(place_adj, place, words, action)
+        elif form == 1:
+            minutes = str(random.randrange(5, 31, 5))
+            out = "You {} in the {} {}, and you write for {} minutes as you do so.".format(
+                action, place_adj, place, minutes)
+        await ctx.send(out)
     
-    @generate.command(name='prompt')
+    @generate.command(name='prompt', description="Generates a normal writing prompt")
     async def _prompt(self, ctx):
-        """Generates a prompt"""
+        """Generates a writing prompt sentence. Currently only one sentence form, more coming."""
         adj = random.choice(self.adjective)
         noun = random.choice(self.noun)
         goal = random.choice(self.goal)
         obstacle = random.choice(self.obstacle)
         await ctx.send("A story about a {} {} who must {} while {}.".format(adj, noun, goal, obstacle))
 
-    @generate.command(name="name")
+    @generate.command(name="name", description="Generates a random name")
     async def _name(self, ctx, number=1):
-        """Generates a name or names. Number must be between 1 and 6"""
+        """Generates a name or names. Number must be between 1 and 6. Names are sourced from behindthename."""
         if number < 1 or number > 6:
             await ctx.send("Number must be between 1 and 6 inclusive.")
             return
@@ -504,27 +458,29 @@ class Commands:
             out += "{}\n".format(name)
         await ctx.send(out)
 
-    @commands.group(aliases=["pw", "PW"])
+    @commands.group(aliases=["pw", "PW"], description="Want Talos to help you run a productivity war?")
     @commands.guild_only()
-    @perms_check()
     async def productivitywar(self, ctx):
-        """Commands for a productivity war."""
+        """Talos productivity war commands. First you create a PW, then people can join it (the creator is """\
+            """automatically added), then once everyone has joined who wants to you can start it.
+            Once started, people can leave as they finish, and once everyone is gone the PW will end automatically. """\
+            """Alternatively, you can forcibly end the PW if some people are gone and can't or won't leave."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'create', 'join', 'start', 'leave', and 'end'.")
 
-    @productivitywar.command(name='create')
+    @productivitywar.command(name='create', description="Create a new PW if one doesn't exist yet")
     async def _create(self, ctx):
-        """Begins a new PW, if one isn't already running."""
+        """Creates a new PW, assuming one doesn't yet exist. There is a limit of one PW per guild at a time."""
         if active_pw[ctx.guild.id] is not None:
             await ctx.send("There's already a PW going on. Would you like to **join**?")
         else:
             await ctx.send("Creating a new PW.")
-            active_pw[ctx.guild.id] = PW()
+            active_pw[ctx.guild.id] = utils.PW()
             active_pw[ctx.guild.id].join(ctx.author)
 
-    @productivitywar.command(name='join')
+    @productivitywar.command(name='join', description="Join an existing PW")
     async def _join(self, ctx):
-        """Join a currently running PW, if you aren't already in it."""
+        """Signs you up for an existing PW, if you are not already in this one."""
         if active_pw[ctx.guild.id] is not None:
             if active_pw[ctx.guild.id].join(ctx.author):
                 await ctx.send("User {} joined the PW.".format(ctx.author.display_name))
@@ -533,9 +489,9 @@ class Commands:
         else:
             await ctx.send("No PW to join. Maybe you want to **create** one?")
 
-    @productivitywar.command(name='start')
+    @productivitywar.command(name='start', description="Start an unstarted PW")
     async def _start(self, ctx, time=""):
-        """Start a PW that isn't yet begun."""
+        """Start a PW that isn't yet begun. Ready, set... GO!"""
         if active_pw[ctx.guild.id] is not None:
             if not active_pw[ctx.guild.id].get_started():
                 if time != "" and time[0] == ":":
@@ -558,9 +514,9 @@ class Commands:
         else:
             await ctx.send("No PW to start. Maybe you want to **create** one?")
 
-    @productivitywar.command(name='leave')
+    @productivitywar.command(name='leave', description="Leave a PW you've joined")
     async def _leave(self, ctx):
-        """End your involvement in a PW, if you're the last person, the whole thing ends."""
+        """End your involvement in a PW. If you're the last person out, the whole thing ends."""
         if active_pw[ctx.guild.id] is not None:
             leave = active_pw[ctx.guild.id].leave(ctx.author)
             if leave == 0:
@@ -574,9 +530,9 @@ class Commands:
         else:
             await ctx.send("No PW to leave. Maybe you want to **create** one?")
 
-    @productivitywar.command(name='end')
+    @productivitywar.command(name='end', description="End a running PW")
     async def _end(self, ctx):
-        """End the whole PW, if one is currently running."""
+        """End the whole PW, if one is currently running. Just delete it, if one exists but isn't running."""
         if active_pw[ctx.guild.id] is None:
             await ctx.send("There's currently no PW going on. Would you like to **create** one?")
         elif not active_pw[ctx.guild.id].get_started():
@@ -622,9 +578,9 @@ class Commands:
 
             active_pw[ctx.guild.id] = None
 
-    @productivitywar.command(name='dump', hidden=True)
+    @productivitywar.command(name='dump', hidden=True, description="Dump the info down the hole")
     async def _dump(self, ctx):
-        """Dumps info about the current state of a running PW"""
+        """Dumps info about the current state of a running PW. Designed for dev purposes."""
         cur_pw = active_pw[ctx.guild.id]
         if cur_pw is None:
             await ctx.send("No PW currently running")

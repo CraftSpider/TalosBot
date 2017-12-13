@@ -102,7 +102,7 @@ class Talos(commands.Bot):
         # Override things set by super init that we don't want
         self._skip_check = self.skip_check
         self.remove_command("help")
-        self.command(name="help", aliases=["man"])(self._talos_help_command)
+        self.command(name="help", aliases=["man"], description="Shows this message")(self._talos_help_command)
 
     def load_extensions(self, extensions=None):
         """
@@ -184,7 +184,7 @@ class Talos(commands.Bot):
         await super().close()
 
     async def _talos_help_command(self, ctx, *args: str):
-        """Shows this message."""
+        """The command you're using. Can show help for any command, cog, or extension Talos is running."""
         if ctx.guild is not None and self.database.is_connected():
             destination = ctx.message.author if self.database.get_guild_option(ctx.guild.id, "pm_help") else \
                           ctx.message.channel
@@ -268,7 +268,7 @@ class Talos(commands.Bot):
         if self.discordbots_token != "":
             log.info("Posting guilds to Discordbots")
             guild_count = len(self.guilds)
-            self.cogs["EventLoops"].last_server_count = guild_count
+            self.cogs["EventLoops"].last_guild_count = guild_count
             import aiohttp
             headers = {
                 'Authorization': self.discordbots_token}
@@ -325,7 +325,7 @@ class Talos(commands.Bot):
         elif isinstance(exception, commands.CheckFailure):
             log.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
         elif isinstance(exception, commands.NoPrivateMessage):
-            await ctx.send("This command can only be used in a server. Apologies.")
+            await ctx.send("This command can only be used in a guild. Apologies.")
         elif isinstance(exception, commands.BadArgument):
             await ctx.send(exception)
         elif isinstance(exception, commands.MissingRequiredArgument):

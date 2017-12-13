@@ -1,6 +1,6 @@
 """
     Admin Commands cog for Talos.
-    Holds all commands relevant to administrator function, server specific stuff.
+    Holds all commands relevant to administrator function, guild specific stuff.
 
     Author: CraftSpider
 """
@@ -9,6 +9,7 @@ import logging
 import random
 import string
 import re
+import utils
 from discord.ext import commands
 from collections import defaultdict
 
@@ -40,41 +41,37 @@ def space_replace(match):
 #
 # Admin Command Checks
 #
-def op_check():
+def op_check(self, ctx):
     """Determine whether the person calling the command is an operator or admin."""
-    def predicate(ctx):
+    if isinstance(ctx.channel, discord.abc.PrivateChannel):
+        return True
+    command = str(ctx.command)
 
-        if isinstance(ctx.channel, discord.abc.PrivateChannel):
-            return True
-        command = str(ctx.command)
+    if ctx.author.id in ctx.bot.ADMINS or\
+       len(ctx.bot.database.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
+       ctx.author == ctx.guild.owner or\
+       ctx.author.id in ctx.bot.database.get_ops(ctx.guild.id):
+        return True
 
-        if ctx.author.id in ctx.bot.ADMINS or\
-           len(ctx.bot.database.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
-           ctx.author == ctx.guild.owner or\
-           ctx.author.id in ctx.bot.database.get_ops(ctx.guild.id):
-            return True
-
-        perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
-        if len(perms) == 0:
-            return False
-        perms.sort(key=lambda x: x[3])
-        for perm in perms:
-            if perm[1] == "user" and perm[2] == str(ctx.author):
-                return perm[4]
-            elif perm[1] == "role":
-                for role in ctx.author.roles:
-                    if perm[2] == str(role):
-                        return perm[4]
-            elif perm[1] == "channel" and perm[2] == str(ctx.channel):
-                return perm[4]
-            elif perm[1] == "guild":
-                return perm[4]
+    perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
+    if len(perms) == 0:
         return False
+    perms.sort(key=lambda x: x[3])
+    for perm in perms:
+        if perm[1] == "user" and perm[2] == str(ctx.author):
+            return perm[4]
+        elif perm[1] == "role":
+            for role in ctx.author.roles:
+                if perm[2] == str(role):
+                    return perm[4]
+        elif perm[1] == "channel" and perm[2] == str(ctx.channel):
+            return perm[4]
+        elif perm[1] == "guild":
+            return perm[4]
+    return False
 
-    return commands.check(predicate)
 
-
-def admin_check():
+def dev_check():
     """Determine whether the person calling the command is an admin."""
     def predicate(ctx):
         return ctx.author.id in ctx.bot.ADMINS
@@ -84,41 +81,31 @@ def admin_check():
 #
 # Admin Cog Class
 #
-class AdminCommands:
+class AdminCommands(utils.TalosCog):
     """These commands can only be used by Admins or Ops, and will work at any time.
     If no ops exist, anyone with admin role permission can use op commands"""
 
-    __slots__ = ['bot', 'database']
-
     LEVELS = {"guild": 0, "channel": 1, "role": 2, "user": 3}
+    __local_check = op_check
 
-    def __init__(self, bot):
-        """Initializes the AdminCommands cog. Takes an instance of Talos to use while running."""
-        self.bot = bot
-        self.database = None
-        if hasattr(bot, "database"):
-            self.database = bot.database
-
-    @commands.command()
+    @commands.command(description="Changes Talos' nickname")
     @commands.guild_only()
-    @op_check()
     async def nick(self, ctx, *, nickname: str):
-        """Changes Talos' nickname"""
+        """Sets Talos' nickname in the current guild."""
         await ctx.me.edit(nick=nickname)
         await ctx.send("Nickname changed to {}".format(nickname))
 
-    @commands.command()
-    @op_check()
+    @commands.command(description="Makes Talos repeat you")
     async def repeat(self, ctx, *, text):
-        """Causes Talos to repeat whatever you said"""
+        """Causes Talos to repeat whatever you just said, exactly."""
         await ctx.send(text)
 
-    @commands.command(usage="[number=10]")
+    @commands.command(usage="[number=10]", description="Remove messages from a channel")
     @commands.guild_only()
-    @op_check()
     async def purge(self, ctx, number: str="10", *key):
         """Purges messages from a channel. By default, this will be 10 (including the invoking command)."""\
-            """ Use 'all' to purge whole channel."""
+            """ Use 'all' to purge whole channel. Confirmation keys should be tacked on the end, so """\
+            """`^purge 100 [key]`"""
         if number != "all":
             number = int(number)
             if number >= 100 and (len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]):
@@ -136,11 +123,11 @@ class AdminCommands:
                 await ctx.channel.purge(limit=None)
                 secure_keys[str(ctx.guild.id)] = ""
 
-    @commands.command()
+    @commands.command(description="Display current Talos perms")
     @commands.guild_only()
-    @op_check()
     async def talos_perms(self, ctx):
-        """Has Talos print out their current guild permissions"""
+        """Has Talos display their current effective guild permissions. This is channel independent, """\
+            """channel-specific perms aren't taken into account."""
         talos_perms = ctx.me.guild_permissions
         out = "```Guild Permissions:\n"
         out += "    Administrator: {}\n".format(talos_perms.administrator)
@@ -174,29 +161,28 @@ class AdminCommands:
         out += "```"
         await ctx.send(out)
 
-    @commands.group()
-    @op_check()
+    @commands.group(description="Operator related commands")
     async def ops(self, ctx):
-        """Operator related commands. By default, anyone on a server with admin privileges is an Op."""\
-            """ Adding someone to the list will override this behavior.
-            The Server Owner is also always Op, and this behavior can't be overridden for security reasons."""
+        """By default, anyone on a guild with admin privileges is an Op. Adding someone to the list will override """\
+            """ this behavior.
+            The Guild Owner is also always Op, and this behavior can't be overridden for security reasons."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'add', 'list', and 'remove'.")
 
-    @ops.command(name="add")
+    @ops.command(name="add", description="Adds a new operator")
     @commands.guild_only()
     async def _ops_add(self, ctx, member: discord.Member):
-        """Adds a new operator user"""
+        """Adds a user to the guild operator list."""
         if member.id not in self.database.get_ops(ctx.guild.id):
             self.database.add_op(ctx.guild.id, member.id)
             await ctx.send("Opped {0.name}!".format(member))
         else:
             await ctx.send("That user is already an op!")
 
-    @ops.command(name="remove")
+    @ops.command(name="remove", description="Removes an operator")
     @commands.guild_only()
     async def _ops_remove(self, ctx, member):
-        """Removes an operator user"""
+        """Removes an operator user from the guild list"""
         member_object = discord.utils.find(lambda x: x.name == member or str(x) == member, ctx.guild.members)
         if member_object is not None:
             member = member_object.id
@@ -209,10 +195,10 @@ class AdminCommands:
         else:
             await ctx.send("That person isn't an op!")
 
-    @ops.command(name="list")
+    @ops.command(name="list", description="Display operators")
     @commands.guild_only()
     async def _ops_list(self, ctx):
-        """Displays all operators for the current server"""
+        """Displays all operators for the current guild"""
         opslist = self.database.get_ops(ctx.guild.id)
         if len(opslist) > 0:
             out = "```"
@@ -222,18 +208,18 @@ class AdminCommands:
             out += "```"
             await ctx.send(out)
         else:
-            await ctx.send("This server currently has no operators.")
+            await ctx.send("This guild currently has no operators.")
 
-    @ops.command(name="all", hidden=True)
-    @admin_check()
+    @ops.command(name="all", hidden=True, description="Display all operators")
+    @dev_check()
     async def _ops_all(self, ctx):
-        """Displays all operators everywhere"""
+        """Displays all operators in every guild Talos is in"""
         all_ops = self.database.get_all_ops()
         consumed = []
         out = "```"
         for key in all_ops:
             if key[0] not in consumed:
-                out += "Server: {}\n".format(self.bot.get_guild(key[0]))
+                out += "Guild: {}\n".format(self.bot.get_guild(key[0]))
                 consumed.append(key[0])
             op = self.bot.get_user(key[1])
             out += "    {}\n".format(str(op) if op is not None else key[1])
@@ -243,11 +229,10 @@ class AdminCommands:
         else:
             await ctx.send("No ops currently")
 
-    @commands.group()
-    @op_check()
+    @commands.group(description="Permissions related commands")
     async def perms(self, ctx):
-        """Permissions related commands. Talos permissions are divided into 4 levels, with each level having a"""\
-           """ default priority. The levels, in order from lowest to highest default priority, are:
+        """Talos permissions are divided into 4 levels, with each level having a default priority. The levels, in """\
+           """order from lowest to highest default priority, are:
            -Guild
            -Channel
            -Role
@@ -258,11 +243,11 @@ class AdminCommands:
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'create', 'list', and 'remove'.")
 
-    @perms.command(name="create")
+    @perms.command(name="create", description="Create or alter permission rules")
     @commands.guild_only()
     async def _p_create(self, ctx, command: str, level: str, allow: str, name: str=None, priority: str=None):
-        """Create or alter a permissions rule. Provide a command, one of the four levels, whether to allow or """\
-            """forbid, if the level isn't guild then a name, and a priority if you don't want default."""
+        """Provide a command, one of the four levels (see `^help perms`), whether to allow or forbid the command, """\
+            """a name (If level is guild, this is ignored), and a priority if you don't want default."""
         level = level.lower()
         allow = allow.lower()
         if allow == "allow" or allow == "true":
@@ -298,51 +283,44 @@ class AdminCommands:
         else:
             await ctx.send("Unrecognized permission level.")
 
-    @perms.command(name="remove")
+    @perms.command(name="remove", description="Remove permission rules")
     @commands.guild_only()
-    async def _p_remove(self, ctx, *args):
-        """Remove a permissions rule or set of rules."""
-        if len(args) > 0:
-            command = args[0]
-        else:
-            command = None
-        if len(args) > 1:
-            level = args[1]
+    async def _p_remove(self, ctx, command=None, level=None, name=None):
+        """Remove a permissions rule or set of rules. Be careful, as simply `^perms remove` will clear all guild """\
+            """permissions."""
+        if isinstance(level, str):
             level = level.lower()
-        else:
-            level = None
         if level in self.LEVELS or level is None:
-            target = None
-            if len(args) > 2:
+            if isinstance(name, str):
                 if level == "user":
-                    target = str(discord.utils.find(lambda u: u.name == args[2], ctx.guild.members))
+                    name = str(discord.utils.find(lambda u: u.name == name, ctx.guild.members))
                 elif level == "role":
-                    target = str(discord.utils.find(lambda r: r.name == args[2], ctx.guild.roles))
+                    name = str(discord.utils.find(lambda r: r.name == name, ctx.guild.roles))
                 elif level == "channel":
-                    target = str(discord.utils.find(lambda c: c.name == args[2], ctx.guild.channels))
+                    name = str(discord.utils.find(lambda c: c.name == name, ctx.guild.channels))
 
-            self.database.remove_perm_rules(ctx.guild.id, command, level, target)
+            self.database.remove_perm_rules(ctx.guild.id, command, level, name)
             if command is None:
                 await ctx.send("Permissions for guild cleared")
                 return
             if level is None:
                 await ctx.send("Permissions for command **{}** at all levels cleared.".format(command))
                 return
-            if target is None:
+            if name is None:
                 await ctx.send("Permissions for command **{}** at level **{}** cleared.".format(command, level))
                 return
-            out = "Permissions for command **{}** at level **{}** for **{}** cleared.".format(command, level, target)
+            out = "Permissions for command **{}** at level **{}** for **{}** cleared.".format(command, level, name)
             await ctx.send(out)
         else:
             await ctx.send("Unrecognized permission level.")
 
-    @perms.command(name="list")
+    @perms.command(name="list", description="Display permission rules for the current guild")
     @commands.guild_only()
     async def _p_list(self, ctx):
-        """Lists permissions rules for the current guild"""
+        """Displays a list of all permissions rules for the current guild"""
         result = self.database.get_perm_rules(ctx.guild.id)
         if len(result) == 0:
-            await ctx.send("No permissions set for this server.")
+            await ctx.send("No permissions set for this guild, with all data about them.")
             return
         guild_perms = {}
         for line in result:
@@ -365,10 +343,10 @@ class AdminCommands:
         out += "```"
         await ctx.send(out)
 
-    @perms.command(name="all", hidden=True)
-    @admin_check()
+    @perms.command(name="all", hidden=True, description="Display permission rules for all guilds")
+    @dev_check()
     async def _p_all(self, ctx):
-        """Displays all permissions everywhere"""
+        """Displays all permissions rules, in all guilds Talos is in."""
         result = self.database.get_all_perm_rules()
         if len(result) == 0:
             await ctx.send("All permissions default")
@@ -399,17 +377,17 @@ class AdminCommands:
         out += "```"
         await ctx.send(out)
 
-    @commands.group()
+    @commands.group(description="Options related commands")
     async def options(self, ctx):
-        """Command to change Talos guild options. All of these only effect the current guild."""
+        """Command to change Talos guild options. All of these only effect the current guild. Check """\
+            """`^help options list` for a list of available options, and what they do."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'set', 'list', and 'default'.")
 
-    @options.command(name="set")
+    @options.command(name="set", description="Set guild options")
     @commands.guild_only()
-    @op_check()
     async def _opt_set(self, ctx, option: str, value: str):
-        """Set an option. Most options are true or false. See `^options list` for available options"""
+        """Set an option. Most options are true or false. See `^help options list` for available options"""
         try:
             option_type = self.database.get_column_type("guild_options", option)
         except ValueError:
@@ -432,11 +410,19 @@ class AdminCommands:
         else:
             await ctx.send("I don't recognize that option.")
 
-    @options.command(name="list")
+    @options.command(name="list", description="Display guild options")
     @commands.guild_only()
     async def _opt_list(self, ctx):
-        """List of what options are currently set on the server. Do `^help options [option name]` for details on"""\
-            """ an individual option"""
+        """Displays list of what options are currently set to in this guild. Available options are:
+        rich_embeds: whether Talos will use any embedded messages in this guild.
+        fail_message: whether Talos will post a message for unknown commands
+        pm_help: whether Talos will PM help or post it in the channel
+        commands: whether the Commands cog is active in this guild
+        user_commands: whether the UserCommands cog is active in this guild
+        joke_commands: whether the JokeCommands cog is active in this guild
+        writing_prompts: whether to post daily writing prompts
+        prompts_channel: the name of the channel to post daily prompts to, if above option is true
+        prefix: command prefix for Talos to use in this guild. @ mention will always work"""
         out = "```"
         name_types = self.database.get_columns("guild_options")
         options = self.database.get_guild_options(ctx.guild.id)
@@ -451,11 +437,10 @@ class AdminCommands:
             return
         await ctx.send(out)
 
-    @options.command(name="default")
+    @options.command(name="default", description="Set guild option to default")
     @commands.guild_only()
-    @op_check()
     async def _opt_default(self, ctx, option):
-        """Sets an option to its default value, as in a server Talos had just joined."""
+        """Sets an option to its default value, as in a guild Talos had just joined."""
         try:
             data_type = self.database.get_column_type("guild_options", option)
         except ValueError:
@@ -467,10 +452,10 @@ class AdminCommands:
         else:
             await ctx.send("I don't recognize that option.")
 
-    @options.command(name="all", hidden=True)
-    @admin_check()
+    @options.command(name="all", hidden=True, description="Display all guild options")
+    @dev_check()
     async def _opt_all(self, ctx):
-        """Displays all options everywhere"""
+        """Displays all guild options in every guild Talos is in. Condensed to save your screen."""
         all_options = self.database.get_all_guild_options()
         name_types = self.database.get_columns("guild_options")
         out = "```"
@@ -478,7 +463,7 @@ class AdminCommands:
             for index in range(len(options)):
                 key = options[index]
                 if self.bot.get_guild(key) or key == -1:
-                    out += "Server: {}\n".format(self.bot.get_guild(key))
+                    out += "Guild: {}\n".format(self.bot.get_guild(key))
                     continue
                 if key is None:
                     continue

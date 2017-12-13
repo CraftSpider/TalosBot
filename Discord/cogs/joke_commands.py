@@ -13,40 +13,6 @@ from utils import fullwidth_transform
 logging = logging.getLogger("talos.joke")
 
 
-def perms_check():
-    """Determine whether the person calling the command is an operator or admin."""
-
-    def predicate(ctx):
-
-        if isinstance(ctx.channel, discord.abc.PrivateChannel):
-            return True
-        command = str(ctx.command)
-
-        try:
-            if not ctx.bot.database.get_guild_option(ctx.guild.id, "joke_commands"):
-                return False
-        except KeyError:
-            pass
-        perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
-        if len(perms) == 0:
-            return True
-        perms.sort(key=lambda x: x[3])
-        for perm in perms:
-            if perm[1] == "user" and perm[2] == str(ctx.author):
-                return perm[4]
-            elif perm[1] == "role":
-                for role in ctx.author.roles:
-                    if perm[2] == str(role):
-                        return perm[4]
-            elif perm[1] == "channel" and perm[2] == str(ctx.channel):
-                return perm[4]
-            elif perm[1] == "guild":
-                return perm[4]
-        return True
-
-    return commands.check(predicate)
-
-
 class JokeCommands:
     """These commands can be used by anyone, as long as Talos is awake.\nThey are really just for fun."""
 
@@ -59,10 +25,9 @@ class JokeCommands:
         if hasattr(bot, "database"):
             self.database = bot.database
 
-    @commands.command(aliases=["Hi"])
-    @perms_check()
+    @commands.command(aliases=["Hi"], description="Say hello to Talos")
     async def hi(self, ctx, *, extra=""):
-        """Say hi to Talos"""
+        """Talos is friendly, and love to say hello. Some rare people may invoke special responses."""
         if str(ctx.author) == "East#4048" and extra.startswith("there..."):
             async with ctx.typing():
                 await asyncio.sleep(1)
@@ -74,10 +39,9 @@ class JokeCommands:
             return
         await ctx.send("Hello there {}".format(ctx.author.name))
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Ask Talos for a favor, or have them ask others for one...")
     async def favor(self, ctx):
-        """If East is in the same server, ask them a favor... Otherwise, Talos isn't doing it"""
+        """If East is in the same guild, Talos will ask them a favor... Otherwise, Talos isn't doing it"""
         east = ctx.guild.get_member(339119069066297355)
         if not east or east.status != discord.Status.online:
             await ctx.send("I'm afraid I can't do that, {}.".format(ctx.author.display_name))
@@ -88,10 +52,9 @@ class JokeCommands:
             await asyncio.sleep(1)
             await ctx.send("Oh my. Well, if you insist ;)")
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Sometimes you just need it louder looking")
     async def aesthetic(self, ctx, *, text):
-        """For when you just need it in large"""
+        """When you just need it in large, this is the command for you."""
         out = ""
         for char in text:
             out += fullwidth_transform.get(char, char)

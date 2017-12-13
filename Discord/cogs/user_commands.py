@@ -15,40 +15,6 @@ from discord.ext import commands
 logging = logging.getLogger("talos.user")
 
 
-def perms_check():
-    """Determine whether the person calling the command is an operator or admin."""
-
-    def predicate(ctx):
-
-        if isinstance(ctx.channel, discord.abc.PrivateChannel):
-            return True
-        command = str(ctx.command)
-
-        try:
-            if not ctx.bot.database.get_guild_option(ctx.guild.id, "user_commands"):
-                return False
-        except KeyError:
-            pass
-        perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
-        if len(perms) == 0:
-            return True
-        perms.sort(key=lambda x: x[3])
-        for perm in perms:
-            if perm[1] == "user" and perm[2] == str(ctx.author):
-                return perm[4]
-            elif perm[1] == "role":
-                for role in ctx.author.roles:
-                    if perm[2] == str(role):
-                        return perm[4]
-            elif perm[1] == "channel" and perm[2] == str(ctx.channel):
-                return perm[4]
-            elif perm[1] == "guild":
-                return perm[4]
-        return True
-
-    return commands.check(predicate)
-
-
 def space_replace(match):
     print(match.group(1))
     if match.group(1):
@@ -57,22 +23,12 @@ def space_replace(match):
         return " "
 
 
-class UserCommands:
+class UserCommands(utils.TalosCog):
     """These commands can be used by anyone, as long as Talos is awake.\n"""\
         """The effects will apply to the person using the command."""
 
-    __slots__ = ['bot', 'database']
-
-    def __init__(self, bot):
-        """Initialize the UserCommands cog. Takes in an instance of Talos to use while running."""
-        self.bot = bot
-        self.database = None
-        if hasattr(bot, "database"):
-            self.database = bot.database
-
-    @commands.command(signature="color <hex-code>")
+    @commands.command(signature="color <hex-code>", description="Set your role color")
     @commands.guild_only()
-    @perms_check()
     async def color(self, ctx, color: str):
         """Changes the User's color, if Talos has role permissions."""\
             """ Input must be a hexadecimal color or the word 'clear' to remove all Talos colors."""
@@ -124,11 +80,11 @@ class UserCommands:
 
         await ctx.send("{0.name}'s color changed to {1}!".format(ctx.message.author, color))
 
-    @commands.command()
+    @commands.command(description="Display current guild perms")
     @commands.guild_only()
-    @perms_check()
     async def my_perms(self, ctx):
-        """Has Talos print out your current guild permissions"""
+        """Has Talos display your current effective guild permissions. This is channel independent, channel-specific"""\
+            """ perms aren't taken into account."""
         user_perms = ctx.author.guild_permissions
         out = "```Guild Permissions:\n"
         out += "    Administrator: {}\n".format(user_perms.administrator)
@@ -162,8 +118,7 @@ class UserCommands:
         out += "```"
         await ctx.send(out)
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="User registration command")
     async def register(self, ctx):
         """Registers you as a user with Talos. This creates a profile and options for you, and allows Talos to """\
             """save info."""
@@ -173,8 +128,7 @@ class UserCommands:
         else:
             await ctx.send("You're already a registered user.")
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="User deletion command")
     async def deregister(self, ctx):
         """Deregisters you from Talos. All collected data is wiped, no account info will be saved until """\
             """you re-register."""
@@ -184,10 +138,10 @@ class UserCommands:
         else:
             raise utils.NotRegistered(ctx.author)
 
-    @commands.command()
-    @perms_check()
+    @commands.command(description="Display a user profile")
     async def profile(self, ctx, user: discord.User=None):
-        """Displays you or another user's profile, if it exists."""
+        """Displays you or another user's profile, if it exists. Defaults to your own profile, but accepts the name """\
+            """of a user to display instead."""
         if user is None:
             user = ctx.author
         profile = self.database.get_user(user.id)
@@ -214,19 +168,21 @@ class UserCommands:
             out += "```"
             await ctx.send(out)
 
-    @commands.group()
-    @perms_check()
+    @commands.group(description="For checking or setting your own profile")
     async def user(self, ctx):
-        """For checking or setting your own profile"""
+        """Options will show current user options, stats will display what Talos has saved about you, description """\
+            """will set your user description, set will set user options, and remove will clear user options."""
         if not self.database.get_user(ctx.author.id):
             raise utils.NotRegistered(ctx.author)
         elif ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'options', 'stats', 'description', 'set', and 'remove'")
             return
 
-    @user.command(name="options")
+    @user.command(name="options", description="List your current user options")
     async def _options(self, ctx):
-        """List your current user options"""
+        """Currently available user options:
+        rich_embeds: whether Talos will embed messages for you if guild options allow it
+        prefix: what prefix Talos will use in PMs with you"""
         out = "```"
         name_types = self.database.get_columns("user_options")
         options = self.database.get_user_options(ctx.author.id)
@@ -241,9 +197,9 @@ class UserCommands:
             return
         await ctx.send(out)
 
-    @user.command(name="stats")
+    @user.command(name="stats", description="List your current user stats")
     async def _stats(self, ctx):
-        """List your current user stats"""
+        """Will show just about everything Talos knows about you."""
         profile = self.database.get_user(ctx.author.id)
         stats = self.database.get_command_data(ctx.author.id)
         out = "```"
@@ -255,15 +211,15 @@ class UserCommands:
         out += "```"
         await ctx.send(out)
 
-    @user.command(name="description")
+    @user.command(name="description", description="Set your user description")
     async def _description(self, ctx, *text):
-        """Set your user description"""
+        """Change what the user description on your profile is. Max size of 2048 characters."""
         self.database.set_description(ctx.author.id, ' '.join(text))
         await ctx.send("Description set.")
 
-    @user.command(name="set")
+    @user.command(name="set", description="Set your user options")
     async def _set(self, ctx, option: str, value: str):
-        """Set your user options"""
+        """Set user options for your account. See `^help user options` for available options."""
         try:
             option_type = self.database.get_column_type("user_options", option)
         except ValueError:
@@ -286,9 +242,9 @@ class UserCommands:
         else:
             await ctx.send("I don't recognize that option.")
 
-    @user.command(name="remove")
+    @user.command(name="remove", description="Set a user option to default")
     async def _remove(self, ctx, option):
-        """Reset your user options to default"""
+        """Reset a user option to default. See `^help user options` for available options."""
         try:
             data_type = self.database.get_column_type("user_options", option)
         except ValueError:

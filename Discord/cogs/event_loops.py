@@ -9,6 +9,7 @@ import asyncio
 import logging
 import random
 import argparse
+import utils
 from datetime import datetime
 from datetime import timedelta
 from datetime import date
@@ -25,18 +26,17 @@ APPLICATION_NAME = 'TalosBot Prompt Reader'
 log = logging.getLogger("talos.events")
 
 
-class EventLoops:
-    """Handles the Talos regulated events, Time based loops. How did you even figure out this help page existed?"""
+class EventLoops(utils.TalosCog):
+    """Handles the Talos regulated events, time based loops. How did you even figure out this help page existed?"""
+
+    __slots__ = utils.TalosCog.__slots__ + ['service', 'flags', 'last_guild_count', 'bg_tasks']
 
     def __init__(self, bot):
         """Initialize the EventLoops cog. Takes in an instance of Talos to use while running."""
-        self.bot = bot
-        self.database = None
-        if hasattr(bot, "database"):
-            self.database = bot.database
+        super().__init__(bot)
         self.service = None
         self.flags = None
-        self.last_server_count = 0
+        self.last_guild_count = 0
         self.bg_tasks = []
 
     def __unload(self):
@@ -130,8 +130,8 @@ class EventLoops:
         while True:
             log.debug("Hourly task runs")
             guild_count = len(self.bot.guilds)
-            if self.bot.discordbots_token != "" and guild_count != self.last_server_count:
-                self.last_server_count = guild_count
+            if self.bot.discordbots_token != "" and guild_count != self.last_guild_count:
+                self.last_guild_count = guild_count
                 import aiohttp
                 headers = {'Authorization': self.bot.discordbots_token}
                 data = {'server_count': guild_count}

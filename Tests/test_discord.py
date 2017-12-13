@@ -139,8 +139,9 @@ def test_method_docs():
         for name, member in inspect.getmembers(cog, get_unique_member(cog)):
             if isinstance(member, commands.Command):
                 assert inspect.getdoc(member.callback) is not None, "Cog command {} missing docstring".format(name)
-                continue
-            assert inspect.getdoc(member) is not None, "Cog method {} missing docstring".format(name)
+                assert member.description is not "", "Cog command {} missing description".format(name)
+            else:
+                assert inspect.getdoc(member) is not None, "Cog method {} missing docstring".format(name)
 
 
 # def test_commands():

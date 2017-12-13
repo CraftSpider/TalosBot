@@ -11,6 +11,7 @@ import re
 import discord
 import logging
 import aiohttp
+import abc
 import mysql.connector.abstracts as mysql_abstracts
 import discord.ext.commands as dcommands
 import datetime as dt
@@ -231,7 +232,7 @@ class TalosFormatter(dcommands.HelpFormatter):
                 # skip aliases
                 continue
 
-            entry = '{0} - {1}\n'.format(name, command.short_doc)
+            entry = '{0} - {1}\n'.format(name, command.description if command.description else "")
             shortened = self.embed_shorten(entry)
             out += shortened
         return out
@@ -416,12 +417,16 @@ class TalosDatabase:
             self._cursor = EmptyCursor()
 
     async def commit(self):
-        """Saves current talos data to the save file"""
+        """Commits all changes to the database"""
         log.debug("Committing data")
         self._sql_conn.commit()
 
     def is_connected(self):
         return self._sql_conn is not None and not isinstance(self._cursor, EmptyCursor)
+
+    def raw_exec(self, statement):
+        self._cursor.execute(statement)
+        return self._cursor.fetchall()
 
     # Meta methods
 
@@ -862,6 +867,50 @@ class TalosHTTPClient(aiohttp.ClientSession):
         }
         async with self.post(self.NANO_URL + "sign_in", data=params) as response:
             return response.status
+
+
+def _perms_check(ctx):
+    """Determine whether the person calling the command is an operator or admin."""
+
+    if isinstance(ctx.channel, discord.abc.PrivateChannel):
+        return False
+    command = str(ctx.command)
+
+    try:
+        if not ctx.bot.database.get_guild_option(ctx.guild.id, "commands"):
+            return False
+    except KeyError:
+        pass
+    perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
+    if len(perms) == 0:
+        return True
+    perms.sort(key=lambda x: x[3])
+    for perm in perms:
+        if perm[1] == "user" and perm[2] == str(ctx.author):
+            return perm[4]
+        elif perm[1] == "role":
+            for role in ctx.author.roles:
+                if perm[2] == str(role):
+                    return perm[4]
+        elif perm[1] == "channel" and perm[2] == str(ctx.channel):
+            return perm[4]
+        elif perm[1] == "guild":
+            return perm[4]
+    return True
+
+
+class TalosCog:
+
+    __slots__ = ['bot', 'database', '__local_check']
+
+    def __init__(self, bot):
+        """Initiates the current cog. Takes an instance of Talos to use while running."""
+        self.bot = bot
+        self.database = None
+        if hasattr(bot, "database"):
+            self.database = bot.database
+        if not hasattr(self, "_{0.__class__.__name__}__local_check".format(self)):
+            setattr(self, "_{0.__class__.__name__}__local_check".format(self), _perms_check)
 
 
 # Command classes
