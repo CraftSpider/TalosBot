@@ -869,15 +869,25 @@ class TalosHTTPClient(aiohttp.ClientSession):
             return response.status
 
 
-def _perms_check(ctx):
-    """Determine whether the person calling the command is an operator or admin."""
+def to_snake_case(text):
+    out = ""
+    for char in text:
+        if char.isupper():
+            out += "_{}".format(char.lower())
+        else:
+            out += char
+    return out.strip("_")
 
-    if isinstance(ctx.channel, discord.abc.PrivateChannel):
-        return False
+
+def _perms_check(ctx):
+    """Determine whether the person calling the command is allowed to run this command"""
+
+    if isinstance(ctx.channel, discord.abc.PrivateChannel) or ctx.author.id in ctx.bot.ADMINS:
+        return True
     command = str(ctx.command)
 
     try:
-        if not ctx.bot.database.get_guild_option(ctx.guild.id, "commands"):
+        if not ctx.bot.database.get_guild_option(ctx.guild.id, to_snake_case(ctx.command.instance.__class__.__name__)):
             return False
     except KeyError:
         pass
@@ -900,6 +910,7 @@ def _perms_check(ctx):
 
 
 class TalosCog:
+    """Super class to all Talos cogs. Sets a default __local_check, and other init stuff."""
 
     __slots__ = ['bot', 'database', '__local_check']
 

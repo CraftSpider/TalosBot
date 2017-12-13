@@ -7,23 +7,14 @@
 import discord
 import asyncio
 import logging
+import utils
 from discord.ext import commands
-from utils import fullwidth_transform
 
 logging = logging.getLogger("talos.joke")
 
 
-class JokeCommands:
+class JokeCommands(utils.TalosCog):
     """These commands can be used by anyone, as long as Talos is awake.\nThey are really just for fun."""
-
-    __slots__ = ['bot', 'database']
-
-    def __init__(self, bot):
-        """Initialize the JokeCommands cog. Takes in an instance of Talos to use while running."""
-        self.bot = bot
-        self.database = None
-        if hasattr(bot, "database"):
-            self.database = bot.database
 
     @commands.command(aliases=["Hi"], description="Say hello to Talos")
     async def hi(self, ctx, *, extra=""):
@@ -57,7 +48,7 @@ class JokeCommands:
         """When you just need it in large, this is the command for you."""
         out = ""
         for char in text:
-            out += fullwidth_transform.get(char, char)
+            out += utils.fullwidth_transform.get(char, char)
         await ctx.send(out)
 
 
