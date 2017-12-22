@@ -12,7 +12,7 @@ import utils
 import re
 from discord.ext import commands
 
-logging = logging.getLogger("talos.user")
+log = logging.getLogger("talos.user")
 
 
 def space_replace(match):
@@ -29,7 +29,7 @@ class UserCommands(utils.TalosCog):
 
     @commands.command(signature="color <hex-code>", description="Set your role color")
     @commands.guild_only()
-    async def color(self, ctx, color: str):
+    async def color(self, ctx, color):
         """Changes the User's color, if Talos has role permissions."""\
             """ Input must be a hexadecimal color or the word 'clear' to remove all Talos colors."""
         color_role = None
@@ -74,8 +74,8 @@ class UserCommands(utils.TalosCog):
                 await asyncio.sleep(.1)
                 await color_role.edit(position=(ctx.guild.me.top_role.position - 1))
             except discord.errors.InvalidArgument as e:
-                logging.error(e.__cause__)
-                logging.error(e.args)
+                log.error(e.__cause__)
+                log.error(e.args)
             await ctx.author.add_roles(color_role)
 
         await ctx.send("{0.name}'s color changed to {1}!".format(ctx.message.author, color))
@@ -212,13 +212,13 @@ class UserCommands(utils.TalosCog):
         await ctx.send(out)
 
     @user.command(name="description", description="Set your user description")
-    async def _description(self, ctx, *text):
+    async def _description(self, ctx, *, text):
         """Change what the user description on your profile is. Max size of 2048 characters."""
-        self.database.set_description(ctx.author.id, ' '.join(text))
+        self.database.set_description(ctx.author.id, text)
         await ctx.send("Description set.")
 
     @user.command(name="set", description="Set your user options")
-    async def _set(self, ctx, option: str, value: str):
+    async def _set(self, ctx, option, value):
         """Set user options for your account. See `^help user options` for available options."""
         try:
             option_type = self.database.get_column_type("user_options", option)
@@ -251,7 +251,7 @@ class UserCommands(utils.TalosCog):
             await ctx.send("Eh eh eh, letters and numbers only.")
             return
         if data_type is not None:
-            self.database.set_user_option(ctx.author.id, option, None)
+            self.database.remove_user_option(ctx.author.id, option)
             await ctx.send("Option {} set to default for {}".format(option, ctx.author.display_name))
         else:
             await ctx.send("I don't recognize that option.")

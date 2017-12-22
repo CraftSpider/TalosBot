@@ -11,18 +11,12 @@ import sys
 import logging
 import re
 import mysql.connector
-from datetime import datetime
+import datetime as dt
 
-try:
-    from .utils import TalosFormatter
-    from .utils import TalosDatabase
-    from .utils import TalosHTTPClient
-    from .utils import NotRegistered
-except SystemError:
-    from utils import TalosFormatter
-    from utils import TalosDatabase
-    from utils import TalosHTTPClient
-    from utils import NotRegistered
+# try:
+#     from .utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, tz_map
+# except SystemError or ImportError:
+from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, tz_map
 
 #
 #   Constants
@@ -57,9 +51,10 @@ class Talos(commands.Bot):
     """
 
     # Current Talos version. Loosely incremented.
-    VERSION = "2.5.0"
+    VERSION = "2.6.0"
     # Time Talos started
-    BOOT_TIME = datetime.now()
+    BOOT_TIME = dt.datetime.now()
+
     # Time, in UTC, that the prompt task kicks off each day.
     PROMPT_TIME = 10
     # Default Prefix, in case the options are borked.
@@ -126,7 +121,6 @@ class Talos(commands.Bot):
         """
             Unloads all extensions in input, or all extensions currently loaded if None
             :param extensions: List of extensions to unload, or None if all
-            :return: 0
         """
         logging.debug("Unloading all extensions")
         if extensions is None:
@@ -138,7 +132,6 @@ class Talos(commands.Bot):
             for extension in extensions:
                 log.debug("Unloading extension {}".format(extension))
                 self.unload_extension(extension)
-        return 0
 
     def skip_check(self, author_id, self_id):
         """
@@ -151,7 +144,7 @@ class Talos(commands.Bot):
             return False
         return author_id == self_id or (self.get_user(author_id) is not None and self.get_user(author_id).bot)
 
-    def should_embed(self, ctx: commands.Context):
+    def should_embed(self, ctx):
         """
             Determines whether Talos is allowed to use RichEmbeds in a given context.
             :param ctx: commands.Context object
@@ -164,6 +157,18 @@ class Talos(commands.Bot):
                 return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
                        ctx.channel.permissions_for(ctx.me).embed_links
         return ctx.channel.permissions_for(ctx.me).embed_links
+
+    def get_timezone(self, ctx):
+        """
+            Returns a timezone object with the offset to use for the given context.
+        :param ctx: commands.Context object
+        :return: Timezone object for the context
+        """
+        if self.database.is_connected():
+            if ctx.guild is not None:
+                timezone = self.database.get_guild_option(ctx.guild.id, "timezone")
+                return dt.timezone(dt.timedelta(hours=tz_map[timezone]), timezone)
+        return dt.timezone(dt.timedelta(), "UTC")
 
     async def logout(self):
         """
@@ -284,7 +289,7 @@ class Talos(commands.Bot):
         :return: None
         """
         log.debug("OnGuildJoin Event")
-        log.info("Joined Guild {}, {} after boot".format(guild.name, datetime.now() - self.BOOT_TIME))
+        log.info("Joined Guild {}, {} after boot".format(guild.name, dt.datetime.now() - self.BOOT_TIME))
 
     async def on_guild_remove(self, guild):
         """
@@ -293,7 +298,7 @@ class Talos(commands.Bot):
         :return: None
         """
         log.debug("OnGuildRemove Event")
-        log.info("Left Guild {}, {} after boot".format(guild.name, datetime.now() - self.BOOT_TIME))
+        log.info("Left Guild {}, {} after boot".format(guild.name, dt.datetime.now() - self.BOOT_TIME))
 
     async def on_command(self, ctx):
         """
@@ -305,7 +310,7 @@ class Talos(commands.Bot):
         if user:
             self.database.user_invoked_command(ctx.author.id, str(ctx.command))
 
-    async def on_command_error(self, ctx: commands.Context, exception: commands.CommandError):
+    async def on_command_error(self, ctx, exception):
         """
             Called upon command error. Handles most things that extend CommandError.
             any un-handled errors it simply logs
@@ -315,13 +320,10 @@ class Talos(commands.Bot):
         """
         log.debug("OnCommandError Event")
         if isinstance(exception, commands.CommandNotFound):
-            try:
-                if self.database.get_guild_option(ctx.guild.id, "fail_message"):
-                    cur_pref = (await self.get_prefix(ctx.message))[0]
-                    await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
-                                                                                                    cur_pref))
-            except KeyError:
-                pass
+            if self.database.is_connected() and self.database.get_guild_option(ctx.guild.id, "fail_message"):
+                cur_pref = (await self.get_prefix(ctx.message))[0]
+                await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
+                                                                                                cur_pref))
         elif isinstance(exception, commands.CheckFailure):
             log.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
         elif isinstance(exception, commands.NoPrivateMessage):
@@ -337,7 +339,7 @@ class Talos(commands.Bot):
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
 
-def prefix(bot: Talos, message: discord.Message):
+def prefix(bot, message):
     """
         Return the Talos prefix, given Talos class object and a message
     :param bot: Talos object to find prefix for

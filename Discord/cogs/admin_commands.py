@@ -90,7 +90,7 @@ class AdminCommands(utils.TalosCog):
 
     @commands.command(description="Changes Talos' nickname")
     @commands.guild_only()
-    async def nick(self, ctx, *, nickname: str):
+    async def nick(self, ctx, *, nickname):
         """Sets Talos' nickname in the current guild."""
         await ctx.me.edit(nick=nickname)
         await ctx.send("Nickname changed to {}".format(nickname))
@@ -102,7 +102,7 @@ class AdminCommands(utils.TalosCog):
 
     @commands.command(usage="[number=10]", description="Remove messages from a channel")
     @commands.guild_only()
-    async def purge(self, ctx, number: str="10", *key):
+    async def purge(self, ctx, number="10", *key):
         """Purges messages from a channel. By default, this will be 10 (including the invoking command)."""\
             """ Use 'all' to purge whole channel. Confirmation keys should be tacked on the end, so """\
             """`^purge 100 [key]`"""
@@ -183,9 +183,14 @@ class AdminCommands(utils.TalosCog):
     @commands.guild_only()
     async def _ops_remove(self, ctx, member):
         """Removes an operator user from the guild list"""
-        member_object = discord.utils.find(lambda x: x.name == member or str(x) == member, ctx.guild.members)
+        member_object = discord.utils.find(
+            lambda x: x.name == member or str(x) == member or (member.isnumeric() and x.id == int(member)),
+            ctx.guild.members
+        )
         if member_object is not None:
             member = member_object.id
+        elif member.isnumeric():
+            member = int(member)
         if member in self.database.get_ops(ctx.guild.id):
             self.database.remove_op(ctx.guild.id, member)
             if member_object:
@@ -245,7 +250,7 @@ class AdminCommands(utils.TalosCog):
 
     @perms.command(name="create", description="Create or alter permission rules")
     @commands.guild_only()
-    async def _p_create(self, ctx, command: str, level: str, allow: str, name: str=None, priority: str=None):
+    async def _p_create(self, ctx, command, level, allow, name=None, priority: int=None):
         """Provide a command, one of the four levels (see `^help perms`), whether to allow or forbid the command, """\
             """a name (If level is guild, this is ignored), and a priority if you don't want default."""
         level = level.lower()
@@ -298,7 +303,6 @@ class AdminCommands(utils.TalosCog):
                     name = str(discord.utils.find(lambda r: r.name == name, ctx.guild.roles))
                 elif level == "channel":
                     name = str(discord.utils.find(lambda c: c.name == name, ctx.guild.channels))
-
             self.database.remove_perm_rules(ctx.guild.id, command, level, name)
             if command is None:
                 await ctx.send("Permissions for guild cleared")
@@ -386,7 +390,7 @@ class AdminCommands(utils.TalosCog):
 
     @options.command(name="set", description="Set guild options")
     @commands.guild_only()
-    async def _opt_set(self, ctx, option: str, value: str):
+    async def _opt_set(self, ctx, option, value):
         """Set an option. Most options are true or false. See `^help options list` for available options"""
         try:
             option_type = self.database.get_column_type("guild_options", option)
@@ -447,7 +451,7 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("Eh eh eh, letters and numbers only.")
             return
         if data_type is not None:
-            self.database.set_guild_option(ctx.guild.id, option, None)
+            self.database.remove_guild_option(ctx.guild.id, option)
             await ctx.send("Option {} set to default".format(option))
         else:
             await ctx.send("I don't recognize that option.")

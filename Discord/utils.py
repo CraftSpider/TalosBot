@@ -11,7 +11,6 @@ import re
 import discord
 import logging
 import aiohttp
-import abc
 import mysql.connector.abstracts as mysql_abstracts
 import discord.ext.commands as dcommands
 import datetime as dt
@@ -27,7 +26,7 @@ _levels = {
     "user": 40
 }
 
-# Special transforms
+# Normal characters to fullwidth characters
 fullwidth_transform = {
     "!": "！", "\"": "＂", "#": "＃", "$": "＄", "%": "％", "&": "＆", "'": "＇", "(": "（", ")": "）", "*": "＊",
     "+": "＋", ",": "，", "-": "－", ".": "．", "/": "／", "0": "０", "1": "１", "2": "２", "3": "３", "4": "４",
@@ -39,6 +38,34 @@ fullwidth_transform = {
     "g": "ｇ", "h": "ｈ", "i": "ｉ", "j": "ｊ", "k": "ｋ", "l": "ｌ", "m": "ｍ", "n": "ｎ", "o": "ｏ", "p": "ｐ",
     "q": "ｑ", "r": "ｒ", "s": "ｓ", "t": "ｔ", "u": "ｕ", "v": "ｖ", "w": "ｗ", "x": "ｘ", "y": "ｙ", "z": "ｚ",
     "{": "｛", "|": "｜", "}": "｝", "~": "～", " ": "　"
+}
+
+# Timezone names to timezone objects
+tz_map = {
+    "A": +1, "ACDT": +10.5, "ACST": +9.5, "ACT": None, "ACWST": +8.75, "ADT": -3, "AEDT": +11, "AEST": +10, "AET": None,
+    "AFT": +4.5, "AKDT": -8, "AKST": -9, "ALMT": +6, "AMST": -3, "AMT": -4, "ANAST": +12, "ANAT": +12, "AQTT": +5,
+    "ART": -3, "AST": -4, "AT": None, "AWDT": +9, "AWST": +8, "AZOST": 0, "AZOT": -1, "AZST": +5, "AZT": +4, "AoE": -12,
+    "B": +2, "BNT": +8, "BOT": -4, "BRST": -2, "BRT": -3, "BST": +1, "BTT": +6, "C": +3, "CAST": +8, "CAT": +2,
+    "CCT": +6.5, "CDT": -5, "CEST": +2, "CET": +1, "CHADT": +13.75, "CHAST": +12.45, "CHOST": +9, "CHOT": +8,
+    "CHUT": +10, "CIDST": -4, "CIST": -5, "CKT": -10, "CLST": -3, "CLT": -4, "COT": -5, "CST": -6, "CT": None,
+    "CVT": -1, "CXT": +7, "ChST": +10, "D": +4, "DAVT": +7, "DDUT": +10, "E": +5, "EASST": -5, "EAST": -6, "EAT": +3,
+    "ECT": -5, "EDT": -4, "EEST": +3, "EET": +2, "EGST": 0, "EGT": -1, "EST": -5, "ET": None, "F": +6, "FET": +3,
+    "FJST": +13, "FJT": +12, "FKST": -3, "FKT": -4, "FNT": -2, "G": +7, "GALT": -6, "GAMT": -9, "GET": +4, "GFT": -3,
+    "GILT": +12, "GMT": 0, "GST": +4, "GYT": -4, "H": +8, "HADT": -9, "HAST": -10, "HKT": +8, "HOVST": +8, "HOVT": +7,
+    "I": +9, "ICT": +7, "IDT": +3, "IOT": +6, "IRDT": +4.5, "IRKST": +9, "IRKT": +8, "IRST": +3.5, "IST": +1, "JST": +9,
+    "K": +10, "KGT": +6, "KOST": +11, "KRAST": +8, "KRAT": +7, "KST": +9, "KUYT": +4, "L": +11, "LHDT": +11,
+    "LHST": +10.5, "LINT": +14, "M": +12, "MAGST": +12, "MAGT": +11, "MART": -9.5, "MAWT": +5, "MDT": -6, "MHT": +12,
+    "MMT": +6.5, "MSD": +4, "MSK": +3, "MST": -7, "MT": None, "MUT": +4, "MVT": +5, "MYT": +8, "N": -1, "NCT": +11,
+    "NDT": -2.5, "NFT": +11, "NOVST": +7, "NOVT": +6, "NPT": +5.75, "NRT": +12, "NST": -3.5, "NUT": -11, "NZDT": +13,
+    "NZST": +12, "O": -2, "OMSST": +7, "OMST": +6, "ORAT": +5, "P": -3, "PDT": -7, "PET": -5, "PETST": +12, "PETT": +12,
+    "PGT": +10, "PHOT": +13, "PHT": +8, "PKT": +5, "PMDT": -2, "PMST": -3, "PONT": +11, "PST": -8, "PT": None,
+    "PWT": +9, "PYST": -3, "PYT": +8.5, "Q": -4, "QYZT": +6, "R": -5, "RET": +4, "ROTT": -3, "S": -6, "SAKT": +11,
+    "SAMT": +4, "SAST": +2, "SBT": +11, "SCT": +4, "SGT": +8, "SRET": +11, "SRT": -3, "SST": -11, "SYOT": +3, "T": -7,
+    "TAHT": -10, "TFT": +5, "TJT": +5, "TKT": +13, "TLT": +9, "TMT": +5, "TOST": +14, "TOT": +13, "TRT": +3, "TVT": +12,
+    "U": -8, "ULAST": +9, "ULAT": +8, "UTC": 0, "UYST": -2, "UYT": -3, "UZT": +5, "V": -9, "VET": -4, "VLAST": +11,
+    "VLAT": +10, "VOST": +6, "VUT": +11, "W": -10, "WAKT": +12, "WARST": -3, "WAST": +2, "WAT": +1, "WEST": +1,
+    "WET": 0, "WFT": +12, "WGST": -2, "WGT": -3, "WIB": +7, "WIT": +9, "WITA": +8, "WST": +14, "WT": 0, "X": -11,
+    "Y": -12, "YAKST": +10, "YAKT": +9, "YAPT": +10, "YEKST": +6, "YEKT": +5, "Z": 0
 }
 
 
@@ -68,7 +95,7 @@ class EmbedPaginator:
     MAX_FOOTER = 2048
     MAX_AUTHOR = 256
 
-    def __init__(self, max_size: int=MAX_TOTAL, colour=discord.Colour(0x000000)):
+    def __init__(self, max_size=MAX_TOTAL, colour=discord.Colour(0x000000)):
         self.max_size = max_size
         self.title = ""
         self.description = ""
@@ -110,12 +137,6 @@ class EmbedPaginator:
         size = self.size
         return math.ceil(size / self.max_size) if size > 0 else 1
 
-    def _next_colour(self):
-        """Gets the next colour in the colour queue. Queue loops."""
-        colour = self.colours[self.colour_pos]
-        self.colour_pos = (self.colour_pos + 1) % len(self.colours)
-        return colour
-
     @property
     def real_fields(self):
         """Gets the actual number of fields in the embed, given fields split on max length."""
@@ -124,40 +145,46 @@ class EmbedPaginator:
             if len(field[1]) > self.MAX_FIELD_VALUE:
                 for i in range(int(math.ceil(len(field[1])/self.MAX_FIELD_VALUE))):
                     if i == 0:
-                        out.append([field[0], field[1][0:self.MAX_FIELD_VALUE+1], field[2]])
+                        out.append((field[0], field[1][0:self.MAX_FIELD_VALUE+1], field[2]))
                     else:
-                        out.append([field[0] + " cont.",
-                                    field[1][i*self.MAX_FIELD_VALUE+1:(i+1)*self.MAX_FIELD_VALUE+1], field[2]])
+                        out.append((field[0] + " cont.",
+                                    field[1][i*self.MAX_FIELD_VALUE+1:(i+1)*self.MAX_FIELD_VALUE+1], field[2]))
             else:
-                out.append([field[0], field[1], field[2]])
+                out.append((field[0], field[1], field[2]))
         return out
 
-    def set_title(self, title: str):
+    def _next_colour(self):
+        """Gets the next colour in the colour queue. Queue loops."""
+        colour = self.colours[self.colour_pos]
+        self.colour_pos = (self.colour_pos + 1) % len(self.colours)
+        return colour
+
+    def set_title(self, title):
         """Sets the embed title. Title length must be less than MAX_TITLE"""
         if len(title) > self.MAX_TITLE:
             raise ValueError("Title length must be less than or equal to {}".format(self.MAX_TITLE))
         self.title = title
         return self
 
-    def set_description(self, description: str):
+    def set_description(self, description):
         """Sets the embed description. Description length must be less than MAX_DESCRIPTION"""
         if len(description) > self.MAX_DESCRIPTION:
             raise ValueError("Description length must be less than or equal to {}".format(self.MAX_DESCRIPTION))
         self.description = description
         return self
 
-    def set_footer(self, footer: str):
+    def set_footer(self, footer):
         """Sets the embed footer. Footer length must be less than MAX_FOOTER"""
         if len(footer) > self.MAX_FOOTER:
             raise ValueError("Footer length must be less than or equal to {}".format(self.MAX_FOOTER))
         self.footer = footer
         return self
 
-    def add_field(self, title: str, value: str, inline: bool=False):
+    def add_field(self, title, value, inline=False):
         """Adds an embed field. Title length must be less than MAX_FIELD_NAMe"""
         if len(title) > self.MAX_FIELD_NAME:
             raise ValueError("Field title length must be less than or equal to {}".format(self.MAX_FIELD_NAME))
-        self.fields.append([title, value, inline])
+        self.fields.append((title, value, inline))
         return self
 
     def close_pages(self):
@@ -182,9 +209,9 @@ class EmbedPaginator:
                 out.append(embed)
                 self.pages = out
         else:
-            # TODO
-            return discord.Embed(title="Not Implemented Yet",
-                                 description="Please contact admins if this is not an expected result")
+            # TODO more than one page embeds
+            self.pages = [discord.Embed(title="Not Implemented Yet",
+                                        description="Please contact admins if this is not an expected result")]
 
 
 class TalosFormatter(dcommands.HelpFormatter):
@@ -211,7 +238,7 @@ class TalosFormatter(dcommands.HelpFormatter):
                )
 
     @staticmethod
-    def capital_split(text: str):
+    def capital_split(text):
         out = ""
         for char in text:
             if char.isupper():
@@ -220,7 +247,7 @@ class TalosFormatter(dcommands.HelpFormatter):
                 out += char
         return out.strip(" ")
 
-    def embed_shorten(self, text: str):
+    def embed_shorten(self, text):
         if len(text) > self.width:
             return text[:self.width - 3] + '...\n'
         return text
@@ -406,9 +433,64 @@ class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
         return None
 
 
+talos_create_schema = "CREATE SCHEMA talos_data DEFAULT CHARACTER SET utf8"
+talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8".format("{}", "{}")
+talos_add_column = "ALTER TABLE {} ADD COLUMN {}".format("{}", "{}")  # Makes pycharm not complain
+
+talos_tables = {
+    "guild_options": {
+        "columns": ["`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
+                    "`fail_message` tinyint(1) DEFAULT NULL", "`pm_help` tinyint(1) DEFAULT NULL",
+                    "`commands` tinyint(1) DEFAULT NULL", "`user_commands` tinyint(1) DEFAULT NULL",
+                    "`joke_commands` tinyint(1) DEFAULT NULL", "`writing_prompts` tinyint(1) DEFAULT NULL",
+                    "`prompts_channel` varchar(64) DEFAULT NULL", "`prefix` varchar(32) DEFAULT NULL",
+                    "`timezone` varchar(5) DEFAULT NULL"],
+        "primary": "PRIMARY KEY (`guild_id`)",
+        "defaults": [-1, True, False, False, True, True, True, False, "prompts", "^", "UTC"]
+    },
+    "ops": {
+        "columns": ["`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"],
+        "primary": "PRIMARY KEY (`guild_id`,`opname`)"
+    },
+    "perm_rules": {
+        "columns": ["`guild_id` bigint(20) NOT NULL", "`command` varchar(255) NOT NULL",
+                    "`perm_type` varchar(32) NOT NULL", "`target` varchar(255) NOT NULL",
+                    "`priority` int(11) NOT NULL", "`allow` tinyint(1) NOT NULL"],
+        "primary": "PRIMARY KEY (`guild_id`,`command`,`perm_type`,`target`)"
+    },
+    "uptime": {
+      "columns": ["`time` bigint(20) NOT NULL"],
+      "primary": "PRIMARY KEY (`time`)"
+    },
+    "user_options": {
+        "columns": ["`user_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
+                    "`prefix` varchar(32) DEFAULT NULL"],
+        "primary": "PRIMARY KEY (`user_id`)"
+    },
+    "user_profiles": {
+        "columns": ["`user_id` bigint(20) NOT NULL", "`description` text",
+                    "`commands_invoked` int(11) NOT NULL DEFAULT '0'", "`title` text"],
+        "primary": "PRIMARY KEY (`user_id`)"
+    },
+    "invoked_commands": {
+        "columns": ["`user_id` bigint(20) NOT NULL", "`command_name` varchar(32) NOT NULL",
+                    "`times_invoked` int(11) NOT NULL DEFAULT '1'"],
+        "primary": "PRIMARY KEY (`command_name`,`user_id`)"
+    }
+}
+
+
 class TalosDatabase:
+    """
+        Class for handling a Talos connection to a MySQL database that fits the schema expected by Talos.
+        (Schema matching can be enforced with verify_schema)
+    """
 
     def __init__(self, sql_conn):
+        """
+            Initializes a TalosDatabase object. If passed None, then it replaces the cursor with a dummy class.
+        :param sql_conn: MySQL connection object.
+        """
         if sql_conn is not None:
             self._sql_conn = sql_conn
             self._cursor = sql_conn.cursor()
@@ -416,41 +498,104 @@ class TalosDatabase:
             self._sql_conn = None
             self._cursor = EmptyCursor()
 
-    async def commit(self):
-        """Commits all changes to the database"""
+    def verify_schema(self):
+        """
+            Verifies the schema of the connected Database. If the expected schema doesn't exist, or it doesn't match the
+            expected table forms, it will be updated to match.
+        """
+        if self.is_connected():
+            self._cursor.execute("SELECT * FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = 'talos_data'")
+            if self._cursor.fetchone():
+                log.info("found schema talos_data")
+            else:
+                log.warning("talos_data doesn't exist, creating schema")
+                self._cursor.execute(talos_create_schema)
+            for table in talos_tables:
+                self._cursor.execute(
+                    "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'talos_data' AND TABLE_NAME = %s",
+                    [table]
+                )
+                if self._cursor.fetchone():
+                    log.info("found table {}".format(table))
+                    for column in talos_tables[table]["columns"]:
+                        name = re.search(r"`(.*?)`", column).group(1)
+                        import mysql.connector
+                        try:
+                            self._cursor.execute("SELECT {1} FROM {0} LIMIT 0".format(table, name))
+                            self._cursor.fetchone()
+                            log.info("found column {}".format(name))
+                        except mysql.connector.ProgrammingError:
+                            log.warning("could not find column {}, adding column".format(name))
+                            self._cursor.execute(talos_add_column.format(table, column))
+                        # TODO: Remove any extra columns
+                else:
+                    log.info("could not find table {}, creating table".format(table))
+                    self._cursor.execute(
+                        talos_create_table.format(
+                            table,
+                            ',\n'.join(talos_tables[table]["columns"]) + ",\n" + talos_tables[table]["primary"]
+                        )
+                    )
+            # TODO: Default values in tables
+
+    def commit(self):
+        """
+            Commits any changes to the SQL database.
+        """
         log.debug("Committing data")
-        self._sql_conn.commit()
+        if self._sql_conn:
+            self._sql_conn.commit()
 
     def is_connected(self):
+        """
+            Checks whether we are currently connected to a database
+        :return: Whether the connection exists and the cursor isn't an EmptyCursor.
+        """
         return self._sql_conn is not None and not isinstance(self._cursor, EmptyCursor)
 
     def raw_exec(self, statement):
+        """
+            Executes a SQL statement raw and returns the result. Should only be used in dev operations.
+        :param statement: SQL statement to execute.
+        :return: The result of a cursor fetchall after the statement executes.
+        """
         self._cursor.execute(statement)
         return self._cursor.fetchall()
 
     # Meta methods
 
-    def get_column_type(self, table_name: str, column_name: str):
-        if re.match("[^a-zA-Z0-9_-]", table_name) or re.match("[^a-zA-Z0-9_-]", column_name):
-            raise ValueError("SQL Injection Detected!")
+    def get_column_type(self, table_name, column_name):
+        """
+            Gets the type of a specific column
+        :param table_name: Name of the table containing the column
+        :param column_name: Name of the column to check
+        :return: The type of the given column
+        """
         query = "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s"
         self._cursor.execute(query, [table_name, column_name])
         result = self._cursor.fetchone()
-        if result is not None:
+        if result is not None and isinstance(result, (list, tuple)):
             result = result[0]
         return result
 
-    def get_columns(self, table_name: str):
-        if re.match("[^a-zA-Z0-9_-]", table_name):
-            raise ValueError("SQL Injection Detected!")
+    def get_columns(self, table_name):
+        """
+            Gets the column names and types of a specified table
+        :param table_name: Name of the table to retrieve columnns from
+        :return: List of column names and data types
+        """
         query = "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
         self._cursor.execute(query, [table_name])
         return self._cursor.fetchall()
 
     # Guild option methods
 
-    def get_guild_default(self, option_name: str):
-        """Get the default value of an option"""
+    def get_guild_default(self, option_name):
+        """
+            Gets the default value for a guild option
+        :param option_name: Name of the option to retrieve
+        :return: Option default value
+        """
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM guild_options WHERE guild_id = -1".format(option_name)
@@ -462,6 +607,10 @@ class TalosDatabase:
             raise KeyError
 
     def get_guild_defaults(self):
+        """
+            Get all default guild option values
+        :return: List of guild option default values
+        """
         query = "SELECT * FROM guild_options WHERE guild_id = -1"
         self._cursor.execute(query)
         result = self._cursor.fetchone()
@@ -472,7 +621,13 @@ class TalosDatabase:
         else:
             return []
 
-    def get_guild_option(self, guild_id: int, option_name: str):
+    def get_guild_option(self, guild_id, option_name):
+        """
+            Get an option for a guild. If option isn't set, gets the default for that option.
+        :param guild_id: id of the guild to fetch option of
+        :param option_name: name of the option to fetch
+        :return: the set option value
+        """
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM guild_options WHERE guild_id = %s".format(option_name)
@@ -484,7 +639,12 @@ class TalosDatabase:
             result = result[0]
         return result
 
-    def get_guild_options(self, guild_id: int):
+    def get_guild_options(self, guild_id):
+        """
+            Get all options for a guild. If option isn't set, returns the default for that option
+        :param guild_id: id of the guild to get options of
+        :return: list of the guild's options
+        """
         query = "SELECT * FROM guild_options WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
         result = self._cursor.fetchone()
@@ -501,6 +661,10 @@ class TalosDatabase:
         return out
 
     def get_all_guild_options(self):
+        """
+            Get all options for all guilds.
+        :return: List of all options of all guilds
+        """
         query = "SELECT * FROM guild_options"
         self._cursor.execute(query)
         out = []
@@ -508,7 +672,13 @@ class TalosDatabase:
             out.append(row)
         return out
 
-    def set_guild_option(self, guild_id: int, option_name: str, value):
+    def set_guild_option(self, guild_id, option_name, value):
+        """
+            Set an option for a specific guild
+        :param guild_id: id of the guild to set option
+        :param option_name: option to set in the guild
+        :param value: thing to set option to
+        """
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "INSERT INTO guild_options (guild_id, {0}) VALUES (%s, %s) "\
@@ -516,7 +686,12 @@ class TalosDatabase:
                 "{0} = VALUES({0})".format(option_name)
         self._cursor.execute(query, [guild_id, value])
 
-    def remove_guild_option(self, guild_id: int, option_name: str):
+    def remove_guild_option(self, guild_id, option_name):
+        """
+            Clear a guild option, resetting it to null
+        :param guild_id: id to clear option of
+        :param option_name: option to clear
+        """
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "UPDATE guild_options SET {} = null WHERE guild_id = %s".format(option_name)
@@ -524,7 +699,12 @@ class TalosDatabase:
 
     # User option methods
 
-    def get_user_default(self, option_name: str):
+    def get_user_default(self, option_name):
+        """
+            Gets the default value for a user option
+        :param option_name: Name of the option to retrieve
+        :return: Option default value
+        """
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM user_options WHERE user_id = -1".format(option_name)
@@ -536,6 +716,10 @@ class TalosDatabase:
             raise KeyError
 
     def get_user_defaults(self):
+        """
+            Get all default user option values
+        :return: List of user option default values
+        """
         query = "SELECT * FROM user_options WHERE user_id = -1"
         self._cursor.execute(query)
         result = self._cursor.fetchone()
@@ -546,7 +730,13 @@ class TalosDatabase:
         else:
             return []
 
-    def get_user_option(self, user_id: int, option_name: str):
+    def get_user_option(self, user_id, option_name):
+        """
+            Get an option for a user. If option isn't set, gets the default for that option.
+        :param user_id: id of the user to fetch option of
+        :param option_name: name of the option to fetch
+        :return: the set option value
+        """
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "SELECT {} FROM user_options WHERE user_id = %s".format(option_name)
@@ -558,7 +748,12 @@ class TalosDatabase:
             result = result[0]
         return result
 
-    def get_user_options(self, user_id: int):
+    def get_user_options(self, user_id):
+        """
+            Get all options for a user. If option isn't set, returns the default for that option
+        :param user_id: id of the user to get options of
+        :return: list of the user's options
+        """
         query = "SELECT * FROM user_options WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         result = self._cursor.fetchone()
@@ -575,6 +770,10 @@ class TalosDatabase:
         return out
 
     def get_all_user_options(self):
+        """
+            Get all options for all users.
+        :return: List of all options of all users
+        """
         query = "SELECT * FROM user_options"
         self._cursor.execute(query)
         out = []
@@ -582,7 +781,13 @@ class TalosDatabase:
             out.append(row)
         return out
 
-    def set_user_option(self, user_id: int, option_name: str, value):
+    def set_user_option(self, user_id, option_name, value):
+        """
+            Set an option for a specific user
+        :param user_id: id of the user to set option
+        :param option_name: option to set of the user
+        :param value: thing to set option to
+        """
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "INSERT INTO user_options (user_id, {0}) VALUES (%s, %s) "\
@@ -590,7 +795,12 @@ class TalosDatabase:
                 "{0} = VALUES({0})".format(option_name)
         self._cursor.execute(query, [user_id, value])
 
-    def remove_user_option(self, user_id: int, option_name: str):
+    def remove_user_option(self, user_id, option_name):
+        """
+            Clear a user option, resetting it to null
+        :param user_id: id to clear option of
+        :param option_name: option to clear
+        """
         if re.match("[^a-zA-Z0-9_-]", option_name):
             raise ValueError("SQL Injection Detected!")
         query = "UPDATE user_options SET {} = null WHERE user_id = %s".format(option_name)
@@ -598,13 +808,21 @@ class TalosDatabase:
 
     # User profile methods
 
-    def register_user(self, user_id: int):
+    def register_user(self, user_id):
+        """
+            Register a user with Talos. Creates values in user_profiles and user_options
+        :param user_id: id of the user to register
+        """
         query = "INSERT INTO user_options (user_id) VALUES (%s)"
         self._cursor.execute(query, [user_id])
         query = "INSERT INTO user_profiles (user_id) VALUES (%s)"
         self._cursor.execute(query, [user_id])
 
-    def deregister_user(self, user_id: int):
+    def deregister_user(self, user_id):
+        """
+            De-register a user from Talos. Removes values in user_profiles, user_options, and invoked_commands.
+        :param user_id: id of user to remove
+        """
         query = "DELETE FROM user_options WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         query = "DELETE FROM user_profiles WHERE user_id = %s"
@@ -612,30 +830,69 @@ class TalosDatabase:
         query = "DELETE FROM invoked_commands WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
 
-    def get_user(self, user_id: int):
+    def get_user(self, user_id):
+        """
+            Return the whole profile object for a registered user
+        :param user_id: id of the user to get profile of
+        :return: Tuple of the user's profile in the database, or None.
+        """
         query = "SELECT * FROM user_profiles WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         return self._cursor.fetchone()
 
-    def get_description(self, user_id: int):
+    def get_description(self, user_id):
+        """
+            Get the description of a user
+        :param user_id: id of the user to get description from
+        :return: User description or None
+        """
         query = "SELECT description FROM user_profiles WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
-        return self._cursor.fetchone()
+        result = self._cursor.fetchone()
+        if result:
+            return result[0]
+        else:
+            return result
 
-    def set_description(self, user_id: int, desc: str):
+    def set_description(self, user_id, desc):
+        """
+            Set the description of a user
+        :param user_id: id of the user to set the description of
+        :param desc: thing to set description to
+        """
         query = "UPDATE user_profiles SET description = %s WHERE user_id = %s"
         self._cursor.execute(query, [desc, user_id])
 
-    def get_title(self, user_id: int):
+    def get_title(self, user_id):
+        """
+            Get the title of a user
+        :param user_id: id of the user to get the title of
+        :return: the title of the user or none
+        """
         query = "SELECT title FROM user_profiles WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
-        return self._cursor.fetchone()
+        result = self._cursor.fetchone()
+        if result:
+            return result[0]
+        else:
+            return result
 
-    def set_title(self, user_id: int, title: str):
+    def set_title(self, user_id, title):
+        """
+            Set the title of a user
+        :param user_id: id of the user to set the title for
+        :param title: the title to set for the user
+        """
         query = "UPDATE user_profiles SET title = %s WHERE user_id = %s"
         self._cursor.execute(query, [title, user_id])
 
-    def user_invoked_command(self, user_id: int, command: str):
+    def user_invoked_command(self, user_id, command):
+        """
+            Called when a registered user invokes a command. Insert or increment the times that command has been invoked
+            in invoked_commands table for that user.
+        :param user_id: id of the user who invoked the command
+        :param command: name of the command that was invoked
+        """
         query = "UPDATE user_profiles SET commands_invoked = commands_invoked + 1 WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         query = "INSERT INTO invoked_commands (user_id, command_name) VALUES (%s, %s) " \
@@ -643,12 +900,22 @@ class TalosDatabase:
                 "times_invoked = times_invoked + 1"
         self._cursor.execute(query, [user_id, command])
 
-    def get_command_data(self, user_id: int):
+    def get_command_data(self, user_id):
+        """
+            Get all data from invoked_commands for a specific user
+        :param user_id: id of the user to grab the data of
+        :return: List of commands to times invoked
+        """
         query = "SELECT command_name, times_invoked FROM invoked_commands WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         return self._cursor.fetchall()
 
-    def get_favorite_command(self, user_id: int):
+    def get_favorite_command(self, user_id):
+        """
+            Get the command a specific user has invoked the most.
+        :param user_id: id of the user to get favorite command of
+        :return: Favorite command for that user.
+        """
         query = "SELECT command_name, times_invoked FROM invoked_commands WHERE user_id = %s " \
                 "ORDER BY times_invoked DESC LIMIT 1"
         self._cursor.execute(query, [user_id])
@@ -657,6 +924,10 @@ class TalosDatabase:
     # Ops methods
 
     def get_all_ops(self):
+        """
+            Get all ops in all servers
+        :return: list of all operators and guilds they are operator for.
+        """
         query = "SELECT guild_id, opname FROM ops"
         self._cursor.execute(query)
         out = []
@@ -664,7 +935,12 @@ class TalosDatabase:
             out.append(row)
         return out
 
-    def get_ops(self, guild_id: int):
+    def get_ops(self, guild_id):
+        """
+            Get the list of ops for a specific guild
+        :param guild_id: id of the guild to get the op list for
+        :return: list of ops for input guild
+        """
         query = "SELECT opname FROM ops WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
         out = []
@@ -672,23 +948,49 @@ class TalosDatabase:
             out.append(row[0])
         return out
 
-    def add_op(self, guild_id: int, opname: str):
+    def add_op(self, guild_id, opname):
+        """
+            Add an op to a guild
+        :param guild_id: id of the guild to add op to
+        :param opname: id of the op to add to the guild
+        """
         query = "INSERT INTO ops VALUES (%s, %s)"
         self._cursor.execute(query, [guild_id, opname])
 
-    def remove_op(self, guild_id: int, opname: str):
+    def remove_op(self, guild_id, opname):
+        """
+            Remove an op from a guild
+        :param guild_id: id of the guild to remove op from
+        :param opname: id of the op to be removed from the guild
+        """
         query = "DELETE FROM ops WHERE guild_id = %s AND opname = %s"
         self._cursor.execute(query, [guild_id, opname])
 
     # Perms methods
 
-    def get_perm_rule(self, guild_id: int, command: str, perm_type: str, target: str):
+    def get_perm_rule(self, guild_id, command, perm_type, target):
+        """
+            Get permission rule for a specific context
+        :param guild_id: id of the guild the rule applies to
+        :param command: the name of the command the rule applies to
+        :param perm_type: the type of permission rule
+        :param target: the target of the permission rule
+        :return: the priority and whether to allow this rule if it exists, or None
+        """
         query = "SELECT priority, allow FROM perm_rules WHERE guild_id = %s AND command = %s AND perm_type = %s AND"\
                 " target = %s"
         self._cursor.execute(query, [guild_id, command, perm_type, target])
         return self._cursor.fetchone()
 
-    def get_perm_rules(self, guild_id: int=-1, command=None, perm_type=None, target=None):
+    def get_perm_rules(self, guild_id=-1, command=None, perm_type=None, target=None):
+        """
+            Get a list of permissions rules for a variably specific context
+        :param guild_id: id of the guild to get permissions for. If None, get default rules if they exist
+        :param command: name of the command to get rules for. Any command if none.
+        :param perm_type: type of permissions to get. Any type if none.
+        :param target: target of permissions to get. Any target if none.
+        :return: List of rules fitting the context.
+        """
         query = "SELECT command, perm_type, target, priority, allow FROM perm_rules WHERE guild_id = %s"
         args = []
         if command or perm_type or target:
@@ -710,11 +1012,24 @@ class TalosDatabase:
         return self._cursor.fetchall()
 
     def get_all_perm_rules(self):
+        """
+            Get all permission rules in the database
+        :return: List of all permission rules
+        """
         query = "SELECT guild_id, command, perm_type, target, priority, allow FROM perm_rules"
         self._cursor.execute(query)
         return self._cursor.fetchall()
 
-    def set_perm_rule(self, guild_id: int, command: str, perm_type: str, allow: bool, priority=None, target=None):
+    def set_perm_rule(self, guild_id, command, perm_type, allow, priority=None, target=None):
+        """
+            Create or update a permission rule
+        :param guild_id: id of the guild to set rule for
+        :param command: name of the command to set rule for
+        :param perm_type: type of the rule to set
+        :param allow: whether to allow or forbid
+        :param priority: priority of the rule
+        :param target: target of the rule
+        """
         if priority is None:
             priority = _levels[perm_type]
         if target is None:
@@ -730,6 +1045,13 @@ class TalosDatabase:
         self._cursor.execute(query, [guild_id, command, perm_type, target, priority, allow])
 
     def remove_perm_rules(self, guild_id: int, command=None, perm_type=None, target=None):
+        """
+            Remove permissions rules fitting a specified context
+        :param guild_id: id of the guild to remove rules from
+        :param command: name of the command to remove rules for. Any if None
+        :param perm_type: type of the rules to remove. Any if None
+        :param target: target to remove rules for. Any if None
+        """
         query = "DELETE FROM perm_rules WHERE guild_id = %s"
         if command or perm_type or target:
             query += " AND "
@@ -752,16 +1074,29 @@ class TalosDatabase:
     # Uptime methods
 
     def add_uptime(self, uptime):
+        """
+            Add an uptime value to the list
+        :param uptime: value of the uptime check to add
+        """
         query = "INSERT INTO uptime VALUES (%s)"
         self._cursor.execute(query, [uptime])
 
     def get_uptime(self, start):
+        """
+            Get all uptimes greater than a specified value
+        :param start: Value to start at for uptime collection
+        :return: List of all uptimes
+        """
         query = "SELECT time FROM uptime WHERE time >= %s"
         self._cursor.execute(query, [start])
         result = self._cursor.fetchall()
         return result
 
     def remove_uptime(self, end):
+        """
+            Remove all uptimes less than a specified value
+        :param end: Value to end at for uptime removal
+        """
         query = "DELETE FROM uptime WHERE time < %s"
         self._cursor.execute(query, [end])
 
@@ -772,7 +1107,11 @@ class TalosHTTPClient(aiohttp.ClientSession):
     BTN_URL = "https://www.behindthename.com/"
 
     def __init__(self, *args, **kwargs):
-
+        """
+            Create a Talos HTTP Client object
+        :param args: arguments to pass on
+        :param kwargs: keyword args to use and pass on
+        """
         self.username = kwargs.pop("username", "")
         self.password = kwargs.pop("password", "")
         self.btn_key = kwargs.pop("btn_key", "")
@@ -780,10 +1119,24 @@ class TalosHTTPClient(aiohttp.ClientSession):
         super().__init__(*args, **kwargs)
 
     async def get_site(self, url, **kwargs):
+        """
+            Get the text of a given URL
+        :param url: url to get text from
+        :param kwargs: keyword args to pass to the GET call
+        :return: text of the requested page
+        """
         async with self.get(url, **kwargs) as response:
             return await response.text()
 
     async def btn_get_names(self, gender="", usage="", number=1, surname=False):
+        """
+            Get names from Behind The Name
+        :param gender: gender to restrict names to. m or f
+        :param usage: usage to restrict names to. eng for english, see documentation
+        :param number: number of names to generate. Between 1 and 6.
+        :param surname: whether to generate a random surname. Yes or No
+        :return: List of names generated or None if failed
+        """
         surname = "yes" if surname else "no"
         gender = "&gender="+gender if gender else gender
         usage = "&usage="+usage if usage else usage
@@ -798,7 +1151,11 @@ class TalosHTTPClient(aiohttp.ClientSession):
                 return None
 
     async def nano_get_user(self, username):
-        """Returns a given NaNo user profile, if it can be found. If not, returns None"""
+        """
+            Returns a given NaNo user profile, if it can be found.
+        :param username: username of nano user to get profile of
+        :return: text of the profile page for that user or None
+        """
         async with self.get(self.NANO_URL + "participants/{}".format(username)) as response:
             if response.status == 200:
                 if not str(response.url).startswith("https://nanowrimo.org/participants"):
@@ -813,6 +1170,12 @@ class TalosHTTPClient(aiohttp.ClientSession):
                 return None
 
     async def nano_get_novel(self, username, novel_name=""):
+        """
+            Returns the novel of a given NaNo user. This year's novel, if specific name not given.
+        :param username: user to get novel of.
+        :param novel_name: novel to get for user. Most recent if not given.
+        :return: novel main page and novel stats page, or None None.
+        """
         if novel_name == "":
             user_page = await self.nano_get_user(username)
             if user_page is None:
@@ -854,6 +1217,10 @@ class TalosHTTPClient(aiohttp.ClientSession):
         return novel_page, novel_stats
 
     async def nano_login_client(self):
+        """
+            Login the client to the NaNo site.
+        :return: status of login request.
+        """
         login_page = await self.get_site(self.NANO_URL + "sign_in")
         pattern = re.compile("<input name=\"authenticity_token\" .*? value=\"(.*?)\" />")
         auth_key = pattern.search(login_page).group(1)
@@ -870,6 +1237,11 @@ class TalosHTTPClient(aiohttp.ClientSession):
 
 
 def to_snake_case(text):
+    """
+        Convert a string into snake case
+    :param text: string to convert
+    :return: string in snake case form
+    """
     out = ""
     for char in text:
         if char.isupper():
@@ -880,8 +1252,11 @@ def to_snake_case(text):
 
 
 def _perms_check(ctx):
-    """Determine whether the person calling the command is allowed to run this command"""
-
+    """
+        Determine whether the command can is allowed to run in this context.
+    :param ctx: dcommands.Context object to consider
+    :return: whether the command can run
+    """
     if isinstance(ctx.channel, discord.abc.PrivateChannel) or ctx.author.id in ctx.bot.ADMINS:
         return True
     command = str(ctx.command)
@@ -999,14 +1374,17 @@ class PWMember:
     __slots__ = ['user', 'start', 'end']
 
     def __init__(self, user):
+        """Create a PWMember object with given member"""
         self.user = user
         self.start = None
         self.end = None
 
     def __str__(self):
+        """Convert PWMember to a string"""
         return str(self.user)
 
     def __eq__(self, other):
+        """Check equality with another PWMember instance"""
         return isinstance(other, PWMember) and self.user == other.user
 
     def get_len(self):

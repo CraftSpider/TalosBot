@@ -194,6 +194,14 @@ def test_empty_cursor():
     assert cursor.lastrowid is None, "lastrowid not None"
 
 
+def test_talos_database():
+    database = utils.TalosDatabase(None)
+
+    database.commit()
+    assert database.is_connected() is False, "Empty database considered connected"
+    assert database.raw_exec("SELECT * FROM ops") == list(), "raw_exec didn't return empty fetchall"
+
+
 def test_pw_member():
     member1 = utils.PWMember("Test#0001")
     member2 = utils.PWMember("Test#0002")

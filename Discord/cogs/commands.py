@@ -19,10 +19,7 @@ from collections import defaultdict
 # Dict to keep track of whatever the currently active PW is
 active_pw = defaultdict(lambda: None)
 
-logging = logging.getLogger("talos.command")
-
-
-
+log = logging.getLogger("talos.command")
 
 
 def sort_mem(member):
@@ -167,7 +164,7 @@ class Commands(utils.TalosCog):
         await ctx.send("Version: {0}".format(self.bot.VERSION))
 
     @commands.command(description="Allows the rolling of dice")
-    async def roll(self, ctx, dice: str):
+    async def roll(self, ctx, dice):
         """Dice are rolled in NdN format, Number of dice first, then how many sides they have."""
         try:
             rolls, limit = map(int, dice.lower().split('d'))
@@ -186,7 +183,7 @@ class Commands(utils.TalosCog):
         
     @commands.command(description='For when you wanna settle the score some other way',
                       usage="[choice 1], [choice 2], ...")
-    async def choose(self, ctx, *, choices: str):
+    async def choose(self, ctx, *, choices):
         """Chooses between multiple choices, as a comma-separated list."""
         if "," not in choices:
             await ctx.send("I need at least two choices to choose between!")
@@ -207,7 +204,7 @@ class Commands(utils.TalosCog):
         await ctx.send("It's time to get a watch. {0}".format(datetime.utcnow().strftime("%H:%M:%S")))
     
     @commands.command(aliases=["ww", "WW"], description="Have Talos help run a Word War")
-    async def wordwar(self, ctx, length: str="", start: str="", wpm: int=30):
+    async def wordwar(self, ctx, length="", start="", wpm: int=30):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
             """number of words in the given time period"""
         try:
@@ -288,7 +285,7 @@ class Commands(utils.TalosCog):
             await ctx.send("Valid options are 'novel' and 'profile'.")
 
     @nanowrimo.command(name="novel", description="Fetch a user's nano novel.")
-    async def _novel(self, ctx, username: str, novel_name: str=""):
+    async def _novel(self, ctx, username, novel_name=""):
         """Fetches detailed info on a user's novel from the NaNo site. If no novel name is given, it grabs the most """\
             """recent."""
         username = username.lower().replace(" ", "-")
@@ -345,7 +342,7 @@ class Commands(utils.TalosCog):
             await ctx.send(embed=embed)
 
     @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
-    async def _profile(self, ctx, username: str):
+    async def _profile(self, ctx, username):
         """Fetches detailed info on a user's profile from the NaNo website."""
         sitename = username.lower().replace(" ", "-")
         sitename = sitename.lower().replace(".", "-")
@@ -526,7 +523,8 @@ class Commands(utils.TalosCog):
             elif leave == 2:
                 await ctx.send("You've already left this PW! Are you going to **end** it?")
             if active_pw[ctx.guild.id].get_finished():
-                await self._end.invoke(ctx)
+                # await self._end.invoke(ctx)
+                await self.productivitywar.all_commands["end"].invoke(ctx)
         else:
             await ctx.send("No PW to leave. Maybe you want to **create** one?")
 

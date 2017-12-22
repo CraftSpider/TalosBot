@@ -10,7 +10,7 @@ import logging
 import utils
 from discord.ext import commands
 
-logging = logging.getLogger("talos.joke")
+log = logging.getLogger("talos.joke")
 
 
 class JokeCommands(utils.TalosCog):
