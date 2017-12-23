@@ -427,7 +427,7 @@ class AdminCommands(utils.TalosCog):
         writing_prompts: whether to post daily writing prompts
         prompts_channel: the name of the channel to post daily prompts to, if above option is true
         prefix: command prefix for Talos to use in this guild. @ mention will always work
-        timezone: what timezone for Talos to use for displayed times"""
+        timezone: what timezone for Talos to use for displayed times, supports any timezone abbreviation"""
         out = "```"
         name_types = self.database.get_columns("guild_options")
         options = self.database.get_guild_options(ctx.guild.id)
