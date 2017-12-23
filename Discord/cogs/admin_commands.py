@@ -47,13 +47,13 @@ def op_check(self, ctx):
         return True
     command = str(ctx.command)
 
-    if ctx.author.id in ctx.bot.ADMINS or\
-       len(ctx.bot.database.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
+    if ctx.author.id in self.ADMINS or\
+       len(self.database.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
        ctx.author == ctx.guild.owner or\
-       ctx.author.id in ctx.bot.database.get_ops(ctx.guild.id):
+       ctx.author.id in self.database.get_ops(ctx.guild.id):
         return True
 
-    perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
+    perms = self.database.get_perm_rules(ctx.guild.id, command)
     if len(perms) == 0:
         return False
     perms.sort(key=lambda x: x[3])

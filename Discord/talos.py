@@ -57,7 +57,7 @@ class Talos(commands.Bot):
 
     # Time, in UTC, that the prompt task kicks off each day.
     PROMPT_TIME = 10
-    # Default Prefix, in case the options are borked.
+    # Default Prefix, in case the options are unavailable.
     DEFAULT_PREFIX = "^"
     # Folder which extensions are stored in
     EXTENSION_DIRECTORY = "cogs"
@@ -83,16 +83,8 @@ class Talos(commands.Bot):
         # Set talos specific things
         self.database = TalosDatabase(sql_conn)
         self.discordbots_token = kwargs.get("token", "")
-        nano_login = kwargs.get("nano_login", ["", ""])
-        btn_key = kwargs.get("btn_key", "")
-
-        async def open_session():
-            log.info("Opened Talos HTTP Client")
-            self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key,
-                                           read_timeout=60, loop=self.loop)
 
         self.session = None
-        self.loop.create_task(open_session())
 
         # Override things set by super init that we don't want
         self._skip_check = self.skip_check
@@ -250,7 +242,7 @@ class Talos(commands.Bot):
             else:
                 await destination.send(page)
 
-    def run(self, token):
+    def run(self, token, *args, **kwargs):
         """
             Run Talos. Logs into discord and runs event loop forever.
         :param token: Discord bot token to log in with
@@ -258,7 +250,20 @@ class Talos(commands.Bot):
         """
         if self.cogs.get("EventLoops", None) is not None:
             self.cogs["EventLoops"].start_all_tasks()
-        super().run(token)
+        super().run(token, *args, **kwargs)
+
+    async def start(self, *args, **kwargs):
+        """
+            Starts Talos. Opens the Talos session and passes on to super, which will login to discord and start the bot.
+        :param args: non-keyword arguments
+        :param kwargs: keyword arguments
+        """
+        nano_login = kwargs.get("nano_login", ["", ""])
+        btn_key = kwargs.get("btn_key", "")
+        log.info("Opened Talos HTTP Client")
+        self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key,
+                                       read_timeout=60, loop=self.loop)
+        await super().start(*args, **kwargs)
 
     async def on_ready(self):
         """
@@ -473,11 +478,11 @@ def main():
         log.warning("Database connection dropped, no data will be saved this session.")
 
     # Create and run Talos
-    talos = Talos(sql_conn=cnx, token=botlist_token, nano_login=nano_login, btn_key=btn_key)
+    talos = Talos(sql_conn=cnx, token=botlist_token)
 
     try:
         talos.load_extensions()
-        talos.run(bot_token)
+        talos.run(bot_token, nano_login=nano_login, btn_key=btn_key)
     finally:
         print("Talos Exiting")
         cnx.commit()

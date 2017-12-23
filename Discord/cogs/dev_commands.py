@@ -24,7 +24,7 @@ log = logging.getLogger("talos.dev")
 #
 def dev_check(self, ctx):
     """Determine whether the person calling the command is an admin."""
-    return ctx.author.id in ctx.bot.ADMINS
+    return ctx.author.id in self.ADMINS
 
 
 #
@@ -165,6 +165,7 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
         file = discord.File(byteso, filename="test.png")
         await ctx.send(file=file)
         end = datetime.now()
+        await asyncio.sleep(.1)
         await ctx.send(end - start)
 
 

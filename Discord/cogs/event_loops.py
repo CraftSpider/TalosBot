@@ -132,12 +132,10 @@ class EventLoops(utils.TalosCog):
             guild_count = len(self.bot.guilds)
             if self.bot.discordbots_token != "" and guild_count != self.last_guild_count:
                 self.last_guild_count = guild_count
-                import aiohttp
                 headers = {'Authorization': self.bot.discordbots_token}
                 data = {'server_count': guild_count}
                 api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
-                async with aiohttp.ClientSession() as session:
-                    await session.post(api_url, data=data, headers=headers)
+                await self.bot.session.post(api_url, data=data, headers=headers)
             await asyncio.sleep(60*60)
 
     async def daily_task(self):

@@ -14,7 +14,7 @@ import utils
 SQL_ADDRESS = ... # type: str
 TOKEN_FILE = ... # type: str
 _mentions_transforms = ... # type: Dict[str, str]
-_mention_pattern = Pattern
+_mention_pattern = ... # type:Pattern
 log = ... # type: logging.Logger
 
 class Talos(commands.Bot):
@@ -48,7 +48,9 @@ class Talos(commands.Bot):
 
     async def _talos_help_command(self, ctx: commands.Context, *args: str) -> None: ...
 
-    def run(self, token: str) -> None: ...
+    def run(self, token: str, *args, **kwargs) -> None: ...
+
+    async def start(self, *args, **kwargs) -> None: ...
 
     async def on_ready(self) -> None: ...
 

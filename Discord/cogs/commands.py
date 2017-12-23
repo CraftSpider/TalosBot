@@ -120,7 +120,7 @@ class Commands(utils.TalosCog):
             embed = discord.Embed(
                 title="Talos Information",
                 colour=discord.Colour(0x202020),
-                description=description.format((await self.bot.get_prefix(ctx))[0]),
+                description=description.format((await self.bot.get_prefix(ctx.message))[0]),
                 timestamp=datetime.now()
             )
             embed.set_footer(text="{}".format(random.choice(self.phrases)))
@@ -145,7 +145,7 @@ class Commands(utils.TalosCog):
                     \nI am built using discord.py, version {}.\
                     \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.\
                     \nMy primary website is located at http://talosbot.tk".format(
-                (await self.bot.get_prefix(ctx))[0], discord.__version__)
+                (await self.bot.get_prefix(ctx.message))[0], discord.__version__)
             await ctx.send(out)
 
     @commands.command(description="Disclaimer for discord TOS")
@@ -273,7 +273,7 @@ class Commands(utils.TalosCog):
     async def ping(self, ctx):
         """Checks the Talos delay. (Not round trip. Time between putting message and gateway acknowledgement.)"""
         start = datetime.now()
-        await self.bot.get_user_info(101091070904897536)
+        await self.bot.application_info(101091070904897536)
         end = datetime.now()
         milliseconds = (end - start).microseconds/1000
         await ctx.send("Current Ping: `{}`".format(milliseconds))
@@ -344,10 +344,10 @@ class Commands(utils.TalosCog):
     @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
     async def _profile(self, ctx, username):
         """Fetches detailed info on a user's profile from the NaNo website."""
-        sitename = username.lower().replace(" ", "-")
-        sitename = sitename.lower().replace(".", "-")
+        site_name = username.lower().replace(" ", "-")
+        site_name = site_name.lower().replace(".", "-")
 
-        page = await self.bot.session.nano_get_user(sitename)
+        page = await self.bot.session.nano_get_user(site_name)
         if page is None:
             await ctx.send("Sorry, I couldn't find that user on the NaNo site.")
             return
@@ -368,7 +368,7 @@ class Commands(utils.TalosCog):
         if novel_title is not None:
             novel_title = novel_title.group(1)
             novel_genre = re.search(r"<strong>Genre:</strong>\n(.*)", page).group(1)
-            novel_words = re.search(r"<strong>(\d*)</strong>\nwords so far", page).group(1)
+            novel_words = re.search("<strong>(\d*)</strong>\nwords(?: so far)?", page).group(1)
         else:
             novel_genre = None
             novel_words = None
@@ -384,7 +384,7 @@ class Commands(utils.TalosCog):
         if self.bot.should_embed(ctx):
             # Build Embed
             embed = discord.Embed(title="__Author Info__", description="*{}*\n\n".format(member_age) + author_bio)
-            embed.set_author(name=username, url="http://nanowrimo.org/participants/" + sitename, icon_url=avatar)
+            embed.set_author(name=username, url="http://nanowrimo.org/participants/" + site_name, icon_url=avatar)
             embed.set_thumbnail(url=avatar)
             if novel_title is not None:
                 embed.add_field(
@@ -445,7 +445,7 @@ class Commands(utils.TalosCog):
 
     @generate.command(name="name", description="Generates a random name")
     async def _name(self, ctx, number=1):
-        """Generates a name or names. Number must be between 1 and 6. Names are sourced from behindthename."""
+        """Generates a name or names. Number must be between 1 and 6. Names are sourced from Behind The Name"""
         if number < 1 or number > 6:
             await ctx.send("Number must be between 1 and 6 inclusive.")
             return
@@ -486,7 +486,7 @@ class Commands(utils.TalosCog):
         else:
             await ctx.send("No PW to join. Maybe you want to **create** one?")
 
-    @productivitywar.command(name='start', description="Start an unstarted PW")
+    @productivitywar.command(name='start', description="Start an un-started PW")
     async def _start(self, ctx, time=""):
         """Start a PW that isn't yet begun. Ready, set... GO!"""
         if active_pw[ctx.guild.id] is not None:
