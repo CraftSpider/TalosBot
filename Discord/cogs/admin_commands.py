@@ -47,7 +47,7 @@ def op_check(self, ctx):
         return True
     command = str(ctx.command)
 
-    if ctx.author.id in self.ADMINS or\
+    if ctx.author.id in self.bot.ADMINS or\
        len(self.database.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
        ctx.author == ctx.guild.owner or\
        ctx.author.id in self.database.get_ops(ctx.guild.id):
@@ -426,7 +426,8 @@ class AdminCommands(utils.TalosCog):
         joke_commands: whether the JokeCommands cog is active in this guild
         writing_prompts: whether to post daily writing prompts
         prompts_channel: the name of the channel to post daily prompts to, if above option is true
-        prefix: command prefix for Talos to use in this guild. @ mention will always work"""
+        prefix: command prefix for Talos to use in this guild. @ mention will always work
+        timezone: what timezone for Talos to use for displayed times"""
         out = "```"
         name_types = self.database.get_columns("guild_options")
         options = self.database.get_guild_options(ctx.guild.id)

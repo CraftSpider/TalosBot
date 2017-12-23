@@ -159,7 +159,7 @@ class Talos(commands.Bot):
         if self.database.is_connected():
             if ctx.guild is not None:
                 timezone = self.database.get_guild_option(ctx.guild.id, "timezone")
-                return dt.timezone(dt.timedelta(hours=tz_map[timezone]), timezone)
+                return dt.timezone(dt.timedelta(hours=tz_map[timezone.upper()]), timezone.upper())
         return dt.timezone(dt.timedelta(), "UTC")
 
     async def logout(self):

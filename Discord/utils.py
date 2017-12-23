@@ -1320,32 +1320,32 @@ class PW:
         """Gets whether the PW is ended"""
         return self.end is not None
 
-    def begin(self):
+    def begin(self, ctx):
         """Starts the PW, assumes it isn't started"""
-        self.start = dt.datetime.utcnow()
+        self.start = dt.datetime.now(tz=ctx.bot.get_timezone(ctx))
         for member in self.members:
             if not member.get_started():
                 member.begin(self.start)
 
-    def finish(self):
+    def finish(self, ctx):
         """Ends the PW, assumes it isn't ended"""
-        self.end = dt.datetime.utcnow()
+        self.end = dt.datetime.now(tz=ctx.bot.get_timezone(ctx))
         for member in self.members:
             if not member.get_finished():
                 member.finish(self.end)
 
-    def join(self, member):
+    def join(self, member, ctx):
         """Have a new member join the PW."""
         if PWMember(member) not in self.members and self.get_finished() is not True:
             new_mem = PWMember(member)
             if self.get_started():
-                new_mem.begin(dt.datetime.utcnow())
+                new_mem.begin(dt.datetime.now(tz=ctx.bot.get_timezone(ctx)))
             self.members.append(new_mem)
             return True
         else:
             return False
 
-    def leave(self, member):
+    def leave(self, member, ctx):
         """Have a member in the PW leave the PW."""
         if PWMember(member) in self.members:
             for user in self.members:
@@ -1353,7 +1353,7 @@ class PW:
                     if user.get_finished():
                         return 2
                     elif user.get_started():
-                        user.finish(dt.datetime.utcnow())
+                        user.finish(dt.datetime.now(tz=ctx.bot.get_timezone(ctx)))
                     else:
                         self.members.remove(user)
                         break
@@ -1362,7 +1362,7 @@ class PW:
                 if not user.get_finished():
                     return 0
             # if everyone is finished, end the pw
-            self.finish()
+            self.finish(ctx)
             return 0
         else:
             return 1

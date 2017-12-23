@@ -13,7 +13,7 @@ import discord.ext.commands as commands
 
 log = ... # type: logging.Logger
 
-def dev_check(self: Talos, ctx: commands.Context) -> bool: ...
+def dev_check(self: DevCommands, ctx: commands.Context) -> bool: ...
 
 class DevCommands(utils.TalosCog):
 

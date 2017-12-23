@@ -121,7 +121,7 @@ class Commands(utils.TalosCog):
                 title="Talos Information",
                 colour=discord.Colour(0x202020),
                 description=description.format((await self.bot.get_prefix(ctx.message))[0]),
-                timestamp=datetime.now()
+                timestamp=datetime.now(tz=self.bot.get_timezone(ctx))
             )
             embed.set_footer(text="{}".format(random.choice(self.phrases)))
             embed.add_field(name="Developers", value="CraftSpider#0269\nDino\nHiddenStorys", inline=True)
@@ -201,7 +201,9 @@ class Commands(utils.TalosCog):
     @commands.command(description="It's time to get a watch")
     async def time(self, ctx):
         """Prints out the current time in UTC, HH:MM:SS format"""
-        await ctx.send("It's time to get a watch. {0}".format(datetime.utcnow().strftime("%H:%M:%S")))
+        await ctx.send(
+            "It's time to get a watch. {0}".format(datetime.now(tz=self.bot.get_timezone(ctx)).strftime("%H:%M:%S"))
+        )
     
     @commands.command(aliases=["ww", "WW"], description="Have Talos help run a Word War")
     async def wordwar(self, ctx, length="", start="", wpm: int=30):
@@ -235,7 +237,7 @@ class Commands(utils.TalosCog):
                 return
 
         if start is not "":
-            now = datetime.utcnow()
+            now = datetime.now(tz=self.bot.get_timezone(ctx))
             dif = abs(now - now.replace(hour=(now.hour if start > now.minute else (now.hour + 1) % 24), minute=start,
                                         second=0))
             await ctx.send("Starting WW at :{0:02}".format(start))
@@ -473,13 +475,13 @@ class Commands(utils.TalosCog):
         else:
             await ctx.send("Creating a new PW.")
             active_pw[ctx.guild.id] = utils.PW()
-            active_pw[ctx.guild.id].join(ctx.author)
+            active_pw[ctx.guild.id].join(ctx.author, ctx)
 
     @productivitywar.command(name='join', description="Join an existing PW")
     async def _join(self, ctx):
         """Signs you up for an existing PW, if you are not already in this one."""
         if active_pw[ctx.guild.id] is not None:
-            if active_pw[ctx.guild.id].join(ctx.author):
+            if active_pw[ctx.guild.id].join(ctx.author, ctx):
                 await ctx.send("User {} joined the PW.".format(ctx.author.display_name))
             else:
                 await ctx.send("You're already in this PW.")
@@ -497,7 +499,7 @@ class Commands(utils.TalosCog):
                         if time < 0 or time > 59:
                             ctx.send("Please give a time between 0 and 60.")
                             return
-                        now = datetime.now()
+                        now = datetime.now(tz=self.bot.get_timezone(ctx))
                         time_delta = abs(now - now.replace(hour=(now.hour if time > now.minute else (now.hour+1 % 24)),
                                                            minute=time, second=0))
                         await ctx.send("Starting PW at :{:02}".format(time))
@@ -505,7 +507,7 @@ class Commands(utils.TalosCog):
                     except ValueError:
                         ctx.send("Time needs to be a number.")
                 await ctx.send("Starting PW")
-                active_pw[ctx.guild.id].begin()
+                active_pw[ctx.guild.id].begin(ctx)
             else:
                 await ctx.send("PW has already started! Would you like to **join**?")
         else:
@@ -515,7 +517,7 @@ class Commands(utils.TalosCog):
     async def _leave(self, ctx):
         """End your involvement in a PW. If you're the last person out, the whole thing ends."""
         if active_pw[ctx.guild.id] is not None:
-            leave = active_pw[ctx.guild.id].leave(ctx.author)
+            leave = active_pw[ctx.guild.id].leave(ctx.author, ctx)
             if leave == 0:
                 await ctx.send("User {} left the PW.".format(ctx.author.display_name))
             elif leave == 1:
@@ -538,14 +540,14 @@ class Commands(utils.TalosCog):
             active_pw[ctx.guild.id] = None
         else:
             await ctx.send("Ending PW.")
-            active_pw[ctx.guild.id].finish()
+            active_pw[ctx.guild.id].finish(ctx)
             cur_pw = active_pw[ctx.guild.id]
             cur_pw.members.sort(key=sort_mem, reverse=True)
             winner = discord.utils.find(lambda m: cur_pw.members[0].user == m, ctx.guild.members)
 
             if self.bot.should_embed(ctx):
                 embed = discord.Embed(colour=winner.colour,
-                                      timestamp=datetime.now())
+                                      timestamp=datetime.now(tz=self.bot.get_timezone(ctx)))
                 embed.set_author(name="{} won the PW!".format(winner.display_name), icon_url=winner.avatar_url)
                 embed.add_field(name="Start",
                                 value="{}".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),

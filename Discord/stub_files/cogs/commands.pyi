@@ -3,15 +3,14 @@
 
     author: CraftSpider
 """
-from typing import Tuple, List, Union, Callable
-from collections import defaultdict
+from typing import Tuple, List, Dict
 import logging
 import discord.ext.commands as commands
 import datetime as dt
 import utils
 from Discord.talos import Talos
 
-active_pw = ... # type: defaultdict
+active_pw = ... # type: Dict[int, utils.PW]
 log = ... # type: logging.Logger
 
 def sort_mem(member: utils.PWMember) -> dt.timedelta: ...

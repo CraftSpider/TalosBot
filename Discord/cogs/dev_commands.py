@@ -24,7 +24,7 @@ log = logging.getLogger("talos.dev")
 #
 def dev_check(self, ctx):
     """Determine whether the person calling the command is an admin."""
-    return ctx.author.id in self.ADMINS
+    return ctx.author.id in self.bot.ADMINS
 
 
 #
@@ -90,7 +90,7 @@ class DevCommands(utils.TalosCog):
     async def verifysql(self, ctx):
         """Check connected SQL database schema, if it doesn't match the expected schema then alter it to fit."""
         await ctx.send("Verifying Talos Schema...")
-        self.bot.database.verify_sql()
+        self.bot.database.verify_schema()
         await ctx.send("Talos Schema verified")
 
     @commands.command(hidden=True, description="Grant a user title")
