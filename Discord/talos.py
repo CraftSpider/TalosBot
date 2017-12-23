@@ -168,7 +168,7 @@ class Talos(commands.Bot):
             :return None:
         """
         log.debug("Logging out Talos")
-        await self.database.commit()
+        self.database.commit()
         await super().logout()
 
     async def close(self):
