@@ -6,18 +6,15 @@
 """
 
 import discord.ext.commands as commands
-import discord.gateway
 import inspect
 import re
 import sys
 import os
 import pytest
 import logging
+import Tests.class_factories as dfacts
 import asyncio
 import asyncio.queues
-import time
-import json
-import websockets
 from datetime import datetime
 from datetime import timedelta
 sys.path.append(os.getcwd().replace("\\Tests", ""))
@@ -28,74 +25,7 @@ import Discord.utils as utils
 log = logging.getLogger("tests.talos")
 
 
-# class TestWebSocket(discord.gateway.DiscordWebSocket):
-#
-#     shard_id = None
-#     state = 1
-#
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#
-#         self.sent = asyncio.queues.Queue(2**5, loop=self.loop)
-#
-#         async def run():
-#             while not self.connection_closed.done():
-#                 await asyncio.sleep(5, loop=self.loop)
-#
-#         self.worker_task = asyncio.ensure_future(run(), loop=self.loop)
-#
-#     async def send_as_json(self, data):
-#         try:
-#             await self.send(json.dumps(data, separators=(',', ':'), ensure_ascii=True))
-#         except websockets.exceptions.ConnectionClosed as e:
-#             if not self._can_handle_close(e.code):
-#                 raise discord.errors.ConnectionClosed(e, shard_id=self.shard_id) from e
-#
-#     async def send(self, data):
-#         await self.ensure_open()
-#
-#         await self.sent.put(data)
-#
-#     @classmethod
-#     async def from_client(cls, client, *, shard_id=None, session=None, sequence=None, resume=False, loop=None):
-#
-#         ws = cls(loop=loop)
-#         ws._max_heartbeat_timeout = client._connection.heartbeat_timeout
-#
-#         return ws
-#
-#
-# class Testlos(dtalos.Talos):
-#
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#
-#     async def login(self, token, *, bot=True):
-#         log.info('logging in using static token')
-#         self._connection.is_bot = bot
-#
-#     async def _connect(self):
-#         self.ws = await TestWebSocket.from_client(self, loop=self.loop)
-#         while True:
-#             try:
-#                 await self.ws.poll_event()
-#             except discord.gateway.ResumeWebSocket:
-#                 self.ws = TestWebSocket(loop=self.loop)
-#             except json.decoder.JSONDecodeError as e:
-#                 log.error(e)
-#
-#     async def add_message(self, message):
-#         while self.ws is None:
-#             await asyncio.sleep(1)
-#         await self.ws.messages.put(message)
-#
-#     async def get_response(self):
-#         while self.ws is None:
-#             await asyncio.sleep(1)
-#         return await self.ws.sent.get()
-
-
-# Test Talos and cogs
+# Test Talos and cog plain methods
 
 def test_extension_load():
     testlos = dtalos.Talos()
@@ -130,12 +60,12 @@ def get_unique_member(base_class):
 
 
 def test_method_docs():
-    talos = dtalos.Talos()
-    talos.load_extensions()
-    for name, member in inspect.getmembers(talos, get_unique_member(talos)):
+    testlos = dtalos.Talos()
+    testlos.load_extensions()
+    for name, member in inspect.getmembers(testlos, get_unique_member(testlos)):
         assert inspect.getdoc(member) is not None, "Talos method missing docstring"
-    for cog in talos.cogs:
-        cog = talos.cogs[cog]
+    for cog in testlos.cogs:
+        cog = testlos.cogs[cog]
         for name, member in inspect.getmembers(cog, get_unique_member(cog)):
             if isinstance(member, commands.Command):
                 assert inspect.getdoc(member.callback) is not None, "Cog command {} missing docstring".format(name)
@@ -144,21 +74,72 @@ def test_method_docs():
                 assert inspect.getdoc(member) is not None, "Cog method {} missing docstring".format(name)
 
 
-# def test_commands():
-#     loop = asyncio.get_event_loop()
-#     testlos = Testlos(loop=loop)
-#     task = loop.run_in_executor(None, lambda: testlos.run(""))
-#     loop.create_task(test_commands_async(testlos))
-#     while not task.done():
-#         pass
-#
-#
-# async def test_commands_async(testlos):
-#     await testlos.add_message('{"t":null,"s":null,"op": 10,"d":{"heartbeat_interval":41250,"_trace":["gateway-prd-main-v5x4"]}}')
-#     print(await testlos.get_response())
-#     await testlos.add_message('{"t":null,"s":null,"op":11,"d":null}')
-#     await testlos.add_message('{"op": 0, "t": "READY", "s": 1, "d": {"user": {"verified": true, "id": "330061997842628623", "avatar": null, "bot": true, "email": null, "mfa_enabled": true, "username": "Testlos", "discriminator": "2178"}, "user_settings": {}, "relationships": [], "session_id": "40d9e80d259005d648606e0739c340a8", "_trace": ["gateway-prd-main-7cr7", "discord-sessions-prd-1-15"], "v": 6, "guilds": [{"unavailable": true, "id": "338137396820443137"}, {"unavailable": true, "id": "346423616881295360"}, {"unavailable": true, "id": "367647133077340162"}], "presences": [], "private_channels": []}}')
-#     print(await testlos.get_response())
+# Test Talos commands
+test_values = {}
+sent_queue = asyncio.queues.Queue()
+
+
+def test_all_commands():
+    loop = asyncio.get_event_loop()
+    testlos = dtalos.Talos()
+    testlos.load_extensions()
+    async_test = loop.create_task(talos_async_tests(testlos))
+    loop.run_until_complete(async_test)
+
+
+async def prepare(channels=1, members=1):
+    test_values["guild"] = dfacts.make_guild("Test_Guild")
+    for i in range(channels):
+        test_values["channel_{}".format(i+1)] = dfacts.make_text_channel("Channel_{}".format(i), test_values["guild"])
+    for i in range(members):
+        test_values["member_{}".format(i+1)] = dfacts.make_member("Test", "{:04}".format(i), test_values["guild"])
+
+
+async def call(callback, content, bot, channel=1, member=1):
+    if len(test_values) == 0:
+        log.error("Attempted to make call before context prepared")
+        return
+    message = dfacts.make_message(content,
+                                  test_values["member_{}".format(member)],
+                                  test_values["channel_{}".format(channel)])
+    ctx = await dfacts.make_context(callback, message, bot)
+    await bot.invoke(ctx)
+
+
+async def talos_async_tests(testlos):
+    await prepare()
+    await commands_async(testlos)
+    await admin_commands_async(testlos)
+    await dev_commands_async(testlos)
+    await joke_commands_async(testlos)
+    await user_commands_async(testlos)
+
+
+async def command_callback(*args, **kwargs):
+    await sent_queue.put([args, kwargs])
+
+
+async def commands_async(testlos):
+    await call(command_callback, "^uptime", testlos)
+    response = await sent_queue.get()
+    print(response)
+
+
+async def admin_commands_async(testlos):
+    pass
+
+
+async def dev_commands_async(testlos):
+    pass
+
+
+async def joke_commands_async(testlos):
+    pass
+
+
+async def user_commands_async(testlos):
+    pass
+
 
 # Test utils classes
 
@@ -180,10 +161,10 @@ def test_empty_cursor():
     with pytest.raises(StopIteration):
         cursor.__iter__().__next__()
 
-    assert cursor.callproc(None) is None, "callproc did something"
+    assert cursor.callproc("") is None, "callproc did something"
     assert cursor.close() is None, "close did something"
-    assert cursor.execute(None) is None, "execute did something"
-    assert cursor.executemany(None, None) is None, "executemany did something"
+    assert cursor.execute("") is None, "execute did something"
+    assert cursor.executemany("", []) is None, "executemany did something"
 
     assert cursor.fetchone() is None, "fetchone not None"
     assert cursor.fetchmany() == list(), "fetchmany not empty list"
@@ -201,38 +182,42 @@ def test_talos_database():
     assert database.is_connected() is False, "Empty database considered connected"
     assert database.raw_exec("SELECT * FROM ops") == list(), "raw_exec didn't return empty fetchall"
 
+    pass  # TODO
+
 
 def test_pw_member():
-    member1 = utils.PWMember("Test#0001")
-    member2 = utils.PWMember("Test#0002")
-    member3 = utils.PWMember("Test#0002")
+    d_guild = dfacts.make_guild("test")
+    pw_member1 = utils.PWMember(dfacts.make_member("Test", "0001", d_guild))
+    d_member2 = dfacts.make_member("Test", "0002", d_guild)
+    pw_member2 = utils.PWMember(d_member2)
+    pw_member3 = utils.PWMember(d_member2)
 
-    assert str(member1) == "Test#0001", "Failed string conversion"
+    assert str(pw_member1) == "Test#0001", "Failed string conversion"
 
-    assert member1 != member2, "Failed difference"
-    assert member2 == member3, "Failed equivalence"
+    assert pw_member1 != pw_member2, "Failed difference"
+    assert pw_member2 == pw_member3, "Failed equivalence"
 
-    assert member1.get_started() is False, "Claims started before start"
-    assert member1.get_finished() is False, "Claims finished before finish"
-    assert member1.get_len() == -1, "Length should be -1 before finish"
+    assert pw_member1.get_started() is False, "Claims started before start"
+    assert pw_member1.get_finished() is False, "Claims finished before finish"
+    assert pw_member1.get_len() == -1, "Length should be -1 before finish"
 
     with pytest.raises(ValueError, message="Allowed non-time beginning"):
-        member1.begin("Hello World!")
-    time = datetime(year=2017, month=12, day=31)
-    member1.begin(time)
+        pw_member1.begin("Hello World!")
+    d_time = datetime(year=2017, month=12, day=31)
+    pw_member1.begin(d_time)
 
-    assert member1.get_started() is True, "Claims not started after start"
-    assert member1.get_finished() is False, "Claims finished before finish"
-    assert member1.get_len() == -1, "Length should be -1 before finish"
+    assert pw_member1.get_started() is True, "Claims not started after start"
+    assert pw_member1.get_finished() is False, "Claims finished before finish"
+    assert pw_member1.get_len() == -1, "Length should be -1 before finish"
 
     with pytest.raises(ValueError, message="Allowed non-time ending"):
-        member1.finish(2017.3123)
-    time = time.replace(minute=30)
-    member1.finish(time)
+        pw_member1.finish(2017.3123)
+    d_time = d_time.replace(minute=30)
+    pw_member1.finish(d_time)
 
-    assert member1.get_started() is True, "Claims not started after start"
-    assert member1.get_finished() is True, "Claims not finished after finish"
-    assert member1.get_len() == timedelta(minutes=30), "Length should be 30 minutes after finish"
+    assert pw_member1.get_started() is True, "Claims not started after start"
+    assert pw_member1.get_finished() is True, "Claims not finished after finish"
+    assert pw_member1.get_len() == timedelta(minutes=30), "Length should be 30 minutes after finish"
 
 
 def test_pw():
@@ -241,36 +226,40 @@ def test_pw():
     assert pw.get_started() is False, "Claims started before start"
     assert pw.get_finished() is False, "Claims finished before finish"
 
-    assert pw.join("Test#0001") is True, "New member not successfully added"
-    assert pw.join("Test#0001") is False, "Member already in PW still added"
-    assert pw.leave("Test#0001") is 0, "Existing member couldn't leave"
-    assert "Test#0001" not in pw.members, "Member leaving before start is not deleted"
-    assert pw.leave("Test#0001") is 1, "Member successfully left twice"
-    assert pw.leave("Test#0002") is 1, "Member left before joining"
+    d_guild = dfacts.make_guild("test")
+    d_member1 = dfacts.make_member("Test", "0001", d_guild)
+    d_member2 = dfacts.make_member("Test", "0002", d_guild)
+    d_member3 = dfacts.make_member("Test", "0003", d_guild)
+    assert pw.join(d_member1) is True, "New member not successfully added"
+    assert pw.join(d_member1) is False, "Member already in PW still added"
+    assert pw.leave(d_member1) is 0, "Existing member couldn't leave"
+    assert d_member1 not in pw.members, "Member leaving before start is not deleted"
+    assert pw.leave(d_member1) is 1, "Member successfully left twice"
+    assert pw.leave(d_member2) is 1, "Member left before joining"
 
     pw = utils.PW()
 
-    pw.join("Test#0001")
+    pw.join(d_member1)
     pw.begin()
     assert pw.get_started() is True, "Isn't started after start"
     assert pw.get_finished() is False, "Finished before finish"
-    pw.join("Test#0002")
+    pw.join(d_member2)
     for member in pw.members:
         assert member.get_started() is True, "Member not started after start"
-    pw.leave("Test#0001")
-    pw.leave("Test#0002")
+    pw.leave(d_member1)
+    pw.leave(d_member2)
     assert pw.get_started() is True, "Isn't started after start"
     assert pw.get_finished() is True, "Isn't finished after all leave"
     for member in pw.members:
         assert member.get_finished() is True, "Member not finished after finish"
-    assert pw.leave("Test#0001") is 2, "Member leaving after join not reporting "
-    assert pw.join("Test#0003") is False, "Allowed join after finish"
+    assert pw.leave(d_member1) is 2, "Member leaving after join not reporting "
+    assert pw.join(d_member3) is False, "Allowed join after finish"
 
     pw = utils.PW()
 
-    pw.join("Test#0001")
+    pw.join(d_member1)
     pw.begin()
-    pw.join("Test#0002")
+    pw.join(d_member2)
     for member in pw.members:
         assert member.get_started() is True, "Member not started after start"
     pw.finish()
