@@ -41,6 +41,7 @@ and - logical and
 or - logical or  
 not - logical not  
 is - equals  
+= - equals  
 < - less than  
 \> - greater than
 
