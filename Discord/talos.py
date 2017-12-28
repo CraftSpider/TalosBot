@@ -378,7 +378,9 @@ def custom_creator(text):
 
     async def custom_callback(ctx):
         try:
-            await ctx.send(command_lang.parse_lang(ctx, text))
+            out = command_lang.parse_lang(ctx, text)
+            if out.strip() != "":
+                await ctx.send(out)
         except command_lang.CommandLangError:
             await ctx.send("Malformed CommandLang syntax.")
 

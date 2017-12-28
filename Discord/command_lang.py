@@ -4,6 +4,7 @@
     author: CraftSpider
 """
 import re
+import asyncio
 
 
 def get_sub(obj, attribute):
@@ -54,6 +55,7 @@ def parse_lang(ctx, command_str):
     raw = ""
     escape = False
     in_logic = False
+    in_if = False
     for char in command_str:
         if escape is False:
             if char == "\\" and depth == 0:
@@ -64,13 +66,14 @@ def parse_lang(ctx, command_str):
                     raw = ""
                 if char == "[":
                     in_logic = True
+                    in_if = True
                 depth += 1
                 raw += char
-            elif (char == ")" and not in_logic) or char == "}":
+            elif (char == ")" and not in_logic and in_if) or char == "}":
                 depth -= 1
                 raw += char
                 if depth == 0:
-                    in_logic = False
+                    in_if = False
                 if depth == 0 and raw != "":
                     exec_stack.append(raw)
                     raw = ""
@@ -112,20 +115,34 @@ def parse_lang(ctx, command_str):
         elif item.startswith("{"):
             # Evaluate invoke block. First check if anything matches a variable, if so, return that. Otherwise run
             # the command.
-            item = _process_val(ctx, item[1:-1])
-            if isinstance(item, (str, int, float)):
+            if ":" in item:
+                item = item[1:-1].split(":")
+                item = get_sub(_process_val(ctx, item[0]), _process_val(ctx, item[1]))
+            else:
+                item = _process_val(ctx, item[1:-1])
+
+            if " " in item:
+                item = item.split()
+                command = item[0]
+                args = item[1:]
+            else:
+                command = item
+                args = []
+            command = ctx.bot.all_commands.get(command)
+            if command:
                 try:
-                    ctx.invoke(item)
+                    ctx.bot.loop.create_task(ctx.invoke(command, args))
                 except Exception as e:
                     print(e)
-            out += item
+            else:
+                out += str(item)
         elif item.startswith("|"):
             out += item[1:]
     return out
 
 
 def _verify_syntax(command_str):
-    return re.search(r"\[(?:if|elif|else) .+?\]\(.+?\)|{[\w ]+?}", command_str)
+    return re.search(r"\[(?:if|elif|else) .+?\]\(.+?\)|{[\w :]+?}", command_str)
 
 
 def _evaluate(ctx, expression):
