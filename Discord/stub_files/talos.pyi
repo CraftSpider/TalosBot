@@ -3,7 +3,7 @@
 
     author: CraftSpider
 """
-from typing import List, Tuple, Union, Any, Optional, Dict, Pattern
+from typing import List, Tuple, Union, Any, Optional, Dict, Pattern, Callable
 import logging
 import discord
 import discord.ext.commands as commands
@@ -63,6 +63,8 @@ class Talos(commands.Bot):
     async def on_command_error(self, ctx: commands.Context, exception: commands.CommandError) -> None: ...
 
     async def get_context(self, message: discord.Message, *, cls: commands.Context=commands.Context) -> commands.Context: ...
+
+def custom_creator(text: str) -> Callable: ...
 
 def talos_prefix(bot: Talos, message: discord.Message) -> Union[List[str], str]: ...
 

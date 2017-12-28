@@ -4,10 +4,13 @@
 *.iml
 
 # Python Cache
-*/__pycache__/
-Tests/.cache
+*__pycache__/
+*.cache
 
 # Discord
 /Discord/*.bak
 /Discord/*.txt
 /Discord/*.dat
+
+# Talos Log
+*.log
