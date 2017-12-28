@@ -6,7 +6,7 @@
 
 ## Possible Operations:
 
-`\[if statement](operation)\[elif statement](operation)\[else](operation)` - if/else if/else block. Parenthesis may contain any valid def_string  
+`[if statement](operation)[elif statement](operation)[else](operation)` - if/else if/else block. Parenthesis may contain any valid def_string  
 `{command}` - invoke block. runs a given command, or inserts a variable. Must be a Talos builtin command.
             Will likely eventually fix the inconsistency of running commands and inserting variables.
 
