@@ -15,8 +15,7 @@ import logging
 import Tests.class_factories as dfacts
 import asyncio
 import asyncio.queues
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 sys.path.append(os.getcwd().replace("\\Tests", ""))
 sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
 import Discord.talos as dtalos
@@ -120,6 +119,7 @@ async def command_callback(*args, **kwargs):
 
 
 async def commands_async(testlos):
+    cog = testlos.cogs["Commands"]  # type: utils.TalosCog
     await call(command_callback, "^uptime", testlos)
     response = await sent_queue.get()
     print(response)
@@ -203,7 +203,7 @@ def test_pw_member():
 
     with pytest.raises(ValueError, message="Allowed non-time beginning"):
         pw_member1.begin("Hello World!")
-    d_time = datetime(year=2017, month=12, day=31)
+    d_time = dt.datetime(year=2017, month=12, day=31)
     pw_member1.begin(d_time)
 
     assert pw_member1.get_started() is True, "Claims not started after start"
@@ -217,52 +217,53 @@ def test_pw_member():
 
     assert pw_member1.get_started() is True, "Claims not started after start"
     assert pw_member1.get_finished() is True, "Claims not finished after finish"
-    assert pw_member1.get_len() == timedelta(minutes=30), "Length should be 30 minutes after finish"
+    assert pw_member1.get_len() == dt.timedelta(minutes=30), "Length should be 30 minutes after finish"
 
 
-def test_pw():
+def test_pw():  # TODO: Add testing for timezones, for now it's just going with UTC always
     pw = utils.PW()
 
     assert pw.get_started() is False, "Claims started before start"
     assert pw.get_finished() is False, "Claims finished before finish"
 
-    d_guild = dfacts.make_guild("test")
+    tz = dt.timezone(dt.timedelta(), "UTC")
+    d_guild = dfacts.make_guild("test_guild")
     d_member1 = dfacts.make_member("Test", "0001", d_guild)
     d_member2 = dfacts.make_member("Test", "0002", d_guild)
     d_member3 = dfacts.make_member("Test", "0003", d_guild)
-    assert pw.join(d_member1) is True, "New member not successfully added"
-    assert pw.join(d_member1) is False, "Member already in PW still added"
-    assert pw.leave(d_member1) is 0, "Existing member couldn't leave"
+    assert pw.join(d_member1, tz) is True, "New member not successfully added"
+    assert pw.join(d_member1, tz) is False, "Member already in PW still added"
+    assert pw.leave(d_member1, tz) is 0, "Existing member couldn't leave"
     assert d_member1 not in pw.members, "Member leaving before start is not deleted"
-    assert pw.leave(d_member1) is 1, "Member successfully left twice"
-    assert pw.leave(d_member2) is 1, "Member left before joining"
+    assert pw.leave(d_member1, tz) is 1, "Member successfully left twice"
+    assert pw.leave(d_member2, tz) is 1, "Member left before joining"
 
     pw = utils.PW()
 
-    pw.join(d_member1)
-    pw.begin()
+    pw.join(d_member1, tz)
+    pw.begin(tz)
     assert pw.get_started() is True, "Isn't started after start"
     assert pw.get_finished() is False, "Finished before finish"
-    pw.join(d_member2)
+    pw.join(d_member2, tz)
     for member in pw.members:
         assert member.get_started() is True, "Member not started after start"
-    pw.leave(d_member1)
-    pw.leave(d_member2)
+    pw.leave(d_member1, tz)
+    pw.leave(d_member2, tz)
     assert pw.get_started() is True, "Isn't started after start"
     assert pw.get_finished() is True, "Isn't finished after all leave"
     for member in pw.members:
         assert member.get_finished() is True, "Member not finished after finish"
-    assert pw.leave(d_member1) is 2, "Member leaving after join not reporting "
-    assert pw.join(d_member3) is False, "Allowed join after finish"
+    assert pw.leave(d_member1, tz) is 2, "Member leaving after join not reporting "
+    assert pw.join(d_member3, tz) is False, "Allowed join after finish"
 
     pw = utils.PW()
 
-    pw.join(d_member1)
-    pw.begin()
-    pw.join(d_member2)
+    pw.join(d_member1, tz)
+    pw.begin(tz)
+    pw.join(d_member2, tz)
     for member in pw.members:
         assert member.get_started() is True, "Member not started after start"
-    pw.finish()
+    pw.finish(tz)
     assert pw.get_started() is True, "Isn't started after start"
     assert pw.get_finished() is True, "Isn't finished after finish called"
     for member in pw.members:

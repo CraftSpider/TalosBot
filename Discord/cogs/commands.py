@@ -48,9 +48,12 @@ def html_to_markdown(html):
 class Commands(utils.TalosCog):
     """These commands can be used by anyone, as long as Talos is awake.\nThey don't care who is using them."""
 
+    # keep track of active WWs
+    active_wws = {}
+
     def get_uptime_days(self):
         """Gets the amount of time Talos has been online in days, hours, minutes, and seconds. Returns a string."""
-        time_delta = datetime.now() - self.bot.BOOT_TIME
+        time_delta = datetime.utcnow() - self.bot.BOOT_TIME
         delta_string = strfdelta(time_delta,
                                  "{d} day" + ("s" if time_delta.days != 1 else "") + ", {h:02}:{m:02}:{s:02}") \
             .format(x=("s" if time_delta.days == 1 else ""))
@@ -58,7 +61,7 @@ class Commands(utils.TalosCog):
 
     def get_uptime_percent(self):
         """Gets the percentages of time Talos has been up over the past day, month, and week."""
-        now = datetime.now().replace(microsecond=0)
+        now = datetime.utcnow().replace(microsecond=0)
         day_total = 24 * 60
         week_total = day_total * 7
         month_total = day_total * 30
@@ -201,14 +204,29 @@ class Commands(utils.TalosCog):
     @commands.command(description="It's time to get a watch")
     async def time(self, ctx):
         """Prints out the current time in UTC, HH:MM:SS format"""
+        tz = self.bot.get_timezone(ctx)
         await ctx.send(
-            "It's time to get a watch. {0}".format(datetime.now(tz=self.bot.get_timezone(ctx)).strftime("%H:%M:%S"))
+            "It's time to get a watch. {0} {1}".format(datetime.now(tz=tz).strftime("%H:%M:%S"), tz.tzname(None))
         )
     
     @commands.command(aliases=["ww", "WW"], description="Have Talos help run a Word War")
     async def wordwar(self, ctx, length="", start="", wpm: int=30):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
-            """number of words in the given time period"""
+            """number of words in the given time period. `^wordwar cancel [id]` to cancel a running ww."""
+        if length.lower() == "cancel":
+            try:
+                start = int(start) - 1
+            except ValueError:
+                await ctx.send("ID must be a number.")
+                return
+            try:
+                self.active_wws[start].cancel()
+            except KeyError:
+                await ctx.send("That WW either doesn't exist or is already over.")
+                return
+            del self.active_wws[start]
+            await ctx.send("WW cancelled!")
+            return
         try:
             length = float(length)
         except ValueError:
@@ -242,15 +260,23 @@ class Commands(utils.TalosCog):
                                         second=0))
             await ctx.send("Starting WW at :{0:02}".format(start))
             await asyncio.sleep(dif.total_seconds())
-        await ctx.send("Word War for {:g} {}.".format(length, "minutes" if length != 1 else "minute"))
 
-        await asyncio.sleep(length * 60)
+        async def active_wordwar():
+            await asyncio.sleep(length * 60)
 
-        if wpm != 0:
-            words_written = int(wpm * length + random.randint(-2 * length, 2 * length))
-            await ctx.send("I wrote {} words. How many did you write?".format(words_written))
-        else:
-            await ctx.send("The word war is over. How did you do?")
+            if wpm != 0:
+                words_written = int(wpm * length + random.randint(-2 * length, 2 * length))
+                await ctx.send("I wrote {} words. How many did you write?".format(words_written))
+            else:
+                await ctx.send("The word war is over. How did you do?")
+            del self.active_wws[wwid]
+
+        task = self.bot.loop.create_task(active_wordwar())
+        wwid = 0
+        while self.active_wws.get(wwid):
+            wwid += 1
+        self.active_wws[wwid] = task
+        await ctx.send("Word War {} for {:g} {}.".format(wwid+1, length, "minutes" if length != 1 else "minute"))
 
     @commands.command(description="Credit where it is due")
     async def credits(self, ctx):
@@ -274,9 +300,9 @@ class Commands(utils.TalosCog):
     @commands.command(description="Pong!")
     async def ping(self, ctx):
         """Checks the Talos delay. (Not round trip. Time between putting message and gateway acknowledgement.)"""
-        start = datetime.now()
+        start = datetime.utcnow()
         await self.bot.application_info(101091070904897536)
-        end = datetime.now()
+        end = datetime.utcnow()
         milliseconds = (end - start).microseconds/1000
         await ctx.send("Current Ping: `{}`".format(milliseconds))
 
@@ -475,13 +501,13 @@ class Commands(utils.TalosCog):
         else:
             await ctx.send("Creating a new PW.")
             active_pw[ctx.guild.id] = utils.PW()
-            active_pw[ctx.guild.id].join(ctx.author, ctx)
+            active_pw[ctx.guild.id].join(ctx.author, self.bot.get_timezone(ctx))
 
     @productivitywar.command(name='join', description="Join an existing PW")
     async def _join(self, ctx):
         """Signs you up for an existing PW, if you are not already in this one."""
         if active_pw[ctx.guild.id] is not None:
-            if active_pw[ctx.guild.id].join(ctx.author, ctx):
+            if active_pw[ctx.guild.id].join(ctx.author, self.bot.get_timezone(ctx)):
                 await ctx.send("User {} joined the PW.".format(ctx.author.display_name))
             else:
                 await ctx.send("You're already in this PW.")
@@ -507,7 +533,7 @@ class Commands(utils.TalosCog):
                     except ValueError:
                         ctx.send("Time needs to be a number.")
                 await ctx.send("Starting PW")
-                active_pw[ctx.guild.id].begin(ctx)
+                active_pw[ctx.guild.id].begin(self.bot.get_timezone(ctx))
             else:
                 await ctx.send("PW has already started! Would you like to **join**?")
         else:
@@ -517,7 +543,7 @@ class Commands(utils.TalosCog):
     async def _leave(self, ctx):
         """End your involvement in a PW. If you're the last person out, the whole thing ends."""
         if active_pw[ctx.guild.id] is not None:
-            leave = active_pw[ctx.guild.id].leave(ctx.author, ctx)
+            leave = active_pw[ctx.guild.id].leave(ctx.author, self.bot.get_timezone(ctx))
             if leave == 0:
                 await ctx.send("User {} left the PW.".format(ctx.author.display_name))
             elif leave == 1:
@@ -540,7 +566,7 @@ class Commands(utils.TalosCog):
             active_pw[ctx.guild.id] = None
         else:
             await ctx.send("Ending PW.")
-            active_pw[ctx.guild.id].finish(ctx)
+            active_pw[ctx.guild.id].finish(self.bot.get_timezone(ctx))
             cur_pw = active_pw[ctx.guild.id]
             cur_pw.members.sort(key=sort_mem, reverse=True)
             winner = discord.utils.find(lambda m: cur_pw.members[0].user == m, ctx.guild.members)

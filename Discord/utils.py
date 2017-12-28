@@ -476,6 +476,10 @@ talos_tables = {
         "columns": ["`user_id` bigint(20) NOT NULL", "`command_name` varchar(32) NOT NULL",
                     "`times_invoked` int(11) NOT NULL DEFAULT '1'"],
         "primary": "PRIMARY KEY (`command_name`,`user_id`)"
+    },
+    "guild_commands": {
+        "columns": ["`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`text` text NOT NULL"],
+        "primary": "PRIMARY KEY (`guild_id`,`name`)"
     }
 }
 
@@ -1071,6 +1075,55 @@ class TalosDatabase:
             args.append(target)
         self._cursor.execute(query, [guild_id] + args)
 
+    # Custom guild commands
+
+    def set_guild_command(self, guild_id, name, text):
+        """
+            Set the text for a custom guild command
+        :param guild_id: id of the guild
+        :param name: name of the command
+        :param text: text of the command
+        """
+        query = "INSERT INTO guild_commands VALUES (%s, %s, %s) " \
+                "ON DUPLICATE KEY UPDATE " \
+                "guild_id = VALUES(guild_id)," \
+                "name = VALUES(name)," \
+                "text = VALUES(text)"
+        self._cursor.execute(query, [guild_id, name, text])
+
+    def get_guild_command(self, guild_id, name):
+        """
+            Get the text for a custom guild command
+        :param guild_id: id of the guild
+        :param name: name of the command
+        :return: text of the command or None
+        """
+        query = "SELECT text FROM guild_commands WHERE guild_id = %s and name = %s"
+        self._cursor.execute(query, [guild_id, name])
+        result = self._cursor.fetchone()
+        if result:
+            result = result[0]
+        return result
+
+    def get_guild_commands(self, guild_id):
+        """
+            Get a list of all commands for a guild, both names and internal text
+        :param guild_id: id of the guild
+        :return: List of commands
+        """
+        query = "SELECT name, text FROM guild_commands WHERE guild_id = %s"
+        self._cursor.execute(query, [guild_id])
+        return self._cursor.fetchall()
+
+    def remove_guild_command(self, guild_id, name):
+        """
+            Remove a custom guild command
+        :param guild_id: id of the guild
+        :param name: name of the command to remove
+        """
+        query = "DELETE FROM guild_commands WHERE guild_id = %s and name = %s"
+        self._cursor.execute(query, [guild_id, name])
+
     # Uptime methods
 
     def add_uptime(self, uptime):
@@ -1320,32 +1373,32 @@ class PW:
         """Gets whether the PW is ended"""
         return self.end is not None
 
-    def begin(self, ctx):
+    def begin(self, tz):
         """Starts the PW, assumes it isn't started"""
-        self.start = dt.datetime.now(tz=ctx.bot.get_timezone(ctx))
+        self.start = dt.datetime.now(tz=tz)
         for member in self.members:
             if not member.get_started():
                 member.begin(self.start)
 
-    def finish(self, ctx):
+    def finish(self, tz):
         """Ends the PW, assumes it isn't ended"""
-        self.end = dt.datetime.now(tz=ctx.bot.get_timezone(ctx))
+        self.end = dt.datetime.now(tz=tz)
         for member in self.members:
             if not member.get_finished():
                 member.finish(self.end)
 
-    def join(self, member, ctx):
+    def join(self, member, tz):
         """Have a new member join the PW."""
         if PWMember(member) not in self.members and self.get_finished() is not True:
             new_mem = PWMember(member)
             if self.get_started():
-                new_mem.begin(dt.datetime.now(tz=ctx.bot.get_timezone(ctx)))
+                new_mem.begin(dt.datetime.now(tz=tz))
             self.members.append(new_mem)
             return True
         else:
             return False
 
-    def leave(self, member, ctx):
+    def leave(self, member, tz):
         """Have a member in the PW leave the PW."""
         if PWMember(member) in self.members:
             for user in self.members:
@@ -1353,7 +1406,7 @@ class PW:
                     if user.get_finished():
                         return 2
                     elif user.get_started():
-                        user.finish(dt.datetime.now(tz=ctx.bot.get_timezone(ctx)))
+                        user.finish(dt.datetime.now(tz=tz))
                     else:
                         self.members.remove(user)
                         break
@@ -1362,7 +1415,7 @@ class PW:
                 if not user.get_finished():
                     return 0
             # if everyone is finished, end the pw
-            self.finish(ctx)
+            self.finish()
             return 0
         else:
             return 1

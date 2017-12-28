@@ -480,6 +480,47 @@ class AdminCommands(utils.TalosCog):
             return
         await ctx.send(out)
 
+    @commands.group()
+    async def command(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Valid options are 'add', 'edit', 'remove', and 'list'")
+
+    @command.command(name="add", aliases=["create"])
+    async def _c_add(self, ctx, name, *, text):
+        if self.database.get_guild_command(ctx.guild.id, name):
+            await ctx.send("That command already exists. Maybe you meant to `edit` it instead?")
+            return
+        self.database.set_guild_command(ctx.guild.id, name, text)
+        await ctx.send("Command {} created".format(name))
+
+    @command.command(name="edit")
+    async def _c_edit(self, ctx, name, *, text):
+        if not self.database.get_guild_command(ctx.guild.id, name):
+            await ctx.send("That command doesn't exist. Maybe you meant to `add` it instead?")
+            return
+        self.database.set_guild_command(ctx.guild.id, name, text)
+        await ctx.send("Command {} succesfully edited".format(name))
+
+    @command.command(name="remove")
+    async def _c_remove(self, ctx, name):
+        if not self.database.get_guild_command(ctx.guild.id, name):
+            await ctx.send("That command doesn't exist, sorry.")
+            return
+        self.database.remove_guild_command(ctx.guild.id, name)
+        await ctx.send("Command {} succesfully removed".format(name))
+
+    @command.command(name="list")
+    async def _c_list(self, ctx):
+        command_list = self.database.get_guild_commands(ctx.guild.id)
+        out = "```\nServer Commands:\n"
+        for name, text in command_list:
+            out += "{}: {}\n".format(name, text)
+        out += "```"
+        if out == "``````":
+            await ctx.send("This server has no custom commands")
+            return
+        await ctx.send(out)
+
 
 def setup(bot):
     bot.add_cog(AdminCommands(bot))

@@ -6,6 +6,7 @@
 """
 import discord
 import discord.ext.commands as commands
+import discord.ext.commands.view as dview
 import traceback
 import sys
 import logging
@@ -16,6 +17,7 @@ import datetime as dt
 # try:
 #     from .utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, tz_map
 # except SystemError or ImportError:
+import command_lang
 from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, tz_map
 
 #
@@ -53,7 +55,7 @@ class Talos(commands.Bot):
     # Current Talos version. Loosely incremented.
     VERSION = "2.6.0"
     # Time Talos started
-    BOOT_TIME = dt.datetime.now()
+    BOOT_TIME = dt.datetime.utcnow()
 
     # Time, in UTC, that the prompt task kicks off each day.
     PROMPT_TIME = 10
@@ -78,7 +80,7 @@ class Talos(commands.Bot):
         # Set default values to pass to super
         description = '''Greetings. I'm Talos, chat helper. Here are my commands.'''
         kwargs["formatter"] = kwargs.get("formatter", TalosFormatter())
-        super().__init__(prefix, description=description, **kwargs)
+        super().__init__(talos_prefix, description=description, **kwargs)
 
         # Set talos specific things
         self.database = TalosDatabase(sql_conn)
@@ -343,8 +345,47 @@ class Talos(commands.Bot):
             log.warning('Ignoring exception in command {}'.format(ctx.command))
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
+    async def get_context(self, message, *, cls=commands.Context):
+        view = dview.StringView(message.content)
+        ctx = cls(prefix=None, view=view, bot=self, message=message)
 
-def prefix(bot, message):
+        if self._skip_check(message.author.id, self.user.id):
+            return ctx
+
+        prefix = await self.get_prefix(message)
+        invoked_prefix = prefix
+
+        if isinstance(prefix, str):
+            if not view.skip_string(prefix):
+                return ctx
+        else:
+            invoked_prefix = discord.utils.find(view.skip_string, prefix)
+            if invoked_prefix is None:
+                return ctx
+
+        invoker = view.get_word()
+        ctx.invoked_with = invoker
+        ctx.prefix = invoked_prefix
+        command = self.all_commands.get(invoker)
+        if command is None:
+            command = commands.Command(invoker,
+                                       custom_creator(self.database.get_guild_command(message.guild.id, invoker)))
+        ctx.command = command
+        return ctx
+
+
+def custom_creator(text):
+
+    async def custom_callback(ctx):
+        try:
+            await ctx.send(command_lang.parse_lang(ctx, text))
+        except command_lang.CommandLangError:
+            await ctx.send("Malformed CommandLang syntax.")
+
+    return custom_callback
+
+
+def talos_prefix(bot, message):
     """
         Return the Talos prefix, given Talos class object and a message
     :param bot: Talos object to find prefix for

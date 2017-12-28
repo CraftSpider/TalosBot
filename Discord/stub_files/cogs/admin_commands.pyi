@@ -66,4 +66,6 @@ class AdminCommands(utils.TalosCog):
 
     async def _opt_all(self, ctx: commands.Context) -> None: ...
 
+    command = ... # type: commands.Group
+
 def setup(bot: Talos) -> None: ...

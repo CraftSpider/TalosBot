@@ -5,6 +5,7 @@
 """
 from typing import Tuple, List, Dict
 import logging
+import asyncio
 import discord.ext.commands as commands
 import datetime as dt
 import utils
@@ -29,6 +30,7 @@ class Commands(utils.TalosCog):
     place_adjective = ... # type: List[str]
     action = ... # type: List[str]
     phrases = ... # type: List[str]
+    active_wws = ... # type: Dict[int, asyncio.Task]
 
     def get_uptime_days(self) -> str: ...
 
