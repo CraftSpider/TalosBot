@@ -480,37 +480,45 @@ class AdminCommands(utils.TalosCog):
             return
         await ctx.send(out)
 
-    @commands.group()
+    @commands.group(description="Custom commands, Yay!")
     async def command(self, ctx):
+        """Command for managing guild-only commands. Create, edit, delete, or list commands. To see documentation """\
+            """on how to write more complex commands, check out the talos website CommandLang page. **Currently in """\
+            """development, please report bugs on the github or official server**"""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'add', 'edit', 'remove', and 'list'")
 
-    @command.command(name="add", aliases=["create"])
+    @command.command(name="add", aliases=["create"], description="Add new command")
     async def _c_add(self, ctx, name, *, text):
+        """Creates a new guild only command, first word will be the name, and everything after will define the """\
+            """command"""
         if self.database.get_guild_command(ctx.guild.id, name):
             await ctx.send("That command already exists. Maybe you meant to `edit` it instead?")
             return
         self.database.set_guild_command(ctx.guild.id, name, text)
         await ctx.send("Command {} created".format(name))
 
-    @command.command(name="edit")
+    @command.command(name="edit", description="Edit existing command")
     async def _c_edit(self, ctx, name, *, text):
+        """Edits an existing command. Same format as adding a command."""
         if not self.database.get_guild_command(ctx.guild.id, name):
             await ctx.send("That command doesn't exist. Maybe you meant to `add` it instead?")
             return
         self.database.set_guild_command(ctx.guild.id, name, text)
         await ctx.send("Command {} succesfully edited".format(name))
 
-    @command.command(name="remove")
+    @command.command(name="remove", description="Remove existing command")
     async def _c_remove(self, ctx, name):
+        """Removes a command from the guild."""
         if not self.database.get_guild_command(ctx.guild.id, name):
             await ctx.send("That command doesn't exist, sorry.")
             return
         self.database.remove_guild_command(ctx.guild.id, name)
         await ctx.send("Command {} succesfully removed".format(name))
 
-    @command.command(name="list")
+    @command.command(name="list", description="List existing commands")
     async def _c_list(self, ctx):
+        """Lists commands in this guild"""
         command_list = self.database.get_guild_commands(ctx.guild.id)
         out = "```\nServer Commands:\n"
         for name, text in command_list:

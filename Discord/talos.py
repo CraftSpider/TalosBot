@@ -53,7 +53,7 @@ class Talos(commands.Bot):
     """
 
     # Current Talos version. Loosely incremented.
-    VERSION = "2.6.0"
+    VERSION = "2.7.0"
     # Time Talos started
     BOOT_TIME = dt.datetime.utcnow()
 
@@ -381,8 +381,8 @@ def custom_creator(text):
             out = command_lang.parse_lang(ctx, text)
             if out.strip() != "":
                 await ctx.send(out)
-        except command_lang.CommandLangError:
-            await ctx.send("Malformed CommandLang syntax.")
+        except command_lang.CommandLangError as e:
+            await ctx.send("Malformed CommandLang syntax: {}".format(e))
 
     return custom_callback
 

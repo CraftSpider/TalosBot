@@ -117,11 +117,14 @@ def parse_lang(ctx, command_str):
             # the command.
             if ":" in item:
                 item = item[1:-1].split(":")
-                item = get_sub(_process_val(ctx, item[0]), _process_val(ctx, item[1]))
+                try:
+                    item = get_sub(_process_val(ctx, item[0]), _process_val(ctx, item[1]))
+                except AttributeError:
+                    raise CommandLangError("Invalid Sub-Attribute")
             else:
                 item = _process_val(ctx, item[1:-1])
 
-            if " " in item:
+            if isinstance(item, str) and " " in item:
                 item = item.split()
                 command = item[0]
                 args = item[1:]
@@ -131,7 +134,7 @@ def parse_lang(ctx, command_str):
             command = ctx.bot.all_commands.get(command)
             if command:
                 try:
-                    ctx.bot.loop.create_task(ctx.invoke(command, args))
+                    ctx.bot.loop.create_task(ctx.invoke(command, *args))
                 except Exception as e:
                     print(e)
             else:
@@ -192,18 +195,21 @@ def _evaluate(ctx, expression):
         _exec_op(op_stack, val_stack)
     # If we have dangling operators or variables, something went wrong.
     if len(val_stack) != 1 or len(op_stack) != 0:
-        raise CommandLangError
+        raise CommandLangError("Invalid Boolean Expression")
     return bool(val_stack[0])
 
 
 def _exec_op(ops, vals):
-    val1 = vals.pop()
-    op = ops.pop()
-    if op != "not":
-        val2 = vals.pop()
-        vals.append(op_functions[op](val2, val1))
-    else:
-        vals.append(op_functions[op](val1))
+    try:
+        val1 = vals.pop()
+        op = ops.pop()
+        if op != "not":
+            val2 = vals.pop()
+            vals.append(op_functions[op](val2, val1))
+        else:
+            vals.append(op_functions[op](val1))
+    except IndexError:
+        raise CommandLangError("One value supplied to two value operator")
 
 
 def _process_val(ctx, val):
