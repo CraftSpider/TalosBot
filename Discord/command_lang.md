@@ -12,10 +12,12 @@
 
 ## Possible variables:
 
-`"text"` - string literal  
+`"text"` or `'text'` - string literal  
 `0123456789` - int/float literal  
 `author` - message author  
 &nbsp;&nbsp;&nbsp; `name` - author name  
+&nbsp;&nbsp;&nbsp; `nick` - author nickname
+&nbsp;&nbsp;&nbsp; `display_name` - author display name
 &nbsp;&nbsp;&nbsp; `discriminator` - author discriminator  
 &nbsp;&nbsp;&nbsp; `id` - author id  
 `role` - author top role  
@@ -32,8 +34,10 @@
 sub-variables are accessed with :  
 variables can be accessed with shorthand.  
 variables can be inserted as text into a command using the invoke block  
+nickname and category may be None. Display name will be nickname if it exists,
+otherwise it will be name.
 author -> a, role -> r, channel -> ch, category -> cat  
-name -> n, discriminator -> d, colour -> c
+name -> n, discriminator -> disc, colour -> c, display_name -> d/display
 
 ## Boolean Operators:
 

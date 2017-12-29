@@ -492,7 +492,10 @@ class AdminCommands(utils.TalosCog):
     async def _c_add(self, ctx, name, *, text):
         """Creates a new guild only command, first word will be the name, and everything after will define the """\
             """command"""
-        if self.database.get_guild_command(ctx.guild.id, name):
+        if name in self.bot.all_commands:
+            await ctx.send("Talos already has that command, no overwriting allowed.")
+            return
+        elif self.database.get_guild_command(ctx.guild.id, name):
             await ctx.send("That command already exists. Maybe you meant to `edit` it instead?")
             return
         self.database.set_guild_command(ctx.guild.id, name, text)

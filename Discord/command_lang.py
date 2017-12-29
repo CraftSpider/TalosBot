@@ -4,20 +4,32 @@
     author: CraftSpider
 """
 import re
-import asyncio
+from discord.ext.commands import CommandError
+
+allowed_attributes = [
+    "name", "colour", "id", "discriminator", "nick", "display_name"
+]
 
 
 def get_sub(obj, attribute):
+    """
+        Function for the : operator, getting a sub-attribute of something.
+    :param obj: Primary object
+    :param attribute: Attribute to get
+    :return: Retrieved attribute
+    """
+    if attribute not in allowed_attributes:
+        raise CommandLangError("Attempt to access invalid attribute")
     if attribute == "colour":
         return str(obj.colour)
-    else:
-        return getattr(obj, attribute)
+    return getattr(obj, attribute)
 
 
 op_priority = {
     "(": -1,
     ")": -1,
     "=": 0,
+    "is": 0,
     "or": 10,
     "+": 10,
     "-": 10,
@@ -35,6 +47,7 @@ op_functions = {
     "*": lambda x, y: x * y,
     "/": lambda x, y: x / y,
     "^": lambda x, y: x**y,
+    "is": lambda x, y: int(x is y),
     "and": lambda x, y: int(x and y),
     "or": lambda x, y: int(x or y),
     "not": lambda x: int(not x),
@@ -42,14 +55,23 @@ op_functions = {
 }
 
 
-class CommandLangError(Exception):
+class CommandLangError(CommandError):
     pass
 
 
+def _operators_exist(command_str):
+    """
+        Checks that a string contains at least one CommandLang operator.
+    :param command_str: String to check
+    :return: boolean result of search
+    """
+    return bool(re.search(r"\[(?:if|elif|else) .+?\]\(.+?\)|{[\w :]+?}", command_str))
+
+
 def parse_lang(ctx, command_str):
-    if _verify_syntax(command_str) is None:
-        # print('"' + command_str + '"')
+    if not _operators_exist(command_str):  # if it's not obviously in the language, we're already done processing.
         return command_str
+    # split input into list of execution items
     exec_stack = []
     depth = 0
     raw = ""
@@ -69,8 +91,8 @@ def parse_lang(ctx, command_str):
                     in_if = True
                 depth += 1
                 raw += char
-            elif (char == ")" and not in_logic and in_if) or char == "}":
-                depth -= 1
+            elif (char == ")" and not in_logic and in_if) or char == "}":  # first part is to make sure we're at the end
+                depth -= 1                                                 # of the if block, not in the middle.
                 raw += char
                 if depth == 0:
                     in_if = False
@@ -89,6 +111,7 @@ def parse_lang(ctx, command_str):
         if depth != 0:
             raise CommandLangError
         exec_stack.append("|" + raw)
+    # evaluate new list of items
     out = ""
     if_else = False
     for item in exec_stack:
@@ -99,15 +122,16 @@ def parse_lang(ctx, command_str):
             # if false, set ifelse to true and continue
             match = re.match(r"\[(if|elif|else)(.*?)\]\((.+)\)", item)
             if match is None:
-                raise CommandLangError
+                raise CommandLangError("Malformed if block")
             which_if = match.group(1)
             expression = match.group(2).lstrip()
             statement = match.group(3)
             if (which_if == "else" and expression != "") or (which_if != "else" and expression == ""):
-                raise CommandLangError
+                raise CommandLangError("Invalid if statement block")
             if which_if == "elif" or which_if == "else" and if_else is False:
                 continue
-            if which_if == "else" or _evaluate(ctx, expression):
+            exec_list = _get_exec_list(expression)
+            if which_if == "else" or _evaluate(ctx, exec_list):
                 out += parse_lang(ctx, statement)
                 if_else = False
             else:
@@ -120,7 +144,7 @@ def parse_lang(ctx, command_str):
                 try:
                     item = get_sub(_process_val(ctx, item[0]), _process_val(ctx, item[1]))
                 except AttributeError:
-                    raise CommandLangError("Invalid Sub-Attribute")
+                    raise CommandLangError("Attempt to access invalid attribute")
             else:
                 item = _process_val(ctx, item[1:-1])
 
@@ -144,35 +168,34 @@ def parse_lang(ctx, command_str):
     return out
 
 
-def _verify_syntax(command_str):
-    return re.search(r"\[(?:if|elif|else) .+?\]\(.+?\)|{[\w :]+?}", command_str)
+def _get_exec_list(expression):
+    """
+        Creates an execution list from a string. Splits into pieces, then removes dangling spaces and lines.
+    :param expression: Boolean Expression
+    :return: list of either values or operators
+    """
+    exec_list = re.split(r"(\"(?:.*?[^\\](?:\\\\)*?)?\"|'(?:.*?[^\\](?:\\\\)*?)?'|\W)", expression)
 
-
-def _evaluate(ctx, expression):
-    # split expression into pieces
-    exec_list = re.split(r"(\W)", expression)
-    # Un-Split things in quotes TODO: combine this with above for lower repetition
-    quotes = []
-    escapes = []
-    escape = False
-    for i in range(len(exec_list)):
-        if not escape:
-            if exec_list[i] == "\\":
-                escapes.append(i)
-                escape = True
-            if exec_list[i] == "\"":
-                quotes.append(i)
+    def slash_replace(match):
+        if match.group(1):
+            return "\\"*int(len(match.group(1)) / 2)
         else:
-            escape = False
-    for i in escapes:
-        exec_list.pop(i)
-    for i in range(0, len(quotes), 2):
-        j = quotes[i + 1]
-        i = quotes[i]
-        exec_list[i:j + 1] = [''.join(exec_list[i:j + 1])]
-    # Remove all the dangling spaces
-    exec_list = list(filter(lambda x: x != "", map(lambda x: x.strip(), exec_list)))
-    # Perform boolean evaluation
+            return ""
+
+    for i in range(len(exec_list)):
+        if "\\" in exec_list[i]:
+            exec_list[i] = re.sub(r"\\((?:\\\\)*)", slash_replace, exec_list[i])
+    exec_list = list(filter(None, map(lambda x: x.strip(), exec_list)))
+    return exec_list
+
+
+def _evaluate(ctx, exec_list):
+    """
+        Performs boolean evaluation on a list of values and operators
+    :param ctx: commands.Context object
+    :param exec_list: List to evaluate
+    :return: boolean result of the list evaluation
+    """
     op_stack = []
     val_stack = []
     for item in exec_list:
@@ -226,10 +249,12 @@ def _process_val(ctx, val):
             val = ctx.channel.category
         elif val == "n":
             val = "name"
-        elif val == "d":
+        elif val == "disc":
             val = "discriminator"
         elif val == "c":
             val = "colour"
-        elif val.startswith("\"") and val.endswith("\""):
+        elif val == "d" or val == "display":
+            val = "display_name"
+        elif (val.startswith("\"") and val.endswith("\"")) or (val.startswith("'") and val.endswith("'")):
             val = val[1:-1]
         return val

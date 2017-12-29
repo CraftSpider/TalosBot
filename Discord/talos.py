@@ -56,7 +56,6 @@ class Talos(commands.Bot):
     VERSION = "2.7.0"
     # Time Talos started
     BOOT_TIME = dt.datetime.utcnow()
-
     # Time, in UTC, that the prompt task kicks off each day.
     PROMPT_TIME = 10
     # Default Prefix, in case the options are unavailable.
@@ -332,7 +331,8 @@ class Talos(commands.Bot):
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
         elif isinstance(exception, commands.CheckFailure):
-            log.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
+            # log.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
+            await ctx.send("You lack the permission to run that command.")
         elif isinstance(exception, commands.NoPrivateMessage):
             await ctx.send("This command can only be used in a guild. Apologies.")
         elif isinstance(exception, commands.BadArgument):
@@ -341,12 +341,21 @@ class Talos(commands.Bot):
             await ctx.send("Missing parameter `{}`".format(exception.param))
         elif isinstance(exception, NotRegistered):
             await ctx.send("User {} isn't registered, command could not be executed.".format(exception))
+        elif isinstance(exception, command_lang.CommandLangError):
+            await ctx.send("Malformed CommandLang syntax: {}".format(e))
         else:
             log.warning('Ignoring exception in command {}'.format(ctx.command))
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
     async def get_context(self, message, *, cls=commands.Context):
+        """
+            Gets a context object from a message
+        :param message: discord.Message instance
+        :param cls: Class to instantiate, by default a normal context
+        :return: completed context object
+        """
         view = dview.StringView(message.content)
+        # noinspection PyCallingNonCallable
         ctx = cls(prefix=None, view=view, bot=self, message=message)
 
         if self._skip_check(message.author.id, self.user.id):
@@ -368,23 +377,26 @@ class Talos(commands.Bot):
         ctx.prefix = invoked_prefix
         command = self.all_commands.get(invoker)
         if command is None:
-            command = commands.Command(invoker,
-                                       custom_creator(self.database.get_guild_command(message.guild.id, invoker)))
+            text = self.database.get_guild_command(message.guild.id, invoker)
+            command = custom_creator(invoker, text) if text else text
         ctx.command = command
         return ctx
 
 
-def custom_creator(text):
+def custom_creator(name, text):
+    """
+        Create a custom temporary command for Talos
+    :param name: Name of the invoked command
+    :param text: Text of the command
+    :return: commands.Command instance
+    """
 
     async def custom_callback(ctx):
-        try:
-            out = command_lang.parse_lang(ctx, text)
-            if out.strip() != "":
-                await ctx.send(out)
-        except command_lang.CommandLangError as e:
-            await ctx.send("Malformed CommandLang syntax: {}".format(e))
+        out = command_lang.parse_lang(ctx, text)
+        if out.strip() != "":
+            await ctx.send(out)
 
-    return custom_callback
+    return commands.Command(name, custom_callback)
 
 
 def talos_prefix(bot, message):
