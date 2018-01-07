@@ -79,8 +79,9 @@ class NotRegistered(dcommands.CommandError):
 
 
 class EmbedPaginator:  # TODO: make configuration actually do something
-    """Does fancy embed paginating. Will make a single embed with all given fields, except if it becomes too long.
-    A single field being too long becomes Field, Field continued. A whole embed too long, Embed continued.
+    """
+        Does fancy embed paginating. Will make a single embed with all given fields, except if it becomes too long.
+        A single field being too long becomes Field, Field continued. A whole embed too long, Embed continued.
     """
 
     __slots__ = ["max_size", "title", "description", "_fields", "footer", "_built_pages", "colours", "colour_pos",
@@ -125,9 +126,20 @@ class EmbedPaginator:  # TODO: make configuration actually do something
 
     @staticmethod
     def _suffix(d):
+        """
+            Determine the suffix for a date
+        :param d: day to determine suffix of
+        :return: string of suffix
+        """
         return 'th' if 11 <= d <= 13 else {1: 'st', 2: 'nd', 3: 'rd'}.get(d % 10, 'th')
 
     def _custom_strftime(self, strf, t):
+        """
+            Custom string-format function to allow a time format to contain day in the form `1st`, `2nd`, `3r`, etc.
+        :param strf: Format string
+        :param t: Time to format with the string
+        :return: formatted string
+        """
         return t.strftime(strf).replace('{D}', str(t.day) + self._suffix(t.day))
 
     @property
@@ -365,8 +377,14 @@ class EmbedPaginator:  # TODO: make configuration actually do something
 
 
 class TalosFormatter(dcommands.HelpFormatter):
+    """
+        Talos help formatter. Fairly self explanatory.
+    """
 
     def __init__(self):
+        """
+            Instantiate a new TalosFormatter object
+        """
         self._paginator = None
         super().__init__(width=75)
 
