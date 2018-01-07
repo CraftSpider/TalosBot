@@ -86,7 +86,7 @@ class EmbedPaginator:  # TODO: make configuration actually do something
 
     __slots__ = ["max_size", "title", "description", "_fields", "footer", "_built_pages", "colours", "colour_pos",
                  "closed", "author", "author_url", "author_avatar", "repeat_title", "repeat_desc", "repeat_author",
-                 "timestamp"]
+                 "timestamp", "footer_url"]
 
     MAX_TOTAL = 6000
     MAX_TITLE = 256
@@ -116,6 +116,7 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         self._fields = []
         self.timestamp = discord.Embed.Empty
         self.footer = "Page {0}/{1}"
+        self.footer_url = discord.Embed.Empty
         self._built_pages = []
         self.colour_pos = 0
         self.closed = False
@@ -278,11 +279,12 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         self.timestamp = timestamp
         return self
 
-    def set_footer(self, footer):
+    def set_footer(self, footer, icon_url=None):
         """
             Sets the embed footer. Footer length must be less than MAX_FOOTER. {0} and {1} in footer will be replaced
             with current and max pages for each embed.
         :param footer: Footer to set for embed.
+        :param icon_url: URL for the footer icon.
         :return: Self to allow chaining
         """
         if self.closed:
@@ -290,6 +292,7 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         if len(footer) > self.MAX_FOOTER:
             raise ValueError("Footer length must be less than or equal to {}".format(self.MAX_FOOTER))
         self.footer = footer
+        self.footer_url = icon_url
         return self
 
     def add_field(self, name, value, inline=False):
@@ -354,7 +357,7 @@ class EmbedPaginator:  # TODO: make configuration actually do something
             footer_len = len(self.footer.format(page, max_pages))
             cur_fields += 1
             if cur_fields % 25 == 0 or field == ("", "", False) or cur_len + field_len + footer_len > self.MAX_TOTAL:
-                embed.set_footer(text=self.footer.format(page, max_pages))
+                embed.set_footer(text=self.footer.format(page, max_pages), icon_url=self.footer_url)
                 self._built_pages.append(embed)
                 cur_len = 0
                 page += 1
@@ -363,7 +366,7 @@ class EmbedPaginator:  # TODO: make configuration actually do something
             if field != ("", "", False):
                 embed.add_field(name=field[0], value=field[1], inline=field[2])
         if embed.title or embed.description or len(embed.fields) != 0 or len(self._built_pages) == 0:
-            embed.set_footer(text=self.footer.format(max_pages, max_pages))
+            embed.set_footer(text=self.footer.format(max_pages, max_pages), icon_url=self.footer_url)
             self._built_pages.append(embed)
 
     def get_pages(self):
@@ -390,6 +393,10 @@ class TalosFormatter(dcommands.HelpFormatter):
 
     @property
     async def clean_prefix(self):
+        """
+            Returns the prefix from a context, cleaned up.
+        :return: Clean prefix for the given context
+        """
         return (await self.context.bot.get_prefix(self.context))[0]
 
     async def get_command_signature(self):
@@ -563,6 +570,7 @@ class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
     DEFAULT_ALL = list()
 
     def __init__(self):
+        """Init stub"""
         super().__init__()
 
     def __iter__(self):

@@ -41,6 +41,7 @@ class EmbedPaginator:
     _fields = ... # type: List[Tuple[str, str, bool]]
     timestamp = ... # type: dt.datetime
     footer = ... # type: str
+    footer_url = ... # type: str
     _built_pages = ... # type: List[discord.Embed]
     colour_pos = ... # type: int
     colours = ... # type: List[discord.Colour]
@@ -71,7 +72,7 @@ class EmbedPaginator:
 
     def set_timestamp(self, timestamp: dt.datetime) -> EmbedPaginator: ...
 
-    def set_footer(self, footer: str) -> EmbedPaginator: ...
+    def set_footer(self, footer: str, icon_url: str = ...) -> EmbedPaginator: ...
 
     def add_field(self, name: str, value: str, inline: bool = ...) -> EmbedPaginator: ...
 

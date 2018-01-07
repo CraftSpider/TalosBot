@@ -420,7 +420,11 @@ def talos_prefix(bot, message):
 
 
 def string_load(filename):
-    """Loads a file as an array of strings and returns that"""
+    """
+        Loads a file as an array of strings and returns that
+    :param filename: name of file to load
+    :return: array of strings, each string one line in the file.
+    """
     out = []
     with open(filename, 'a+') as file:
         try:

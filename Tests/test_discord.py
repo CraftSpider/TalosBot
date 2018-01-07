@@ -152,6 +152,24 @@ def test_embed_paginator():
     page.close()
     assert len(page.get_pages()) is 1, "Empty embed has more than one page"
 
+    page = utils.EmbedPaginator()
+
+    page.set_title("Test Title")
+    page.set_description("Test Description")
+    page.set_author(name="Test#0001", url="http://talosbot.tk", avatar="http://test.com")
+    page.set_footer("Test Footer", "http://test.com")
+    page.close()
+    pages = page.get_pages()
+    assert len(pages) == 1, "Split embed unnecessarily"
+    embed = pages[0]
+    assert embed.title == "Test Title", "Incorrect Title"
+    assert embed.description == "Test Description", "Incorrect Description"
+    assert embed.footer.text == "Test Footer", "Incorrect Footer"
+    assert embed.footer.icon_url == "http://test.com", "Incorrect footer icon"
+    assert embed.author.name == "Test#0001", "Incorrect Author name"
+    assert embed.author.url == "http://talosbot.tk", "Incorrect Author url"
+    assert embed.author.icon_url == "http://test.com", "Incorrect Author icon"
+
     pass  # TODO finish testing paginator
 
 
