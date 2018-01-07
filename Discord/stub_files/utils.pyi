@@ -50,7 +50,7 @@ class EmbedPaginator:
 
     @staticmethod
     def _suffix(d: int) -> str: ...
-    def _custom_strftime(self, strf: str, t: dt.datetime):
+    def _custom_strftime(self, strf: str, t: dt.datetime) -> str:
 
     @property
     def size(self) -> int: return ...
