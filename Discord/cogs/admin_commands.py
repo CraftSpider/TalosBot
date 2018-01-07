@@ -47,7 +47,7 @@ def op_check(self, ctx):
         return True
     command = str(ctx.command)
 
-    if ctx.author.id in self.bot.ADMINS or\
+    if ctx.author.id in self.bot.DEVS or\
        len(self.database.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
        ctx.author == ctx.guild.owner or\
        ctx.author.id in self.database.get_ops(ctx.guild.id):
@@ -74,7 +74,7 @@ def op_check(self, ctx):
 def dev_check():
     """Determine whether the person calling the command is an admin."""
     def predicate(ctx):
-        return ctx.author.id in ctx.bot.ADMINS
+        return ctx.author.id in ctx.bot.DEVS
     return commands.check(predicate)
 
 
@@ -128,36 +128,8 @@ class AdminCommands(utils.TalosCog):
     async def talos_perms(self, ctx):
         """Has Talos display their current effective guild permissions. This is channel independent, """\
             """channel-specific perms aren't taken into account."""
-        talos_perms = ctx.me.guild_permissions
         out = "```Guild Permissions:\n"
-        out += "    Administrator: {}\n".format(talos_perms.administrator)
-        out += "    Add Reactions: {}\n".format(talos_perms.add_reactions)
-        out += "    Attach Files: {}\n".format(talos_perms.attach_files)
-        out += "    Ban Members: {}\n".format(talos_perms.ban_members)
-        out += "    Change Nickname: {}\n".format(talos_perms.change_nickname)
-        out += "    Connect: {}\n".format(talos_perms.connect)
-        out += "    Deafen Members: {}\n".format(talos_perms.deafen_members)
-        out += "    Embed Links: {}\n".format(talos_perms.embed_links)
-        out += "    External Emojis: {}\n".format(talos_perms.external_emojis)
-        out += "    Instant Invite: {}\n".format(talos_perms.create_instant_invite)
-        out += "    Kick Members: {}\n".format(talos_perms.kick_members)
-        out += "    Manage Channels: {}\n".format(talos_perms.manage_channels)
-        out += "    Manage Emojis: {}\n".format(talos_perms.manage_emojis)
-        out += "    Manage Guild: {}\n".format(talos_perms.manage_guild)
-        out += "    Manage Messages: {}\n".format(talos_perms.manage_messages)
-        out += "    Manage Nicknames: {}\n".format(talos_perms.manage_nicknames)
-        out += "    Manage Roles: {}\n".format(talos_perms.manage_roles)
-        out += "    Manage Webhooks: {}\n".format(talos_perms.manage_webhooks)
-        out += "    Mention Everyone: {}\n".format(talos_perms.mention_everyone)
-        out += "    Move Members: {}\n".format(talos_perms.move_members)
-        out += "    Mute Members: {}\n".format(talos_perms.mute_members)
-        out += "    Read Message History: {}\n".format(talos_perms.read_message_history)
-        out += "    Read Messages: {}\n".format(talos_perms.read_messages)
-        out += "    Send Messages: {}\n".format(talos_perms.send_messages)
-        out += "    Send TTS: {}\n".format(talos_perms.send_tts_messages)
-        out += "    Speak: {}\n".format(talos_perms.speak)
-        out += "    Use Voice Activation: {}\n".format(talos_perms.use_voice_activation)
-        out += "    View Audit: {}\n".format(talos_perms.view_audit_log)
+        out += ', '.join(map(lambda x: x[0], filter(lambda y: y[1] is True, ctx.me.guild_permissions)))
         out += "```"
         await ctx.send(out)
 

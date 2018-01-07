@@ -24,7 +24,7 @@ log = logging.getLogger("talos.dev")
 #
 def dev_check(self, ctx):
     """Determine whether the person calling the command is an admin."""
-    return ctx.author.id in self.bot.ADMINS
+    return ctx.author.id in self.bot.DEVS
 
 
 #
@@ -39,25 +39,26 @@ class DevCommands(utils.TalosCog):
     @commands.command(hidden=True, description="Change what Talos is playing")
     async def playing(self, ctx, *, playing):
         """Changes what Talos is playing, the thing displayed under the name in the user list."""
-        await self.bot.change_presence(game=discord.Game(name=playing))
+        await self.bot.change_presence(activity=discord.Game(name=playing))
         await ctx.send("Now playing {}".format(playing))
 
     @commands.command(hidden=True, description="Change what Talos is streaming")
     async def streaming(self, ctx, *, streaming):
         """Changes what Talos is streaming, the thing displayed under the name in the user list."""
-        await self.bot.change_presence(game=discord.Game(name=streaming, url="http://www.twitch.tv/talos_bot_", type=1))
+        await self.bot.change_presence(
+            activity=discord.Game(name=streaming, url="http://www.twitch.tv/talos_bot_", type=1))
         await ctx.send("Now streaming {}".format(streaming))
 
     @commands.command(hidden=True, description="Change what Talos is listening to")
     async def listening(self, ctx, *, listening):
         """Changes what Talos is listening to, the thing displayed under the name in the user list."""
-        await self.bot.change_presence(game=discord.Game(name=listening, type=2))
+        await self.bot.change_presence(activity=discord.Game(name=listening, type=2))
         await ctx.send("Now listening to {}".format(listening))
 
     @commands.command(hidden=True, description="Change what Talos is watching")
     async def watching(self, ctx, *, watching):
         """Changes what Talos is watching, the thing displayed under the name in the user list."""
-        await self.bot.change_presence(game=discord.Game(name=watching, type=3))
+        await self.bot.change_presence(activity=discord.Game(name=watching, type=3))
         await ctx.send("Now watching {}".format(watching))
 
     @commands.command(hidden=True, description="Kills Talos process")
@@ -122,7 +123,6 @@ class DevCommands(utils.TalosCog):
             """wrapped in an async function and error catcher."""
         if program.startswith("```"):
             program = re.sub(r"```(?:py)?", "", program, count=2)
-        program = re.sub(r"(?<!\\)\\((?:\\\\)*)n", "\n", program)
         program = re.sub(r"(?<!\\)\\((?:\\\\)*)t", "\t", program)
         program = program.replace("\n", "\n        ")
         program = """

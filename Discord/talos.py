@@ -65,7 +65,7 @@ class Talos(commands.Bot):
     # Extensions to load on Talos boot. Can be standard discord.py extensions, though Talos also allows some more stuff.
     STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops"]
     # Hardcoded Admin List. Craft, Dino, Hidd, Hidd
-    ADMINS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
+    DEVS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
     # Discordbots bot list token
     discordbots_token = ""
 
@@ -342,7 +342,7 @@ class Talos(commands.Bot):
         elif isinstance(exception, NotRegistered):
             await ctx.send("User {} isn't registered, command could not be executed.".format(exception))
         elif isinstance(exception, command_lang.CommandLangError):
-            await ctx.send("Malformed CommandLang syntax: {}".format(e))
+            await ctx.send("Malformed CommandLang syntax: {}".format(exception))
         else:
             log.warning('Ignoring exception in command {}'.format(ctx.command))
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
@@ -540,8 +540,11 @@ def main():
         talos.run(bot_token, nano_login=nano_login, btn_key=btn_key)
     finally:
         print("Talos Exiting")
-        cnx.commit()
-        cnx.close()
+        try:
+            cnx.commit()
+            cnx.close()
+        except AttributeError:
+            pass
 
 
 if __name__ == "__main__":

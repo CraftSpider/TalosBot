@@ -25,7 +25,7 @@ class Talos(commands.Bot):
     DEFAULT_PREFIX = ... # type: str
     EXTENSION_DIRECTORY = ... # type: str
     STARTUP_EXTENSIONS = ... # type: List[str]
-    ADMINS = ... # type: Tuple[int, ...]
+    DEVS = ... # type: Tuple[int, ...]
     discordbots_token = ... # type: str
     database = ... # type: utils.TalosDatabase
     session = ... # type: utils.TalosHTTPClient

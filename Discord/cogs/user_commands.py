@@ -27,94 +27,66 @@ class UserCommands(utils.TalosCog):
     """These commands can be used by anyone, as long as Talos is awake.\n"""\
         """The effects will apply to the person using the command."""
 
-    @commands.command(signature="color <hex-code>", description="Set your role color")
+    @commands.command(aliases=["color"], signature="colour <hex-code>", description="Set your role colour")
     @commands.guild_only()
-    async def color(self, ctx, color):
-        """Changes the User's color, if Talos has role permissions."""\
-            """ Input must be a hexadecimal color or the word 'clear' to remove all Talos colors."""
-        color_role = None
-        if color == "clear":
+    async def colour(self, ctx, colour):
+        """Changes the User's colour, if Talos has role permissions."""\
+            """ Input must be a hexadecimal colour or the word 'clear' to remove all Talos colours."""
+        colour_role = None
+        if colour == "clear":
             for role in ctx.author.roles:
                 if role.name.startswith("<TALOS COLOR>"):
                     await ctx.author.remove_roles(role)
-            await ctx.send("Talos color removed")
+            await ctx.send("Talos colour removed")
             return
 
-        if not color.startswith("#") or len(color) is not 7 and len(color) is not 4:
-            await ctx.send("That isn't a valid hexadecimal color!")
+        if not colour.startswith("#") or len(colour) is not 7 and len(colour) is not 4:
+            await ctx.send("That isn't a valid hexadecimal colour!")
             return
 
         for role in ctx.author.roles:
             if role.name.startswith("<TALOS COLOR>"):
                 await ctx.author.remove_roles(role)
 
-        discord_color = None
+        discord_colour = None
         try:
-            if len(color) == 7:
-                discord_color = discord.Colour(int(color[1:], 16))
-            elif len(color) == 4:
-                color = color[1:]
+            if len(colour) == 7:
+                discord_colour = discord.Colour(int(colour[1:], 16))
+            elif len(colour) == 4:
+                colour = colour[1:]
                 result = ""
-                for item in color:
+                for item in colour:
                     result += item*2
-                discord_color = discord.Colour(int(result, 16))
-                color = "#{}".format(result)
+                discord_colour = discord.Colour(int(result, 16))
+                colour = "#{}".format(result)
         except ValueError:
-            await ctx.send("That isn't a valid hexadecimal color!")
+            await ctx.send("That isn't a valid hexadecimal colour!")
             return
 
         for role in ctx.guild.roles:
-            if role.name.startswith("<TALOS COLOR>") and role.color == discord_color:
-                color_role = role
-        if color_role is not None:
-            await ctx.author.add_roles(color_role)
+            if role.name.startswith("<TALOS COLOR>") and role.colour == discord_colour:
+                colour_role = role
+        if colour_role is not None:
+            await ctx.author.add_roles(colour_role)
         else:
-            color_role = await ctx.guild.create_role(name="<TALOS COLOR>", color=discord_color)
+            colour_role = await ctx.guild.create_role(name="<TALOS COLOR>", colour=discord_colour)
             try:
                 await asyncio.sleep(.1)
-                await color_role.edit(position=(ctx.guild.me.top_role.position - 1))
+                await colour_role.edit(position=(ctx.guild.me.top_role.position - 1))
             except discord.errors.InvalidArgument as e:
                 log.error(e.__cause__)
                 log.error(e.args)
-            await ctx.author.add_roles(color_role)
+            await ctx.author.add_roles(colour_role)
 
-        await ctx.send("{0.name}'s color changed to {1}!".format(ctx.message.author, color))
+        await ctx.send("{0.name}'s colour changed to {1}!".format(ctx.message.author, colour))
 
     @commands.command(description="Display current guild perms")
     @commands.guild_only()
     async def my_perms(self, ctx):
         """Has Talos display your current effective guild permissions. This is channel independent, channel-specific"""\
             """ perms aren't taken into account."""
-        user_perms = ctx.author.guild_permissions
         out = "```Guild Permissions:\n"
-        out += "    Administrator: {}\n".format(user_perms.administrator)
-        out += "    Add Reactions: {}\n".format(user_perms.add_reactions)
-        out += "    Attach Files: {}\n".format(user_perms.attach_files)
-        out += "    Ban Members: {}\n".format(user_perms.ban_members)
-        out += "    Change Nickname: {}\n".format(user_perms.change_nickname)
-        out += "    Connect: {}\n".format(user_perms.connect)
-        out += "    Deafen Members: {}\n".format(user_perms.deafen_members)
-        out += "    Embed Links: {}\n".format(user_perms.embed_links)
-        out += "    External Emojis: {}\n".format(user_perms.external_emojis)
-        out += "    Instant Invite: {}\n".format(user_perms.create_instant_invite)
-        out += "    Kick Members: {}\n".format(user_perms.kick_members)
-        out += "    Manage Channels: {}\n".format(user_perms.manage_channels)
-        out += "    Manage Emojis: {}\n".format(user_perms.manage_emojis)
-        out += "    Manage Guild: {}\n".format(user_perms.manage_guild)
-        out += "    Manage Messages: {}\n".format(user_perms.manage_messages)
-        out += "    Manage Nicknames: {}\n".format(user_perms.manage_nicknames)
-        out += "    Manage Roles: {}\n".format(user_perms.manage_roles)
-        out += "    Manage Webhooks: {}\n".format(user_perms.manage_webhooks)
-        out += "    Mention Everyone: {}\n".format(user_perms.mention_everyone)
-        out += "    Move Members: {}\n".format(user_perms.move_members)
-        out += "    Mute Members: {}\n".format(user_perms.mute_members)
-        out += "    Read Message History: {}\n".format(user_perms.read_message_history)
-        out += "    Read Messages: {}\n".format(user_perms.read_messages)
-        out += "    Send Messages: {}\n".format(user_perms.send_messages)
-        out += "    Send TTS: {}\n".format(user_perms.send_tts_messages)
-        out += "    Speak: {}\n".format(user_perms.speak)
-        out += "    Use Voice Activation: {}\n".format(user_perms.use_voice_activation)
-        out += "    View Audit: {}\n".format(user_perms.view_audit_log)
+        out += ', '.join(map(lambda x: x[0], filter(lambda y: y[1] is True, ctx.author.guild_permissions)))
         out += "```"
         await ctx.send(out)
 

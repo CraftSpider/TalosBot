@@ -11,8 +11,8 @@ import random
 import logging
 import re
 import utils
-from datetime import datetime
-from datetime import timedelta
+import html
+import datetime as dt
 from collections import defaultdict
 
 
@@ -35,14 +35,15 @@ def strfdelta(time_delta, fmt):
     return fmt.format(**d)
 
 
-def html_to_markdown(html):
-    html = re.sub(r"</p>|<br>", "\n", html)
-    html = re.sub(r"<strong>|</strong>", "**", html)
-    html = re.sub(r"<em>|</em>", "*", html)
-    html = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", html)
-    html = re.sub(r"<li>", "- ", html)
-    html = re.sub(r"<.*?>\n?", "", html)
-    return html
+def html_to_markdown(html_text):
+    html_text = re.sub(r"</p>|<br>", "\n", html_text)
+    html_text = re.sub(r"<strong>|</strong>", "**", html_text)
+    html_text = re.sub(r"<em>|</em>", "*", html_text)
+    html_text = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", html_text)
+    html_text = re.sub(r"<li>", "- ", html_text)
+    html_text = re.sub(r"<.*?>\n?", "", html_text)
+    html_text = html.unescape(html_text)
+    return html_text
 
 
 class Commands(utils.TalosCog):
@@ -53,7 +54,7 @@ class Commands(utils.TalosCog):
 
     def get_uptime_days(self):
         """Gets the amount of time Talos has been online in days, hours, minutes, and seconds. Returns a string."""
-        time_delta = datetime.utcnow() - self.bot.BOOT_TIME
+        time_delta = dt.datetime.utcnow() - self.bot.BOOT_TIME
         delta_string = strfdelta(time_delta,
                                  "{d} day" + ("s" if time_delta.days != 1 else "") + ", {h:02}:{m:02}:{s:02}") \
             .format(x=("s" if time_delta.days == 1 else ""))
@@ -61,13 +62,13 @@ class Commands(utils.TalosCog):
 
     def get_uptime_percent(self):
         """Gets the percentages of time Talos has been up over the past day, month, and week."""
-        now = datetime.utcnow().replace(microsecond=0)
+        now = dt.datetime.utcnow().replace(microsecond=0)
         day_total = 24 * 60
         week_total = day_total * 7
         month_total = day_total * 30
-        day_up = len(self.database.get_uptime(int((now - timedelta(days=1)).timestamp()))) / day_total * 100
-        week_up = len(self.database.get_uptime(int((now - timedelta(days=7)).timestamp()))) / week_total * 100
-        month_up = len(self.database.get_uptime(int((now - timedelta(days=30)).timestamp()))) / month_total * 100
+        day_up = len(self.database.get_uptime(int((now - dt.timedelta(days=1)).timestamp()))) / day_total * 100
+        week_up = len(self.database.get_uptime(int((now - dt.timedelta(days=7)).timestamp()))) / week_total * 100
+        month_up = len(self.database.get_uptime(int((now - dt.timedelta(days=30)).timestamp()))) / month_total * 100
         return day_up, week_up, month_up
 
     #
@@ -124,7 +125,7 @@ class Commands(utils.TalosCog):
                 title="Talos Information",
                 colour=discord.Colour(0x202020),
                 description=description.format((await self.bot.get_prefix(ctx.message))[0]),
-                timestamp=datetime.now(tz=self.bot.get_timezone(ctx))
+                timestamp=dt.datetime.now(tz=self.bot.get_timezone(ctx))
             )
             embed.set_footer(text="{}".format(random.choice(self.phrases)))
             embed.add_field(name="Developers", value="CraftSpider#0269\nDino\nHiddenStorys", inline=True)
@@ -202,15 +203,41 @@ class Commands(utils.TalosCog):
         await ctx.send(out)
 
     @commands.command(description="It's time to get a watch")
-    async def time(self, ctx):
-        """Prints out the current time in UTC, HH:MM:SS format"""
-        tz = self.bot.get_timezone(ctx)
+    async def time(self, ctx, timezone=None):
+        """Prints out the current guild time, HH:MM:SS format. If provided, timezone should be a timezone """\
+            """shorthand such as EST or of the format [+/-]hhmm, for example +0500."""
+        if not timezone:
+            tz = self.bot.get_timezone(ctx)
+        else:
+            if utils.tz_map.get(timezone):
+                tz = dt.timezone(dt.timedelta(hours=utils.tz_map[timezone]), timezone)
+            else:
+                try:
+                    timezone = float(timezone)
+                except ValueError:
+                    await ctx.send("Invalid timezone format")
+                    return
+                if -24 < timezone < 24:
+                    name = "{:+05}".format(int(timezone*100))
+                    tz = dt.timezone(dt.timedelta(hours=timezone), name)
+                elif -2360 < timezone <= 2360:
+                    timezone = timezone / 100
+                    hours, minutes = str(timezone).split(".")
+                    if len(minutes) == 1:
+                        minutes = str(int(minutes)*10)
+                    hours = int(hours)
+                    minutes = int(minutes)
+                    name = "{:+05}".format(int(timezone*100))
+                    tz = dt.timezone(dt.timedelta(hours=hours, minutes=minutes), name)
+                else:
+                    await ctx.send("Offset must be between -24 hours and 24 hours, exclusive.")
+                    return
         await ctx.send(
-            "It's time to get a watch. {0} {1}".format(datetime.now(tz=tz).strftime("%H:%M:%S"), tz.tzname(None))
+            "It's time to get a watch. {0} {1}".format(dt.datetime.now(tz=tz).strftime("%H:%M:%S"), tz.tzname(None))
         )
     
     @commands.command(aliases=["ww", "WW"], description="Have Talos help run a Word War")
-    async def wordwar(self, ctx, length="", start="", wpm: int=30):
+    async def wordwar(self, ctx, length, start="", wpm: int=30):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
             """number of words in the given time period. `^wordwar cancel [id]` to cancel a running ww."""
         if length.lower() == "cancel":
@@ -255,10 +282,10 @@ class Commands(utils.TalosCog):
                 return
 
         if start is not "":
-            now = datetime.now(tz=self.bot.get_timezone(ctx))
+            now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
             dif = abs(now - now.replace(hour=(now.hour if start > now.minute else (now.hour + 1) % 24), minute=start,
                                         second=0))
-            await ctx.send("Starting WW at :{0:02}".format(start))
+            await ctx.send("Starting WW at :{0:02}".format(start))  # TODO: Allow cancelling un-started WWs
             await asyncio.sleep(dif.total_seconds())
 
         async def active_wordwar():
@@ -300,9 +327,9 @@ class Commands(utils.TalosCog):
     @commands.command(description="Pong!")
     async def ping(self, ctx):
         """Checks the Talos delay. (Not round trip. Time between putting message and gateway acknowledgement.)"""
-        start = datetime.utcnow()
+        start = dt.datetime.utcnow()
         await self.bot.application_info(101091070904897536)
-        end = datetime.utcnow()
+        end = dt.datetime.utcnow()
         milliseconds = (end - start).microseconds/1000
         await ctx.send("Current Ping: `{}`".format(milliseconds))
 
@@ -388,6 +415,7 @@ class Commands(utils.TalosCog):
             if len(member_age) + len(author_bio) > 2048:
                 author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
                 print(len(author_bio) + len(member_age))
+            author_bio = author_bio.strip()
         else:
             author_bio = ""
         avatar = "https:" + re.search(r"<img alt=\".*?\" class=\".*?avatar_thumb.*?\" src=\"(.*?)\" />", page).group(1)
@@ -407,6 +435,7 @@ class Commands(utils.TalosCog):
             fact_sheet = re.sub(r"<dt>|</dt>", "**", fact_sheet)
             fact_sheet = re.sub(r"\*\*Website:\*\*\n<.*?href=\"http://\".*?>.*?</a>\n?", "", fact_sheet)
             fact_sheet = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", fact_sheet)
+            fact_sheet = fact_sheet.strip()
         else:
             fact_sheet = None
         if self.bot.should_embed(ctx):
@@ -435,8 +464,9 @@ class Commands(utils.TalosCog):
                     author_bio = author_bio[:197] + "..."
             out += "*{}*\n{}\n".format(member_age, author_bio)
             out += "__**Novel Info**__\n"
-            out += "**Title:** {} **Genre:** {} **Words:** {}".format(novel_title, novel_genre, novel_words)
-            # TODO Add fact sheet
+            out += "**Title:** {} **Genre:** {} **Words:** {}\n".format(novel_title, novel_genre, novel_words)
+            if fact_sheet is not None:
+                out += "__**Fact Sheet**__\n{}".format(fact_sheet.replace("\n", " "))
             await ctx.send(out)
     
     @commands.group(description="Host to all your random generator needs.")
@@ -525,7 +555,7 @@ class Commands(utils.TalosCog):
                         if time < 0 or time > 59:
                             ctx.send("Please give a time between 0 and 60.")
                             return
-                        now = datetime.now(tz=self.bot.get_timezone(ctx))
+                        now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
                         time_delta = abs(now - now.replace(hour=(now.hour if time > now.minute else (now.hour+1 % 24)),
                                                            minute=time, second=0))
                         await ctx.send("Starting PW at :{:02}".format(time))
@@ -572,24 +602,28 @@ class Commands(utils.TalosCog):
             winner = discord.utils.find(lambda m: cur_pw.members[0].user == m, ctx.guild.members)
 
             if self.bot.should_embed(ctx):
-                embed = discord.Embed(colour=winner.colour,
-                                      timestamp=datetime.now(tz=self.bot.get_timezone(ctx)))
-                embed.set_author(name="{} won the PW!".format(winner.display_name), icon_url=winner.avatar_url)
-                embed.add_field(name="Start",
+                time = dt.datetime.now(tz=self.bot.get_timezone(ctx))
+
+                pager = utils.EmbedPaginator().set_colour(winner.colour).set_timestamp(time).set_footer("")
+                pager.set_author(name="{} won the PW!".format(winner.display_name), url=winner.avatar_url)
+                pager.add_field(name="Start",
                                 value="{}".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
                                 inline=True)
-                embed.add_field(name="End",
+                pager.add_field(name="End",
                                 value="{}".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
                                 inline=True)
-                embed.add_field(
+                pager.add_field(
                     name="Total",
                     value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
                 )
                 member_list = ""
                 for member in cur_pw.members:
                     member_list += "{0} - {1}\n".format(member.user.display_name, member.get_len())
-                embed.add_field(name="Times", value=member_list)
-                await ctx.send(embed=embed)
+                pager.add_field(name="Times", value=member_list)
+
+                pager.close()
+                for page in pager.get_pages():
+                    await ctx.send(embed=page)
             else:
                 out = "```"
                 out += "{} won the PW!\n".format(winner.display_name)

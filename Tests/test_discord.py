@@ -12,12 +12,12 @@ import sys
 import os
 import pytest
 import logging
-import Tests.class_factories as dfacts
 import asyncio
 import asyncio.queues
 import datetime as dt
 sys.path.append(os.getcwd().replace("\\Tests", ""))
 sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
+import Tests.class_factories as dfacts
 import Discord.talos as dtalos
 import Discord.utils as utils
 
@@ -30,7 +30,7 @@ def test_extension_load():
     testlos = dtalos.Talos()
     testlos.load_extensions()
 
-    assert len(testlos.extensions) == len(testlos.STARTUP_EXTENSIONS), "Didn't load  extensions"
+    assert len(testlos.extensions) == len(testlos.STARTUP_EXTENSIONS), "Didn't load all extensions"
     for extension in testlos.STARTUP_EXTENSIONS:
         assert testlos.EXTENSION_DIRECTORY + "." + extension in testlos.extensions,\
             "Didn't load {} extension".format(extension)
@@ -149,10 +149,10 @@ def test_embed_paginator():
     assert page.size is 8, "Base size is not 8"
     page.set_footer("")
     assert page.size is 0, "Empty Embed isn't size 0"
-    page.close_pages()
-    assert len(page.pages) is 1, "Empty embed has more than one page"
+    page.close()
+    assert len(page.get_pages()) is 1, "Empty embed has more than one page"
 
-    pass  # TODO
+    pass  # TODO finish testing paginator
 
 
 def test_empty_cursor():
@@ -182,7 +182,7 @@ def test_talos_database():
     assert database.is_connected() is False, "Empty database considered connected"
     assert database.raw_exec("SELECT * FROM ops") == list(), "raw_exec didn't return empty fetchall"
 
-    pass  # TODO
+    pass  # TODO test all the database functions
 
 
 def test_pw_member():
