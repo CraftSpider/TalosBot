@@ -60,14 +60,20 @@ class SingleServerBot(irc.bot.SingleServerIRCBot):
     def generate_context(self, conn, event):
         return Context(self, conn, event)
 
+    def invoke_command(self, ctx):
+        try:
+            ctx.command.invoke()
+        except Exception as e:
+            print("Command failed with error", e)
+
     def on_pubmsg(self, conn, event):
         self.handle_command(conn, event)
 
     def handle_command(self, conn, event):
         ctx = self.generate_context(conn, event)
         # ctx.server.send_raw(" ".join(ctx.arguments))
-        if ctx.command in self.all_commands:
-            self.all_commands[ctx.command].invoke(ctx)
+        if ctx.command is not None:
+            self.invoke_command(ctx)
 
 
 class Context(client.Messageable):
@@ -81,7 +87,7 @@ class Context(client.Messageable):
         self.command = ""
         if self.message.startswith(self.prefix):
             self.command = remove_prefix(self.message.split(" ")[0], self.prefix)
-        self.raw_args =
+        self.raw_args = self.message.split(" ")[1:]
         self.args = []
         self.kwargs = {}
         self.channel = bot.channels[event.target]
@@ -109,7 +115,7 @@ class Command:
         self.params = signature.parameters.copy()
 
     def _parse_arguments(self, ctx):
-
+        pass
 
     def invoke(self, ctx):
         if not self.can_run(ctx):
@@ -123,9 +129,7 @@ class Command:
         return self.active
 
 
-def command(name=None, cls=None, **attrs):
-    if cls is None:
-        cls = Command
+def command(name=None, cls=Command, **attrs):
 
     def decorator(func):
         if isinstance(func, Command):

@@ -68,4 +68,4 @@ if __name__ == "__main__":
 
     bot.start()
 
-    print(revoke_token(CLIENT_ID, bot_token))
+    # print(revoke_token(CLIENT_ID, bot_token))
