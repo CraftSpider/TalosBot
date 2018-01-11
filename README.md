@@ -1,9 +1,17 @@
 # Talos
 [![Build Status](https://travis-ci.org/CraftSpider/TalosBot.svg?branch=master)](https://travis-ci.org/CraftSpider/TalosBot)
 
-A writing utility chatbot with releases for both Chatzy, an online chat room service, and discord. Its mission? To have useful utility-type functions and others that can help writers.
+A writing utility chatbot with releases for both Discord and Chatzy (an online chat room service). Its primary mission is to provide useful utility-type commands to assist writers.
 
-The Chatzy release is JavaScript-based, and runs in a browser tab. The discord release is python, and requires the discord.py library.
+The Chatzy release is JavaScript-based, and runs in a browser tab. The discord release is python, running on python version of at least 3.5.
+
+## How to invite
+Talos for Discord is hosted and run through google cloud, with a consistent 99.9% uptime.
+To invite Talos into your own server, simply follow this link:
+
+**[Talos Invite](https://discordapp.com/oauth2/authorize?client_id=199965488200024064&scope=bot&permissions=335629312)**
+
+More information on Talos can be found at the official site, [talosbot.tk](http://talosbot.tk)
 
 ## How to Run
 If you wish to run this bot for yourself, here's how.  
@@ -18,21 +26,17 @@ Make sure that timestamps are enabled in the room. The bot will not run without 
 2. Open the console and paste in the code from the 'Chatzy\TalosStart.js' file. Hit 'enter'.
 If prompted, allow popups- the window is the log4js console.
 
-    - If you were prompted to allow popups, after doing so you may want to repeat step 2 so the log4js console actually opens.
+    - If you were prompted to allow popups, after doing so you may want to refresh and repeat step 2 so the log4js console actually opens.
 
 3. Talos should now be running in that tab. Feel free to navigate away, try to avoid clicking on things on the page as it may confuse Talos.
 
 ### Discord
 1. You will need to clone this repository onto your computer. You can do this through the command line with `git clone http://github.com/CraftSpider/TalosBot/`
 
-10. Install the discord.py library using the command `python3 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]`
+10. Navigate into the `TalosBot\Discord\` file
 
-20. Install the google API library with `python3 -m pip install -U google-api-python-client`
+20. Install the discord.py library, the google API library, the mysql connector, and the pillow library using the command `python3 -m pip install -r requirements.txt`
 
-30. Install the mysql connector with `python3 -m pip install -U mysql-connector-python-rf`
+40. Create a file named exactly `Token.txt` and place your discord bot token in that file.
 
-35. Install the pillow library with `python3 -m pip install pillow`
-
-40. Navigate into the discord\ file. Create a file named exactly `Token.txt` and place your discord bot token in that file.
-
-50. Run the command `python3 Talos.py`. Talos should now be running.
+50. Run the command `python3 talos.py`. Talos should now be running.

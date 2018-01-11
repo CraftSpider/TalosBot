@@ -23,7 +23,7 @@ log = logging.getLogger("talos.dev")
 # Dev Command Check
 #
 def dev_check(self, ctx):
-    """Determine whether the person calling the command is an admin."""
+    """Determine whether the person calling the command is a dev."""
     return ctx.author.id in self.bot.DEVS
 
 

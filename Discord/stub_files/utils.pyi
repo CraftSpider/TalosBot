@@ -23,6 +23,10 @@ class NotRegistered(dcommands.CommandError):
 
 class EmbedPaginator:
 
+    __slots__ = ["_max_size", "_title", "_description", "_fields", "_footer", "_built_pages", "_colours", "_colour_pos",
+                 "_closed", "_author", "_author_url", "_author_avatar", "repeat_title", "repeat_desc", "repeat_author",
+                 "_timestamp", "_footer_url"]
+
     MAX_TOTAL = ... # type: int
     MAX_TITLE = ... # type: int
     MAX_DESCRIPTION = ... # type: int
@@ -32,26 +36,30 @@ class EmbedPaginator:
     MAX_FOOTER = ... # type: int
     MAX_AUTHOR = ... # type: int
 
-    max_size = ... # type: int
-    title = ... # type: str
-    description = ... # type: str
-    author = ... # type: str
-    author_url = ... # type: str
-    author_avatar = ... # type: str
+    repeat_title = ... # type: bool
+    repeat_desc = ... # type: bool
+    repeat_author = ... # type: bool
+
+    _max_size = ... # type: int
+    _title = ... # type: str
+    _description = ... # type: str
+    _author = ... # type: str
+    _author_url = ... # type: str
+    _author_avatar = ... # type: str
     _fields = ... # type: List[Tuple[str, str, bool]]
-    timestamp = ... # type: dt.datetime
-    footer = ... # type: str
-    footer_url = ... # type: str
+    _timestamp = ... # type: dt.datetime
+    _footer = ... # type: str
+    _footer_url = ... # type: str
     _built_pages = ... # type: List[discord.Embed]
-    colour_pos = ... # type: int
-    colours = ... # type: List[discord.Colour]
-    closed = ... # type: bool
+    _colour_pos = ... # type: int
+    _colours = ... # type: List[discord.Colour]
+    _closed = ... # type: bool
 
     def __init__(self, max_size: int = ..., colour: discord.Colour = ...) -> None: ...
 
     @staticmethod
     def _suffix(d: int) -> str: ...
-    def _custom_strftime(self, strf: str, t: dt.datetime) -> str:
+    def _custom_strftime(self, strf: str, t: dt.datetime) -> str: ...
 
     @property
     def size(self) -> int: return ...
@@ -222,15 +230,15 @@ class TalosDatabase:
 
     def get_favorite_command(self, user_id: int) -> Tuple[str, int]: ...
 
-    # Ops methods
+    # Admins methods
 
-    def get_all_ops(self) -> List[Tuple[int, int]]: ...
+    def get_all_admins(self) -> List[Tuple[int, int]]: ...
 
-    def get_ops(self, guild_id: int) -> List[int]: ...
+    def get_admins(self, guild_id: int) -> List[int]: ...
 
-    def add_op(self, guild_id: int, opname: str) -> None: ...
+    def add_admin(self, guild_id: int, opname: str) -> None: ...
 
-    def remove_op(self, guild_id: int, opname: str) -> None: ...
+    def remove_admin(self, guild_id: int, opname: str) -> None: ...
 
     # Perms methods
 

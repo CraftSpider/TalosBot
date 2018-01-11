@@ -41,16 +41,16 @@ def space_replace(match):
 #
 # Admin Command Checks
 #
-def op_check(self, ctx):
-    """Determine whether the person calling the command is an operator or admin."""
+def admin_check(self, ctx):
+    """Determine whether the person calling the command is an admin or dev."""
     if isinstance(ctx.channel, discord.abc.PrivateChannel):
         return True
     command = str(ctx.command)
 
     if ctx.author.id in self.bot.DEVS or\
-       len(self.database.get_ops(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
+       len(self.database.get_admins(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
        ctx.author == ctx.guild.owner or\
-       ctx.author.id in self.database.get_ops(ctx.guild.id):
+       ctx.author.id in self.database.get_admins(ctx.guild.id):
         return True
 
     perms = self.database.get_perm_rules(ctx.guild.id, command)
@@ -72,7 +72,7 @@ def op_check(self, ctx):
 
 
 def dev_check():
-    """Determine whether the person calling the command is an admin."""
+    """Determine whether the person calling the command is a dev."""
     def predicate(ctx):
         return ctx.author.id in ctx.bot.DEVS
     return commands.check(predicate)
@@ -82,11 +82,11 @@ def dev_check():
 # Admin Cog Class
 #
 class AdminCommands(utils.TalosCog):
-    """These commands can only be used by Admins or Ops, and will work at any time.
-    If no ops exist, anyone with admin role permission can use op commands"""
+    """These commands can only be used by Admins or Devs, and will work at any time.
+    If no admins exist, anyone with administrator role permission can use admin commands"""
 
     LEVELS = {"guild": 0, "channel": 1, "role": 2, "user": 3}
-    __local_check = op_check
+    __local_check = admin_check
 
     @commands.command(description="Changes Talos' nickname")
     @commands.guild_only()
@@ -133,28 +133,28 @@ class AdminCommands(utils.TalosCog):
         out += "```"
         await ctx.send(out)
 
-    @commands.group(description="Operator related commands")
-    async def ops(self, ctx):
-        """By default, anyone on a guild with admin privileges is an Op. Adding someone to the list will override """\
-            """ this behavior.
-            The Guild Owner is also always Op, and this behavior can't be overridden for security reasons."""
+    @commands.group(description="Admin related commands")
+    async def admins(self, ctx):
+        """By default, anyone on a guild with administrator privileges is an Admin. Adding someone to the list will """\
+            """ override this behavior.
+            The Guild Owner is also always Admin, and this behavior can't be overridden for security reasons."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'add', 'list', and 'remove'.")
 
-    @ops.command(name="add", description="Adds a new operator")
+    @admins.command(name="add", description="Adds a new admin")
     @commands.guild_only()
-    async def _ops_add(self, ctx, member: discord.Member):
-        """Adds a user to the guild operator list."""
-        if member.id not in self.database.get_ops(ctx.guild.id):
-            self.database.add_op(ctx.guild.id, member.id)
-            await ctx.send("Opped {0.name}!".format(member))
+    async def _ad_add(self, ctx, member: discord.Member):
+        """Adds a user to the guild admin list."""
+        if member.id not in self.database.get_admins(ctx.guild.id):
+            self.database.add_admin(ctx.guild.id, member.id)
+            await ctx.send("Added admin {0.name}!".format(member))
         else:
-            await ctx.send("That user is already an op!")
+            await ctx.send("That user is already an admin!")
 
-    @ops.command(name="remove", description="Removes an operator")
+    @admins.command(name="remove", description="Removes an admin")
     @commands.guild_only()
-    async def _ops_remove(self, ctx, member):
-        """Removes an operator user from the guild list"""
+    async def _ad_remove(self, ctx, member):
+        """Removes an admin user from the guild list"""
         member_object = discord.utils.find(
             lambda x: x.name == member or str(x) == member or (member.isnumeric() and x.id == int(member)),
             ctx.guild.members
@@ -163,48 +163,48 @@ class AdminCommands(utils.TalosCog):
             member = member_object.id
         elif member.isnumeric():
             member = int(member)
-        if member in self.database.get_ops(ctx.guild.id):
-            self.database.remove_op(ctx.guild.id, member)
+        if member in self.database.get_admins(ctx.guild.id):
+            self.database.remove_admin(ctx.guild.id, member)
             if member_object:
-                await ctx.send("De-opped {0.name}".format(member_object))
+                await ctx.send("Removed admin from {0.name}".format(member_object))
             else:
-                await ctx.send("De-opped invalid user")
+                await ctx.send("Removed admin from invalid user")
         else:
-            await ctx.send("That person isn't an op!")
+            await ctx.send("That person isn't an admin!")
 
-    @ops.command(name="list", description="Display operators")
+    @admins.command(name="list", description="Display admins")
     @commands.guild_only()
-    async def _ops_list(self, ctx):
-        """Displays all operators for the current guild"""
-        opslist = self.database.get_ops(ctx.guild.id)
-        if len(opslist) > 0:
+    async def _ad_list(self, ctx):
+        """Displays all admins for the current guild"""
+        admin_list = self.database.get_admins(ctx.guild.id)
+        if len(admin_list) > 0:
             out = "```"
-            for op in opslist:
-                opname = self.bot.get_user(op)
-                out += "{}\n".format(str(opname) if opname is not None else op)
+            for admin in admin_list:
+                admin_name = self.bot.get_user(admin)
+                out += "{}\n".format(str(admin_name) if admin_name is not None else admin)
             out += "```"
             await ctx.send(out)
         else:
-            await ctx.send("This guild currently has no operators.")
+            await ctx.send("This guild currently has no administrators.")
 
-    @ops.command(name="all", hidden=True, description="Display all operators")
+    @admins.command(name="all", hidden=True, description="Display all admins")
     @dev_check()
-    async def _ops_all(self, ctx):
-        """Displays all operators in every guild Talos is in"""
-        all_ops = self.database.get_all_ops()
+    async def _ad_all(self, ctx):
+        """Displays all admins in every guild Talos is in"""
+        all_admins = self.database.get_all_admins()
         consumed = []
         out = "```"
-        for key in all_ops:
+        for key in all_admins:
             if key[0] not in consumed:
                 out += "Guild: {}\n".format(self.bot.get_guild(key[0]))
                 consumed.append(key[0])
-            op = self.bot.get_user(key[1])
-            out += "    {}\n".format(str(op) if op is not None else key[1])
+            admin = self.bot.get_user(key[1])
+            out += "    {}\n".format(str(admin) if admin is not None else key[1])
         if out != "```":
             out += "```"
             await ctx.send(out)
         else:
-            await ctx.send("No ops currently")
+            await ctx.send("No admins currently")
 
     @commands.group(description="Permissions related commands")
     async def perms(self, ctx):

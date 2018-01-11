@@ -78,15 +78,15 @@ class NotRegistered(dcommands.CommandError):
 # Fundamental Talos classes
 
 
-class EmbedPaginator:  # TODO: make configuration actually do something
+class EmbedPaginator:
     """
         Does fancy embed paginating. Will make a single embed with all given fields, except if it becomes too long.
         A single field being too long becomes Field, Field continued. A whole embed too long, Embed continued.
     """
 
-    __slots__ = ["max_size", "title", "description", "_fields", "footer", "_built_pages", "colours", "colour_pos",
-                 "closed", "author", "author_url", "author_avatar", "repeat_title", "repeat_desc", "repeat_author",
-                 "timestamp", "footer_url"]
+    __slots__ = ["_max_size", "_title", "_description", "_fields", "_footer", "_built_pages", "_colours", "_colour_pos",
+                 "_closed", "_author", "_author_url", "_author_avatar", "repeat_title", "repeat_desc", "repeat_author",
+                 "_timestamp", "_footer_url"]
 
     MAX_TOTAL = 6000
     MAX_TITLE = 256
@@ -103,27 +103,28 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         :param max_size: maximum size for the embed. Defaults to Discord max embed size
         :param colour: colour for the embeds. Can be a list for rotating colours.
         """
+        # Set default configuration
         self.repeat_title = False
         self.repeat_desc = False
         self.repeat_author = False
-
-        self.max_size = max_size
-        self.title = ""
-        self.description = ""
-        self.author = None
-        self.author_url = discord.Embed.Empty
-        self.author_avatar = discord.Embed.Empty
+        # Set empty data values
+        self._max_size = max_size
+        self._title = ""
+        self._description = ""
+        self._author = None
+        self._author_url = discord.Embed.Empty
+        self._author_avatar = discord.Embed.Empty
         self._fields = []
-        self.timestamp = discord.Embed.Empty
-        self.footer = "Page {0}/{1}"
-        self.footer_url = discord.Embed.Empty
+        self._timestamp = discord.Embed.Empty
+        self._footer = "Page {0}/{1}"
+        self._footer_url = discord.Embed.Empty
         self._built_pages = []
-        self.colour_pos = 0
-        self.closed = False
+        self._colour_pos = 0
+        self._closed = False
         if isinstance(colour, (list, tuple)):
-            self.colours = colour
+            self._colours = colour
         else:
-            self.colours = [colour]
+            self._colours = [colour]
 
     @staticmethod
     def _suffix(d):
@@ -150,7 +151,9 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         :return: Length of the current embed given pages
         """
         # Base size
-        size = len(self.title) + len(self.description)
+        size = len(self._title) + len(self._description)
+        if self._author:
+            len(self._author)
         # Add size for each field
         for field in self._fields:
             name = len(field[0])
@@ -159,12 +162,18 @@ class EmbedPaginator:  # TODO: make configuration actually do something
             # Add any extra title lengths for field overflow. value stays the same.
             if value > self.MAX_FIELD_VALUE:
                 size += (name + 6)*(value//1024)
-        # Calculate the footer size, also timestamp.
+        # Calculate the size of things that are repeated on each page.
         pages = self.pages
         for i in range(pages):
-            size += len(self.footer.format(i, pages))
-            if self.timestamp != discord.Embed.Empty:
-                size += len(self._custom_strftime("%a %b {D}, %Y at %I:%M %p", self.timestamp))
+            if self.repeat_title:
+                size += len(self._title)
+            if self.repeat_desc:
+                size += len(self._description)
+            if self.repeat_author and self._author:
+                size += len(self._author)
+            size += len(self._footer.format(i, pages))
+            if self._timestamp != discord.Embed.Empty:
+                size += len(self._custom_strftime("%a %b {D}, %Y at %I:%M %p", self._timestamp))
         # And that's the total size now.
         return size
 
@@ -179,13 +188,17 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         while math.floor(math.log(max_pages, 10)) != math.floor(math.log(page, 10)):
             max_pages = page
             page = 1
-            cur_size = len(self.title) + len(self.description)
+            cur_size = len(self._title) + len(self._description)
+            if self._author:
+                cur_size += len(self._author)
             for field in self._fields:
                 field_size = len(field[0]) + len(field[1])
-                footer_size = len(self.footer.format(page, max_pages))
-                if cur_size + field_size + footer_size > self.MAX_TOTAL or field == ("", "", False):
+                footer_size = len(self._footer.format(page, max_pages))
+                if cur_size + field_size + footer_size > self._max_size or field == ("", "", False):
                     page += 1
-                    cur_size = 0
+                    cur_size = (len(self._title) if self.repeat_title else 0) +\
+                               (len(self._description) if self.repeat_desc else 0) +\
+                               (len(self._author) if self.repeat_author and self._author else 0)
                 cur_size += field_size
         if len(self._fields) > 0 and self._fields[-1] == ("", "", False):
             page -= 1
@@ -196,24 +209,19 @@ class EmbedPaginator:  # TODO: make configuration actually do something
             Gets the next colour in the colour queue. Queue loops.
         :return: Colour for the next embed.
         """
-        colour = self.colours[self.colour_pos]
-        self.colour_pos = (self.colour_pos + 1) % len(self.colours)
+        colour = self._colours[self._colour_pos]
+        self._colour_pos = (self._colour_pos + 1) % len(self._colours)
         return colour
 
-    def configure(self, *, repeat_title=None, repeat_desc=None, repeat_author=None):
+    def configure(self, **options):
         """
             Set configuration parameters for the Paginator. These will effect size and number of pages properties as
             you would expect.
-        :param repeat_title: Whether to repeat the title on each embed
-        :param repeat_desc: Whether to repeat the description on each embed
-        :param repeat_author: Whether to repeat the author on each embed
+        :param options: Possible configuration options for the Paginator.
         """
-        if repeat_title is not None:
-            self.repeat_title = repeat_title
-        if repeat_desc is not None:
-            self.repeat_desc = repeat_desc
-        if repeat_author is not None:
-            self.repeat_author = repeat_author
+        self.repeat_title = options.get("repeat_title", self.repeat_title)
+        self.repeat_desc = options.get("repeat_desc", self.repeat_desc)
+        self.repeat_author = options.get("repeat_author", self.repeat_author)
 
     def set_title(self, title):
         """
@@ -222,11 +230,11 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         :param title: Title to set for embed.
         :return: Self to allow chaining
         """
-        if self.closed:
+        if self._closed:
             raise RuntimeError("Paginator closed")
         if len(title) > self.MAX_TITLE:
             raise ValueError("Title length must be less than or equal to {}".format(self.MAX_TITLE))
-        self.title = re.sub(r"\s+", " ", title).strip()
+        self._title = re.sub(r"\s+", " ", title).strip()
         return self
 
     def set_description(self, description):
@@ -236,11 +244,11 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         :param description: Description to set for embed.
         :return: Self to allow chaining
         """
-        if self.closed:
+        if self._closed:
             raise RuntimeError("Paginator closed")
         if len(description) > self.MAX_DESCRIPTION:
             raise ValueError("Description length must be less than or equal to {}".format(self.MAX_DESCRIPTION))
-        self.description = description.rstrip()
+        self._description = description.rstrip()
         return self
 
     def set_author(self, name, *, url=discord.Embed.Empty, avatar=discord.Embed.Empty):
@@ -253,9 +261,9 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         """
         if len(name) > self.MAX_AUTHOR:
             raise ValueError("Author name length must be less than or equal to {}".format(self.MAX_AUTHOR))
-        self.author = re.sub(r"\s+", " ", name).strip()
-        self.author_url = url
-        self.author_avatar = avatar
+        self._author = re.sub(r"\s+", " ", name).strip()
+        self._author_url = url
+        self._author_avatar = avatar
         return self
 
     def set_colour(self, colour):
@@ -265,9 +273,9 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         :return: Self to allow chaining
         """
         if isinstance(colour, (list, tuple)):
-            self.colours = colour
+            self._colours = colour
         else:
-            self.colours = [colour]
+            self._colours = [colour]
         return self
 
     def set_timestamp(self, timestamp):
@@ -276,7 +284,7 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         :param timestamp: Timestamp to set for all embeds
         :return: Self to allow chaining
         """
-        self.timestamp = timestamp
+        self._timestamp = timestamp
         return self
 
     def set_footer(self, footer, icon_url=None):
@@ -287,12 +295,12 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         :param icon_url: URL for the footer icon.
         :return: Self to allow chaining
         """
-        if self.closed:
+        if self._closed:
             raise RuntimeError("Paginator closed")
         if len(footer) > self.MAX_FOOTER:
             raise ValueError("Footer length must be less than or equal to {}".format(self.MAX_FOOTER))
-        self.footer = footer
-        self.footer_url = icon_url
+        self._footer = footer
+        self._footer_url = icon_url
         return self
 
     def add_field(self, name, value, inline=False):
@@ -305,7 +313,7 @@ class EmbedPaginator:  # TODO: make configuration actually do something
         :param inline: Whether this is an inline field. Defaults to False.
         :return: Self to allow chaining
         """
-        if self.closed:
+        if self._closed:
             raise RuntimeError("Paginator closed")
         if len(name) == 0 or len(value) == 0:
             raise ValueError("Field and Value must have a length greater than 0")
@@ -341,32 +349,36 @@ class EmbedPaginator:  # TODO: make configuration actually do something
             Closes the embed, and builds real pages from input data. No subsequent changes will be allowed, the
             paginator will raise an error then.
         """
-        if self.closed:
+        if self._closed:
             raise RuntimeError("Tried to close paginator twice.")
-        self.closed = True
+        self._closed = True
         max_pages = self.pages
         page = 1
         cur_len = 0
         cur_fields = 0
-        embed = discord.Embed(title=self.title, description=self.description, colour=self._next_colour(),
-                              timestamp=self.timestamp)
-        if self.author is not None:
-            embed.set_author(name=self.author, url=self.author_url, icon_url=self.author_avatar)
+        embed = discord.Embed(title=self._title, description=self._description, colour=self._next_colour(),
+                              timestamp=self._timestamp)
+        if self._author is not None:
+            embed.set_author(name=self._author, url=self._author_url, icon_url=self._author_avatar)
         for field in self._fields:
             field_len = len(field[0]) + len(field[1])
-            footer_len = len(self.footer.format(page, max_pages))
+            footer_len = len(self._footer.format(page, max_pages))
             cur_fields += 1
-            if cur_fields % 25 == 0 or field == ("", "", False) or cur_len + field_len + footer_len > self.MAX_TOTAL:
-                embed.set_footer(text=self.footer.format(page, max_pages), icon_url=self.footer_url)
+            if cur_fields % 25 == 0 or field == ("", "", False) or cur_len + field_len + footer_len > self._max_size:
+                embed.set_footer(text=self._footer.format(page, max_pages), icon_url=self._footer_url)
                 self._built_pages.append(embed)
                 cur_len = 0
                 page += 1
-                embed = discord.Embed(colour=self._next_colour(), timestamp=self.timestamp)
+                embed = discord.Embed(title=self._title if self.repeat_title else discord.Embed.Empty,
+                                      description=self._description if self.repeat_desc else discord.Embed.Empty,
+                                      colour=self._next_colour(), timestamp=self._timestamp)
+                if self.repeat_author and self._author is not None:
+                    embed.set_author(name=self._author, url=self._author_url, icon_url=self._author_avatar)
             cur_len += field_len
             if field != ("", "", False):
                 embed.add_field(name=field[0], value=field[1], inline=field[2])
         if embed.title or embed.description or len(embed.fields) != 0 or len(self._built_pages) == 0:
-            embed.set_footer(text=self.footer.format(max_pages, max_pages), icon_url=self.footer_url)
+            embed.set_footer(text=self._footer.format(max_pages, max_pages), icon_url=self._footer_url)
             self._built_pages.append(embed)
 
     def get_pages(self):
@@ -374,7 +386,7 @@ class EmbedPaginator:  # TODO: make configuration actually do something
             Gets the pages of a closed Paginator. If not closed, raises an EnvironmentError
         :return: Constructed embed pages.
         """
-        if self.closed:
+        if self._closed:
             return self._built_pages
         raise RuntimeError("Paginator not Closed")
 
@@ -638,7 +650,7 @@ talos_tables = {
         "primary": "PRIMARY KEY (`guild_id`)",
         "defaults": [(-1, True, False, False, True, True, True, False, "prompts", "^", "UTC")]
     },
-    "ops": {
+    "admins": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"],
         "primary": "PRIMARY KEY (`guild_id`,`opname`)"
     },
@@ -1141,50 +1153,50 @@ class TalosDatabase:
         self._cursor.execute(query, [user_id])
         return self._cursor.fetchone()
 
-    # Ops methods
+    # Admin methods
 
-    def get_all_ops(self):
+    def get_all_admins(self):
         """
-            Get all ops in all servers
-        :return: list of all operators and guilds they are operator for.
+            Get all admins in all servers
+        :return: list of all admins and guilds they are admin for.
         """
-        query = "SELECT guild_id, opname FROM ops"
+        query = "SELECT guild_id, opname FROM admins"
         self._cursor.execute(query)
         out = []
         for row in self._cursor:
             out.append(row)
         return out
 
-    def get_ops(self, guild_id):
+    def get_admins(self, guild_id):
         """
-            Get the list of ops for a specific guild
-        :param guild_id: id of the guild to get the op list for
-        :return: list of ops for input guild
+            Get the list of admin for a specific guild
+        :param guild_id: id of the guild to get the admin list for
+        :return: list of admins for input guild
         """
-        query = "SELECT opname FROM ops WHERE guild_id = %s"
+        query = "SELECT opname FROM admins WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
         out = []
         for row in self._cursor:
             out.append(row[0])
         return out
 
-    def add_op(self, guild_id, opname):
+    def add_admin(self, guild_id, admin_name):
         """
-            Add an op to a guild
-        :param guild_id: id of the guild to add op to
-        :param opname: id of the op to add to the guild
+            Add an admin to a guild
+        :param guild_id: id of the guild to add admin to
+        :param admin_name: id of the admin to add to the guild
         """
-        query = "INSERT INTO ops VALUES (%s, %s)"
-        self._cursor.execute(query, [guild_id, opname])
+        query = "INSERT INTO admins VALUES (%s, %s)"
+        self._cursor.execute(query, [guild_id, admin_name])
 
-    def remove_op(self, guild_id, opname):
+    def remove_admin(self, guild_id, admin_name):
         """
-            Remove an op from a guild
-        :param guild_id: id of the guild to remove op from
-        :param opname: id of the op to be removed from the guild
+            Remove an admin from a guild
+        :param guild_id: id of the guild to remove admin from
+        :param admin_name: id of the admin to be removed from the guild
         """
-        query = "DELETE FROM ops WHERE guild_id = %s AND opname = %s"
-        self._cursor.execute(query, [guild_id, opname])
+        query = "DELETE FROM admins WHERE guild_id = %s AND opname = %s"
+        self._cursor.execute(query, [guild_id, admin_name])
 
     # Perms methods
 

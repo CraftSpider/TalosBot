@@ -8,11 +8,7 @@ python:
   - "3.6"
 
 install:
-  - pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
-  - pip install -U pytest
-  - pip install -U google-api-python-client
-  - pip install -U mysql-connector-python-rf
-  - pip install -U pillow
+  - pip install -r Discord/requirements.txt
 
 script:
   - pytest Tests

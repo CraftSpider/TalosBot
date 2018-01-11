@@ -64,7 +64,7 @@ class Talos(commands.Bot):
     EXTENSION_DIRECTORY = "cogs"
     # Extensions to load on Talos boot. Can be standard discord.py extensions, though Talos also allows some more stuff.
     STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops"]
-    # Hardcoded Admin List. Craft, Dino, Hidd, Hidd
+    # Hardcoded Developer List. Craft, Dino, Hidd, Hidd
     DEVS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
     # Discordbots bot list token
     discordbots_token = ""
@@ -290,7 +290,7 @@ class Talos(commands.Bot):
 
     async def on_guild_join(self, guild):
         """
-            Called upon Talos joining a guild. Populates ops, perms, and options
+            Called upon Talos joining a guild.
         :param guild: discord.Guild object
         :return: None
         """
@@ -299,7 +299,7 @@ class Talos(commands.Bot):
 
     async def on_guild_remove(self, guild):
         """
-            Called upon Talos leaving a guild. Depopulates ops, perms, and options
+            Called upon Talos leaving a guild.
         :param guild: discord.Guild object
         :return: None
         """
