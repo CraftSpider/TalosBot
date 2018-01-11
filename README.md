@@ -33,10 +33,10 @@ If prompted, allow popups- the window is the log4js console.
 ### Discord
 1. You will need to clone this repository onto your computer. You can do this through the command line with `git clone http://github.com/CraftSpider/TalosBot/`
 
-10. Navigate into the `TalosBot\Discord\` file
+2. Install the discord.py library, the google API library, the mysql connector, and the pillow library using the command `python3 -m pip install -r requirements.txt`
 
-20. Install the discord.py library, the google API library, the mysql connector, and the pillow library using the command `python3 -m pip install -r requirements.txt`
+3. Navigate into the `TalosBot\Discord\` file
 
-40. Create a file named exactly `Token.txt` and place your discord bot token in that file.
+4. Create a file named exactly `Token.txt` and place your discord bot token in that file.
 
-50. Run the command `python3 talos.py`. Talos should now be running.
+5. Run the command `python3 talos.py`. Talos should now be running.
