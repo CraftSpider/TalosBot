@@ -8,6 +8,7 @@ python:
   - "3.6"
 
 install:
+  - ls -r
   - pip install -r Discord/requirements.txt
 
 script:
