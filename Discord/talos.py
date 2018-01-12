@@ -261,8 +261,9 @@ class Talos(commands.Bot):
         """
         nano_login = kwargs.get("nano_login", ["", ""])
         btn_key = kwargs.get("btn_key", "")
+        cat_key = kwargs.get("cat_key", "")
         log.info("Opened Talos HTTP Client")
-        self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key,
+        self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key, cat_key=cat_key,
                                        read_timeout=60, loop=self.loop)
         await super().start(*args, **kwargs)
 
@@ -491,6 +492,17 @@ def load_sql_data():
     except KeyError:
         return []
 
+def load_cat_key():
+    """
+        Load the TheCatAPI key from the token file.
+    :return:
+    """
+    file = string_load(TOKEN_FILE)
+    try:
+        return file[5].strip()
+    except KeyError:
+        return ""
+
 
 def main():
     """
@@ -523,6 +535,12 @@ def main():
     except IndexError:
         log.warning("Behind The Name key missing, name commands will fail.")
 
+    cat_key = ""
+    try:
+        cat_key = load_cat_key()
+    except IndexError:
+        log.warning("TheCatAPI key missing, catpic command will fail.")
+
     # Load Talos database
     cnx = None
     try:
@@ -541,7 +559,7 @@ def main():
 
     try:
         talos.load_extensions()
-        talos.run(bot_token, nano_login=nano_login, btn_key=btn_key)
+        talos.run(bot_token, nano_login=nano_login, btn_key=btn_key, cat_key=cat_key)
     finally:
         print("Talos Exiting")
         try:

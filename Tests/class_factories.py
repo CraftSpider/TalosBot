@@ -40,7 +40,8 @@ class FakeContext(commands.Context):
         self.callback = callback
 
     async def send(self, content=None, *, tts=False, embed=None, file=None, files=None, delete_after=None, nonce=None):
-        value = self.callback(content, tts=tts, embed=embed, file=file, files=files, delete_after=delete_after, nonce=nonce)
+        value = self.callback(content, tts=tts, embed=embed, file=file, files=files, delete_after=delete_after,
+                              nonce=nonce)
         if asyncio.iscoroutine(value) or asyncio.isfuture(value):
             return await value
         else:
@@ -215,7 +216,7 @@ def main():
 
     d_member = make_member("Test", "0001", d_guild)
 
-    print(d_member)
+    print(d_user, d_member, d_channel)
 
 
 if __name__ == "__main__":

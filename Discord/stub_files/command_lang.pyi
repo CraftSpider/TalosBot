@@ -3,7 +3,7 @@
 
     author: CraftSpider
 """
-from typing import Dict, List, Union, Any
+from typing import Dict, List, Any
 import discord.ext.commands as commands
 
 def get_sub(obj: Any, attribute: str) -> Any: ...

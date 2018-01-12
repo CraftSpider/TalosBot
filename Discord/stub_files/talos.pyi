@@ -3,7 +3,7 @@
 
     author: CraftSpider
 """
-from typing import List, Tuple, Union, Any, Optional, Dict, Pattern, Callable
+from typing import List, Tuple, Union, Any, Optional, Dict, Pattern
 import logging
 import discord
 import discord.ext.commands as commands

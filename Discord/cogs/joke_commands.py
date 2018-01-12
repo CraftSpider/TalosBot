@@ -51,6 +51,12 @@ class JokeCommands(utils.TalosCog):
             out += utils.fullwidth_transform.get(char, char)
         await ctx.send(out)
 
+    @commands.command(description="Feed your cat addiction")
+    async def catpic(self, ctx):
+        """Returns a random cat picture. Sourced from The Cap API."""
+        file = await self.bot.session.get_cat_pic()
+        await ctx.send(file=file)
+
 
 def setup(bot):
     bot.add_cog(JokeCommands(bot))

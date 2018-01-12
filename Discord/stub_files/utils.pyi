@@ -23,9 +23,10 @@ class NotRegistered(dcommands.CommandError):
 
 class EmbedPaginator:
 
-    __slots__ = ["_max_size", "_title", "_description", "_fields", "_footer", "_built_pages", "_colours", "_colour_pos",
+    # noinspection PyDunderSlots
+    __slots__ = ("_max_size", "_title", "_description", "_fields", "_footer", "_built_pages", "_colours", "_colour_pos",
                  "_closed", "_author", "_author_url", "_author_avatar", "repeat_title", "repeat_desc", "repeat_author",
-                 "_timestamp", "_footer_url"]
+                 "_timestamp", "_footer_url") # type: Tuple[str, ...]
 
     MAX_TOTAL = ... # type: int
     MAX_TITLE = ... # type: int
@@ -55,7 +56,7 @@ class EmbedPaginator:
     _colours = ... # type: List[discord.Colour]
     _closed = ... # type: bool
 
-    def __init__(self, max_size: int = ..., colour: discord.Colour = ...) -> None: ...
+    def __init__(self, max_size: int = ..., colour: Union[discord.Colour, List[discord.Colour]] = ...) -> None: ...
 
     @staticmethod
     def _suffix(d: int) -> str: ...
@@ -274,10 +275,12 @@ class TalosHTTPClient(aiohttp.ClientSession):
 
     NANO_URL = ... # type: str
     BTN_URL = ... # type: str
+    CAT_URL = ... # type: str
 
     username = ... # type: str
     password = ... # type: str
     btn_key = ... # type: str
+    cat_key = ... # type: str
 
     def __init__(self, *args, **kwargs) -> None: ...
 
@@ -293,6 +296,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
     async def nano_get_novel(self, username: str, novel_name: str = ...) -> Tuple[None, None]: ...
 
     async def nano_login_client(self) -> int: ...
+
+    async def get_cat_pic(self) -> discord.File: ...
 
 def to_snake_case(text: str) -> str: ...
 

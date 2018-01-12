@@ -7,6 +7,7 @@ import inspect
 import itertools
 import math
 import re
+import io
 import discord
 import logging
 import aiohttp
@@ -84,9 +85,9 @@ class EmbedPaginator:
         A single field being too long becomes Field, Field continued. A whole embed too long, Embed continued.
     """
 
-    __slots__ = ["_max_size", "_title", "_description", "_fields", "_footer", "_built_pages", "_colours", "_colour_pos",
+    __slots__ = ("_max_size", "_title", "_description", "_fields", "_footer", "_built_pages", "_colours", "_colour_pos",
                  "_closed", "_author", "_author_url", "_author_avatar", "repeat_title", "repeat_desc", "repeat_author",
-                 "_timestamp", "_footer_url"]
+                 "_timestamp", "_footer_url")
 
     MAX_TOTAL = 6000
     MAX_TITLE = 256
@@ -153,7 +154,7 @@ class EmbedPaginator:
         # Base size
         size = len(self._title) + len(self._description)
         if self._author:
-            len(self._author)
+            size += len(self._author)
         # Add size for each field
         for field in self._fields:
             name = len(field[0])
@@ -1386,6 +1387,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
 
     NANO_URL = "https://nanowrimo.org/"
     BTN_URL = "https://www.behindthename.com/"
+    CAT_URL = "https://thecatapi.com/api/"
 
     def __init__(self, *args, **kwargs):
         """
@@ -1396,6 +1398,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         self.username = kwargs.pop("username", "")
         self.password = kwargs.pop("password", "")
         self.btn_key = kwargs.pop("btn_key", "")
+        self.cat_key = kwargs.pop("cat_key", "")
 
         super().__init__(*args, **kwargs)
 
@@ -1515,6 +1518,20 @@ class TalosHTTPClient(aiohttp.ClientSession):
         }
         async with self.post(self.NANO_URL + "sign_in", data=params) as response:
             return response.status
+
+    async def get_cat_pic(self):
+        """
+            Get a random cat picture from The Cat API
+        :return: A discord.File with a picture of a cat.
+        """
+        async with self.get(self.CAT_URL + "images/get?api_key={}&type=jpg,png".format(self.cat_key)) as response:
+            filename = ""
+            if response.content_type == "image/jpeg":
+                filename = "cat.jpeg"
+            elif response.content_type == "image/png":
+                filename = "cat.png"
+            file = discord.File(io.BytesIO(await response.read()), filename)
+        return file
 
 
 def to_snake_case(text):

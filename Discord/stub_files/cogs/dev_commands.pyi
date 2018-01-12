@@ -13,8 +13,6 @@ import discord.ext.commands as commands
 
 log = ... # type: logging.Logger
 
-def dev_check(self: DevCommands, ctx: commands.Context) -> bool: ...
-
 class DevCommands(utils.TalosCog):
 
     __local_check = ... # type: Callable[Talos, commands.Context]
@@ -44,5 +42,7 @@ class DevCommands(utils.TalosCog):
     async def sql(self, ctx: commands.Context, *, statement: str) -> None: ...
 
     async def image(self, ctx: commands.Context, red: int = ..., green: int = ..., blue: int = ...) -> None: ...
+
+def dev_check(self: DevCommands, ctx: commands.Context) -> bool: ...
 
 def setup(bot: Talos) -> None: ...

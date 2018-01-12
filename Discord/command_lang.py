@@ -222,15 +222,15 @@ def _evaluate(ctx, exec_list):
     return bool(val_stack[0])
 
 
-def _exec_op(ops, vals):
+def _exec_op(ops, values):
     try:
-        val1 = vals.pop()
+        val1 = values.pop()
         op = ops.pop()
         if op != "not":
-            val2 = vals.pop()
-            vals.append(op_functions[op](val2, val1))
+            val2 = values.pop()
+            values.append(op_functions[op](val2, val1))
         else:
-            vals.append(op_functions[op](val1))
+            values.append(op_functions[op](val1))
     except IndexError:
         raise CommandLangError("One value supplied to two value operator")
 

@@ -5823,15 +5823,15 @@
 		}
 	}
 	
-	LocalStorageAppender.prototype = new Appender()
+	LocalStorageAppender.prototype = new Appender();
 	
-	LocalStorageAppender.prototype.layout = new NullLayout()
+	LocalStorageAppender.prototype.layout = new NullLayout();
 	
 	LocalStorageAppender.prototype.toString = function() {
 		return "LocalStorageAppender";
-	}
+	};
 	
-	log4javascript.LocalStorageAppender = LocalStorageAppender
+	log4javascript.LocalStorageAppender = LocalStorageAppender;
 	
 	/* ---------------------------------------------------------------------- */
 
