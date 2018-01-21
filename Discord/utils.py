@@ -28,16 +28,16 @@ _levels = {
 
 # Normal characters to fullwidth characters
 fullwidth_transform = {
-    "!": "！", "\"": "＂", "#": "＃", "$": "＄", "%": "％", "&": "＆", "'": "＇", "(": "（", ")": "）", "*": "＊",
-    "+": "＋", ",": "，", "-": "－", ".": "．", "/": "／", "0": "０", "1": "１", "2": "２", "3": "３", "4": "４",
-    "5": "５", "6": "６", "7": "７", "8": "８", "9": "９", ":": "：", ";": "；", "<": "＜", "=": "＝", ">": "＞",
-    "?": "？", "@": "＠", "A": "Ａ", "B": "Ｂ", "C": "Ｃ", "D": "Ｄ", "E": "Ｅ", "F": "Ｆ", "G": "Ｇ", "H": "Ｈ",
-    "I": "Ｉ", "J": "Ｊ", "K": "Ｋ", "L": "Ｌ", "M": "Ｍ", "N": "Ｎ", "O": "Ｏ", "P": "Ｐ", "Q": "Ｑ", "R": "Ｒ",
-    "S": "Ｓ", "T": "Ｔ", "U": "Ｕ", "V": "Ｖ", "W": "Ｗ", "X": "Ｘ", "Y": "Ｙ", "Z": "Ｚ", "[": "［", "\\": "＼",
-    "]": "］", "^": "＾", "_": "＿", "`": "｀", "a": "ａ", "b": "ｂ", "c": "ｃ", "d": "ｄ", "e": "ｅ", "f": "ｆ",
-    "g": "ｇ", "h": "ｈ", "i": "ｉ", "j": "ｊ", "k": "ｋ", "l": "ｌ", "m": "ｍ", "n": "ｎ", "o": "ｏ", "p": "ｐ",
-    "q": "ｑ", "r": "ｒ", "s": "ｓ", "t": "ｔ", "u": "ｕ", "v": "ｖ", "w": "ｗ", "x": "ｘ", "y": "ｙ", "z": "ｚ",
-    "{": "｛", "|": "｜", "}": "｝", "~": "～", " ": "　"
+    "!": "！", "\"": "＂", "#": "＃", "$": "＄", "£": "￡", "%": "％", "&": "＆", "'": "＇", "(": "（", ")": "）",
+    "*": "＊", "+": "＋", ",": "，", "-": "－", ".": "．", "/": "／", "0": "０", "1": "１", "2": "２", "3": "３",
+    "4": "４", "5": "５", "6": "６", "7": "７", "8": "８", "9": "９", ":": "：", ";": "；", "<": "＜", "=": "＝",
+    ">": "＞", "?": "？", "@": "＠", "A": "Ａ", "B": "Ｂ", "C": "Ｃ", "D": "Ｄ", "E": "Ｅ", "F": "Ｆ", "G": "Ｇ",
+    "H": "Ｈ", "I": "Ｉ", "J": "Ｊ", "K": "Ｋ", "L": "Ｌ", "M": "Ｍ", "N": "Ｎ", "O": "Ｏ", "P": "Ｐ", "Q": "Ｑ",
+    "R": "Ｒ", "S": "Ｓ", "T": "Ｔ", "U": "Ｕ", "V": "Ｖ", "W": "Ｗ", "X": "Ｘ", "Y": "Ｙ", "Z": "Ｚ", "[": "［",
+    "\\": "＼", "]": "］", "^": "＾", "_": "＿", "`": "｀", "a": "ａ", "b": "ｂ", "c": "ｃ", "d": "ｄ", "e": "ｅ",
+    "f": "ｆ", "g": "ｇ", "h": "ｈ", "i": "ｉ", "j": "ｊ", "k": "ｋ", "l": "ｌ", "m": "ｍ", "n": "ｎ", "o": "ｏ",
+    "p": "ｐ", "q": "ｑ", "r": "ｒ", "s": "ｓ", "t": "ｔ", "u": "ｕ", "v": "ｖ", "w": "ｗ", "x": "ｘ", "y": "ｙ",
+    "z": "ｚ", "{": "｛", "|": "｜", "¦": "￤", "}": "｝", "~": "～", "¬": "￢", "¢": "￠", " ": "　"
 }
 
 # Timezone names to timezone objects
@@ -75,6 +75,10 @@ class NotRegistered(dcommands.CommandError):
         if type(message) == discord.Member or type(message) == discord.User:
             message = str(message)
         super().__init__(message, *args)
+
+
+class CustomCommandError(dcommands.CommandError):
+    pass
 
 # Fundamental Talos classes
 
@@ -288,7 +292,7 @@ class EmbedPaginator:
         self._timestamp = timestamp
         return self
 
-    def set_footer(self, footer, icon_url=None):
+    def set_footer(self, footer, icon_url=discord.Embed.Empty):
         """
             Sets the embed footer. Footer length must be less than MAX_FOOTER. {0} and {1} in footer will be replaced
             with current and max pages for each embed.
@@ -770,6 +774,14 @@ class TalosDatabase:
                     if talos_tables[item].get("defaults") is not None:
                         for values in talos_tables[item]["defaults"]:
                             self._cursor.execute("REPLACE INTO {} VALUES {}".format(item, values))
+
+    def clean_guild(self, guild_id):
+        """
+            Remove all entries belonging to a specific guild from the database.
+        :param guild_id: id of guild to clean.
+        """
+        for item in ["guild_options", "admins", "perm_rules", "guild_commands"]:
+            self._cursor.execute("DELETE FROM {} WHERE guild_id = %s".format(item), [guild_id])
 
     def commit(self):
         """
@@ -1530,7 +1542,10 @@ class TalosHTTPClient(aiohttp.ClientSession):
                 filename = "cat.jpeg"
             elif response.content_type == "image/png":
                 filename = "cat.png"
-            file = discord.File(io.BytesIO(await response.read()), filename)
+            picture_data = await response.read()
+            if not picture_data:
+                return self.get_cat_pic()
+            file = discord.File(io.BytesIO(picture_data), filename)
         return file
 
 
@@ -1585,7 +1600,7 @@ def _perms_check(ctx):
 class TalosCog:
     """Super class to all Talos cogs. Sets a default __local_check, and other init stuff."""
 
-    __slots__ = ['bot', 'database', '__local_check']
+    __slots__ = ('bot', 'database', '__local_check')
 
     def __init__(self, bot):
         """Initiates the current cog. Takes an instance of Talos to use while running."""
@@ -1602,7 +1617,7 @@ class TalosCog:
 class PW:
     """Represents a Productivity War"""
 
-    __slots__ = ['start', 'end', 'members']
+    __slots__ = ('start', 'end', 'members')
 
     def __init__(self):
         """Creates a PW object, with empty variables."""
@@ -1669,7 +1684,7 @@ class PW:
 class PWMember:
     """Represents a single member of a PW"""
 
-    __slots__ = ['user', 'start', 'end']
+    __slots__ = ('user', 'start', 'end')
 
     def __init__(self, user):
         """Create a PWMember object with given member"""
