@@ -21,6 +21,9 @@ class NotRegistered(dcommands.CommandError):
 
     def __init__(self, message: Union[discord.Member, discord.User, str], *args) -> None: ...
 
+class CustomCommandError(dcommands.CommandError):
+    pass
+
 class EmbedPaginator:
 
     # noinspection PyDunderSlots
@@ -165,6 +168,8 @@ class TalosDatabase:
 
     def verify_schema(self) -> None: ...
 
+    def clean_guild(self, guild_id: int) -> None: ...
+
     def commit(self) -> None: ...
 
     def is_connected(self) -> bool: ...
@@ -305,13 +310,15 @@ def _perms_check(ctx: dcommands.Context) -> bool: ...
 
 class TalosCog:
 
-    __slots__ = ... # type: List[str]
+    __slots__ = ... # type: Tuple[str, ...]
     bot = ... # type: Talos
     database = ... # type: TalosDatabase
 
     def __init__(self, bot: Talos): ...
 
 class PW:
+
+    __slots__ = ... # type: Tuple[str, ...]
 
     start = ... # type: dt.datetime
     end = ... # type: dt.datetime
@@ -332,6 +339,8 @@ class PW:
     def leave(self, member: discord.Member, tz: dt.timezone) -> bool: ...
 
 class PWMember:
+
+    __slots__ = ... # type: Tuple[str, ...]
 
     user = ... # type: discord.Member
     start = ... # type: dt.datetime

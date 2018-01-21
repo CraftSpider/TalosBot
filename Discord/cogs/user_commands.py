@@ -6,11 +6,11 @@
     Author: CraftSpider
 """
 import discord
+import discord.ext.commands as commands
 import logging
 import asyncio
 import utils
 import re
-from discord.ext import commands
 
 log = logging.getLogger("talos.user")
 
@@ -29,14 +29,17 @@ class UserCommands(utils.TalosCog):
 
     @commands.command(aliases=["color"], signature="colour <hex-code>", description="Set your role colour")
     @commands.guild_only()
+    @commands.bot_has_permissions(manage_roles=True)
     async def colour(self, ctx, colour):
         """Changes the User's colour, if Talos has role permissions."""\
             """ Input must be a hexadecimal colour or the word 'clear' to remove all Talos colours."""
-        colour_role = None
+        # If we want to remove Talos Colour
         if colour == "clear":
             for role in ctx.author.roles:
                 if role.name.startswith("<TALOS COLOR>"):
                     await ctx.author.remove_roles(role)
+                    if not len(role.members):
+                        await role.delete()
             await ctx.send("Talos colour removed")
             return
 
@@ -47,7 +50,10 @@ class UserCommands(utils.TalosCog):
         for role in ctx.author.roles:
             if role.name.startswith("<TALOS COLOR>"):
                 await ctx.author.remove_roles(role)
+                if not len(role.members):
+                    await role.delete()
 
+        # Convert to hexadecimal number
         discord_colour = None
         try:
             if len(colour) == 7:
@@ -63,9 +69,9 @@ class UserCommands(utils.TalosCog):
             await ctx.send("That isn't a valid hexadecimal colour!")
             return
 
-        for role in ctx.guild.roles:
-            if role.name.startswith("<TALOS COLOR>") and role.colour == discord_colour:
-                colour_role = role
+        # Find and add or create and add the role.
+        colour_role = discord.utils.find(lambda x: x.name.startswith("<TALOS COLOR>") and x.colour == discord_colour,
+                                         ctx.guild.roles)
         if colour_role is not None:
             await ctx.author.add_roles(colour_role)
         else:

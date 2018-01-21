@@ -4,11 +4,14 @@
     author: CraftSpider
 """
 import re
-from discord.ext.commands import CommandError
 
 allowed_attributes = [
     "name", "colour", "id", "discriminator", "nick", "display_name"
 ]
+
+
+class CommandLangError(Exception):
+    pass
 
 
 def get_sub(obj, attribute):
@@ -53,10 +56,6 @@ op_functions = {
     "not": lambda x: int(not x),
     ":": get_sub
 }
-
-
-class CommandLangError(CommandError):
-    pass
 
 
 def _operators_exist(command_str):

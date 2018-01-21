@@ -485,7 +485,7 @@ class AdminCommands(utils.TalosCog):
     @command.command(name="remove", description="Remove existing command")
     async def _c_remove(self, ctx, name):
         """Removes a command from the guild."""
-        if not self.database.get_guild_command(ctx.guild.id, name):
+        if self.database.get_guild_command(ctx.guild.id, name) is None:
             await ctx.send("That command doesn't exist, sorry.")
             return
         self.database.remove_guild_command(ctx.guild.id, name)
@@ -495,13 +495,13 @@ class AdminCommands(utils.TalosCog):
     async def _c_list(self, ctx):
         """Lists commands in this guild"""
         command_list = self.database.get_guild_commands(ctx.guild.id)
+        if len(command_list) is 0:
+            await ctx.send("This server has no custom commands")
+            return
         out = "```\nServer Commands:\n"
         for name, text in command_list:
             out += "{}: {}\n".format(name, text)
         out += "```"
-        if out == "``````":
-            await ctx.send("This server has no custom commands")
-            return
         await ctx.send(out)
 
 

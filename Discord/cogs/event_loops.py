@@ -29,7 +29,7 @@ log = logging.getLogger("talos.events")
 class EventLoops(utils.TalosCog):
     """Handles the Talos regulated events, time based loops. How did you even figure out this help page existed?"""
 
-    __slots__ = utils.TalosCog.__slots__ + ['service', 'flags', 'last_guild_count', 'bg_tasks']
+    __slots__ = utils.TalosCog.__slots__ + ('service', 'flags', 'last_guild_count', 'bg_tasks')
 
     def __init__(self, bot):
         """Initialize the EventLoops cog. Takes in an instance of Talos to use while running."""
@@ -63,6 +63,7 @@ class EventLoops(utils.TalosCog):
 
     def start_regulars(self):
         """Starts regular tasks"""
+        self.bg_tasks.append(self.bot.loop.create_task(self.minute_task()))
         self.bg_tasks.append(self.bot.loop.create_task(self.hourly_task()))
         self.bg_tasks.append(self.bot.loop.create_task(self.daily_task()))
 
@@ -120,6 +121,17 @@ class EventLoops(utils.TalosCog):
                 spreadsheetId=sheet_id, range=sheet_range,
                 valueInputOption="RAW", body=body).execute()
         return result
+
+    async def minute_task(self):
+        """Called once at the start of every minute"""
+        log.info("Starting minute task")
+        now = datetime.now()
+        delta = timedelta(seconds=60 - now.second)
+        await asyncio.sleep(delta.total_seconds())
+        while True:
+            # Here we need to check for regular events queued.
+
+            await asyncio.sleep(60)
 
     async def hourly_task(self):
         """Called once at the top of every hour."""

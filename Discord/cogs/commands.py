@@ -131,7 +131,7 @@ class Commands(utils.TalosCog):
             embed.add_field(name="Developers", value="CraftSpider#0269\nDino\nHiddenStorys", inline=True)
             embed.add_field(name="Library", value="Discord.py\nVersion {}".format(discord.__version__), inline=True)
             embed.add_field(name="Contact/Documentation",
-                            value="[Main Website](http://talosbot.tk)\n"
+                            value="[Main Website](http://talosbot.org)\n"
                                   "[talos.ptp@gmail.com](mailto:talos.ptp@gmail.com)\n"
                                   "[Github](http://github.com/CraftSpider/TalosBot)\n"
                                   "[Discord](http://discord.gg/VxUdS6H)",
@@ -148,7 +148,7 @@ class Commands(utils.TalosCog):
                     \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
                     \nI am built using discord.py, version {}.\
                     \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.\
-                    \nMy primary website is located at http://talosbot.tk".format(
+                    \nMy primary website is located at http://talosbot.org".format(
                 (await self.bot.get_prefix(ctx.message))[0], discord.__version__)
             await ctx.send(out)
 
@@ -237,7 +237,7 @@ class Commands(utils.TalosCog):
         )
     
     @commands.command(aliases=["ww", "WW"], description="Have Talos help run a Word War")
-    async def wordwar(self, ctx, length, start="", wpm: int=30):
+    async def wordwar(self, ctx, length, start="", name="", wpm: int=30):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
             """number of words in the given time period. `^wordwar cancel [id]` to cancel a running ww."""
         if length.lower() == "cancel":
@@ -281,14 +281,17 @@ class Commands(utils.TalosCog):
                 await ctx.send("Please specify a start time in the range of 0 to 59.")
                 return
 
+        dif = dt.timedelta(0)
         if start is not "":
             now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
             dif = abs(now - now.replace(hour=(now.hour if start > now.minute else (now.hour + 1) % 24), minute=start,
                                         second=0))
-            await ctx.send("Starting WW at :{0:02}".format(start))  # TODO: Allow cancelling un-started WWs
-            await asyncio.sleep(dif.total_seconds())
 
         async def active_wordwar():
+            ww_name = (wwid + 1 if isinstance(wwid, int) else wwid.rstrip("_"))
+            await ctx.send("Starting WW {} at :{0:02}".format(ww_name, start))
+            await asyncio.sleep(dif.total_seconds())
+            await ctx.send("Word War {} for {:g} {}.".format(ww_name, length, "minutes" if length != 1 else "minute"))
             await asyncio.sleep(length * 60)
 
             if wpm != 0:
@@ -299,11 +302,13 @@ class Commands(utils.TalosCog):
             del self.active_wws[wwid]
 
         task = self.bot.loop.create_task(active_wordwar())
-        wwid = 0
+        wwid = name or 0
         while self.active_wws.get(wwid):
-            wwid += 1
+            if isinstance(wwid, str):
+                wwid += "_"
+            else:
+                wwid += 1
         self.active_wws[wwid] = task
-        await ctx.send("Word War {} for {:g} {}.".format(wwid+1, length, "minutes" if length != 1 else "minute"))
 
     @commands.command(description="Credit where it is due")
     async def credits(self, ctx):

@@ -18,7 +18,7 @@ import datetime as dt
 #     from .utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, tz_map
 # except SystemError or ImportError:
 import command_lang
-from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, tz_map
+from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, CustomCommandError, tz_map
 
 #
 #   Constants
@@ -85,7 +85,11 @@ class Talos(commands.Bot):
         self.database = TalosDatabase(sql_conn)
         self.discordbots_token = kwargs.get("token", "")
 
-        self.session = None
+        nano_login = kwargs.get("nano_login", ["", ""])
+        btn_key = kwargs.get("btn_key", "")
+        cat_key = kwargs.get("cat_key", "")
+        self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key, cat_key=cat_key,
+                                       read_timeout=60, loop=self.loop)
 
         # Override things set by super init that we don't want
         self._skip_check = self.skip_check
@@ -253,20 +257,6 @@ class Talos(commands.Bot):
             self.cogs["EventLoops"].start_all_tasks()
         super().run(token, *args, **kwargs)
 
-    async def start(self, *args, **kwargs):
-        """
-            Starts Talos. Opens the Talos session and passes on to super, which will login to discord and start the bot.
-        :param args: non-keyword arguments
-        :param kwargs: keyword arguments
-        """
-        nano_login = kwargs.get("nano_login", ["", ""])
-        btn_key = kwargs.get("btn_key", "")
-        cat_key = kwargs.get("cat_key", "")
-        log.info("Opened Talos HTTP Client")
-        self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key, cat_key=cat_key,
-                                       read_timeout=60, loop=self.loop)
-        await super().start(*args, **kwargs)
-
     async def on_ready(self):
         """
             Called on bot ready, any time discord finishes connecting
@@ -281,13 +271,11 @@ class Talos(commands.Bot):
             log.info("Posting guilds to Discordbots")
             guild_count = len(self.guilds)
             self.cogs["EventLoops"].last_guild_count = guild_count
-            import aiohttp
             headers = {
                 'Authorization': self.discordbots_token}
             data = {'server_count': guild_count}
             api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
-            async with aiohttp.ClientSession() as session:
-                await session.post(api_url, data=data, headers=headers)
+            await self.session.post(api_url, data=data, headers=headers)
 
     async def on_guild_join(self, guild):
         """
@@ -306,6 +294,19 @@ class Talos(commands.Bot):
         """
         log.debug("OnGuildRemove Event")
         log.info("Left Guild {}, {} after boot".format(guild.name, dt.datetime.now() - self.BOOT_TIME))
+        self.database.clean_guild(guild.id)
+
+    async def process_commands(self, message):
+        """
+            Called to check for and handle commands in a message.
+        :param message: discord.Message object to process
+        :return: None
+        """
+        ctx = await self.get_context(message)
+        if ctx.command is None and message.guild is not None:
+            text = self.database.get_guild_command(message.guild.id, ctx.invoked_with)
+            ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
+        await self.invoke(ctx)
 
     async def on_command(self, ctx):
         """
@@ -327,61 +328,29 @@ class Talos(commands.Bot):
         """
         log.debug("OnCommandError Event")
         if isinstance(exception, commands.CommandNotFound):
-            if self.database.is_connected() and self.database.get_guild_option(ctx.guild.id, "fail_message"):
+            if self.database.is_connected() and (ctx.guild is None or
+                                                 self.database.get_guild_option(ctx.guild.id, "fail_message")):
                 cur_pref = (await self.get_prefix(ctx.message))[0]
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
+        elif isinstance(exception, commands.BotMissingPermissions):
+            await ctx.send("I lack the permissions to run that command.")
+        elif isinstance(exception, commands.NoPrivateMessage):
+            await ctx.send("This command can only be used in a guild. Apologies.")
         elif isinstance(exception, commands.CheckFailure):
             # log.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
             await ctx.send("You lack the permission to run that command.")
-        elif isinstance(exception, commands.NoPrivateMessage):
-            await ctx.send("This command can only be used in a guild. Apologies.")
         elif isinstance(exception, commands.BadArgument):
             await ctx.send(exception)
         elif isinstance(exception, commands.MissingRequiredArgument):
             await ctx.send("Missing parameter `{}`".format(exception.param))
         elif isinstance(exception, NotRegistered):
             await ctx.send("User {} isn't registered, command could not be executed.".format(exception))
-        elif isinstance(exception, command_lang.CommandLangError):
+        elif isinstance(exception, CustomCommandError):
             await ctx.send("Malformed CommandLang syntax: {}".format(exception))
         else:
             log.warning('Ignoring exception in command {}'.format(ctx.command))
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
-
-    async def get_context(self, message, *, cls=commands.Context):
-        """
-            Gets a context object from a message
-        :param message: discord.Message instance
-        :param cls: Class to instantiate, by default a normal context
-        :return: completed context object
-        """
-        view = dview.StringView(message.content)
-        # noinspection PyCallingNonCallable
-        ctx = cls(prefix=None, view=view, bot=self, message=message)
-
-        if self._skip_check(message.author.id, self.user.id):
-            return ctx
-
-        prefix = await self.get_prefix(message)
-        invoked_prefix = prefix
-
-        if isinstance(prefix, str):
-            if not view.skip_string(prefix):
-                return ctx
-        else:
-            invoked_prefix = discord.utils.find(view.skip_string, prefix)
-            if invoked_prefix is None:
-                return ctx
-
-        invoker = view.get_word()
-        ctx.invoked_with = invoker
-        ctx.prefix = invoked_prefix
-        command = self.all_commands.get(invoker)
-        if command is None:
-            text = self.database.get_guild_command(message.guild.id, invoker)
-            command = custom_creator(invoker, text) if text else text
-        ctx.command = command
-        return ctx
 
 
 def custom_creator(name, text):
@@ -393,7 +362,10 @@ def custom_creator(name, text):
     """
 
     async def custom_callback(ctx):
-        out = command_lang.parse_lang(ctx, text)
+        try:
+            out = command_lang.parse_lang(ctx, text)
+        except command_lang.CommandLangError as e:
+            raise CustomCommandError(*e.args)
         if out.strip() != "":
             await ctx.send(out)
 
@@ -492,6 +464,7 @@ def load_sql_data():
     except KeyError:
         return []
 
+
 def load_cat_key():
     """
         Load the TheCatAPI key from the token file.
@@ -555,11 +528,11 @@ def main():
         log.warning("Database connection dropped, no data will be saved this session.")
 
     # Create and run Talos
-    talos = Talos(sql_conn=cnx, token=botlist_token)
+    talos = Talos(sql_conn=cnx, token=botlist_token, nano_login=nano_login, btn_key=btn_key, cat_key=cat_key)
 
     try:
         talos.load_extensions()
-        talos.run(bot_token, nano_login=nano_login, btn_key=btn_key, cat_key=cat_key)
+        talos.run(bot_token)
     finally:
         print("Talos Exiting")
         try:

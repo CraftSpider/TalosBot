@@ -160,7 +160,7 @@ def test_embed_paginator():
 
     page.set_title("Test Title")
     page.set_description("Test Description")
-    page.set_author(name="Test#0001", url="http://talosbot.tk", avatar="http://test.com")
+    page.set_author(name="Test#0001", url="http://talosbot.org", avatar="http://test.com")
     page.set_footer("Test Footer", "http://test.com")
     page.close()
     assert page.size == 46, "Embed size incorrect"
@@ -174,7 +174,7 @@ def test_embed_paginator():
     assert embed.footer.text == "Test Footer", "Incorrect Footer"
     assert embed.footer.icon_url == "http://test.com", "Incorrect footer icon"
     assert embed.author.name == "Test#0001", "Incorrect Author name"
-    assert embed.author.url == "http://talosbot.tk", "Incorrect Author url"
+    assert embed.author.url == "http://talosbot.org", "Incorrect Author url"
     assert embed.author.icon_url == "http://test.com", "Incorrect Author icon"
 
     # Test complex setters and output

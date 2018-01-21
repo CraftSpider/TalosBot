@@ -170,4 +170,9 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
 
 
 def setup(bot):
+    DevCommands.commands = bot.cogs.get("Commands")
+    DevCommands.user_commands = bot.cogs.get("UserCommands")
+    DevCommands.admin_commands = bot.cogs.get("AdminCommands")
+    DevCommands.joke_commands = bot.cogs.get("JokeCommands")
+    DevCommands.event_loops = bot.cogs.get("EventLoops")
     bot.add_cog(DevCommands(bot))
