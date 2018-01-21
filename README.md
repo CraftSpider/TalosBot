@@ -11,7 +11,7 @@ To invite Talos into your own server, simply follow this link:
 
 **[Talos Invite](https://discordapp.com/oauth2/authorize?client_id=199965488200024064&scope=bot&permissions=335629312)**
 
-More information on Talos can be found at the official site, [talosbot.tk](http://talosbot.tk)
+More information on Talos can be found at the official site, [talosbot.org](http://talosbot.org)
 
 ## How to Run
 If you wish to run this bot for yourself, here's how.  
