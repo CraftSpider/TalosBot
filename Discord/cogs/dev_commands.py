@@ -105,6 +105,16 @@ class DevCommands(utils.TalosCog):
         self.database.set_title(user.id, title)
         await ctx.send("Title `{}` granted to {}".format(title, str(user)))
 
+    @commands.command(hidden=True, description="Reload a Talos extension. Allows command updates without reboot.")
+    async def reload(self, ctx, name):
+        """Will reload a given extension. Name should match class name exactly. Any extension can be reloaded."""
+        try:
+            self.bot.unload_extension(name)
+            self.bot.load_extension(name)
+            await ctx.send("Extension reloaded successfully.")
+        except ImportError:
+            await ctx.send("That extension doesn't exist.")
+
     @commands.command(hidden=True, description="Run eval on input. This is not dangerous.")
     async def eval(self, ctx, *, program):
         """Evaluate a given string as python code. Prints the return, if not empty."""

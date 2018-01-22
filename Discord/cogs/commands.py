@@ -13,6 +13,7 @@ import re
 import utils
 import html
 import datetime as dt
+import paginators
 from collections import defaultdict
 
 
@@ -107,7 +108,7 @@ class Commands(utils.TalosCog):
     phrases = [
         "Hello World!", "Hephaestus and Daedalus are my favorite people", "This is a footer message",
         "I can't wait to see East again", "I'm here to help", "My devs are all crazy", "The Absolute Love Of Styx",
-        "I'm just a glorified Turing machine", "If I was a ship AI I might be called Stalo",
+        "I'm just a glorified Turing Machine", "If I was a ship AI I might be called Stalo",
         "Terrific Artificial Logarithmic Operation Solver", "Top Amorous Locking Oversight Submersible",
         "Terminator After Love Or Salt", "Technically A Literary Operations Sentinel"]
 
@@ -121,28 +122,29 @@ class Commands(utils.TalosCog):
         if self.bot.should_embed(ctx):
             description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
                           "`{}help` to see a list of my commands."
-            embed = discord.Embed(
-                title="Talos Information",
-                colour=discord.Colour(0x202020),
-                description=description.format((await self.bot.get_prefix(ctx.message))[0]),
-                timestamp=dt.datetime.now(tz=self.bot.get_timezone(ctx))
-            )
-            embed.set_footer(text="{}".format(random.choice(self.phrases)))
-            embed.add_field(name="Developers", value="CraftSpider#0269\nDino\nHiddenStorys", inline=True)
-            embed.add_field(name="Library", value="Discord.py\nVersion {}".format(discord.__version__), inline=True)
-            embed.add_field(name="Contact/Documentation",
-                            value="[Main Website](http://talosbot.org)\n"
-                                  "[talos.ptp@gmail.com](mailto:talos.ptp@gmail.com)\n"
-                                  "[Github](http://github.com/CraftSpider/TalosBot)\n"
-                                  "[Discord](http://discord.gg/VxUdS6H)",
-                            inline=True)
+            with paginators.PaginatedEmbed() as embed:
+                embed.title = "Talos Information"
+                embed.colour = discord.Colour(0x202020)
+                embed.description = description.format((await self.bot.get_prefix(ctx.message))[0])
+                embed.timestamp = dt.datetime.now(tz=self.bot.get_timezone(ctx))
+                embed.set_footer(text="{}".format(random.choice(self.phrases)))
+                embed.add_field(name="Developers", value="CraftSpider#0269\nDino\nHiddenStorys", inline=True)
+                embed.add_field(name="Library", value="Discord.py\nVersion {}".format(discord.__version__), inline=True)
+                embed.add_field(name="Contact/Documentation",
+                                value="[Main Website](http://talosbot.org)\n"
+                                      "[talos.ptp@gmail.com](mailto:talos.ptp@gmail.com)\n"
+                                      "[Github](http://github.com/CraftSpider/TalosBot)\n"
+                                      "[Discord](http://discord.gg/VxUdS6H)",
+                                inline=True)
 
-            uptime_str = "{}\n{:.0f}% Day, {:.0f}% Week, {:.0f}% Month".format(self.get_uptime_days(),
-                                                                               *self.get_uptime_percent())
-            embed.add_field(name="Uptime", value=uptime_str, inline=True)
-            stats_str = "I'm in {} Guilds,\nWith {} Users.".format(len(self.bot.guilds), len(self.bot.users))
-            embed.add_field(name="Statistics", value=stats_str, inline=True)
-            await ctx.send(embed=embed)
+                uptime_str = "{}\n{:.0f}% Day, {:.0f}% Week, {:.0f}% Month".format(self.get_uptime_days(),
+                                                                                   *self.get_uptime_percent())
+                embed.add_field(name="Uptime", value=uptime_str, inline=True)
+                stats_str = "I'm in {} Guilds,\nWith {} Users.".format(len(self.bot.guilds), len(self.bot.users))
+                embed.add_field(name="Statistics", value=stats_str, inline=True)
+            for page in embed:
+                await ctx.send(embed=page)
+            # await ctx.send(embed=embed.get_pages())
         else:
             out = "Hello! I'm Talos, official PtP mod-bot. `{}help` for command details.\
                     \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
@@ -391,15 +393,18 @@ class Commands(utils.TalosCog):
             description += "Words Total: {:,}\n".format(stats[2])
             description += "Remaining Today: {:,}\n".format(stats[3])
             description += "Remaining Total: {:,}\n".format(stats[4])
-            embed = discord.Embed(title="__Novel Details__", description=description)
-            embed.set_author(name=username, icon_url=avatar)
-            if novel_cover is not None:
-                embed.set_thumbnail(url=novel_cover)
-            if novel_synopsis is not None:
-                embed.add_field(name="__Synopsis__", value=novel_synopsis)
-            if novel_excerpt is not None:
-                embed.add_field(name="__Excerpt__", value=novel_excerpt)
-            await ctx.send(embed=embed)
+            with paginators.PaginatedEmbed() as embed:
+                embed.title = "__Novel Details__"
+                embed.description = description
+                embed.set_author(name=username, icon_url=avatar)
+                if novel_cover is not None:
+                    embed.set_thumbnail(url=novel_cover)
+                if novel_synopsis is not None:
+                    embed.add_field(name="__Synopsis__", value=novel_synopsis)
+                if novel_excerpt is not None:
+                    embed.add_field(name="__Excerpt__", value=novel_excerpt)
+            for page in embed:
+                await ctx.send(embed=page)
 
     @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
     async def _profile(self, ctx, username):
@@ -419,7 +424,6 @@ class Commands(utils.TalosCog):
             author_bio = html_to_markdown(author_bio)
             if len(member_age) + len(author_bio) > 2048:
                 author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
-                print(len(author_bio) + len(member_age))
             author_bio = author_bio.strip()
         else:
             author_bio = ""
@@ -445,20 +449,23 @@ class Commands(utils.TalosCog):
             fact_sheet = None
         if self.bot.should_embed(ctx):
             # Build Embed
-            embed = discord.Embed(title="__Author Info__", description="*{}*\n\n".format(member_age) + author_bio)
-            embed.set_author(name=username, url="http://nanowrimo.org/participants/" + site_name, icon_url=avatar)
-            embed.set_thumbnail(url=avatar)
-            if novel_title is not None:
-                embed.add_field(
-                    name="__Novel Info__",
-                    value="**Title:** {}\n**Genre:** {}\n**Words:** {}".format(novel_title, novel_genre, novel_words)
-                )
-            if fact_sheet is not None:
-                embed.add_field(
-                    name="__Fact Sheet__",
-                    value=fact_sheet
-                )
-            await ctx.send(embed=embed)
+            with paginators.PaginatedEmbed() as embed:
+                embed.title = "__Author Info__"
+                embed.description = "*{}*\n\n".format(member_age) + author_bio
+                embed.set_author(name=username, url="http://nanowrimo.org/participants/" + site_name, icon_url=avatar)
+                embed.set_thumbnail(url=avatar)
+                if novel_title is not None:
+                    embed.add_field(
+                        name="__Novel Info__",
+                        value="**Title:** {}\n**Genre:** {}\n**Words:** {}".format(novel_title, novel_genre, novel_words)
+                    )
+                if fact_sheet is not None:
+                    embed.add_field(
+                        name="__Fact Sheet__",
+                        value=fact_sheet
+                    )
+            for page in embed:
+                await ctx.send(embed=page)
         else:
             out = "__**{}**__\n".format(username)
             while len(author_bio) > 200:
@@ -608,26 +615,26 @@ class Commands(utils.TalosCog):
 
             if self.bot.should_embed(ctx):
                 time = dt.datetime.now(tz=self.bot.get_timezone(ctx))
-
-                pager = utils.EmbedPaginator().set_colour(winner.colour).set_timestamp(time).set_footer("")
-                pager.set_author(name="{} won the PW!".format(winner.display_name), url=winner.avatar_url)
-                pager.add_field(name="Start",
-                                value="{}".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
-                                inline=True)
-                pager.add_field(name="End",
-                                value="{}".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
-                                inline=True)
-                pager.add_field(
-                    name="Total",
-                    value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
-                )
-                member_list = ""
-                for member in cur_pw.members:
-                    member_list += "{0} - {1}\n".format(member.user.display_name, member.get_len())
-                pager.add_field(name="Times", value=member_list)
-
-                pager.close()
-                for page in pager.get_pages():
+                with paginators.PaginatedEmbed() as embed:
+                    embed.colour = winner.colour
+                    embed.timestamp = time
+                    embed.set_footer(text="")
+                    embed.set_author(name="{} won the PW!".format(winner.display_name), url=winner.avatar_url)
+                    embed.add_field(name="Start",
+                                    value="{}".format(cur_pw.start.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
+                                    inline=True)
+                    embed.add_field(name="End",
+                                    value="{}".format(cur_pw.end.replace(microsecond=0).strftime("%b %d - %H:%M:%S")),
+                                    inline=True)
+                    embed.add_field(
+                        name="Total",
+                        value="{}".format(cur_pw.end.replace(microsecond=0) - cur_pw.start.replace(microsecond=0))
+                    )
+                    member_list = ""
+                    for member in cur_pw.members:
+                        member_list += "{0} - {1}\n".format(member.user.display_name, member.get_len())
+                    embed.add_field(name="Times", value=member_list)
+                for page in embed:
                     await ctx.send(embed=page)
             else:
                 out = "```"

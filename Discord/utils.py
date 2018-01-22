@@ -8,11 +8,12 @@ import itertools
 import math
 import re
 import io
-import discord
 import logging
 import aiohttp
-import mysql.connector.abstracts as mysql_abstracts
+import paginators
+import discord
 import discord.ext.commands as dcommands
+import mysql.connector.abstracts as mysql_abstracts
 import datetime as dt
 
 
@@ -69,6 +70,8 @@ tz_map = {
 }
 
 
+# Talos errors
+
 class NotRegistered(dcommands.CommandError):
     """Error raised when a Talos command requires a registered user, and the given user isn't."""
     def __init__(self, message, *args):
@@ -80,14 +83,10 @@ class NotRegistered(dcommands.CommandError):
 class CustomCommandError(dcommands.CommandError):
     pass
 
+
 # Fundamental Talos classes
 
-
 class EmbedPaginator:
-    """
-        Does fancy embed paginating. Will make a single embed with all given fields, except if it becomes too long.
-        A single field being too long becomes Field, Field continued. A whole embed too long, Embed continued.
-    """
 
     __slots__ = ("_max_size", "_title", "_description", "_fields", "_footer", "_built_pages", "_colours", "_colour_pos",
                  "_closed", "_author", "_author_url", "_author_avatar", "repeat_title", "repeat_desc", "repeat_author",
@@ -130,6 +129,12 @@ class EmbedPaginator:
             self._colours = colour
         else:
             self._colours = [colour]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     @staticmethod
     def _suffix(d):
@@ -292,19 +297,19 @@ class EmbedPaginator:
         self._timestamp = timestamp
         return self
 
-    def set_footer(self, footer, icon_url=discord.Embed.Empty):
+    def set_footer(self, text, icon_url=discord.Embed.Empty):
         """
             Sets the embed footer. Footer length must be less than MAX_FOOTER. {0} and {1} in footer will be replaced
             with current and max pages for each embed.
-        :param footer: Footer to set for embed.
+        :param text: Footer to set for embed.
         :param icon_url: URL for the footer icon.
         :return: Self to allow chaining
         """
         if self._closed:
             raise RuntimeError("Paginator closed")
-        if len(footer) > self.MAX_FOOTER:
+        if len(text) > self.MAX_FOOTER:
             raise ValueError("Footer length must be less than or equal to {}".format(self.MAX_FOOTER))
-        self._footer = footer
+        self._footer = text
         self._footer_url = icon_url
         return self
 
@@ -474,27 +479,27 @@ class TalosFormatter(dcommands.HelpFormatter):
             return await self.string_format()
 
     async def embed_format(self):
-        self._paginator = EmbedPaginator()
+        self._paginator = paginators.PaginatedEmbed()
 
         description = self.command.description if not self.is_cog() else inspect.getdoc(self.command)
 
         if description:
             # <description> section
-            self._paginator.set_description(description)
+            self._paginator.description = description
 
         if isinstance(self.command, dcommands.Command):
             # <signature> section
             signature = await self.get_command_signature()
-            self._paginator.add_field("Signature", signature)
+            self._paginator.add_field(name="Signature", value=signature)
 
             # <long doc> section
             if self.command.help:
-                self._paginator.add_field("Documentation", self.command.help)
+                self._paginator.add_field(name="Documentation", value=self.command.help)
 
             # end it here if it's just a regular command
             if not self.has_subcommands():
                 self._paginator.close()
-                return self._paginator.get_pages()
+                return self._paginator.pages
 
         def category(tup):
             cog = tup[1].cog_name
@@ -504,8 +509,8 @@ class TalosFormatter(dcommands.HelpFormatter):
 
         filtered = await self.filter_command_list()
         if self.is_bot():
-            self._paginator.set_title("Talos Help")
-            self._paginator.set_description(description+"\n"+await self.get_ending_note())
+            self._paginator.title = "Talos Help"
+            self._paginator.description = description+"\n"+await self.get_ending_note()
 
             data = sorted(filtered, key=category)
             for category, commands in itertools.groupby(data, key=category):
@@ -515,15 +520,15 @@ class TalosFormatter(dcommands.HelpFormatter):
                     title = category
                 if title:
                     value = self._subcommands_field_value(commands)
-                    self._paginator.add_field(title, value)
+                    self._paginator.add_field(name=title, value=value)
         else:
             filtered = sorted(filtered)
             if filtered:
                 value = self._subcommands_field_value(filtered)
-                self._paginator.add_field('Commands', value)
+                self._paginator.add_field(name='Commands', value=value)
 
         self._paginator.close()
-        return self._paginator.get_pages()
+        return self._paginator.pages
 
     async def string_format(self):
         self._paginator = dcommands.Paginator()
@@ -643,7 +648,6 @@ talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8"
 talos_add_column = "ALTER TABLE {} ADD COLUMN {}".format("{}", "{}")  # Makes pycharm not complain
 talos_remove_column = "ALTER TABLE {} DROP COLUMN {}".format("{}", "{}")
 talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}".format("{}", "{}")
-
 talos_tables = {
     "guild_options": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",

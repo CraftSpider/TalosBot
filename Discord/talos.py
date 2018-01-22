@@ -107,7 +107,7 @@ class Talos(commands.Bot):
         for extension in (self.STARTUP_EXTENSIONS if extensions is None else extensions):
             try:
                 log.debug("Loading extension {}".format(extension))
-                self.load_extension(self.EXTENSION_DIRECTORY + "." + extension)
+                self.load_extension(extension)
             except Exception as err:
                 clean = 1
                 exc = '{}: {}'.format(type(err).__name__, err)
@@ -124,11 +124,19 @@ class Talos(commands.Bot):
             while len(self.extensions) > 0:
                 extension = self.extensions.popitem()
                 log.debug("Unloading extension {}".format(extension))
-                self.unload_extension(extension)
+                self.unload_extension(extension, False)
         else:
             for extension in extensions:
                 log.debug("Unloading extension {}".format(extension))
                 self.unload_extension(extension)
+
+    def load_extension(self, name, prefix=True):
+        name = self.EXTENSION_DIRECTORY + "." + name if prefix else name
+        super().load_extension(name)
+
+    def unload_extension(self, name, prefix=True):
+        name = self.EXTENSION_DIRECTORY + "." + name if prefix else name
+        super().unload_extension(name)
 
     def skip_check(self, author_id, self_id):
         """
@@ -166,6 +174,16 @@ class Talos(commands.Bot):
                 timezone = self.database.get_guild_option(ctx.guild.id, "timezone")
                 return dt.timezone(dt.timedelta(hours=tz_map[timezone.upper()]), timezone.upper())
         return dt.timezone(dt.timedelta(), "UTC")
+
+    def run(self, token, *args, **kwargs):
+        """
+            Run Talos. Logs into discord and runs event loop forever.
+        :param token: Discord bot token to log in with
+        :return: None
+        """
+        if self.cogs.get("EventLoops", None) is not None:
+            self.cogs["EventLoops"].start_all_tasks()
+        super().run(token, *args, **kwargs)
 
     async def logout(self):
         """
@@ -247,16 +265,6 @@ class Talos(commands.Bot):
             else:
                 await destination.send(page)
 
-    def run(self, token, *args, **kwargs):
-        """
-            Run Talos. Logs into discord and runs event loop forever.
-        :param token: Discord bot token to log in with
-        :return: None
-        """
-        if self.cogs.get("EventLoops", None) is not None:
-            self.cogs["EventLoops"].start_all_tasks()
-        super().run(token, *args, **kwargs)
-
     async def on_ready(self):
         """
             Called on bot ready, any time discord finishes connecting
@@ -296,17 +304,18 @@ class Talos(commands.Bot):
         log.info("Left Guild {}, {} after boot".format(guild.name, dt.datetime.now() - self.BOOT_TIME))
         self.database.clean_guild(guild.id)
 
-    async def process_commands(self, message):
+    async def get_context(self, message, *, cls=commands.Context):
         """
-            Called to check for and handle commands in a message.
-        :param message: discord.Message object to process
-        :return: None
+            Gets a context object from a message
+        :param message: discord.Message instance
+        :param cls: Class to instantiate, by default a normal context
+        :return: completed context object
         """
-        ctx = await self.get_context(message)
+        ctx = await super().get_context(message, cls=cls)
         if ctx.command is None and message.guild is not None:
             text = self.database.get_guild_command(message.guild.id, ctx.invoked_with)
             ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
-        await self.invoke(ctx)
+        return ctx
 
     async def on_command(self, ctx):
         """

@@ -6,6 +6,7 @@ from typing import Dict, Union, List, Tuple, Any, Iterable, Optional, overload
 from Discord.talos import Talos
 import logging
 import aiohttp
+import paginators
 import discord
 import discord.ext.commands as dcommands
 import datetime as dt
@@ -84,7 +85,7 @@ class EmbedPaginator:
 
     def set_timestamp(self, timestamp: dt.datetime) -> EmbedPaginator: ...
 
-    def set_footer(self, footer: str, icon_url: str = ...) -> EmbedPaginator: ...
+    def set_footer(self, text: str, icon_url: str = ...) -> EmbedPaginator: ...
 
     def add_field(self, name: str, value: str, inline: bool = ...) -> EmbedPaginator: ...
 
@@ -96,7 +97,7 @@ class EmbedPaginator:
 
 class TalosFormatter(dcommands.HelpFormatter):
 
-    _paginator = ... # type: Union[dcommands.Paginator, EmbedPaginator]
+    _paginator = ... # type: Union[dcommands.Paginator, paginators.PaginatedEmbed]
 
     def __init__(self) -> None: ...
 

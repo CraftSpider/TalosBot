@@ -10,6 +10,7 @@ import discord.ext.commands as commands
 import logging
 import asyncio
 import utils
+import paginators
 import re
 
 log = logging.getLogger("talos.user")
@@ -128,14 +129,16 @@ class UserCommands(utils.TalosCog):
         total_commands = profile[2]
         favorite_command = self.database.get_favorite_command(user.id)
         if self.bot.should_embed(ctx):
-            embed = discord.Embed(title=profile[3] if profile[3] else False,
-                                  description=profile[1] if profile[1] else "User has not set a description")
-            embed.set_author(name=user.name, icon_url=user.avatar_url)
-            value = "Total Invoked Commands: {0}\nFavorite Command: `{1[0]}`, invoked {1[1]} times.".format(
-                total_commands, favorite_command
-            )
-            embed.add_field(name="Command Stats", value=value)
-            await ctx.send(embed=embed)
+            with paginators.PaginatedEmbed() as embed:
+                embed.title = profile[3] if profile[3] else False
+                embed.description = profile[1] if profile[1] else "User has not set a description"
+                embed.set_author(name=user.name, icon_url=user.avatar_url)
+                value = "Total Invoked Commands: {0}\nFavorite Command: `{1[0]}`, invoked {1[1]} times.".format(
+                    total_commands, favorite_command
+                )
+                embed.add_field(name="Command Stats", value=value)
+            for page in embed:
+                await ctx.send(embed=page)
         else:
             out = "```md\n"
             out += "{}\n".format(user.name)
