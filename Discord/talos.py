@@ -11,7 +11,6 @@ import sys
 import logging
 import re
 import mysql.connector
-from mysql.connector.errors import ProgrammingError
 import datetime as dt
 import command_lang
 from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, CustomCommandError, tz_map
@@ -388,12 +387,12 @@ def talos_prefix(bot, message):
     if isinstance(message.channel, discord.abc.PrivateChannel):
         try:
             return [bot.database.get_user_option(message.author.id, "prefix"), mention]
-        except KeyError or ProgrammingError:
+        except KeyError or mysql.connector.errors.ProgrammingError:
             return [bot.DEFAULT_PREFIX, mention]
     else:
         try:
             return [bot.database.get_guild_option(message.guild.id, "prefix"), mention]
-        except KeyError or ProgrammingError:
+        except KeyError or mysql.connector.errors.ProgrammingError:
             return [bot.DEFAULT_PREFIX, mention]
 
 
