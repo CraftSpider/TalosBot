@@ -151,11 +151,14 @@ class Talos(commands.Bot):
             :return: Whether Talos should embed message
         """
         if self.database.is_connected():
-            if not self.database.get_user_option(ctx.author.id, "rich_embeds"):
+            try:
+                if not self.database.get_user_option(ctx.author.id, "rich_embeds"):
+                    return False
+                if ctx.guild is not None:
+                    return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
+                           ctx.channel.permissions_for(ctx.me).embed_links
+            except mysql.connector.ProgrammingError:
                 return False
-            if ctx.guild is not None:
-                return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
-                       ctx.channel.permissions_for(ctx.me).embed_links
         return ctx.channel.permissions_for(ctx.me).embed_links
 
     def get_timezone(self, ctx):
