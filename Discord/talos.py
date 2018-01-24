@@ -387,12 +387,12 @@ def talos_prefix(bot, message):
     if isinstance(message.channel, discord.abc.PrivateChannel):
         try:
             return [bot.database.get_user_option(message.author.id, "prefix"), mention]
-        except KeyError or mysql.connector.errors.ProgrammingError:
+        except (KeyError, mysql.connector.errors.ProgrammingError):
             return [bot.DEFAULT_PREFIX, mention]
     else:
         try:
             return [bot.database.get_guild_option(message.guild.id, "prefix"), mention]
-        except KeyError or mysql.connector.errors.ProgrammingError:
+        except (KeyError, mysql.connector.errors.ProgrammingError):
             return [bot.DEFAULT_PREFIX, mention]
 
 
