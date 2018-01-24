@@ -290,8 +290,9 @@ class Commands(utils.TalosCog):
 
         async def active_wordwar():
             ww_name = (wwid + 1 if isinstance(wwid, int) else wwid.rstrip("_"))
-            await ctx.send("Starting WW {} at :{:02}".format(ww_name, start))
-            await asyncio.sleep(dif.total_seconds())
+            if start is not "":
+                await ctx.send("Starting WW {} at :{:02}".format(ww_name, start))
+                await asyncio.sleep(dif.total_seconds())
             await ctx.send("Word War {} for {:g} {}.".format(ww_name, length, "minutes" if length != 1 else "minute"))
             await asyncio.sleep(length * 60)
 
