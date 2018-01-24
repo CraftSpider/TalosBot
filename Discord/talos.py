@@ -308,7 +308,10 @@ class Talos(commands.Bot):
         """
         ctx = await super().get_context(message, cls=cls)
         if ctx.command is None and message.guild is not None:
-            text = self.database.get_guild_command(message.guild.id, ctx.invoked_with)
+            try:
+                text = self.database.get_guild_command(message.guild.id, ctx.invoked_with)
+            except mysql.connector.ProgrammingError:
+                text = None
             ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
         return ctx
 
