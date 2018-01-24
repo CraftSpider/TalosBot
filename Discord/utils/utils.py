@@ -445,10 +445,10 @@ class TalosDatabase:
                             table, ',\n'.join(talos_tables[table]["columns"] + [talos_tables[table]["primary"]])
                         )
                     )
-                for item in talos_tables:
-                    if talos_tables[item].get("defaults") is not None:
-                        for values in talos_tables[item]["defaults"]:
-                            self._cursor.execute("REPLACE INTO {} VALUES {}".format(item, values))
+            for item in talos_tables:
+                if talos_tables[item].get("defaults") is not None:
+                    for values in talos_tables[item]["defaults"]:
+                        self._cursor.execute("REPLACE INTO {} VALUES {}".format(item, values))
 
     def clean_guild(self, guild_id):
         """
