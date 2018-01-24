@@ -6,17 +6,12 @@
 """
 import discord
 import discord.ext.commands as commands
-import discord.ext.commands.view as dview
 import traceback
 import sys
 import logging
 import re
 import mysql.connector
 import datetime as dt
-
-# try:
-#     from .utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, tz_map
-# except SystemError or ImportError:
 import command_lang
 from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, CustomCommandError, tz_map
 

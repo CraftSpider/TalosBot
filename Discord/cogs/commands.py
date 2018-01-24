@@ -5,7 +5,7 @@
     Author: CraftSpider
 """
 import discord
-from discord.ext import commands
+import discord.ext.commands as commands
 import asyncio
 import random
 import logging
@@ -13,7 +13,6 @@ import re
 import utils
 import html
 import datetime as dt
-import paginators
 from collections import defaultdict
 
 
@@ -122,7 +121,7 @@ class Commands(utils.TalosCog):
         if self.bot.should_embed(ctx):
             description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
                           "`{}help` to see a list of my commands."
-            with paginators.PaginatedEmbed() as embed:
+            with utils.PaginatedEmbed() as embed:
                 embed.title = "Talos Information"
                 embed.colour = discord.Colour(0x202020)
                 embed.description = description.format((await self.bot.get_prefix(ctx.message))[0])
@@ -291,7 +290,7 @@ class Commands(utils.TalosCog):
 
         async def active_wordwar():
             ww_name = (wwid + 1 if isinstance(wwid, int) else wwid.rstrip("_"))
-            await ctx.send("Starting WW {} at :{0:02}".format(ww_name, start))
+            await ctx.send("Starting WW {} at :{:02}".format(ww_name, start))
             await asyncio.sleep(dif.total_seconds())
             await ctx.send("Word War {} for {:g} {}.".format(ww_name, length, "minutes" if length != 1 else "minute"))
             await asyncio.sleep(length * 60)
@@ -393,7 +392,7 @@ class Commands(utils.TalosCog):
             description += "Words Total: {:,}\n".format(stats[2])
             description += "Remaining Today: {:,}\n".format(stats[3])
             description += "Remaining Total: {:,}\n".format(stats[4])
-            with paginators.PaginatedEmbed() as embed:
+            with utils.PaginatedEmbed() as embed:
                 embed.title = "__Novel Details__"
                 embed.description = description
                 embed.set_author(name=username, icon_url=avatar)
@@ -449,7 +448,7 @@ class Commands(utils.TalosCog):
             fact_sheet = None
         if self.bot.should_embed(ctx):
             # Build Embed
-            with paginators.PaginatedEmbed() as embed:
+            with utils.PaginatedEmbed() as embed:
                 embed.title = "__Author Info__"
                 embed.description = "*{}*\n\n".format(member_age) + author_bio
                 embed.set_author(name=username, url="http://nanowrimo.org/participants/" + site_name, icon_url=avatar)
@@ -615,7 +614,7 @@ class Commands(utils.TalosCog):
 
             if self.bot.should_embed(ctx):
                 time = dt.datetime.now(tz=self.bot.get_timezone(ctx))
-                with paginators.PaginatedEmbed() as embed:
+                with utils.PaginatedEmbed() as embed:
                     embed.colour = winner.colour
                     embed.timestamp = time
                     embed.set_footer(text="")

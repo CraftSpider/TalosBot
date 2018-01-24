@@ -6,7 +6,6 @@ from typing import Dict, Union, List, Tuple, Any, Iterable, Optional, overload
 from Discord.talos import Talos
 import logging
 import aiohttp
-import paginators
 import discord
 import discord.ext.commands as dcommands
 import datetime as dt
@@ -17,83 +16,6 @@ log = ... # type: logging.Logger
 _levels = ... # type: Dict[str, int]
 fullwidth_transform = ... # type: Dict[str, str]
 tz_map = ... # type: Dict[str, float]
-
-class NotRegistered(dcommands.CommandError):
-
-    def __init__(self, message: Union[discord.Member, discord.User, str], *args) -> None: ...
-
-class CustomCommandError(dcommands.CommandError):
-    pass
-
-class EmbedPaginator:
-
-    # noinspection PyDunderSlots
-    __slots__ = ("_max_size", "_title", "_description", "_fields", "_footer", "_built_pages", "_colours", "_colour_pos",
-                 "_closed", "_author", "_author_url", "_author_avatar", "repeat_title", "repeat_desc", "repeat_author",
-                 "_timestamp", "_footer_url") # type: Tuple[str, ...]
-
-    MAX_TOTAL = ... # type: int
-    MAX_TITLE = ... # type: int
-    MAX_DESCRIPTION = ... # type: int
-    MAX_FIELDS = ... # type: int
-    MAX_FIELD_NAME = ... # type: int
-    MAX_FIELD_VALUE = ... # type: int
-    MAX_FOOTER = ... # type: int
-    MAX_AUTHOR = ... # type: int
-
-    repeat_title = ... # type: bool
-    repeat_desc = ... # type: bool
-    repeat_author = ... # type: bool
-
-    _max_size = ... # type: int
-    _title = ... # type: str
-    _description = ... # type: str
-    _author = ... # type: str
-    _author_url = ... # type: str
-    _author_avatar = ... # type: str
-    _fields = ... # type: List[Tuple[str, str, bool]]
-    _timestamp = ... # type: dt.datetime
-    _footer = ... # type: str
-    _footer_url = ... # type: str
-    _built_pages = ... # type: List[discord.Embed]
-    _colour_pos = ... # type: int
-    _colours = ... # type: List[discord.Colour]
-    _closed = ... # type: bool
-
-    def __init__(self, max_size: int = ..., colour: Union[discord.Colour, List[discord.Colour]] = ...) -> None: ...
-
-    @staticmethod
-    def _suffix(d: int) -> str: ...
-    def _custom_strftime(self, strf: str, t: dt.datetime) -> str: ...
-
-    @property
-    def size(self) -> int: return ...
-    @property
-    def pages(self) -> int: return ...
-
-    def _next_colour(self) -> discord.Colour: ...
-
-    def configure(self, *, repeat_title: bool = ..., repeat_desc: bool = ..., repeat_author: bool = ...) -> None: ...
-
-    def set_title(self, title: str) -> EmbedPaginator: ...
-
-    def set_description(self, description: str) -> EmbedPaginator: ...
-
-    def set_author(self, name: str, *, url: str = ..., avatar: str = ...) -> EmbedPaginator: ...
-
-    def set_colour(self, colour: Union[discord.Colour, List[discord.Colour]]) -> EmbedPaginator: ...
-
-    def set_timestamp(self, timestamp: dt.datetime) -> EmbedPaginator: ...
-
-    def set_footer(self, text: str, icon_url: str = ...) -> EmbedPaginator: ...
-
-    def add_field(self, name: str, value: str, inline: bool = ...) -> EmbedPaginator: ...
-
-    def close_page(self) -> None: ...
-
-    def close(self) -> None: ...
-
-    def get_pages(self) -> List[discord.Embed]: ...
 
 class TalosFormatter(dcommands.HelpFormatter):
 
