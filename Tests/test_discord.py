@@ -21,6 +21,7 @@ sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
 import Tests.class_factories as dfacts
 import Discord.talos as dtalos
 import Discord.utils as utils
+import Discord.utils.utils as util
 
 log = logging.getLogger("tests.talos")
 
@@ -182,7 +183,7 @@ def test_paginated_embed():  # TODO: Need to redo due to change to PaginatedEmbe
 
 
 def test_empty_cursor():
-    cursor = utils.EmptyCursor()
+    cursor = util.EmptyCursor()
 
     with pytest.raises(StopIteration):
         cursor.__iter__().__next__()
