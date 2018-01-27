@@ -3,9 +3,12 @@
 """
 
 import abc
+import logging
 import irc.bot
 import irc.features
 import irc.client
+
+log = logging.getLogger("twitch-irc.client")
 
 
 class Messageable(metaclass=abc.ABCMeta):
@@ -46,6 +49,12 @@ class TwitchConnection(irc.client.ServerConnection):
             self.server, self.port, self.nickname
         )
 
+    def _handle_event(self, event):
+        try:
+            super()._handle_event(event)
+        except Exception as e:
+            log.error("Encountered error while handling event:", e)
+
     def req_membership(self):
         self.cap("REQ", "twitch.tv/membership")
 
@@ -64,7 +73,7 @@ class TwitchConnection(irc.client.ServerConnection):
         tags = "" if tags == "@" else None
         self.send_items(tags, "CLEARCHAT", channel, ":{}".format(user))
 
-    action = None
+    action = ...
     admin = None
     ctcp = None
     ctcp_reply = None
@@ -96,6 +105,8 @@ class TwitchConnection(irc.client.ServerConnection):
 
 class TwitchChannel(irc.bot.Channel, Messageable):
 
+    __slots__ = ("name", "server")
+
     def __init__(self, conn, name):
         super().__init__()
         self.name = name
@@ -108,4 +119,17 @@ class TwitchChannel(irc.bot.Channel, Messageable):
         return "TwitchChannel(name=\"{}\")".format(self.name)
 
     def send(self, message):
-        self.server.privmsg(self.name, message)
+        self.server.privmsg(self.name, str(message))
+
+
+class MessageTags:
+
+    def __init__(self, user_tags):
+        print(type(user_tags))
+        for tag in user_tags:
+            value = tag["value"]
+            if value is not None and value.isnumeric():
+                value = int(value)
+                if value == 1 or value == 0:
+                    value = bool(value)
+            setattr(self, tag['key'].replace("-", "_"), value)
