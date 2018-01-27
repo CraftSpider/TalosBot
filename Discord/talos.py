@@ -435,7 +435,7 @@ def load_botlist_token():
     file = string_load(TOKEN_FILE)
     try:
         return file[1].strip()
-    except KeyError:
+    except IndexError:
         return ""
 
 
@@ -447,7 +447,7 @@ def load_nano_login():
     file = string_load(TOKEN_FILE)
     try:
         return file[2].strip().split(":")
-    except KeyError:
+    except IndexError:
         return []
 
 
@@ -459,7 +459,7 @@ def load_btn_key():
     file = string_load(TOKEN_FILE)
     try:
         return file[3].strip()
-    except KeyError:
+    except IndexError:
         return ""
 
 
@@ -471,7 +471,7 @@ def load_sql_data():
     file = string_load(TOKEN_FILE)
     try:
         return file[4].strip().split(":")
-    except KeyError:
+    except IndexError:
         return []
 
 
@@ -483,7 +483,7 @@ def load_cat_key():
     file = string_load(TOKEN_FILE)
     try:
         return file[5].strip()
-    except KeyError:
+    except IndexError:
         return ""
 
 
@@ -500,28 +500,20 @@ def main():
         log.fatal("Bot token missing, talos cannot start.")
         exit(126)
 
-    botlist_token = ""
-    try:
-        botlist_token = load_botlist_token()
-    except IndexError:
+    botlist_token = load_botlist_token()
+    if not botlist_token:
         log.warning("Botlist token missing, stats will not be posted.")
 
-    nano_login = []
-    try:
-        nano_login = load_nano_login()
-    except IndexError:
+    nano_login = load_nano_login()
+    if not nano_login:
         log.warning("Nano Login missing, nano commands will likely fail")
 
-    btn_key = ""
-    try:
-        btn_key = load_btn_key()
-    except IndexError:
+    btn_key = load_btn_key()
+    if not btn_key:
         log.warning("Behind The Name key missing, name commands will fail.")
 
-    cat_key = ""
-    try:
-        cat_key = load_cat_key()
-    except IndexError:
+    cat_key = load_cat_key()
+    if not cat_key:
         log.warning("TheCatAPI key missing, catpic command will fail.")
 
     # Load Talos database
