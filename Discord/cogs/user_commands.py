@@ -7,6 +7,7 @@
 """
 import discord
 import discord.ext.commands as commands
+import discord.errors as errors
 import logging
 import asyncio
 import utils
@@ -36,7 +37,7 @@ class UserCommands(utils.TalosCog):
         # If we want to remove Talos Colour
         if colour == "clear":
             for role in ctx.author.roles:
-                if role.name.startswith("<TALOS COLOR>"):
+                if role.name.startswith("<TALOS COLOR>") or role.name.startswith("LOPEZ COLOR:"):
                     await ctx.author.remove_roles(role)
                     if not len(role.members):
                         await role.delete()
@@ -48,7 +49,7 @@ class UserCommands(utils.TalosCog):
             return
 
         for role in ctx.author.roles:
-            if role.name.startswith("<TALOS COLOR>"):
+            if role.name.startswith("<TALOS COLOR>") or role.name.startswith("LOPEZ COLOR:"):
                 await ctx.author.remove_roles(role)
                 if not len(role.members):
                     await role.delete()
@@ -78,7 +79,10 @@ class UserCommands(utils.TalosCog):
             colour_role = await ctx.guild.create_role(name="<TALOS COLOR>", colour=discord_colour)
             try:
                 await asyncio.sleep(.1)
-                await colour_role.edit(position=(ctx.guild.me.top_role.position - 1))
+                try:
+                    await colour_role.edit(position=(ctx.guild.me.top_role.position - 1))
+                except errors.HTTPException:
+                    pass
             except discord.errors.InvalidArgument as e:
                 log.error(e.__cause__)
                 log.error(e.args)
