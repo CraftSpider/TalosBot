@@ -23,6 +23,7 @@ class SingleServerBot(irc.bot.SingleServerIRCBot):
         server_list = [irc.bot.ServerSpec("irc.chat.twitch.tv", password=password)]
 
         super().__init__(server_list, username, username, **params)
+        self.connection.add_global_handler("pubmsg", self._on_pubmsg, -20)
 
     def __str__(self):
         return "SingleServerBot()"
@@ -77,8 +78,7 @@ class SingleServerBot(irc.bot.SingleServerIRCBot):
         except Exception as e:
             print("Command failed with error", e)
 
-    def on_pubmsg(self, conn, event):
-        print(event.tags)
+    def _on_pubmsg(self, conn, event):
         self.handle_command(conn, event)
 
     def handle_command(self, conn, event):

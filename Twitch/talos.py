@@ -57,9 +57,13 @@ class Talos(twirc.SingleServerBot):
         conn.req_tags()
         conn.req_commands()
         conn.req_membership()
+        conn.join("#rozoken")
         conn.join("#craftspider")
         conn.privmsg("#craftspider", "[Talos Boot successful]")
         log.info("Boot cycle complete")
+
+    def on_all_raw_messages(self, conn, event):
+        print(event)
 
 
 def admin_only():
@@ -95,8 +99,8 @@ if __name__ == "__main__":
         ctx.server.part(channel)
         ctx.send("Left channel " + channel)
 
-    @bot.command()
-    def hello(ctx):
-        ctx.send("Hello World!")
+    # @bot.command()
+    # def hello(ctx):
+    #     ctx.send("Hello World!")
 
     bot.start()
