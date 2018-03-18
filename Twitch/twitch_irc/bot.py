@@ -67,7 +67,7 @@ class SingleServerBot(irc.bot.SingleServerIRCBot):
         nick = event.source.nick
         if nick == conn.get_nickname():
             self.channels[ch] = client.TwitchChannel(conn, ch)
-        self.channels[ch].add_user(nick)
+        self.channels[ch]._user(nick)
 
     def generate_context(self, conn, event):
         return Context(self, conn, event)
