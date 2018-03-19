@@ -70,7 +70,7 @@ if __name__ == "__main__":
     bot_token = ""  # input("Token > ")  # token_data["access_token"]
     password = "oauth:{}".format(bot_token)
 
-    talos = Talos("^")
+    talos = Talos("^", user_type=airc.UserType.known_bot)
 
     @talos.command()
     @dev_only()
