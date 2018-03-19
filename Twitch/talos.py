@@ -60,7 +60,7 @@ class Talos(airc.TwitchBot):
 def dev_only():
 
     def pred(ctx: airc.Context):
-        return not ctx.author.display_name == "CraftSpider"
+        return ctx.author.display_name == "CraftSpider"
     return airc.check(pred)
 
 
