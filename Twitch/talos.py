@@ -74,25 +74,25 @@ if __name__ == "__main__":
 
     @talos.command()
     @dev_only()
-    def join(ctx, server):
-        if server[0] != "#":
-            server = "#" + server
-        ctx.server.join(server)
-        ctx.send("Joined channel " + server)
+    async def join(ctx, channel):
+        if channel[0] != "#":
+            channel = "#" + channel
+        await talos.server.join(channel)
+        await ctx.send("Joined channel " + channel)
 
     @talos.command()
     @dev_only()
-    def leave(ctx, channel):
+    async def leave(ctx, channel):
         if channel[0] != "#":
             channel = "#" + channel
         if not talos.get_channel(channel):
             ctx.send("Talos not in channel " + channel)
             return
-        ctx.server.part(channel)
-        ctx.send("Left channel " + channel)
+        await talos.server.part(channel)
+        await ctx.send("Left channel " + channel)
 
     @talos.command()
-    def wr(ctx):
-        ctx.send("Current WR is 29:14 by Lynx")
+    async def wr(ctx):
+        await ctx.send("Current WR is 29:14 by Lynx")
 
     talos.run(uri=uri, username="talos_bot_", password=password)
