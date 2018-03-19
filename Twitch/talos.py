@@ -65,9 +65,12 @@ def dev_only():
 
 
 if __name__ == "__main__":
+
+    with open("token.txt") as tokens:
+        bot_token = tokens.read()
+
     # token_data = generate_user_token(CLIENT_ID)
     uri = "ws://irc-ws.chat.twitch.tv"
-    bot_token = ""  # input("Token > ")  # token_data["access_token"]
     password = "oauth:{}".format(bot_token)
 
     talos = Talos("^", user_type=airc.UserType.known_bot)
