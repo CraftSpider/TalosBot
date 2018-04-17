@@ -92,6 +92,9 @@ class AdminCommands(utils.TalosCog):
     @commands.guild_only()
     async def nick(self, ctx, *, nickname):
         """Sets Talos' nickname in the current guild."""
+        if len(nickname) > 32:
+            await ctx.send("Nickname must be 32 characters or fewer")
+            return
         await ctx.me.edit(nick=nickname)
         await ctx.send("Nickname changed to {}".format(nickname))
 

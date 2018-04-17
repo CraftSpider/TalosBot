@@ -64,6 +64,13 @@ def dev_only():
     return airc.check(pred)
 
 
+def channel_specific(channel):
+
+    def pred(ctx: airc.Context):
+        return ctx.channel.name == channel
+    return airc.check(pred)
+
+
 if __name__ == "__main__":
 
     with open("token.txt") as tokens:
@@ -97,5 +104,10 @@ if __name__ == "__main__":
     @talos.command()
     async def wr(ctx):
         await ctx.send("Current WR is 29:14 by Lynx")
+
+    @talos.command()
+    @airc.mod_only()
+    async def settitle(ctx: airc.Context, title):
+        await ctx.send("Implementation soon" + title)
 
     talos.run(uri=uri, username="talos_bot_", password=password)

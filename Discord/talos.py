@@ -22,7 +22,7 @@ from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered,
 # This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
 SQL_ADDRESS = "127.0.0.1:3306"
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
-TOKEN_FILE = "Token.txt"
+TOKEN_FILE = "token.txt"
 
 #
 #   Command Vars
@@ -272,7 +272,7 @@ class Talos(commands.Bot):
         log.info('| Now logged in as')
         log.info('| {}'.format(self.user.name))
         log.info('| {}'.format(self.user.id))
-        await self.change_presence(game=discord.Game(name="Taking over the World", type=0))
+        await self.change_presence(activity=discord.Game(name="Taking over the World", type=0))
         if self.discordbots_token != "":
             log.info("Posting guilds to Discordbots")
             guild_count = len(self.guilds)

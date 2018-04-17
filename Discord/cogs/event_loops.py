@@ -131,7 +131,8 @@ class EventLoops(utils.TalosCog):
         while True:
             # Here we need to check for regular events queued.
 
-            await asyncio.sleep(60)
+            delta = timedelta(seconds=60 - now.second)
+            await asyncio.sleep(delta.total_seconds())
 
     async def hourly_task(self):
         """Called once at the top of every hour."""
@@ -148,7 +149,9 @@ class EventLoops(utils.TalosCog):
                 data = {'server_count': guild_count}
                 api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
                 await self.bot.session.post(api_url, data=data, headers=headers)
-            await asyncio.sleep(60*60)
+
+            delta = timedelta(minutes=60 - now.minute, seconds=60 - now.second)
+            await asyncio.sleep(delta.total_seconds())
 
     async def daily_task(self):
         """Called once every day at midnight, does most time-consuming tasks."""
@@ -159,8 +162,9 @@ class EventLoops(utils.TalosCog):
         while True:
             log.debug("Daily task runs")
             self.database.remove_uptime(int((datetime.now() - timedelta(days=30)).timestamp()))
-            # self.bot.verify()
-            await asyncio.sleep(24*60*60)
+
+            delta = timedelta(hours=24 - now.hour, minutes=60 - now.minute, seconds=60 - now.second)
+            await asyncio.sleep(delta.total_seconds())
 
     async def uptime_task(self):
         """Called once a minute, to verify uptime. Old uptimes cleaned once a day."""
@@ -170,7 +174,9 @@ class EventLoops(utils.TalosCog):
         while True:
             log.debug("Uptime task runs")
             self.database.add_uptime(int(datetime.now().replace(microsecond=0).timestamp()))
-            await asyncio.sleep(60)
+
+            delta = timedelta(seconds=60 - datetime.now().replace(microsecond=0).second)
+            await asyncio.sleep(delta.total_seconds())
 
     async def prompt_task(self):
         """Once a day, grabs a prompt from google sheets and posts it to the defined prompts chat, if enabled."""
@@ -204,7 +210,10 @@ class EventLoops(utils.TalosCog):
             prompt.append("POSTED")
             self.set_spreadsheet(prompt_sheet_id, [prompt],
                                  "Form Responses 1!B{0}:E{0}".format(values.index(prompt) + 1))
-            await asyncio.sleep(24*60*60)
+
+            delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME - 1)) % 24, minutes=60 - now.minute,
+                              seconds=60 - now.second)
+            await asyncio.sleep(delta.total_seconds())
 
 
 def setup(bot):

@@ -129,15 +129,14 @@ class UserCommands(utils.TalosCog):
         profile = self.database.get_user(user.id)
         if not profile:
             raise utils.NotRegistered(user)
-        total_commands = profile[2]
-        favorite_command = self.database.get_favorite_command(user.id)
+        favorite_command = profile.get_favorite_command()
         if self.bot.should_embed(ctx):
             with utils.PaginatedEmbed() as embed:
-                embed.title = profile[3] if profile[3] else False
-                embed.description = profile[1] if profile[1] else "User has not set a description"
+                embed.title = profile.cur_title
+                embed.description = profile.description if profile.description else "User has not set a description"
                 embed.set_author(name=user.name, icon_url=user.avatar_url)
                 value = "Total Invoked Commands: {0}\nFavorite Command: `{1[0]}`, invoked {1[1]} times.".format(
-                    total_commands, favorite_command
+                    profile.total_commands, favorite_command
                 )
                 embed.add_field(name="Command Stats", value=value)
             for page in embed:
@@ -145,9 +144,9 @@ class UserCommands(utils.TalosCog):
         else:
             out = "```md\n"
             out += "{}\n".format(user.name)
-            out += "{}\n".format(profile[1] if profile[1] else "User has not set a description")
+            out += "{}\n".format(profile.description if profile.description else "User has not set a description")
             out += "# Command Stats:\n"
-            out += "-  Total Invoked: {}\n".format(total_commands)
+            out += "-  Total Invoked: {}\n".format(profile.total_commands)
             out += "-  Favorite Command: {0[0]}, invoked {0[1]} times.".format(favorite_command)
             out += "```"
             await ctx.send(out)
@@ -159,8 +158,31 @@ class UserCommands(utils.TalosCog):
         if not self.database.get_user(ctx.author.id):
             raise utils.NotRegistered(ctx.author)
         elif ctx.invoked_subcommand is None:
-            await ctx.send("Valid options are 'options', 'stats', 'description', 'set', and 'remove'")
+            await ctx.send("Valid options are 'options', 'stats', 'title', 'description', 'set', and 'remove'")
             return
+
+    @user.command(name="title", description="List or set your title(s)")
+    async def _title(self, ctx, title=""):
+        """If given no arguments will list your available titles, if given a title will make that your title if you
+        own that title."""
+        if title:
+            pass
+            result = self.database.set_title(ctx.author.id, title)
+            if result:
+                await ctx.send("Title successfully set to `{}`".format(title))
+            else:
+                await ctx.send("You do not have that title")
+        else:
+            profile = self.database.get_user(ctx.author.id)
+            titles = profile.titles
+            if len(titles) == 0:
+                await ctx.send("No available titles")
+                return
+            out = "```"
+            for title in titles:
+                out += title[0] + "\n"
+            out += "```"
+            await ctx.send(out)
 
     @user.command(name="options", description="List your current user options")
     async def _options(self, ctx):

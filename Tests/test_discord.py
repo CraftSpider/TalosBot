@@ -20,8 +20,7 @@ sys.path.append(os.getcwd().replace("\\Tests", ""))
 sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
 import Tests.class_factories as dfacts
 import Discord.talos as dtalos
-import Discord.utils as utils
-import Discord.utils.utils as util
+import Discord.utils as tutils
 
 log = logging.getLogger("tests.talos")
 
@@ -89,6 +88,10 @@ def test_all_commands():
 
 
 async def prepare(channels=1, members=1):
+    global test_values
+
+    test_values = dict()
+
     test_values["guild"] = dfacts.make_guild("Test_Guild")
     for i in range(channels):
         test_values["channel_{}".format(i+1)] = dfacts.make_text_channel("Channel_{}".format(i), test_values["guild"])
@@ -121,7 +124,7 @@ async def command_callback(*args, **kwargs):
 
 
 async def commands_async(testlos):
-    cog = testlos.cogs["Commands"]  # type: utils.TalosCog
+    cog = testlos.cogs["Commands"]  # type: tutils.TalosCog
     await call(command_callback, "^uptime", testlos)
     response = await sent_queue.get()
     # print(response)
@@ -145,8 +148,27 @@ async def user_commands_async(testlos):
 
 # Test utils classes
 
+def test_paginated_helpers():
+
+    assert tutils.paginators._suffix(1) is "st"
+    assert tutils.paginators._suffix(2) is "nd"
+    assert tutils.paginators._suffix(3) is "rd"
+    assert tutils.paginators._suffix(4) is "th"
+
+    assert tutils.paginators._suffix(11) is "th"
+    assert tutils.paginators._suffix(21) is "st"
+
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=1)) == "1st"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=2)) == "2nd"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=3)) == "3rd"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=4)) == "4th"
+
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=11)) == "11th"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=21)) == "21st"
+
+
 def test_paginated_embed():  # TODO: Need to redo due to change to PaginatedEmbed
-    # page = utils.EmbedPaginator()
+    # page = tutils.EmbedPaginator()
     #
     # # Test empty embed
     # assert page.size is 8, "Base size is not 8"
@@ -183,7 +205,7 @@ def test_paginated_embed():  # TODO: Need to redo due to change to PaginatedEmbe
 
 
 def test_empty_cursor():
-    cursor = util.EmptyCursor()
+    cursor = tutils.sql.EmptyCursor()
 
     with pytest.raises(StopIteration):
         cursor.__iter__().__next__()
@@ -203,7 +225,7 @@ def test_empty_cursor():
 
 
 def test_talos_database():
-    database = utils.TalosDatabase(None)
+    database = tutils.TalosDatabase(None)
 
     database.commit()
     assert database.is_connected() is False, "Empty database considered connected"
@@ -214,10 +236,10 @@ def test_talos_database():
 
 def test_pw_member():
     d_guild = dfacts.make_guild("test")
-    pw_member1 = utils.PWMember(dfacts.make_member("Test", "0001", d_guild))
+    pw_member1 = tutils.PWMember(dfacts.make_member("Test", "0001", d_guild))
     d_member2 = dfacts.make_member("Test", "0002", d_guild)
-    pw_member2 = utils.PWMember(d_member2)
-    pw_member3 = utils.PWMember(d_member2)
+    pw_member2 = tutils.PWMember(d_member2)
+    pw_member3 = tutils.PWMember(d_member2)
 
     assert str(pw_member1) == "Test#0001", "Failed string conversion"
 
@@ -248,7 +270,7 @@ def test_pw_member():
 
 
 def test_pw():  # TODO: Add testing for timezones, for now it's just going with UTC always
-    pw = utils.PW()
+    pw = tutils.PW()
 
     assert pw.get_started() is False, "Claims started before start"
     assert pw.get_finished() is False, "Claims finished before finish"
@@ -265,7 +287,7 @@ def test_pw():  # TODO: Add testing for timezones, for now it's just going with 
     assert pw.leave(d_member1, tz) is 1, "Member successfully left twice"
     assert pw.leave(d_member2, tz) is 1, "Member left before joining"
 
-    pw = utils.PW()
+    pw = tutils.PW()
 
     pw.join(d_member1, tz)
     pw.begin(tz)
@@ -283,7 +305,7 @@ def test_pw():  # TODO: Add testing for timezones, for now it's just going with 
     assert pw.leave(d_member1, tz) is 2, "Member leaving after join not reporting "
     assert pw.join(d_member3, tz) is False, "Allowed join after finish"
 
-    pw = utils.PW()
+    pw = tutils.PW()
 
     pw.join(d_member1, tz)
     pw.begin(tz)

@@ -2,15 +2,19 @@
     Talos utils stub file
 """
 
-from typing import Dict, Union, List, Tuple, Any, Iterable, Optional, overload
+from typing import Dict, Union, List, Tuple, Any, Optional, overload
+
 from Discord.talos import Talos
 import logging
 import aiohttp
 import discord
 import discord.ext.commands as dcommands
 import datetime as dt
+import utils.sql as tsql
 import mysql.connector.cursor_cext as cursor_cext
 import mysql.connector.abstracts as mysql_abstracts
+
+import utils.paginators as paginators
 
 log = ... # type: logging.Logger
 _levels = ... # type: Dict[str, int]
@@ -19,7 +23,7 @@ tz_map = ... # type: Dict[str, float]
 
 class TalosFormatter(dcommands.HelpFormatter):
 
-    _paginator = ... # type: Union[dcommands.Paginator, paginators.PaginatedEmbed]
+    _paginator: Union[dcommands.Paginator, paginators.PaginatedEmbed] = ...
 
     def __init__(self) -> None: ...
 
@@ -45,170 +49,18 @@ class TalosFormatter(dcommands.HelpFormatter):
 
     async def string_format(self) -> List[str]: ...
 
-class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
-
-    DEFAULT_ONE = ... # type: None
-    DEFAULT_ALL = ... # type: list
-
-    def __init__(self) -> None: ...
-
-    def __iter__(self) -> iter: ...
-
-    @property
-    def description(self) -> Tuple: return ...
-    @property
-    def rowcount(self) -> int: return ...
-    @property
-    def lastrowid(self) -> type(None): return ...
-
-    def callproc(self, procname: str, args: Tuple[Any, ...] = ...) -> None: ...
-
-    def close(self) -> None: ...
-
-    def execute(self, query: str, params: Iterable = ..., multi: bool = ...) -> None: ...
-
-    def executemany(self, operation: str, seqparams: Iterable[Iterable]) -> None: ...
-
-    def fetchone(self) -> type(DEFAULT_ONE): ...
-
-    def fetchmany(self, size: int = ...) -> type(DEFAULT_ALL): ...
-
-    def fetchall(self) -> type(DEFAULT_ALL): ...
-
-talos_create_schema = ... # type: str
-talos_create_table = ... # type: str
-talos_add_column = ... # type: str
-talos_remove_column = ... # type: str
-talos_modify_column = ... # type: str
-talos_tables = ... # type: Dict[str, Dict[str, Union[List[str], str]]]
-
-class TalosDatabase:
-
-    _sql_conn = ... # type: Optional[mysql_abstracts.MySQLConnectionAbstract]
-    _cursor = ... # type: Union[cursor_cext.CMySQLCursor, EmptyCursor]
-
-    def __init__(self, sql_conn: Optional[mysql_abstracts.MySQLConnectionAbstract]) -> None: ...
-
-    def verify_schema(self) -> None: ...
-
-    def clean_guild(self, guild_id: int) -> None: ...
-
-    def commit(self) -> None: ...
-
-    def is_connected(self) -> bool: ...
-
-    def raw_exec(self, statement: str) -> List: ...
-
-    # Meta methods
-
-    def get_column_type(self, table_name: str, column_name: str) -> str: ...
-
-    def get_columns(self, table_name: str) -> List[Tuple[str, str]]: ...
-
-    # Guild option methods
-
-    def get_guild_default(self, option_name: str) -> Union[str, int]: ...
-
-    def get_guild_defaults(self) -> List[Union[str, int]]: ...
-
-    def get_guild_option(self, guild_id: int, option_name: str) -> Union[str, int]: ...
-
-    def get_guild_options(self, guild_id: int) -> List[Union[str, int]]: ...
-
-    def get_all_guild_options(self) -> List[Tuple[Union[str, int], ...]]: ...
-
-    def set_guild_option(self, guild_id: int, option_name: str, value: Union[str, int]) -> None: ...
-
-    def remove_guild_option(self, guild_id: int, option_name: str) -> None: ...
-
-    # User option methods
-
-    def get_user_default(self, option_name: str) -> Union[str, int]: ...
-
-    def get_user_defaults(self) -> List[Union[str, int]]: ...
-
-    def get_user_option(self, user_id: int, option_name: str) -> Union[str, int]: ...
-
-    def get_user_options(self, user_id: int) -> List[Union[str, int]]: ...
-
-    def get_all_user_options(self) -> List[Tuple[Union[str, int]]]: ...
-
-    def set_user_option(self, user_id: int, option_name: str, value: Union[str, int]) -> None: ...
-
-    def remove_user_option(self, user_id: int, option_name: str) -> None: ...
-
-    # User profile methods
-
-    def register_user(self, user_id: int) -> None: ...
-
-    def deregister_user(self, user_id: int) -> None: ...
-
-    def get_user(self, user_id: int) -> Optional[Tuple[Union[str, int], ...]]: ...
-
-    def get_description(self, user_id: int) -> Optional[str]: ...
-
-    def set_description(self, user_id: int, desc: str) -> None: ...
-
-    def get_title(self, user_id: int) -> Optional[str]: ...
-
-    def set_title(self, user_id: int, title: str) -> None: ...
-
-    def user_invoked_command(self, user_id: int, command: str) -> None: ...
-
-    def get_command_data(self, user_id: int) -> List[Tuple[str, int]]: ...
-
-    def get_favorite_command(self, user_id: int) -> Tuple[str, int]: ...
-
-    # Admins methods
-
-    def get_all_admins(self) -> List[Tuple[int, int]]: ...
-
-    def get_admins(self, guild_id: int) -> List[int]: ...
-
-    def add_admin(self, guild_id: int, opname: str) -> None: ...
-
-    def remove_admin(self, guild_id: int, opname: str) -> None: ...
-
-    # Perms methods
-
-    def get_perm_rule(self, guild_id: int, command: str, perm_type: str, target: str) -> Optional[Tuple[int, int]]: ...
-
-    def get_perm_rules(self, guild_id: int = ..., command: str = ..., perm_type: str = ..., target: str = ...) -> List[Tuple[int, int]]: ...
-
-    def get_all_perm_rules(self) -> List[Tuple[int, str, str, str, int, int]]: ...
-
-    def set_perm_rule(self, guild_id: int, command: str, perm_type: str, allow: bool, priority: int = ..., target: str = ...) -> None: ...
-
-    def remove_perm_rules(self, guild_id: int, command: Optional[str] = ..., perm_type: Optional[str] = ..., target: Optional[str] = ...) -> None: ...
-
-    # Custom guild commands
-
-    def set_guild_command(self, guild_id: int, name: str, text: str) -> None: ...
-
-    def get_guild_command(self, guild_id: int, name: str) -> Optional[str]: ...
-
-    def get_guild_commands(self, guild_id: int) -> List[Tuple[str, str]]: ...
-
-    def remove_guild_command(self, guild_id: int, name: str) -> None: ...
-
-    # Uptime methods
-
-    def add_uptime(self, uptime: int) -> None: ...
-
-    def get_uptime(self, start: int) -> List[Tuple[int]]: ...
-
-    def remove_uptime(self, end: int) -> None: ...
-
 class TalosHTTPClient(aiohttp.ClientSession):
 
-    NANO_URL = ... # type: str
-    BTN_URL = ... # type: str
-    CAT_URL = ... # type: str
+    __slots__ = ("username", "password", "btn_key", "cat_key")
 
-    username = ... # type: str
-    password = ... # type: str
-    btn_key = ... # type: str
-    cat_key = ... # type: str
+    NANO_URL: str = ...
+    BTN_URL: str = ...
+    CAT_URL: str = ...
+
+    username: str
+    password: str
+    btn_key: str
+    cat_key: str
 
     def __init__(self, *args, **kwargs) -> None: ...
 
@@ -233,19 +85,19 @@ def _perms_check(ctx: dcommands.Context) -> bool: ...
 
 class TalosCog:
 
-    __slots__ = ... # type: Tuple[str, ...]
-    bot = ... # type: Talos
-    database = ... # type: TalosDatabase
+    __slots__ = ('bot', 'database', '__local_check')
+    bot: Talos
+    database: tsql.TalosDatabase
 
     def __init__(self, bot: Talos): ...
 
 class PW:
 
-    __slots__ = ... # type: Tuple[str, ...]
+    __slots__ = ('start', 'end', 'members')
 
-    start = ... # type: dt.datetime
-    end = ... # type: dt.datetime
-    members = ... # type: List[PWMember]
+    start: dt.datetime
+    end: dt.datetime
+    members: List[PWMember]
 
     def __init__(self) -> None: ...
 
@@ -263,11 +115,11 @@ class PW:
 
 class PWMember:
 
-    __slots__ = ... # type: Tuple[str, ...]
+    __slots__ = ('user', 'start', 'end')
 
-    user = ... # type: discord.Member
-    start = ... # type: dt.datetime
-    end = ... # type: dt.datetime
+    user: discord.Member
+    start: dt.datetime
+    end: dt.datetime
 
     def __init__(self, user: discord.Member) -> None: ...
 

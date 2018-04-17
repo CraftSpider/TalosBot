@@ -46,19 +46,19 @@ class DevCommands(utils.TalosCog):
     async def streaming(self, ctx, *, streaming):
         """Changes what Talos is streaming, the thing displayed under the name in the user list."""
         await self.bot.change_presence(
-            activity=discord.Game(name=streaming, url="http://www.twitch.tv/talos_bot_", type=1))
+            activity=discord.Streaming(name=streaming, url="http://www.twitch.tv/talos_bot_", type=1))
         await ctx.send("Now streaming {}".format(streaming))
 
     @commands.command(hidden=True, description="Change what Talos is listening to")
     async def listening(self, ctx, *, listening):
         """Changes what Talos is listening to, the thing displayed under the name in the user list."""
-        await self.bot.change_presence(activity=discord.Game(name=listening, type=2))
+        await self.bot.change_presence(activity=discord.Activity(name=listening, type=discord.ActivityType.listening))
         await ctx.send("Now listening to {}".format(listening))
 
     @commands.command(hidden=True, description="Change what Talos is watching")
     async def watching(self, ctx, *, watching):
         """Changes what Talos is watching, the thing displayed under the name in the user list."""
-        await self.bot.change_presence(activity=discord.Game(name=watching, type=3))
+        await self.bot.change_presence(activity=discord.Activity(name=watching, type=discord.ActivityType.watching))
         await ctx.send("Now watching {}".format(watching))
 
     @commands.command(hidden=True, description="Kills Talos process")
@@ -96,13 +96,13 @@ class DevCommands(utils.TalosCog):
 
     @commands.command(hidden=True, description="Grant a user title")
     async def grant_title(self, ctx, user: discord.User, *, title):
-        """Give someone access to a title (currently just sets their title)"""
+        """Give someone access to a title"""
         profile = self.database.get_user(user.id)
         if not profile:
             raise utils.NotRegistered(user)
         if title == "None":
             title = None
-        self.database.set_title(user.id, title)
+        self.database.add_title(user.id, title)
         await ctx.send("Title `{}` granted to {}".format(title, str(user)))
 
     @commands.command(hidden=True, description="Reload a Talos extension. Allows command updates without reboot.")

@@ -20,7 +20,7 @@ def _suffix(d):
 
 def _custom_strftime(strf, t):
     """
-        Custom string-format function to allow a time format to contain day in the form `1st`, `2nd`, `3r`, etc.
+        Custom string-format function to allow a time format to contain day in the form `1st`, `2nd`, `3rd`, etc.
     :param strf: Format string
     :param t: Time to format with the string
     :return: formatted string
@@ -36,7 +36,7 @@ class PaginatedEmbed(Embed):
         result in only the first page being sent, whether there are one or many pages.
     """
 
-    __slots__ = Embed.__slots__ + ("_built_pages", "_max_size", "repeat_title", "repeat_desc", "repeat_author")
+    __slots__ = ("_built_pages", "_max_size", "repeat_title", "repeat_desc", "repeat_author")
 
     MAX_TOTAL = 6000
     MAX_TITLE = 256
