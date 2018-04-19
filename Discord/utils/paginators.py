@@ -6,7 +6,7 @@ from discord.embeds import Embed, EmbedProxy, EmptyEmbed, _EmptyEmbed
 
 
 _EmptyEmbed.__len__ = lambda self: 0
-EmptyField = EmbedProxy({"text": "", "name": "", "inline": False})
+EmptyField = {"value": "", "name": "", "inline": False}
 
 
 def _suffix(d):
@@ -102,8 +102,8 @@ class PaginatedEmbed(Embed):
         size = len(self.title) + len(self.description) + len(self.author.name)
         # Add size for each field
         for field in self._fields:
-            name = len(field.name)
-            value = len(field.value)
+            name = len(field["name"])
+            value = len(field["value"])
             size += name + value
             # Add any extra title lengths for field overflow. value stays the same.
             if value > self.MAX_FIELD_VALUE:
@@ -173,7 +173,7 @@ class PaginatedEmbed(Embed):
         """
         if isinstance(value, (list, tuple)):
             self._colour = value
-        if isinstance(value, (discord.Colour, _EmptyEmbed)):
+        elif isinstance(value, (discord.Colour, _EmptyEmbed)):
             self._colour = [value]
         elif isinstance(value, int):
             self._colour = [discord.Colour(value=value)]

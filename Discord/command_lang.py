@@ -117,8 +117,8 @@ def parse_lang(ctx, command_str):
         if item.startswith("["):
             # pull out if/elif/else and boolean expression
             # evaluate expression
-            # if true, parse internals and set ifelse to false
-            # if false, set ifelse to true and continue
+            # if true, parse internals and set if_else to false
+            # if false, set if_else to true and continue
             match = re.match(r"\[(if|elif|else)(.*?)\]\((.+)\)", item)
             if match is None:
                 raise CommandLangError("Malformed if block")

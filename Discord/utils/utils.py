@@ -430,25 +430,26 @@ def _perms_check(ctx):
     command = str(ctx.command)
 
     try:
-        if not ctx.bot.database.get_guild_option(ctx.guild.id, to_snake_case(ctx.command.instance.__class__.__name__)):
+        options = ctx.bot.database.get_guild_options(ctx.guild.id)
+        if not getattr(options, to_snake_case(ctx.command.instance.__class__.__name__)):
             return False
     except KeyError:
         pass
     perms = ctx.bot.database.get_perm_rules(ctx.guild.id, command)
     if len(perms) == 0:
         return True
-    perms.sort(key=lambda x: x[3])
+    perms.sort()
     for perm in perms:
-        if perm[1] == "user" and perm[2] == str(ctx.author):
-            return perm[4]
-        elif perm[1] == "role":
+        if perm.perm_type == "user" and perm.target == str(ctx.author):
+            return perm.allow
+        elif perm.perm_type == "role":
             for role in ctx.author.roles:
-                if perm[2] == str(role):
-                    return perm[4]
-        elif perm[1] == "channel" and perm[2] == str(ctx.channel):
-            return perm[4]
-        elif perm[1] == "guild":
-            return perm[4]
+                if perm.target == str(role):
+                    return perm.allow
+        elif perm.perm_type == "channel" and perm.target == str(ctx.channel):
+            return perm.allow
+        elif perm.perm_type == "guild":
+            return perm.allow
     return True
 
 

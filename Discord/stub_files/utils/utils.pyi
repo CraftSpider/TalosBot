@@ -25,6 +25,7 @@ class TalosFormatter(dcommands.HelpFormatter):
 
     _paginator: Union[dcommands.Paginator, paginators.PaginatedEmbed] = ...
 
+    # noinspection PyMissingConstructor
     def __init__(self) -> None: ...
 
     @property
@@ -62,6 +63,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
     btn_key: str
     cat_key: str
 
+    # noinspection PyMissingConstructor
     def __init__(self, *args, **kwargs) -> None: ...
 
     async def get_site(self, url: str, **kwargs) -> str: ...

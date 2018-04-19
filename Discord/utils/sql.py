@@ -1,5 +1,5 @@
 
-import utils.user as user
+import utils.data as data
 
 import logging
 import re
@@ -14,6 +14,7 @@ _levels = {
     "role": 30,
     "user": 40
 }
+
 
 class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
 
@@ -137,7 +138,7 @@ class TalosDatabase:
         (Schema matching can be enforced with verify_schema)
     """
 
-    __slots__ = ("_sql_conn", "_cursor")
+    __slots__ = ("_sql_conn", "_cursor", "_guild_cache")
 
     def __init__(self, sql_conn):
         """
@@ -150,6 +151,7 @@ class TalosDatabase:
         else:
             self._sql_conn = None
             self._cursor = EmptyCursor()
+        self._guild_cache = None
 
     def verify_schema(self):
         """
@@ -214,7 +216,7 @@ class TalosDatabase:
             for item in talos_tables:
                 if talos_tables[item].get("defaults") is not None:
                     for values in talos_tables[item]["defaults"]:
-                        self._cursor.execute("REPLACE INTO {} VALUES {}".format(item, values))
+                        self._cursor.execute("REPLACE INTO {} VALUES ({})".format(item, values))
 
     def clean_guild(self, guild_id):
         """
@@ -227,10 +229,13 @@ class TalosDatabase:
     def commit(self):
         """
             Commits any changes to the SQL database.
+        :return: Whether a commit successfully occurred
         """
         log.debug("Committing data")
         if self._sql_conn:
             self._sql_conn.commit()
+            return True
+        return False
 
     def is_connected(self):
         """
@@ -255,7 +260,7 @@ class TalosDatabase:
             Gets the type of a specific column
         :param table_name: Name of the table containing the column
         :param column_name: Name of the column to check
-        :return: The type of the given column
+        :return: The type of the given column, or None
         """
         query = "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s"
         self._cursor.execute(query, [table_name, column_name])
@@ -268,29 +273,16 @@ class TalosDatabase:
         """
             Gets the column names and types of a specified table
         :param table_name: Name of the table to retrieve columnns from
-        :return: List of column names and data types
+        :return: List of column names and data types, or None if table doesn't exist
         """
         query = "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
         self._cursor.execute(query, [table_name])
-        return self._cursor.fetchall()
+        result = self._cursor.fetchall()
+        if len(result) is 0:
+            return None
+        return result
 
     # Guild option methods
-
-    def get_guild_default(self, option_name):
-        """
-            Gets the default value for a guild option
-        :param option_name: Name of the option to retrieve
-        :return: Option default value
-        """
-        if re.match("[^a-zA-Z0-9_-]", option_name):
-            raise ValueError("SQL Injection Detected!")
-        query = "SELECT {} FROM guild_options WHERE guild_id = -1".format(option_name)
-        self._cursor.execute(query)
-        result = self._cursor.fetchone()
-        if result:
-            return result[0]
-        else:
-            raise KeyError
 
     def get_guild_defaults(self):
         """
@@ -300,30 +292,10 @@ class TalosDatabase:
         query = "SELECT * FROM guild_options WHERE guild_id = -1"
         self._cursor.execute(query)
         result = self._cursor.fetchone()
-        if isinstance(result, (tuple, list)):
-            return result
-        elif result:
-            return [result]
+        if result:
+            return data.GuildOptions(self, result)
         else:
-            return []
-
-    def get_guild_option(self, guild_id, option_name):
-        """
-            Get an option for a guild. If option isn't set, gets the default for that option.
-        :param guild_id: id of the guild to fetch option of
-        :param option_name: name of the option to fetch
-        :return: the set option value
-        """
-        if re.match("[^a-zA-Z0-9_-]", option_name):
-            raise ValueError("SQL Injection Detected!")
-        query = "SELECT {} FROM guild_options WHERE guild_id = %s".format(option_name)
-        self._cursor.execute(query, [guild_id])
-        result = self._cursor.fetchone()
-        if result is None or result[0] is None:
-            result = self.get_guild_default(option_name)
-        else:
-            result = result[0]
-        return result
+            return data.GuildOptions(self, [])
 
     def get_guild_options(self, guild_id):
         """
@@ -334,17 +306,18 @@ class TalosDatabase:
         query = "SELECT * FROM guild_options WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
         result = self._cursor.fetchone()
-        out = []
+        guild_defaults = self.get_guild_defaults()
+        guild_data = []
         if result is None:
-            out = self.get_guild_defaults()
+            return guild_defaults
         else:
             rows = self.get_columns("guild_options")
             for item in range(len(result)):
                 if result[item] is None:
-                    out.append(self.get_guild_default(rows[item][0]))
+                    guild_data.append(getattr(guild_defaults, rows[item][0]))
                 else:
-                    out.append(result[item])
-        return out
+                    guild_data.append(result[item])
+        return data.GuildOptions(self, guild_data)
 
     def get_all_guild_options(self):
         """
@@ -385,22 +358,6 @@ class TalosDatabase:
 
     # User option methods
 
-    def get_user_default(self, option_name):
-        """
-            Gets the default value for a user option
-        :param option_name: Name of the option to retrieve
-        :return: Option default value
-        """
-        if re.match("[^a-zA-Z0-9_-]", option_name):
-            raise ValueError("SQL Injection Detected!")
-        query = "SELECT {} FROM user_options WHERE user_id = -1".format(option_name)
-        self._cursor.execute(query)
-        result = self._cursor.fetchone()
-        if result:
-            return result[0]
-        else:
-            raise KeyError
-
     def get_user_defaults(self):
         """
             Get all default user option values
@@ -409,30 +366,10 @@ class TalosDatabase:
         query = "SELECT * FROM user_options WHERE user_id = -1"
         self._cursor.execute(query)
         result = self._cursor.fetchone()
-        if isinstance(result, (tuple, list)):
-            return result
-        elif result:
-            return [result]
+        if result:
+            return data.UserOptions(self, result)
         else:
-            return []
-
-    def get_user_option(self, user_id, option_name):
-        """
-            Get an option for a user. If option isn't set, gets the default for that option.
-        :param user_id: id of the user to fetch option of
-        :param option_name: name of the option to fetch
-        :return: the set option value
-        """
-        if re.match("[^a-zA-Z0-9_-]", option_name):
-            raise ValueError("SQL Injection Detected!")
-        query = "SELECT {} FROM user_options WHERE user_id = %s".format(option_name)
-        self._cursor.execute(query, [user_id])
-        result = self._cursor.fetchone()
-        if result is None or result[0] is None:
-            result = self.get_user_default(option_name)
-        else:
-            result = result[0]
-        return result
+            return data.UserOptions(self, [])
 
     def get_user_options(self, user_id):
         """
@@ -443,17 +380,19 @@ class TalosDatabase:
         query = "SELECT * FROM user_options WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
         result = self._cursor.fetchone()
-        out = []
+        user_defaults = self.get_user_defaults()
+        user_data = []
         if result is None:
-            out = self.get_user_defaults()
+            return user_defaults
         else:
             rows = self.get_columns("user_options")
             for item in range(len(result)):
                 if result[item] is None:
-                    out.append(self.get_user_default(rows[item][0]))
+                    user_data.append(getattr(user_defaults, rows[item][0]))
                 else:
-                    out.append(result[item])
-        return out
+                    user_data.append(result[item])
+
+        return data.UserOptions(self, user_data)
 
     def get_all_user_options(self):
         """
@@ -537,21 +476,9 @@ class TalosDatabase:
         self._cursor.execute(query, [user_id])
         user_data["titles"] = self._cursor.fetchall()
 
-        return user.TalosUser(user_data)
+        user_data["options"] = self.get_user_options(user_id)
 
-    def get_description(self, user_id):
-        """
-            Get the description of a user
-        :param user_id: id of the user to get description from
-        :return: User description or None
-        """
-        query = "SELECT description FROM user_profiles WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-        result = self._cursor.fetchone()
-        if result:
-            return result[0]
-        else:
-            return result
+        return data.TalosUser(self, user_data)
 
     def set_description(self, user_id, desc):
         """
@@ -561,20 +488,6 @@ class TalosDatabase:
         """
         query = "UPDATE user_profiles SET description = %s WHERE user_id = %s"
         self._cursor.execute(query, [desc, user_id])
-
-    def get_title(self, user_id):
-        """
-            Get the title of a user
-        :param user_id: id of the user to get the title of
-        :return: the title of the user or none
-        """
-        query = "SELECT title FROM user_profiles WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-        result = self._cursor.fetchone()
-        if result:
-            return result[0]
-        else:
-            return result
 
     def add_title(self, user_id, title):
         """
@@ -618,27 +531,6 @@ class TalosDatabase:
                 "ON DUPLICATE KEY UPDATE " \
                 "times_invoked = times_invoked + 1"
         self._cursor.execute(query, [user_id, command])
-
-    def get_command_data(self, user_id):
-        """
-            Get all data from invoked_commands for a specific user
-        :param user_id: id of the user to grab the data of
-        :return: List of commands to times invoked
-        """
-        query = "SELECT command_name, times_invoked FROM invoked_commands WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-        return self._cursor.fetchall()
-
-    def get_favorite_command(self, user_id):
-        """
-            Get the command a specific user has invoked the most.
-        :param user_id: id of the user to get favorite command of
-        :return: Favorite command for that user.
-        """
-        query = "SELECT command_name, times_invoked FROM invoked_commands WHERE user_id = %s " \
-                "ORDER BY times_invoked DESC LIMIT 1"
-        self._cursor.execute(query, [user_id])
-        return self._cursor.fetchone()
 
     # Admin methods
 
@@ -696,10 +588,11 @@ class TalosDatabase:
         :param target: the target of the permission rule
         :return: the priority and whether to allow this rule if it exists, or None
         """
-        query = "SELECT priority, allow FROM perm_rules WHERE guild_id = %s AND command = %s AND perm_type = %s AND"\
+        query = "SELECT * FROM perm_rules WHERE guild_id = %s AND command = %s AND perm_type = %s AND"\
                 " target = %s"
         self._cursor.execute(query, [guild_id, command, perm_type, target])
-        return self._cursor.fetchone()
+        response = self._cursor.fetchone()
+        return data.PermissionRule(self, response)
 
     def get_perm_rules(self, guild_id=-1, command=None, perm_type=None, target=None):
         """
@@ -710,7 +603,7 @@ class TalosDatabase:
         :param target: target of permissions to get. Any target if none.
         :return: List of rules fitting the context.
         """
-        query = "SELECT command, perm_type, target, priority, allow FROM perm_rules WHERE guild_id = %s"
+        query = "SELECT * FROM perm_rules WHERE guild_id = %s"
         args = []
         if command or perm_type or target:
             query += " AND "
@@ -728,7 +621,11 @@ class TalosDatabase:
             query += "target = %s"
             args.append(target)
         self._cursor.execute(query, [guild_id] + args)
-        return self._cursor.fetchall()
+        response = self._cursor.fetchall()
+        out = []
+        for item in response:
+            out.append(data.PermissionRule(self, item))
+        return out
 
     def get_all_perm_rules(self):
         """

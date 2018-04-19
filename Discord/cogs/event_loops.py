@@ -201,10 +201,10 @@ class EventLoops(utils.TalosCog):
             out += "{}\n\n".format(prompt[0].strip("\""))
             out += "({} by {})".format(("Original prompt" if prompt[1].upper() == "YES" else "Submitted"), prompt[2])
             for guild in self.bot.guilds:
-                if not self.database.get_guild_option(guild.id, "writing_prompts"):
+                if not self.database.get_guild_options(guild.id).writing_prompts:
                     continue
                 for channel in guild.channels:
-                    if channel.name == self.database.get_guild_option(guild.id, "prompts_channel"):
+                    if channel.name == self.database.get_guild_options(guild.id).prompts_channel:
                         await channel.send(out)
 
             prompt.append("POSTED")

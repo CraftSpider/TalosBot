@@ -56,18 +56,18 @@ def admin_check(self, ctx):
     perms = self.database.get_perm_rules(ctx.guild.id, command)
     if len(perms) == 0:
         return False
-    perms.sort(key=lambda x: x[3])
+    perms.sort()
     for perm in perms:
-        if perm[1] == "user" and perm[2] == str(ctx.author):
-            return perm[4]
-        elif perm[1] == "role":
+        if perm.perm_type == "user" and perm.target == str(ctx.author):
+            return perm.allow
+        elif perm.perm_type == "role":
             for role in ctx.author.roles:
-                if perm[2] == str(role):
-                    return perm[4]
-        elif perm[1] == "channel" and perm[2] == str(ctx.channel):
-            return perm[4]
-        elif perm[1] == "guild":
-            return perm[4]
+                if perm.target == str(role):
+                    return perm.allow
+        elif perm.perm_type == "channel" and perm.target == str(ctx.channel):
+            return perm.allow
+        elif perm.perm_type == "guild":
+            return perm.allow
     return False
 
 
@@ -302,12 +302,12 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("No permissions set for this guild, with all data about them.")
             return
         guild_perms = {}
-        for line in result:
-            if guild_perms.get(line[0], None) is None:
-                guild_perms[line[0]] = {}
-            if guild_perms.get(line[0]).get(line[1], None) is None:
-                guild_perms[line[0]][line[1]] = []
-            guild_perms[line[0]][line[1]].append([line[2], line[3], line[4]])
+        for perm in result:
+            if guild_perms.get(perm.command, None) is None:
+                guild_perms[perm.command] = {}
+            if guild_perms.get(perm.command).get(perm.perm_type, None) is None:
+                guild_perms[perm.command][perm.perm_type] = []
+            guild_perms[perm.command][perm.perm_type].append([perm.target, perm.priority, perm.allow])
 
         out = "```"
         for command in guild_perms:
@@ -404,13 +404,9 @@ class AdminCommands(utils.TalosCog):
         prefix: command prefix for Talos to use in this guild. @ mention will always work
         timezone: what timezone for Talos to use for displayed times, supports any timezone abbreviation"""
         out = "```"
-        name_types = self.database.get_columns("guild_options")
         options = self.database.get_guild_options(ctx.guild.id)
-        for index in range(len(options)):
-            if options[index] == ctx.guild.id or options[index] == -1:
-                continue
-            option = options[index] if name_types[index][1] == "varchar" else bool(options[index])
-            out += "{}: {}\n".format(name_types[index][0], option)
+        for item in options.__slots__[2:]:
+            out += "{}: {}\n".format(item, getattr(options, item))
         out += "```"
         if out == "``````":
             await ctx.send("No options available.")
@@ -483,7 +479,7 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("That command doesn't exist. Maybe you meant to `add` it instead?")
             return
         self.database.set_guild_command(ctx.guild.id, name, text)
-        await ctx.send("Command {} succesfully edited".format(name))
+        await ctx.send("Command {} successfully edited".format(name))
 
     @command.command(name="remove", description="Remove existing command")
     async def _c_remove(self, ctx, name):
@@ -492,7 +488,7 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("That command doesn't exist, sorry.")
             return
         self.database.remove_guild_command(ctx.guild.id, name)
-        await ctx.send("Command {} succesfully removed".format(name))
+        await ctx.send("Command {} successfully removed".format(name))
 
     @command.command(name="list", description="List existing commands")
     async def _c_list(self, ctx):

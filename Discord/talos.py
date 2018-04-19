@@ -72,7 +72,8 @@ class Talos(commands.Bot):
         :return: None
         """
         # Set default values to pass to super
-        description = '''Greetings. I'm Talos, chat helper. Here are my commands.'''
+        description = '''Greetings. I'm Talos, chat helper. Here are my commands. If you like me and have the money, \
+please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         kwargs["formatter"] = kwargs.get("formatter", TalosFormatter())
         super().__init__(talos_prefix, description=description, **kwargs)
 
@@ -152,10 +153,10 @@ class Talos(commands.Bot):
         """
         if self.database.is_connected():
             try:
-                if not self.database.get_user_option(ctx.author.id, "rich_embeds"):
+                if not self.database.get_user_options(ctx.author.id).rich_embeds:
                     return False
                 if ctx.guild is not None:
-                    return self.database.get_guild_option(ctx.guild.id, "rich_embeds") and\
+                    return self.database.get_guild_options(ctx.guild.id).rich_embeds and\
                            ctx.channel.permissions_for(ctx.me).embed_links
             except mysql.connector.ProgrammingError:
                 return False
@@ -169,7 +170,7 @@ class Talos(commands.Bot):
         """
         if self.database.is_connected():
             if ctx.guild is not None:
-                timezone = self.database.get_guild_option(ctx.guild.id, "timezone")
+                timezone = self.database.get_guild_options(ctx.guild.id).timezone
                 return dt.timezone(dt.timedelta(hours=tz_map[timezone.upper()]), timezone.upper())
         return dt.timezone(dt.timedelta(), "UTC")
 
@@ -204,7 +205,7 @@ class Talos(commands.Bot):
     async def _talos_help_command(self, ctx, *args: str):
         """The command you're using. Can show help for any command, cog, or extension Talos is running."""
         if ctx.guild is not None and self.database.is_connected():
-            destination = ctx.message.author if self.database.get_guild_option(ctx.guild.id, "pm_help") else \
+            destination = ctx.message.author if self.database.get_guild_options(ctx.guild.id).pm_help else \
                           ctx.message.channel
         else:
             destination = ctx.message.channel
@@ -339,7 +340,7 @@ class Talos(commands.Bot):
         log.debug("OnCommandError Event")
         if isinstance(exception, commands.CommandNotFound):
             if self.database.is_connected() and (ctx.guild is None or
-                                                 self.database.get_guild_option(ctx.guild.id, "fail_message")):
+                                                 self.database.get_guild_options(ctx.guild.id).fail_message):
                 cur_pref = (await self.get_prefix(ctx.message))[0]
                 await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
                                                                                                 cur_pref))
@@ -392,12 +393,12 @@ def talos_prefix(bot, message):
     mention = bot.user.mention + " "
     if isinstance(message.channel, discord.abc.PrivateChannel):
         try:
-            return [bot.database.get_user_option(message.author.id, "prefix"), mention]
+            return [bot.database.get_user_options(message.author.id).prefix, mention]
         except (KeyError, mysql.connector.errors.ProgrammingError):
             return [bot.DEFAULT_PREFIX, mention]
     else:
         try:
-            return [bot.database.get_guild_option(message.guild.id, "prefix"), mention]
+            return [bot.database.get_guild_options(message.guild.id).prefix, mention]
         except (KeyError, mysql.connector.errors.ProgrammingError):
             return [bot.DEFAULT_PREFIX, mention]
 

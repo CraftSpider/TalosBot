@@ -18,15 +18,20 @@ CLIENT_SECRET_FILE = ... # type: str
 APPLICATION_NAME = ... # type: str
 log = ... # type: logging.Logger
 
+class SpreadsheetService(googleapiclient.discovery.Resource):
+
+    def spreadsheets(self) -> None: ...
+
 class EventLoops(utils.TalosCog):
 
     __slots__ = ... # type: Tuple[str, ...]
 
-    service = ... # type: googleapiclient.discovery.Resource
+    service = ... # type: SpreadsheetService
     flags = ... # type: argparse.ArgumentParser
     last_guild_count = ... # type: int
     bg_tasks = ... # type: List[asyncio.Task]
 
+    # noinspection PyMissingConstructor
     def __init__(self, bot: Talos) -> None: ...
 
     def __unload(self) -> None: ...

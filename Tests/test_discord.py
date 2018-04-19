@@ -230,6 +230,7 @@ def test_talos_database():
     database.commit()
     assert database.is_connected() is False, "Empty database considered connected"
     assert database.raw_exec("SELECT * FROM admins") == list(), "raw_exec didn't return empty fetchall"
+    assert database.commit() is False, "Database committed despite not existing?"
 
     pass  # TODO test all the database functions
 

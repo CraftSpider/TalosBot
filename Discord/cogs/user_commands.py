@@ -190,13 +190,9 @@ class UserCommands(utils.TalosCog):
         rich_embeds: whether Talos will embed messages for you if guild options allow it
         prefix: what prefix Talos will use in PMs with you"""
         out = "```"
-        name_types = self.database.get_columns("user_options")
         options = self.database.get_user_options(ctx.author.id)
-        for index in range(len(options)):
-            if options[index] == ctx.author.id or options[index] == -1:
-                continue
-            option = options[index] if name_types[index][1] == "varchar" else bool(options[index])
-            out += "{}: {}\n".format(name_types[index][0], option)
+        for item in options.__slots__[2:]:
+            out += "{}: {}\n".format(item, getattr(options, item))
         out += "```"
         if out == "``````":
             await ctx.send("No options available.")
@@ -207,12 +203,14 @@ class UserCommands(utils.TalosCog):
     async def _stats(self, ctx):
         """Will show just about everything Talos knows about you."""
         profile = self.database.get_user(ctx.author.id)
-        stats = self.database.get_command_data(ctx.author.id)
+        if profile is None:
+            await ctx.send("No profile found, please register.")
+            return
         out = "```"
-        out += "Desc: {}\n".format(profile[1])
-        out += "Total Invoked: {}\n".format(profile[2])
+        out += "Desc: {}\n".format(profile.description)
+        out += "Total Invoked: {}\n".format(profile.total_commands)
         out += "Command Stats:\n"
-        for command in stats:
+        for command in profile.invoked_data:
             out += "    {}: {}\n".format(command[0], command[1])
         out += "```"
         await ctx.send(out)

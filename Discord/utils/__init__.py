@@ -6,6 +6,6 @@
 
 from .utils import fullwidth_transform, tz_map, TalosFormatter, TalosHTTPClient, TalosCog, PW, PWMember
 from .sql import TalosDatabase
-from .user import TalosUser
+from .data import TalosUser
 from .errors import *
 from .paginators import PaginatedEmbed

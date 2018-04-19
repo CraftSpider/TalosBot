@@ -120,7 +120,8 @@ class Commands(utils.TalosCog):
         """Displays such information as who made me, how I'm built, where you can contact me, and more."""
         if self.bot.should_embed(ctx):
             description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
-                          "`{}help` to see a list of my commands."
+                          "`{}help` to see a list of my commands.\nPlease donate to support my development on "\
+                          "[Patreon](https://www.patreon.com/TalosBot)"
             with utils.PaginatedEmbed() as embed:
                 embed.title = "Talos Information"
                 embed.colour = discord.Colour(0x202020)
@@ -457,7 +458,8 @@ class Commands(utils.TalosCog):
                 if novel_title is not None:
                     embed.add_field(
                         name="__Novel Info__",
-                        value="**Title:** {}\n**Genre:** {}\n**Words:** {}".format(novel_title, novel_genre, novel_words)
+                        value="**Title:** {}\n**Genre:** {}\n**Words:** {}".format(novel_title, novel_genre,
+                                                                                   novel_words)
                     )
                 if fact_sheet is not None:
                     embed.add_field(
@@ -605,7 +607,7 @@ class Commands(utils.TalosCog):
             await ctx.send("There's currently no PW going on. Would you like to **create** one?")
         elif not active_pw[ctx.guild.id].get_started():
             await ctx.send("Deleting un-started PW.")
-            active_pw[ctx.guild.id] = None
+            del active_pw[ctx.guild.id]
         else:
             await ctx.send("Ending PW.")
             active_pw[ctx.guild.id].finish(self.bot.get_timezone(ctx))
@@ -647,8 +649,7 @@ class Commands(utils.TalosCog):
                     out += "    {0} - {1}\n".format(member.user.display_name, member.get_len())
                 out += "```"
                 await ctx.send(out)
-
-            active_pw[ctx.guild.id] = None
+            del active_pw[ctx.guild.id]
 
     @productivitywar.command(name='dump', hidden=True, description="Dump the info down the hole")
     async def _dump(self, ctx):

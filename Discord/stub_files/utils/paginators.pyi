@@ -1,18 +1,19 @@
 
 import datetime as dt
-from typing import Tuple, List, Dict, overload
+from typing import Union, List, Dict, overload
 import discord
-from discord.embeds import Embed, EmbedProxy, EmptyEmbed, _EmptyEmbed
+from discord.embeds import Embed, EmbedProxy
 
-EmptyField = ... # type: EmbedProxy
+EmptyField: Dict[str, Union[str, bool]] = ...
 
 def _suffix(d: int) -> str: ...
 
 def _custom_strftime(strf: str, t: dt.datetime) -> str: ...
 
+
 class PaginatedEmbed(Embed):
 
-    __slots__ = ("_built_pages", "_max_size", "repeat_title", "repeat_desc", "repeat_author")
+    __slots__ = ("_built_pages", "_max_size", "repeat_title", "repeat_desc", "repeat_author", "_fields")  # TODO: d.py stubs
 
     MAX_TOTAL: int = ...
     MAX_TITLE: int = ...
@@ -23,12 +24,14 @@ class PaginatedEmbed(Embed):
     MAX_FOOTER: int = ...
     MAX_AUTHOR: int = ...
 
+    _fields: List[Dict[str, Union[str, bool]]]
     _built_pages: List[Embed]
     _max_size: int
     repeat_title: bool
     repeat_desc: bool
     repeat_author: bool
 
+    # noinspection PyMissingConstructor
     def __init__(self, **kwargs: Dict[str, ...]) -> None: ...
 
     def __enter__(self) -> PaginatedEmbed: ...
