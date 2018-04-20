@@ -74,12 +74,13 @@ class Talos(commands.Bot):
         # Set default values to pass to super
         description = '''Greetings. I'm Talos, chat helper. Here are my commands. If you like me and have the money, \
 please support me on [Patreon](https://www.patreon.com/TalosBot)'''
-        kwargs["formatter"] = kwargs.get("formatter", TalosFormatter())
+        if not kwargs.get("formatter", None):
+            kwargs["formatter"] = kwargs.get("formatter", TalosFormatter())
         super().__init__(talos_prefix, description=description, **kwargs)
 
         # Set talos specific things
         self.database = TalosDatabase(sql_conn)
-        self.discordbots_token = kwargs.get("token", "")
+        self.discordbots_token = kwargs.get("db_token", "")
 
         nano_login = kwargs.get("nano_login", ["", ""])
         btn_key = kwargs.get("btn_key", "")
@@ -360,7 +361,12 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         elif isinstance(exception, CustomCommandError):
             await ctx.send("Malformed CommandLang syntax: {}".format(exception))
         else:
-            log.warning('Ignoring exception in command {}'.format(ctx.command))
+            log.warning('Ignoring exception `{}` in command {}'.format(exception, ctx.command))
+            try:
+                if ctx.author.id in self.DEVS:
+                    await ctx.send(exception)
+            except Exception as e:
+                log.error(e)
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
 
@@ -394,12 +400,14 @@ def talos_prefix(bot, message):
     if isinstance(message.channel, discord.abc.PrivateChannel):
         try:
             return [bot.database.get_user_options(message.author.id).prefix, mention]
-        except (KeyError, mysql.connector.errors.ProgrammingError):
+        except Exception as e:
+            log.warning(e)
             return [bot.DEFAULT_PREFIX, mention]
     else:
         try:
             return [bot.database.get_guild_options(message.guild.id).prefix, mention]
-        except (KeyError, mysql.connector.errors.ProgrammingError):
+        except Exception as e:
+            log.warning(e)
             return [bot.DEFAULT_PREFIX, mention]
 
 
@@ -531,7 +539,7 @@ def main():
         log.warning("Database connection dropped, no data will be saved this session.")
 
     # Create and run Talos
-    talos = Talos(sql_conn=cnx, token=botlist_token, nano_login=nano_login, btn_key=btn_key, cat_key=cat_key)
+    talos = Talos(sql_conn=cnx, db_token=botlist_token, nano_login=nano_login, btn_key=btn_key, cat_key=cat_key)
 
     try:
         talos.load_extensions()

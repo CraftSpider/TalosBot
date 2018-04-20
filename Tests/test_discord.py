@@ -168,15 +168,16 @@ def test_paginated_helpers():
 
 
 def test_paginated_embed():  # TODO: Need to redo due to change to PaginatedEmbed
-    # page = tutils.EmbedPaginator()
-    #
-    # # Test empty embed
-    # assert page.size is 8, "Base size is not 8"
-    # page.set_footer("")
-    # assert page.size is 0, "Empty Embed isn't size 0"
-    # page.close()
-    # assert len(page.get_pages()) is 1, "Empty embed has more than one page"
-    #
+    page = tutils.PaginatedEmbed()
+
+    # Test empty embed
+    assert page.size is 8, "Base size is not 8"
+    page.set_footer(text="")
+    assert page.size is 0, "Empty Embed isn't size 0"
+    page.close()
+    assert page.num_pages is 1, "Empty embed has more than one page"
+    assert page.num_pages == len(page._built_pages), "Embed num_pages doesn't match number of built pages"
+
     # # Test simple setters and output
     # colours = [discord.Colour(0xFF00FF)]
     # page = utils.EmbedPaginator(colour=colours)

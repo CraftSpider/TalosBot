@@ -433,18 +433,14 @@ class AdminCommands(utils.TalosCog):
     async def _opt_all(self, ctx):
         """Displays all guild options in every guild Talos is in. Condensed to save your screen."""
         all_options = self.database.get_all_guild_options()
-        name_types = self.database.get_columns("guild_options")
         out = "```"
         for options in all_options:
-            for index in range(len(options)):
-                key = options[index]
-                if self.bot.get_guild(key) or key == -1:
-                    out += "Guild: {}\n".format(self.bot.get_guild(key))
+            out += "Guild: {}\n".format(self.bot.get_guild(options.id))
+            for item in options.__slots__[2:]:
+                option = getattr(options, item)
+                if option is None:
                     continue
-                if key is None:
-                    continue
-                option = key if name_types[index][1] == "varchar" else bool(key)
-                out += "    {}: {}\n".format(name_types[index][0], option)
+                out += "    {}: {}\n".format(item, option)
         out += "```"
         if out == "``````":
             await ctx.send("No options available.")

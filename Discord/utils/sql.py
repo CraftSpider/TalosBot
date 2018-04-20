@@ -76,7 +76,7 @@ class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
 
 
 talos_create_schema = "CREATE SCHEMA talos_data DEFAULT CHARACTER SET utf8"
-talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8".format("{}", "{}")
+talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8"
 talos_add_column = "ALTER TABLE {} ADD COLUMN {}".format("{}", "{}")  # Makes pycharm not complain
 talos_remove_column = "ALTER TABLE {} DROP COLUMN {}".format("{}", "{}")
 talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}".format("{}", "{}")
@@ -244,6 +244,16 @@ class TalosDatabase:
         """
         return self._sql_conn is not None and not isinstance(self._cursor, EmptyCursor)
 
+    def new_connection(self, sql_conn):
+        self.commit()
+        self._sql_conn.close()
+        if sql_conn is not None:
+            self._sql_conn = sql_conn
+            self._cursor = sql_conn.cursor()
+        else:
+            self._sql_conn = None
+            self._cursor = EmptyCursor()
+
     def raw_exec(self, statement):
         """
             Executes a SQL statement raw and returns the result. Should only be used in dev operations.
@@ -295,7 +305,7 @@ class TalosDatabase:
         if result:
             return data.GuildOptions(self, result)
         else:
-            return data.GuildOptions(self, [])
+            return data.GuildOptions(self, talos_tables["guild_options"]["defaults"][0])
 
     def get_guild_options(self, guild_id):
         """
@@ -328,7 +338,7 @@ class TalosDatabase:
         self._cursor.execute(query)
         out = []
         for row in self._cursor:
-            out.append(row)
+            out.append(data.GuildOptions(self, row))
         return out
 
     def set_guild_option(self, guild_id, option_name, value):
@@ -369,7 +379,7 @@ class TalosDatabase:
         if result:
             return data.UserOptions(self, result)
         else:
-            return data.UserOptions(self, [])
+            return data.UserOptions(self, talos_tables["user_options"]["defaults"][0])
 
     def get_user_options(self, user_id):
         """
@@ -403,7 +413,7 @@ class TalosDatabase:
         self._cursor.execute(query)
         out = []
         for row in self._cursor:
-            out.append(row)
+            out.append(data.UserOptions(self, row))
         return out
 
     def set_user_option(self, user_id, option_name, value):
@@ -498,25 +508,27 @@ class TalosDatabase:
         query = "INSERT INTO user_titles VALUES (%s, %s)"
         self._cursor.execute(query, [user_id, title])
 
-    def check_title(self, user_id, title):
-        query = "SELECT * FROM user_titles WHERE user_id = %s AND title = %s"
+    def remove_title(self, user_id, title):
+        """
+            Remove a title from a user
+        :param user_id: id of the user to remove the title from
+        :param title: title to remove from the user
+        """
+        query = "DELETE FROM user_titles WHERE user_id = %s AND title = %s"
         self._cursor.execute(query, [user_id, title])
-        if self._cursor.fetchone():
-            return True
-        return False
 
     def set_title(self, user_id, title):
         """
             Set the title of a user
         :param user_id: id of the user to set the title for
         :param title: the title to set for the user
-        :return: Whether title was successfully set
         """
-        if self.check_title(user_id, title):
+        if title is None:
+            query = "UPDATE user_profiles SET title = NULL WHERE user_id = %s"
+            self._cursor.execute(query, [user_id])
+        else:
             query = "UPDATE user_profiles SET title = %s WHERE user_id = %s"
             self._cursor.execute(query, [title, user_id])
-            return True
-        return False
 
     def user_invoked_command(self, user_id, command):
         """

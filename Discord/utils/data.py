@@ -14,12 +14,27 @@ class TalosUser:
 
         self.invoked_data = data["invoked"]
 
-        self.titles = data["titles"]
+        self.titles = list(map(lambda x: x[0], data["titles"]))
 
         self.options = data["options"]
 
     def get_favorite_command(self):
         return self.invoked_data[len(self.invoked_data) - 1]
+
+    def check_title(self, title):
+        print(title, self.titles)
+        if title in self.titles:
+            return True
+        return False
+
+    def set_title(self, title):
+        if self.check_title(title):
+            self.database.set_title(self.id, title)
+            return True
+        return False
+
+    def clear_title(self):
+        self.database.set_title(self.id, None)
 
 
 class UserOptions:

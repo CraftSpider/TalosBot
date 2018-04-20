@@ -53,6 +53,7 @@ class PaginatedEmbed(Embed):
         :param **kwargs: Basic arguments to start the embed with.
         """
         super().__init__(**kwargs)
+        self._fields = []
         self._max_size = kwargs.get("max_size", self.MAX_TOTAL)
         self._built_pages = []
         self.repeat_title = False
@@ -118,8 +119,8 @@ class PaginatedEmbed(Embed):
             if self.repeat_author:
                 size += len(self.author.name)
             size += len(self.footer.text.format(i, pages))
-            if self._timestamp != discord.Embed.Empty:
-                size += len(_custom_strftime("%a %b {D}, %Y at %I:%M %p", self._timestamp))
+            if self.timestamp != discord.Embed.Empty:
+                size += len(_custom_strftime("%a %b {D}, %Y at %I:%M %p", self.timestamp))
         # And that's the total size now.
         return size
 

@@ -12,12 +12,18 @@ class TalosUser:
     total_commands: int
     cur_title: str
     invoked_data: List
-    titles: List
+    titles: List[str]
     options: UserOptions
 
     def __init__(self, database: TalosDatabase, data: Dict[str, List[Any]]) -> None: ...
 
     def get_favorite_command(self) -> Tuple[str, int]: ...
+
+    def check_title(self, title: str) -> bool: ...
+
+    def set_title(self, title: str) -> bool: ...
+
+    def clear_title(self) -> None: ...
 
 class UserOptions:
 

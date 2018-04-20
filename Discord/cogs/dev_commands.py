@@ -100,10 +100,17 @@ class DevCommands(utils.TalosCog):
         profile = self.database.get_user(user.id)
         if not profile:
             raise utils.NotRegistered(user)
-        if title == "None":
-            title = None
         self.database.add_title(user.id, title)
         await ctx.send("Title `{}` granted to {}".format(title, str(user)))
+
+    @commands.command(hidden=True, description="Remove a title from a user")
+    async def revoke_title(self, ctx, user: discord.User, *, title):
+        """Removes access to a specific title from a user"""
+        profile = self.database.get_user(user.id)
+        if not profile:
+            raise utils.NotRegistered(user)
+        self.database.remove_title(user.id, title)
+        await ctx.send("Title `{}` revoked from {}".format(title, str(user)))
 
     @commands.command(hidden=True, description="Reload a Talos extension. Allows command updates without reboot.")
     async def reload(self, ctx, name):
@@ -156,6 +163,21 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
             await ctx.send(self.bot.database.raw_exec(statement))
         except Exception as e:
             await ctx.send("Statement failed with {}: {}".format(e.__class__.__name__, e))
+
+    @commands.command(hidden=True, description="Close and reopen the SQL database connection")
+    async def reset_sql(self, ctx):
+        """Closes and deletes the current TalosDatabase, then attempts to open a new one."""
+        await ctx.send("Reconnecting to SQL Database...")
+        host = ctx.bot.database._sql_conn.server_host
+        port = ctx.bot.database._sql_conn.server_port
+        user = ctx.bot.database._sql_conn.user
+        password = ctx.bot.database._sql_conn._password
+        database = ctx.bot.database._sql_conn.database
+        import mysql.connector
+        cnx = mysql.connector.connect(user=user, password=password, host=host, port=port,
+                                      database=database, autocommit=True)
+        ctx.bot.database.new_connection(cnx)
+        await ctx.send("SQL Database Reconnection complete")
 
     @commands.command(hidden=True, description="Image testing. Smile!")
     async def image(self, ctx, red: int=0, green: int=0, blue: int=0):

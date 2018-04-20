@@ -155,34 +155,39 @@ class UserCommands(utils.TalosCog):
     async def user(self, ctx):
         """Options will show current user options, stats will display what Talos has saved about you, description """\
             """will set your user description, set will set user options, and remove will clear user options."""
-        if not self.database.get_user(ctx.author.id):
+        profile = self.database.get_user(ctx.author.id)
+        if not profile:
             raise utils.NotRegistered(ctx.author)
         elif ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'options', 'stats', 'title', 'description', 'set', and 'remove'")
             return
+        ctx.profile = profile
 
-    @user.command(name="title", description="List or set your title(s)")
-    async def _title(self, ctx, title=""):
-        """If given no arguments will list your available titles, if given a title will make that your title if you
+    @user.command(name="titles", description="List available titles")
+    async def _titles(self, ctx):
+        titles = ctx.profile.titles
+        if len(titles) == 0:
+            await ctx.send("No available titles")
+            return
+        out = "```"
+        for title in titles:
+            out += title + "\n"
+        out += "```"
+        await ctx.send(out)
+
+    @user.command(name="title", description="Set your current title")
+    async def _title(self, ctx, *, title=""):
+        """If given no arguments will clear your title, if given a title will make that your title if you
         own that title."""
         if title:
-            pass
-            result = self.database.set_title(ctx.author.id, title)
+            result = ctx.profile.set_title(title)
             if result:
                 await ctx.send("Title successfully set to `{}`".format(title))
             else:
                 await ctx.send("You do not have that title")
         else:
-            profile = self.database.get_user(ctx.author.id)
-            titles = profile.titles
-            if len(titles) == 0:
-                await ctx.send("No available titles")
-                return
-            out = "```"
-            for title in titles:
-                out += title[0] + "\n"
-            out += "```"
-            await ctx.send(out)
+            ctx.profile.clear_title()
+            await ctx.send("Title successfully cleared")
 
     @user.command(name="options", description="List your current user options")
     async def _options(self, ctx):
@@ -202,15 +207,11 @@ class UserCommands(utils.TalosCog):
     @user.command(name="stats", description="List your current user stats")
     async def _stats(self, ctx):
         """Will show just about everything Talos knows about you."""
-        profile = self.database.get_user(ctx.author.id)
-        if profile is None:
-            await ctx.send("No profile found, please register.")
-            return
         out = "```"
-        out += "Desc: {}\n".format(profile.description)
-        out += "Total Invoked: {}\n".format(profile.total_commands)
+        out += "Desc: {}\n".format(ctx.profile.description)
+        out += "Total Invoked: {}\n".format(ctx.profile.total_commands)
         out += "Command Stats:\n"
-        for command in profile.invoked_data:
+        for command in ctx.profile.invoked_data:
             out += "    {}: {}\n".format(command[0], command[1])
         out += "```"
         await ctx.send(out)
