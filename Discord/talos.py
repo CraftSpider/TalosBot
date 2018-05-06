@@ -19,8 +19,6 @@ from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered,
 #   Constants
 #
 
-# This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
-SQL_ADDRESS = "127.0.0.1:3306"
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = "token.txt"
 
@@ -61,6 +59,8 @@ class Talos(commands.Bot):
     STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops"]
     # Hardcoded Developer List. Craft, Dino, Hidd, Hidd
     DEVS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
+    # This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
+    SQL_ADDRESS = "127.0.0.1:3306"
     # Discordbots bot list token
     discordbots_token = ""
 
@@ -315,7 +315,7 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         if ctx.command is None and message.guild is not None:
             try:
                 text = self.database.get_guild_command(message.guild.id, ctx.invoked_with)
-            except mysql.connector.ProgrammingError:
+            except mysql.connector.Error:
                 text = None
             ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
         return ctx
@@ -364,7 +364,7 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             log.warning('Ignoring exception `{}` in command {}'.format(exception, ctx.command))
             try:
                 if ctx.author.id in self.DEVS:
-                    await ctx.send(exception)
+                    await ctx.send("""```{}```""".format(exception))
             except Exception as e:
                 log.error(e)
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
@@ -527,8 +527,9 @@ def main():
 
     # Load Talos database
     cnx = None
+    login = []
     try:
-        sql = SQL_ADDRESS.split(":")
+        sql = Talos.SQL_ADDRESS.split(":")
         login = load_sql_data()
         cnx = mysql.connector.connect(user=login[0], password=login[1], host=sql[0], port=int(sql[1]),
                                       database=login[2], autocommit=True)
@@ -542,6 +543,7 @@ def main():
     talos = Talos(sql_conn=cnx, db_token=botlist_token, nano_login=nano_login, btn_key=btn_key, cat_key=cat_key)
 
     try:
+        talos.sql_login = login
         talos.load_extensions()
         talos.run(bot_token)
     finally:

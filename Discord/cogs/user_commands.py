@@ -165,6 +165,8 @@ class UserCommands(utils.TalosCog):
 
     @user.command(name="titles", description="List available titles")
     async def _titles(self, ctx):
+        """Lists current titles that you have unlocked. Use the title command if you want to set your current title """\
+            """to one of these"""
         titles = ctx.profile.titles
         if len(titles) == 0:
             await ctx.send("No available titles")
@@ -177,8 +179,8 @@ class UserCommands(utils.TalosCog):
 
     @user.command(name="title", description="Set your current title")
     async def _title(self, ctx, *, title=""):
-        """If given no arguments will clear your title, if given a title will make that your title if you
-        own that title."""
+        """If given no arguments will clear your title, if given a title will make that your title if you own that """\
+            """title."""
         if title:
             result = ctx.profile.set_title(title)
             if result:

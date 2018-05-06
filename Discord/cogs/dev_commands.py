@@ -168,11 +168,12 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
     async def reset_sql(self, ctx):
         """Closes and deletes the current TalosDatabase, then attempts to open a new one."""
         await ctx.send("Reconnecting to SQL Database...")
-        host = ctx.bot.database._sql_conn.server_host
-        port = ctx.bot.database._sql_conn.server_port
-        user = ctx.bot.database._sql_conn.user
-        password = ctx.bot.database._sql_conn._password
-        database = ctx.bot.database._sql_conn.database
+        sql = ctx.bot.SQL_ADDRESSS.split(":")
+        host = sql[0]
+        port = sql[1]
+        user = ctx.bot.sql_login[0]
+        password = ctx.bot.sql_login[1]
+        database = ctx.bot.sql_login[2]
         import mysql.connector
         cnx = mysql.connector.connect(user=user, password=password, host=host, port=port,
                                       database=database, autocommit=True)
