@@ -7,10 +7,10 @@
 *__pycache__/
 *.cache
 
-# Discord
-/Discord/*.bak
-/Discord/*.txt
-/Discord/*.dat
+# Discord Specific
 
-# Talos Log
+
+# Talos Files
 *.log
+*/token.txt
+*/*.dat
