@@ -108,8 +108,8 @@ class Message:
 
 class Room:
 
-    __slots__ = ("id", "session", "ident", "last_received", "offset", "nickname", "color", "key", "new_queue", "server",
-                 "password", "ssl")
+    __slots__ = ("id", "session", "ident", "last_received", "offset", "nickname", "color", "key", "_new_queue",
+                 "server", "password", "ssl")
 
     def __init__(self, room_id, session, *, ssl=False):
         self.id = room_id
@@ -120,7 +120,7 @@ class Room:
         self.color = utils.Color(utils.Color.BLACK)
         self.nickname = ""
         self.key = ""
-        self.new_queue = []
+        self._new_queue = []
         self.server = 0
         self.password = ""
         self.ssl = ssl
@@ -152,7 +152,7 @@ class Room:
             ("X5141", site_ident),
             ("X5865", self.id),
             ("X2940", self.id),  # room Name
-            ("X8385", SITE_URL),  # URL referrer?
+            # ("X8385", SITE_URL),  # URL referrer?
             ("X7960", CHATZY_VERSION),
             ("X5481", 1),  # always 1
             ("X3190", "enter"),
@@ -162,8 +162,8 @@ class Room:
             ("X5455", 2),  # always 2
             ("X7245", "X6766"),
             ("X2457", self.server),
-            ("X7380", ""),
-            ("X8385", SITE_URL),
+            # ("X7380", ""),
+            # ("X8385", SITE_URL),
             ("X7469", js_time()),
         ])
         join_room_data = {}
@@ -182,7 +182,8 @@ class Room:
                 if match[0] == "X1263":
                     self.ident = match[1]
                 join_room_data[match[0]] = match[1]
-        async with self.session.put(self.url, data=join_room_data) as response:
+        print(join_room_data)
+        async with self.session.post(self.url, data=join_room_data) as response:
             page = await response.text()
             # print(page)
             self.offset = re.search(r"X7162=(\d+)", page).group(1)
@@ -233,10 +234,8 @@ class Room:
         params += f"&{random.random()}"
         async with self.session.get(self.base_url + "?" + params, headers=message_headers) as response:
             self.process_new_messages(await response.text())
-            return self.new_queue
 
     def process_new_messages(self, text):
-        print(text)
         if re.search("X6460", text):
             return []
         self.last_received = re.search(r"X9102=(\d+)", text).group(1)
@@ -246,7 +245,13 @@ class Room:
         for message in messages:
             parser = MessageParser()
             parser.feed(message)
-            self.new_queue.append(parser.close())
+            self._new_queue.append(parser.close())
+
+    def next_new(self):
+        if len(self._new_queue):
+            return self._new_queue.pop(0)
+        else:
+            return None
 
     async def quit(self):
         await self.post_message("/quit")
@@ -319,10 +324,11 @@ class Talos:
                         await room.post_message(inp)
                     else:
                         await room.get_messages()
-                while len(room.new_queue):
-                    message = room.new_queue.pop(0)
+                message = room.next_new()
+                while message:
                     if message.author != room.nickname or message.color != room.color:
                         print(message)
+                    message = room.next_new()
             await room.quit()
         finally:
             self.session.close()
