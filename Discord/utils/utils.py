@@ -255,6 +255,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
     NANO_URL = "https://nanowrimo.org/"
     BTN_URL = "https://www.behindthename.com/"
     CAT_URL = "https://thecatapi.com/api/"
+    XKCD_URL = "https://xkcd.com/"
 
     def __init__(self, *args, **kwargs):
         """
@@ -402,6 +403,20 @@ class TalosHTTPClient(aiohttp.ClientSession):
                 return self.get_cat_pic()
             file = discord.File(io.BytesIO(picture_data), filename)
         return file
+
+    async def get_xkcd(self, xkcd):
+        """
+            Get the data from an XKCD comic and return it as a dict
+        :param xkcd: XKCD to get, or None if current
+        :return: Dict of JSON data
+        """
+        async with self.get(self.XKCD_URL + (f"{xkcd}/" if xkcd else "") + "info.0.json") as response:
+            data = await response.text()
+            import json
+            data = json.loads(data)
+        async with self.get(data["img"]) as response:
+            data["img_data"] = discord.File(io.BytesIO(await response.read()), data["img"].split("/")[-1])
+        return data
 
 
 def to_snake_case(text):

@@ -370,6 +370,9 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
 
 
+cl_parser = command_lang.DiscordCL()
+
+
 def custom_creator(name, text):
     """
         Create a custom temporary command for Talos
@@ -380,7 +383,7 @@ def custom_creator(name, text):
 
     async def custom_callback(ctx):
         try:
-            out = command_lang.parse_lang(ctx, text)
+            out = cl_parser.parse_lang(ctx, text)
         except command_lang.CommandLangError as e:
             raise CustomCommandError(*e.args)
         if out.strip() != "":

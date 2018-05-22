@@ -61,13 +61,13 @@ class DevCommands(utils.TalosCog):
         await self.bot.change_presence(activity=discord.Activity(name=watching, type=discord.ActivityType.watching))
         await ctx.send("Now watching {}".format(watching))
 
-    @commands.command(hidden=True, description="Kills Talos process")
+    @commands.command(hidden=True, description="Kills Talos process. Speak, hands for me!")
     async def stop(self, ctx):
         """Stops Talos running and logs it out safely, killing the Talos process."""
         await ctx.send("Et tū, Brute?")
         await self.bot.logout()
 
-    @commands.command(hidden=True, description="Change Talos' nickname everywhere")
+    @commands.command(hidden=True, description="Change Talos' nickname everywhere. Never use this.")
     async def master_nick(self, ctx, nick):
         """Sets Talos' nickname in all guilds it is in."""
         for guild in self.bot.guilds:
@@ -87,14 +87,14 @@ class DevCommands(utils.TalosCog):
         out += "```"
         await ctx.send(out)
 
-    @commands.command(hidden=True, description="Verify Schema")
+    @commands.command(hidden=True, description="Verify Schema. Because updating by hand is hell.")
     async def verifysql(self, ctx):
         """Check connected SQL database schema, if it doesn't match the expected schema then alter it to fit."""
         await ctx.send("Verifying Talos Schema...")
         self.bot.database.verify_schema()
         await ctx.send("Talos Schema verified")
 
-    @commands.command(hidden=True, description="Grant a user title")
+    @commands.command(hidden=True, description="Grant a user title. I knight thee...")
     async def grant_title(self, ctx, user: discord.User, *, title):
         """Give someone access to a title"""
         profile = self.database.get_user(user.id)
@@ -103,7 +103,7 @@ class DevCommands(utils.TalosCog):
         self.database.add_title(user.id, title)
         await ctx.send("Title `{}` granted to {}".format(title, str(user)))
 
-    @commands.command(hidden=True, description="Remove a title from a user")
+    @commands.command(hidden=True, description="Remove a title from a user. Now go in disgrace.")
     async def revoke_title(self, ctx, user: discord.User, *, title):
         """Removes access to a specific title from a user"""
         profile = self.database.get_user(user.id)
@@ -164,7 +164,7 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
         except Exception as e:
             await ctx.send("Statement failed with {}: {}".format(e.__class__.__name__, e))
 
-    @commands.command(hidden=True, description="Close and reopen the SQL database connection")
+    @commands.command(hidden=True, description="Close and reopen the SQL database connection. Whoops.")
     async def reset_sql(self, ctx):
         """Closes and deletes the current TalosDatabase, then attempts to open a new one."""
         await ctx.send("Reconnecting to SQL Database...")

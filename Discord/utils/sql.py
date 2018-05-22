@@ -84,12 +84,12 @@ talos_tables = {
     "guild_options": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
                     "`fail_message` tinyint(1) DEFAULT NULL", "`pm_help` tinyint(1) DEFAULT NULL",
-                    "`commands` tinyint(1) DEFAULT NULL", "`user_commands` tinyint(1) DEFAULT NULL",
-                    "`joke_commands` tinyint(1) DEFAULT NULL", "`writing_prompts` tinyint(1) DEFAULT NULL",
-                    "`prompts_channel` varchar(64) DEFAULT NULL", "`prefix` varchar(32) DEFAULT NULL",
-                    "`timezone` varchar(5) DEFAULT NULL"],
+                    "`any_color` tinyint(1) DEFAULT NULL", "`commands` tinyint(1) DEFAULT NULL",
+                    "`user_commands` tinyint(1) DEFAULT NULL", "`joke_commands` tinyint(1) DEFAULT NULL",
+                    "`writing_prompts` tinyint(1) DEFAULT NULL", "`prompts_channel` varchar(64) DEFAULT NULL",
+                    "`prefix` varchar(32) DEFAULT NULL", "`timezone` varchar(5) DEFAULT NULL"],
         "primary": "PRIMARY KEY (`guild_id`)",
-        "defaults": [(-1, True, False, False, True, True, True, False, "prompts", "^", "UTC")]
+        "defaults": [(-1, True, False, False, True, True, True, True, False, "prompts", "^", "UTC")]
     },
     "admins": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"],

@@ -261,6 +261,10 @@ class PaginatedEmbed(Embed):
         cur_colour += 1
         if self.author.name:
             embed.set_author(name=self.author.name, url=self.author.url, icon_url=self.author.icon_url)
+        if self.image.url:
+            embed.set_image(url=self.image.url)
+        if self.thumbnail.url:
+            embed.set_thumbnail(url=self.thumbnail.url)
         for field in self.fields:
             field_len = len(field.name) + len(field.value)
             footer_len = len(self.footer.text.format(page, max_pages))

@@ -211,6 +211,7 @@ class EventLoops(utils.TalosCog):
             self.set_spreadsheet(prompt_sheet_id, [prompt],
                                  "Form Responses 1!B{0}:E{0}".format(values.index(prompt) + 1))
 
+            now = datetime.now()
             delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME - 1)) % 24, minutes=60 - now.minute,
                               seconds=60 - now.second)
             await asyncio.sleep(delta.total_seconds())

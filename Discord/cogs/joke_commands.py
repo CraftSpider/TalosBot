@@ -57,6 +57,27 @@ class JokeCommands(utils.TalosCog):
         file = await self.bot.session.get_cat_pic()
         await ctx.send(file=file)
 
+    @commands.command(description="There's a relevant XKCD for everything")
+    async def xkcd(self, ctx, comic: int=0):
+        """Gets an XKCD comic with the given number, or the current one if one isn't specified, and displays it."""
+        if comic < 0:
+            await ctx.send("Requested XKCD can't be negative")
+            return
+        data = await self.bot.session.get_xkcd(comic or None)
+        title = data["title"]
+        img_data = data["img_data"]
+        img = data["img"]
+        alt = data["alt"]
+        print(img)
+        if ctx.bot.should_embed(ctx):
+            with utils.PaginatedEmbed() as embed:
+                embed.title = title
+                embed.set_image(url=img)
+                embed.set_footer(text=alt)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("**" + title + "**\n" + alt, file=img_data)
+
 
 def setup(bot):
     bot.add_cog(JokeCommands(bot))

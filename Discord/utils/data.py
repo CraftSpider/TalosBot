@@ -51,7 +51,7 @@ class UserOptions:
 
 class GuildOptions:
 
-    __slots__ = ("database", "id", "rich_embeds", "fail_message", "pm_help", "commands", "user_commands",
+    __slots__ = ("database", "id", "rich_embeds", "fail_message", "pm_help", "any_color", "commands", "user_commands",
                  "joke_commands", "writing_prompts", "prompts_channel", "prefix", "timezone")
 
     def __init__(self, database, data):
