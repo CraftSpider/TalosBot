@@ -404,13 +404,13 @@ def talos_prefix(bot, message):
         try:
             return [bot.database.get_user_options(message.author.id).prefix, mention]
         except Exception as e:
-            log.warning(e)
+            log.warning("talos_prefix error: " + str(e))
             return [bot.DEFAULT_PREFIX, mention]
     else:
         try:
             return [bot.database.get_guild_options(message.guild.id).prefix, mention]
         except Exception as e:
-            log.warning(e)
+            log.warning("talos_prefix error: " + str(e))
             return [bot.DEFAULT_PREFIX, mention]
 
 
