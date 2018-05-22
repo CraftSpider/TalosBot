@@ -107,7 +107,7 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
             raise CommandLangError("One value supplied to two value operator")
 
     def get_priority(self, operator):
-        return self.DEFAULT_PRIORITY.get(operator, 0)
+        return self.DEFAULT_PRIORITY[operator]
 
     def get_function(self, operator):
         return self.DEFAULT_FUNCS.get(operator, lambda: None)
