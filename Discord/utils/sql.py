@@ -77,7 +77,7 @@ class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
 
 talos_create_schema = "CREATE SCHEMA talos_data DEFAULT CHARACTER SET utf8"
 talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8"
-talos_add_column = "ALTER TABLE {} ADD COLUMN {}".format("{}", "{}")  # Makes pycharm not complain
+talos_add_column = "ALTER TABLE {} ADD COLUMN {} {}".format("{}", "{}", "{}")  # Makes pycharm not complain
 talos_remove_column = "ALTER TABLE {} DROP COLUMN {}".format("{}", "{}")
 talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}".format("{}", "{}")
 talos_tables = {
@@ -197,7 +197,16 @@ class TalosDatabase:
                             log.warning("  Could not find column {}, creating column".format(name))
                             column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
                                                       talos_tables[table]["columns"]))
-                            self._cursor.execute(talos_add_column.format(table, column_spec))
+                            column_index = talos_tables[table]["columns"].index(column_spec)
+                            if column_index == 0:
+                                column_place = "FIRST"
+                            else:
+                                column_place = "AFTER " +\
+                                               re.search(
+                                                   r"`(.*?)`",
+                                                   talos_tables[table]["columns"][column_index-1]
+                                               ).group(1)
+                            self._cursor.execute(talos_add_column.format(table, column_spec, column_place))
                         elif exists == 3 and type_match is not True:
                             log.warning("  Column {} didn't match expected type, attempting to fix.".format(name))
                             column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
@@ -246,7 +255,8 @@ class TalosDatabase:
 
     def new_connection(self, sql_conn):
         self.commit()
-        self._sql_conn.close()
+        if self._sql_conn:
+            self._sql_conn.close()
         if sql_conn is not None:
             self._sql_conn = sql_conn
             self._cursor = sql_conn.cursor()
