@@ -336,7 +336,7 @@ class Commands(utils.TalosCog):
     async def ping(self, ctx):
         """Checks the Talos delay. (Not round trip. Time between putting message and gateway acknowledgement.)"""
         start = dt.datetime.utcnow()
-        await self.bot.application_info(101091070904897536)
+        await self.bot.application_info()
         end = dt.datetime.utcnow()
         milliseconds = (end - start).microseconds/1000
         await ctx.send("Current Ping: `{}`".format(milliseconds))
