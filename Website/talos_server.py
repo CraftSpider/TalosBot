@@ -30,7 +30,8 @@ class TalosServerHandler(hserver.BaseHTTPRequestHandler):
             self.serve_file(path)
         else:
             print("Doesn't exist")
-            path = HTML_PATH
+            path = HTML_PATH / "404.html"
+            self.serve_file(path)
         return path
 
     def normalize_path(self, path):
