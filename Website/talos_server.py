@@ -4,7 +4,7 @@ import shutil
 import pathlib
 
 
-HTML_PATH = str(pathlib.Path.home()) + "\\public_html\\"
+HTML_PATH = pathlib.Path.home() / "public_html"
 
 
 class TalosServerHandler(hserver.BaseHTTPRequestHandler):
@@ -30,13 +30,13 @@ class TalosServerHandler(hserver.BaseHTTPRequestHandler):
             self.serve_file(path)
         else:
             print("Doesn't exist")
+            path = HTML_PATH
         return path
 
     def normalize_path(self, path):
         if path == "/":
             path = "/index"
-        path = HTML_PATH + path.lstrip("/")
-        path = path.replace("\\", "/")
+        path = HTML_PATH.joinpath(path.lstrip("/"))
         print(path)
         return pathlib.Path(path)
 
