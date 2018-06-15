@@ -33,7 +33,7 @@ class UserCommands(utils.TalosCog):
     @commands.bot_has_permissions(manage_roles=True)
     async def colour(self, ctx, colour):
         """Changes the User's colour, if Talos has role permissions."""\
-            """ Input must be a hexadecimal colour or the word 'clear' to remove all Talos colours."""
+            """ Input must be a hexadecimal colour prefixed by `#` or the word 'clear' to remove all Talos colours."""
         # If we want to remove Talos Colour
         if colour == "clear":
             for role in ctx.author.roles:
