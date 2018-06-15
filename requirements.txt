@@ -4,3 +4,4 @@ mysql-connector-python
 pillow
 aiohttp
 httplib2
+oauth2client
