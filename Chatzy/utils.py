@@ -50,3 +50,22 @@ class Color:
             self._color = value._color
         else:
             raise TypeError("Cannot convert that type to color")
+
+
+class Message:
+
+    __slots__ = ("type", "author", "color", "text")
+
+    def __init__(self, type, author, color, text):
+        self.type = type
+        self.author = author
+        self.color = color
+        self.text = text
+
+    def __str__(self):
+        if self.type == "a":
+            return "<" + self.author + "> " + self.text
+        elif self.type == "b":
+            return self.author + " " + self.text
+        else:
+            return self.text
