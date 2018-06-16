@@ -499,6 +499,56 @@ class AdminCommands(utils.TalosCog):
         out += "```"
         await ctx.send(out)
 
+    @commands.group(description="Custom events, on a timer")
+    async def event(self, ctx):
+        """Allows the creation of custom events to occur on a regular basis. See the CommandLang page on the """\
+            """official website for details of the language used to define these events."""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Valid options are 'add', 'edit', 'remove', and 'list'")
+
+    @event.command(name="add", description="Add a custom event")
+    async def _e_add(self, ctx, name, period, *, text):
+        """Creates a new custom event. First word is identifier name, Second word is a period. Period is defined as """\
+            """1h for once an hour, 10m for once every ten minutes, 7d for once every week. Minimum time period """\
+            """is 10 minutes. One may user multiple specifiers, eg 1d7m"""
+        if self.database.get_guild_event(ctx.guild.id, name):
+            await ctx.send("That event already exists. Maybe you meant to `edit` it instead?")
+            return
+        self.database.set_guild_event(ctx.guild.id, name, period, ctx.channel.id, text)
+        await ctx.send("Event {} created".format(name))
+
+    @event.command(name="edit", description="Edit an existing event")
+    async def _e_edit(self, ctx, name, *, text):
+        """Edits an existing event, changing what text is displayed when the event runs."""
+        event = self.database.get_guild_event(ctx.guild.id, name)
+        if not event:
+            await ctx.send("That event doesn't exist. Maybe you meant to `add` it instead?")
+            return
+        self.database.set_guild_event(ctx.guild.id, name, str(event.period), ctx.channel.id, text)
+        await ctx.send("Event {} successfully edited".format(name))
+
+    @event.command(name="remove", description="Remove an event")
+    async def _e_remove(self, ctx, name):
+        """Delete an existing event, so it will no longer occur."""
+        if self.database.get_guild_event(ctx.guild.id, name) is None:
+            await ctx.send("That event doesn't exist, sorry.")
+            return
+        self.database.remove_guild_event(ctx.guild.id, name)
+        await ctx.send("Event {} successfully removed".format(name))
+
+    @event.command(name="list", description="List all events")
+    async def _e_list(self, ctx):
+        """Display a list of all events currently defined for this guild."""
+        event_list = self.database.get_guild_events(ctx.guild.id)
+        if len(event_list) is 0:
+            await ctx.send("This server has no custom events")
+            return
+        out = "```\nServer Events:\n"
+        for event in event_list:
+            out += "{} - {}: {}\n".format(event.name, event.period, event.text)
+        out += "```"
+        await ctx.send(out)
+
 
 def setup(bot):
     bot.add_cog(AdminCommands(bot))

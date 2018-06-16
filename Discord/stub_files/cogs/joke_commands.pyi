@@ -9,7 +9,7 @@ import logging
 import utils
 import discord.ext.commands as commands
 
-log = ... # type: logging.Logger
+log: logging.Logger = ...
 
 class JokeCommands(utils.TalosCog):
 

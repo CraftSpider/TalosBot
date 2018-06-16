@@ -11,7 +11,7 @@ import utils
 import discord
 import discord.ext.commands as commands
 
-log = ... # type: logging.Logger
+log: logging.Logger = ...
 
 def space_replace(match: Match) -> str: ...
 
@@ -27,7 +27,7 @@ class UserCommands(utils.TalosCog):
 
     async def profile(self, ctx: commands.Context, user: discord.User=None) -> None: ...
 
-    user = ... # type: commands.Group
+    user: commands.Group = ...
 
     class UserCtx(commands.Context):
         profile: utils.TalosUser

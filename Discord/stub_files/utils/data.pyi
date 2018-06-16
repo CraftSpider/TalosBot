@@ -73,3 +73,31 @@ class PermissionRule:
     def __lt__(self, other: Any) -> bool: ...
 
     def __gt__(self, other: Any) -> bool: ...
+
+class EventPeriod:
+
+    __slots__ = ("days", "hours", "minutes")
+
+    days: int
+    hours: int
+    minutes: int
+
+    def __init__(self, period: str) -> None: ...
+
+    def __str__(self) -> str: ...
+
+    def __int__(self) -> int: ...
+
+class GuildEvent:
+
+    __slots__ = ("database", "id", "name", "period", "last_active", "channel", "text")
+
+    database: TalosDatabase
+    id: int
+    name: str
+    period: EventPeriod
+    last_active: int
+    channel: str
+    text: str
+
+    def __init__(self, database: TalosDatabase, data: List[Union[str, int]]) -> None: ...

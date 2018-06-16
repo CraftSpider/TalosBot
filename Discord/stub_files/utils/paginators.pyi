@@ -55,7 +55,7 @@ class PaginatedEmbed(Embed):
     @overload
     def colour(self, value) -> None: ...
 
-    color = ... # type: property
+    color: property = ...
 
     @property
     def footer(self) -> EmbedProxy: return

@@ -6,6 +6,7 @@
 
 from typing import List, Dict, Union, Tuple
 from Discord.talos import Talos
+import command_lang
 import logging
 import argparse
 import asyncio
@@ -13,10 +14,11 @@ import googleapiclient.discovery
 import oauth2client.client
 import utils
 
-SCOPES = ... # type: str
-CLIENT_SECRET_FILE = ... # type: str
-APPLICATION_NAME = ... # type: str
-log = ... # type: logging.Logger
+SCOPES: str = ...
+CLIENT_SECRET_FILE: str = ...
+APPLICATION_NAME: str = ...
+log: logging.Logger = ...
+cl_parser: command_lang.ContextLessCL()
 
 class SpreadsheetService(googleapiclient.discovery.Resource):
 
@@ -24,12 +26,12 @@ class SpreadsheetService(googleapiclient.discovery.Resource):
 
 class EventLoops(utils.TalosCog):
 
-    __slots__ = ... # type: Tuple[str, ...]
+    __slots__: Tuple[str, ...] = ('service', 'flags', 'last_guild_count', 'bg_tasks', "__local_check")
 
-    service = ... # type: SpreadsheetService
-    flags = ... # type: argparse.ArgumentParser
-    last_guild_count = ... # type: int
-    bg_tasks = ... # type: List[asyncio.Task]
+    service: SpreadsheetService
+    flags: argparse.ArgumentParser
+    last_guild_count: int
+    bg_tasks: List[asyncio.Task]
 
     # noinspection PyMissingConstructor
     def __init__(self, bot: Talos) -> None: ...

@@ -16,10 +16,9 @@ import mysql.connector.abstracts as mysql_abstracts
 
 import utils.paginators as paginators
 
-log = ... # type: logging.Logger
-_levels = ... # type: Dict[str, int]
-fullwidth_transform = ... # type: Dict[str, str]
-tz_map = ... # type: Dict[str, float]
+log: logging.Logger = ...
+fullwidth_transform: Dict[str, str] = ...
+tz_map: Dict[str, float] = ...
 
 class TalosFormatter(dcommands.HelpFormatter):
 

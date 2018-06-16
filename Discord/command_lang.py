@@ -286,3 +286,9 @@ class DiscordCL(CommandLangInterpreter):
             elif (val.startswith("\"") and val.endswith("\"")) or (val.startswith("'") and val.endswith("'")):
                 val = val[1:-1]
             return val
+
+
+class ContextLessCL(DiscordCL):
+
+    def process_val(self, ctx, val):
+        return str(val)

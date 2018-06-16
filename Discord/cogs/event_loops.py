@@ -10,12 +10,11 @@ import logging
 import random
 import argparse
 import utils
-from datetime import datetime
-from datetime import timedelta
-from datetime import date
+import command_lang
+import discord.ext.commands as commands
+from datetime import datetime, timedelta, date
 from apiclient import discovery
-from oauth2client import client
-from oauth2client import tools
+from oauth2client import client, tools
 from oauth2client.file import Storage
 
 # Google API values
@@ -24,6 +23,7 @@ CLIENT_SECRET_FILE = 'client_secret.dat'
 APPLICATION_NAME = 'TalosBot Prompt Reader'
 
 log = logging.getLogger("talos.events")
+cl_parser = command_lang.ContextLessCL()
 
 
 class EventLoops(utils.TalosCog):
@@ -129,7 +129,16 @@ class EventLoops(utils.TalosCog):
         delta = timedelta(seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
-            # Here we need to check for regular events queued.
+            for guild in self.bot.guilds:
+                events = self.database.get_guild_events(guild.id)
+                for event in events:
+                    period = int(event.period)
+                    time = int(datetime.now().timestamp())
+                    current = int(time / period)
+                    if current > event.last_active:
+                        channel = list(filter(lambda x: x.id == event.channel, guild.channels))[0]
+                        await channel.send(cl_parser.parse_lang(channel, event.text))
+                        self.database.update_guild_event(guild.id, event.name, current)
 
             delta = timedelta(seconds=60 - now.second)
             await asyncio.sleep(delta.total_seconds())

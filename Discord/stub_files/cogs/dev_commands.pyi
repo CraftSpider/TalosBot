@@ -11,11 +11,11 @@ import utils
 import discord
 import discord.ext.commands as commands
 
-log = ... # type: logging.Logger
+log: logging.Logger = ...
 
 class DevCommands(utils.TalosCog):
 
-    __local_check = ... # type: Callable[Talos, commands.Context]
+    __local_check: Callable[Talos, commands.Context] = ...
 
     async def playing(self, ctx: commands.Context, *, playing: str) -> None: ...
 
@@ -43,7 +43,7 @@ class DevCommands(utils.TalosCog):
 
     async def sql(self, ctx: commands.Context, *, statement: str) -> None: ...
 
-    async def reset_sql(self, ctx: commands.Context):
+    async def reset_sql(self, ctx: commands.Context): ...
 
     async def image(self, ctx: commands.Context, red: int = ..., green: int = ..., blue: int = ...) -> None: ...
 

@@ -87,3 +87,53 @@ class PermissionRule:
     def __gt__(self, other):
         if isinstance(other, PermissionRule):
             return self.priority > other.priority
+
+
+class EventPeriod:
+
+    __slots__ = ("days", "hours", "minutes")
+
+    def __init__(self, period):
+        num = ""
+        self.days = 0
+        self.hours = 0
+        self.minutes = 0
+        for char in period:
+            if char == "d" or char == "h" or char == "m":
+                if char == "d":
+                    self.days = int(num)
+                elif char == "h":
+                    self.hours = int(num)
+                elif char == "m":
+                    self.minutes = int(num)
+                num = ""
+            elif "0" <= char <= "9":
+                num += char
+
+    def __str__(self):
+        out = ""
+        if self.days:
+            out += f"{self.days}d"
+        if self.hours:
+            out += f"{self.hours}h"
+        if self.minutes:
+            out += f"{self.minutes}m"
+        return out
+
+    def __int__(self):
+        return self.days * 86400 + self.hours * 3600 + self.minutes * 60
+
+
+class GuildEvent:
+
+    __slots__ = ("database", "id", "name", "period", "last_active", "channel", "text")
+
+    def __init__(self, database, data):
+        self.database = database
+
+        self.id = data[0]
+        self.name = data[1]
+        self.period = EventPeriod(data[2])
+        self.last_active = data[3]
+        self.channel = data[4]
+        self.text = data[5]
