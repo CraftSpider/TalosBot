@@ -3,6 +3,9 @@ import http.server as hserver
 import io
 import shutil
 import pathlib
+import logging
+
+log = logging.getLogger("talosserver")
 
 
 HTML_PATH = pathlib.Path.home() / "public_html"
@@ -32,13 +35,15 @@ class TalosServerHandler(hserver.BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.get_path(self.path)
         self.serve_file(path)
+        log.info("End GET")
 
     def do_HEAD(self):
         path = self.get_path(self.path)
         self.serve_file(path, head=True)
+        log.info("End HEAD")
 
     def do_POST(self):
-        pass
+        log.info("End POST")
 
     def get_path(self, path):
         # any hardcoded redirects here
