@@ -137,6 +137,7 @@ class EventLoops(utils.TalosCog):
                     current = int(time / period)
                     if current > event.last_active:
                         channel = list(filter(lambda x: x.id == event.channel, guild.channels))[0]
+                        log.info("Kicking off event " + event.name)
                         await channel.send(cl_parser.parse_lang(channel, event.text))
                         self.database.update_guild_event(guild.id, event.name, current)
 
