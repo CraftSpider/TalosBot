@@ -33,6 +33,10 @@ class TalosServerHandler(hserver.BaseHTTPRequestHandler):
         path = self.get_path(self.path)
         self.serve_file(path)
 
+    def do_HEAD(self):
+        path = self.get_path(self.path)
+        self.serve_file(path, head=True)
+
     def do_POST(self):
         pass
 
@@ -43,25 +47,25 @@ class TalosServerHandler(hserver.BaseHTTPRequestHandler):
         path = HTML_PATH.joinpath(path.lstrip("/"))
         return pathlib.Path(path)
 
-    def serve_file(self, path):
+    def serve_file(self, path, head=False):
         if pathlib.Path.is_file(path):
-            self.send_file(path)
+            self.send_file(path, head=head)
         elif pathlib.Path.is_dir(path):
             path = path / 'index.html'
             print(path.with_name(str(path.parent.name) + ".html"))
             if path.is_file():
-                self.send_file(path)
+                self.send_file(path, head=head)
                 return path
             path = path.with_name(str(path.parent.name) + ".html")
             if path.is_file():
-                self.send_file(path)
+                self.send_file(path, head=head)
                 return path
             else:
                 self.error_code(404)
                 return path
         elif path.with_suffix(".html").is_file():
             path = path.with_suffix(".html")
-            self.send_file(path)
+            self.send_file(path, head=head)
         else:
             self.error_code(404)
         return path
@@ -84,14 +88,15 @@ class TalosServerHandler(hserver.BaseHTTPRequestHandler):
             return KNOWN_MIMES[path.suffix]
         return "application/octet-stream"
 
-    def send_file(self, path, *, code=200, mime_type=None):
+    def send_file(self, path, *, code=200, mime_type=None, head=False):
         if mime_type is None:
             mime_type = self.guess_mime(path)
         with path.open("rb") as file:
             self.send_response(code)
             self.send_header("Content-Type", mime_type)
             self.end_headers()
-            shutil.copyfileobj(file, self.wfile)
+            if not head:
+                shutil.copyfileobj(file, self.wfile)
 
 
 def main():
