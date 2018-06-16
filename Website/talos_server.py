@@ -35,15 +35,15 @@ class TalosServerHandler(hserver.BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.get_path(self.path)
         self.serve_file(path)
-        log.info("End GET")
+        log.warning("End GET")
 
     def do_HEAD(self):
         path = self.get_path(self.path)
         self.serve_file(path, head=True)
-        log.info("End HEAD")
+        log.warning("End HEAD")
 
     def do_POST(self):
-        log.info("End POST")
+        log.warning("End POST")
 
     def get_path(self, path):
         # any hardcoded redirects here
