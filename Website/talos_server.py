@@ -80,14 +80,14 @@ class TalosPrimaryHandler:
         headers["Content-Type"] = await self.guess_mime(path)
         return web.FileResponse(path=path, status=status, headers=headers)
 
-    async def error_code(self, code):
-        path = await self.get_path(f"{code}.html")
+    async def error_code(self, status):
+        path = await self.get_path(f"{status}.html")
         try:
-            if not path.is_file():
+            if isinstance(path, int):
                 raise ServerError("Could not find specified error handler")
-            return web.FileResponse(path, status=code)
+            return web.FileResponse(path, status=status)
         except Exception as e:
-            return await self.backup_error_code(code, 404, e)
+            return await self.backup_error_code(status, path, e)
 
     async def backup_error_code(self, old_code, new_code, error=None):
         return web.Response(text=BACKUP_ERROR.format(old_code, new_code, error, WEBMASTER_EMAIL), status=new_code)
@@ -106,7 +106,7 @@ def main():
         web.head("/{tail:.*}", handler.do_head),
         web.post("/api/{tail:.*}", handler.do_post)
     ])
-    web.run_app(app)
+    web.run_app(app, port=80)
 
 
 if __name__ == "__main__":
