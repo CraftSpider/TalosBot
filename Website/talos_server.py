@@ -1,14 +1,13 @@
 
-import http.server as hserver
-import io
-import shutil
 import pathlib
 import logging
+import aiohttp.web as web
 
 log = logging.getLogger("talosserver")
 
 
 HTML_PATH = pathlib.Path.home() / "public_html"
+
 
 WEBMASTER_EMAIL = "talos.ptp@gmail.com"
 BACKUP_ERROR = """
@@ -30,84 +29,84 @@ KNOWN_MIMES = {
 }
 
 
-class TalosServerHandler(hserver.BaseHTTPRequestHandler):
+class ServerError(Exception):
+    pass
 
-    def do_GET(self):
-        path = self.get_path(self.path)
-        self.serve_file(path)
-        log.warning("End GET")
 
-    def do_HEAD(self):
-        path = self.get_path(self.path)
-        self.serve_file(path, head=True)
-        log.warning("End HEAD")
+class TalosPrimaryHandler:
 
-    def do_POST(self):
+    async def do_get(self, request: web.Request) -> web.Response:
+        path = await self.get_path(request.path)
+        if isinstance(path, int):
+            response = await self.error_code(path)
+        else:
+            response = await self.get_response(path)
+        return response
+
+    async def do_head(self, request: web.Request):
+        response = await self.do_get(request)
+        response = web.Response(headers=response.headers, status=response.status)
+        return response
+
+    async def do_post(self):
         log.warning("End POST")
 
-    def get_path(self, path):
+    async def get_path(self, path):
         # any hardcoded redirects here
         if path == "/":
             path = "/index"
         path = HTML_PATH.joinpath(path.lstrip("/"))
-        return pathlib.Path(path)
 
-    def serve_file(self, path, head=False):
+        # Now do logic to find the desired file. If found, return that path. If not, return an error code
         if pathlib.Path.is_file(path):
-            self.send_file(path, head=head)
+            return path
         elif pathlib.Path.is_dir(path):
             path = path / 'index.html'
             print(path.with_name(str(path.parent.name) + ".html"))
             if path.is_file():
-                self.send_file(path, head=head)
                 return path
             path = path.with_name(str(path.parent.name) + ".html")
             if path.is_file():
-                self.send_file(path, head=head)
                 return path
             else:
-                self.error_code(404)
-                return path
+                return 404
         elif path.with_suffix(".html").is_file():
-            path = path.with_suffix(".html")
-            self.send_file(path, head=head)
+            return path.with_suffix(".html")
         else:
-            self.error_code(404)
-        return path
+            return 404
 
-    def error_code(self, code):
-        path = self.get_path(f"{code}.html")
+    async def get_response(self, path, status=200):
+        headers = dict()
+        headers["Content-Type"] = await self.guess_mime(path)
+        return web.FileResponse(path=path, status=status, headers=headers)
+
+    async def error_code(self, code):
+        path = await self.get_path(f"{code}.html")
         try:
-            self.send_file(path, code=code)
+            if not path.is_file():
+                raise ServerError("Could not find specified error handler")
+            return web.FileResponse(path, status=code)
         except Exception as e:
-            self.backup_error_code(code, 404, e)
+            return await self.backup_error_code(code, 404, e)
 
-    def backup_error_code(self, old_code, new_code, error=None):
-        self.send_response(new_code)
-        self.end_headers()
-        file = io.BytesIO(bytes(BACKUP_ERROR.format(old_code, new_code, error, WEBMASTER_EMAIL), "utf-8"))
-        shutil.copyfileobj(file, self.wfile)
+    async def backup_error_code(self, old_code, new_code, error=None):
+        return web.Response(text=BACKUP_ERROR.format(old_code, new_code, error, WEBMASTER_EMAIL), status=new_code)
 
-    def guess_mime(self, path):
+    async def guess_mime(self, path):
         if KNOWN_MIMES.get(path.suffix):
             return KNOWN_MIMES[path.suffix]
         return "application/octet-stream"
 
-    def send_file(self, path, *, code=200, mime_type=None, head=False):
-        if mime_type is None:
-            mime_type = self.guess_mime(path)
-        with path.open("rb") as file:
-            self.send_response(code)
-            self.send_header("Content-Type", mime_type)
-            self.end_headers()
-            if not head:
-                shutil.copyfileobj(file, self.wfile)
-
 
 def main():
-    server_address = ('', 80)
-    server = hserver.HTTPServer(server_address, TalosServerHandler)
-    server.serve_forever()
+    app = web.Application()
+    handler = TalosPrimaryHandler()
+    app.add_routes([
+        web.get("/{tail:.*}", handler.do_get),
+        web.head("/{tail:.*}", handler.do_head),
+        web.post("/api/{tail:.*}", handler.do_post)
+    ])
+    web.run_app(app)
 
 
 if __name__ == "__main__":
