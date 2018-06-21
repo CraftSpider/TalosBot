@@ -133,7 +133,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             status = response.status
             if re.search(r"<a href=\"/sign_in\">Sign In</a></li>", page):
                 if self.nano_tries < 3:
-                    await self.nano_login_client()
+                    return await self.nano_login_client()
                 else:
                     status = 403
                     self.nano_tries = 0
