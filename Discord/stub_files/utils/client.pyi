@@ -5,7 +5,7 @@ import io
 
 class TalosHTTPClient(aiohttp.ClientSession):
 
-    __slots__ = ("username", "password", "btn_key", "cat_key")
+    __slots__ = ("username", "password", "btn_key", "cat_key", "nano_tries")
 
     NANO_URL: str = ...
     BTN_URL: str = ...
@@ -16,6 +16,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
     password: str
     btn_key: str
     cat_key: str
+    nano_tries: int
 
     # noinspection PyMissingConstructor
     def __init__(self, *args, **kwargs) -> None: ...
@@ -23,6 +24,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
     async def get_site(self, url: str, **kwargs) -> str: ...
 
     async def btn_get_names(self, gender: str = ..., usage: str = ..., number: int = ..., surname: bool = ...) -> Optional[List[str]]: ...
+
+    async def nano_get_page(self, url: str) -> Optional[str]: ...
 
     async def nano_get_user(self, username: str) -> Optional[str]: ...
 

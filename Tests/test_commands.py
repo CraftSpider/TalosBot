@@ -164,12 +164,20 @@ async def commands_async():
         await call("^nano novel")
     await empty_queue()
     await call("^nano novel craftspider")
-    verify_embed()
+    if not sent_queue.empty():
+        message = await sent_queue.get()
+        if message.message != "Sorry, I couldn't find that user or novel.":
+            await sent_queue.put(message)
+            verify_embed()
     with pytest.raises(commands.MissingRequiredArgument):
         await call("^nano profile")
     await empty_queue()
     await call("^nano profile craftspider")
-    verify_embed()
+    if not sent_queue.empty():
+        message = await sent_queue.get()
+        if message.message != "Sorry, I couldn't find that user on the NaNo site.":
+            await sent_queue.put(message)
+            verify_embed()
 
     # We don't test ping, as that's beyond our current connection spoofing, and a trivial command.
 

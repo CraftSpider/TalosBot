@@ -234,7 +234,7 @@ class Commands(utils.TalosCog):
         novel_name = novel_name.lower().replace(" ", "-")
 
         novel_page, novel_stats = await self.bot.session.nano_get_novel(username, novel_name)
-        if novel_page is None:
+        if novel_page is None or novel_stats is None:
             await ctx.send("Sorry, I couldn't find that user or novel.")
             return
         # Get basic novel info
