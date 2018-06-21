@@ -75,7 +75,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
                 return await response.text()
             elif response.status == 403:
                 response = await self.nano_login_client()
-                if response != 200 and self.nano_tries >= 3:
+                if self.nano_tries >= 3:
                     self.nano_tries = 0
                     return None, None
                 log.debug("Login Status: {}".format(response))
@@ -108,7 +108,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             elif response.status == 403:
                 response = await self.nano_login_client()
                 log.debug("Login Status: {}".format(response))
-                if response != 200 and self.nano_tries >= 3:
+                if self.nano_tries >= 3:
                     self.nano_tries = 0
                     return None, None
                 return await self.nano_get_novel(username, novel_name)
@@ -126,7 +126,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             elif response.status == 403:
                 response = await self.nano_login_client()
                 log.debug("Login Status: {}".format(response))
-                if response != 200 and self.nano_tries >= 3:
+                if self.nano_tries >= 3:
                     self.nano_tries = 0
                     return None, None
                 return await self.nano_get_novel(username, novel_name)
