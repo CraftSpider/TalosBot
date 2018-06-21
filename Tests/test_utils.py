@@ -5,30 +5,25 @@
     Author: CraftSpider
 """
 
-import discord.ext.commands as commands
-import discord
-import inspect
-import re
-import sys
-import os
-import pytest
-import logging
 import asyncio
 import asyncio.queues
-import datetime as dt
-sys.path.append(os.getcwd().replace("\\Tests", ""))
-sys.path.append(os.getcwd().replace("\\Tests", "") + "/Discord")
-import Tests.class_factories as dfacts
-import Discord.talos as dtalos
-import Discord.utils as tutils
+import inspect
+import re
+import pytest
+import logging
 
-log = logging.getLogger("tests.talos")
+import discord.ext.commands as commands
+import datetime as dt
+import class_factories as dfacts
+import utils as tutils
+
+log = logging.getLogger("talos.tests")
 
 
 # Test Talos and cog plain methods
 
-def test_extension_load():
-    testlos = dtalos.Talos()
+def test_extension_load(testlos):
+
     testlos.load_extensions()
 
     assert len(testlos.extensions) == len(testlos.STARTUP_EXTENSIONS), "Didn't load all extensions"
@@ -43,6 +38,9 @@ def test_extension_load():
     for extension in testlos.STARTUP_EXTENSIONS:
         assert testlos.EXTENSION_DIRECTORY + "." + extension not in testlos.extensions,\
             "Didn't unload {} extension".format(extension)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(testlos.close())
 
 
 def get_unique_member(base_class):
@@ -59,8 +57,7 @@ def get_unique_member(base_class):
     return predicate
 
 
-def test_method_docs():
-    testlos = dtalos.Talos()
+def test_method_docs(testlos):
     testlos.load_extensions()
     for name, member in inspect.getmembers(testlos, get_unique_member(testlos)):
         assert inspect.getdoc(member) is not None, "Talos method missing docstring"
@@ -72,78 +69,6 @@ def test_method_docs():
                 assert member.description is not "", "Cog command {} missing description".format(name)
             else:
                 assert inspect.getdoc(member) is not None, "Cog method {} missing docstring".format(name)
-
-
-# Test Talos commands
-test_values = {}
-sent_queue = asyncio.queues.Queue()
-
-
-def test_all_commands():
-    loop = asyncio.get_event_loop()
-    testlos = dtalos.Talos()
-    testlos.load_extensions()
-    async_test = loop.create_task(talos_async_tests(testlos))
-    loop.run_until_complete(async_test)
-
-
-async def prepare(channels=1, members=1):
-    global test_values
-
-    test_values = dict()
-
-    test_values["guild"] = dfacts.make_guild("Test_Guild")
-    for i in range(channels):
-        test_values["channel_{}".format(i+1)] = dfacts.make_text_channel("Channel_{}".format(i), test_values["guild"])
-    for i in range(members):
-        test_values["member_{}".format(i+1)] = dfacts.make_member("Test", "{:04}".format(i), test_values["guild"])
-
-
-async def call(callback, content, bot, channel=1, member=1):
-    if len(test_values) == 0:
-        log.error("Attempted to make call before context prepared")
-        return
-    message = dfacts.make_message(content,
-                                  test_values["member_{}".format(member)],
-                                  test_values["channel_{}".format(channel)])
-    ctx = await dfacts.make_context(callback, message, bot)
-    await bot.invoke(ctx)
-
-
-async def talos_async_tests(testlos):
-    await prepare()
-    await commands_async(testlos)
-    await admin_commands_async(testlos)
-    await dev_commands_async(testlos)
-    await joke_commands_async(testlos)
-    await user_commands_async(testlos)
-
-
-async def command_callback(*args, **kwargs):
-    await sent_queue.put([args, kwargs])
-
-
-async def commands_async(testlos):
-    cog = testlos.cogs["Commands"]  # type: tutils.TalosCog
-    await call(command_callback, "^uptime", testlos)
-    response = await sent_queue.get()
-    # print(response)
-
-
-async def admin_commands_async(testlos):
-    pass
-
-
-async def dev_commands_async(testlos):
-    pass
-
-
-async def joke_commands_async(testlos):
-    pass
-
-
-async def user_commands_async(testlos):
-    pass
 
 
 # Test utils classes
@@ -234,6 +159,20 @@ def test_talos_database():
     assert database.commit() is False, "Database committed despite not existing?"
 
     pass  # TODO test all the database functions
+
+
+def test_data_classes():
+    database = tutils.TalosDatabase(None)
+
+    options = tutils.data.UserOptions([2, 0, "^"])
+    profile = tutils.TalosUser({"profile": tutils.data.UserOptions([1, "", 100, ""]),
+                                     "invoked": {},
+                                     "titles": [],
+                                     "options": options})
+    database.save_item(options)
+    database.save_item(profile)
+    # database.remove_item(options)
+    # database.remove_item(profile)
 
 
 def test_pw_member():

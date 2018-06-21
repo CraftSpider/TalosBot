@@ -12,11 +12,11 @@ const ADMIN_URL = "http://localhost:8000/Admins.txt"; //URL to pull admin list f
 const ADMINS = []; //Will be filled with Admin data from file
 
 //Control variables
-var CommandsLoaded = false; //So that commands are not run while the Commands script is not yet loaded.
-var adminAliases = []; //Current usernames of admins in chat. Will be filled by getAdminNames.
+let CommandsLoaded = false; //So that commands are not run while the Commands script is not yet loaded.
+let adminAliases = []; //Current usernames of admins in chat. Will be filled by getAdminNames.
 
 //Writing Hour variables
-var WHSwitch = 0; //Used by WH function to determine what point it is at of its function.
+let WHSwitch = 0; //Used by WH function to determine what point it is at of its function.
 
 /*
     -------------------

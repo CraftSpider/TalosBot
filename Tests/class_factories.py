@@ -9,13 +9,32 @@ import discord.ext.commands as commands
 import discord.ext.commands.view as dview
 
 
+test_state = None
+generated_ids = 0
+
+
 class FakeState:
 
     def __init__(self):
         self._users = {}
+        self._guilds = {}
+        self._voice_clients = {}
         self.user = discord.ClientUser(state=self, data=make_user_dict("State", "0000", None, make_id()))
         self._private_channels_by_user = {}
         self.shard_count = None
+
+    @property
+    def self_id(self):
+        u = self.user
+        return u.id if u else None
+
+    @property
+    def guilds(self):
+        return list(self._guilds.values())
+
+    @property
+    def voice_clients(self):
+        return list(self._voice_clients.values())
 
     def store_user(self, data):
         # this way is 300% faster than `dict.setdefault`.
@@ -26,8 +45,14 @@ class FakeState:
             self._users[user_id] = user = discord.User(state=self, data=data)
             return user
 
+    def get_user(self, id):
+        return self._users.get(id)
+
     def _get_private_channel_by_user(self, user_id):
         return self._private_channels_by_user.get(user_id)
+
+    def _add_guild(self, guild):
+        self._guilds[guild.id] = guild
 
 
 class FakeContext(commands.Context):
@@ -48,7 +73,20 @@ class FakeContext(commands.Context):
             return value
 
 
-generated_ids = 0
+class MessageResponse:
+
+    __slots__ = ("message", "kwargs")
+
+    def __init__(self, message, kwargs):
+        self.message = message
+        self.kwargs = kwargs
+
+
+def get_state():
+    global test_state
+    if test_state is None:
+        test_state = FakeState()
+    return test_state
 
 
 def make_id():
@@ -93,10 +131,7 @@ def make_member_dict(username, discriminator, nick, roles, avatar, id_num):
     }
 
 
-test_state = FakeState()
-
-
-def make_guild(name, members=None, channels=None, roles=None, id_num=-1):
+def make_guild(name, members=None, channels=None, roles=None, owner=False, id_num=-1):
     if id_num == -1:
         id_num = make_id()
     if roles is None:
@@ -108,17 +143,20 @@ def make_guild(name, members=None, channels=None, roles=None, id_num=-1):
     else:
         map(lambda x: make_member_dict(x.name, x.discriminator, x.nick, x.roles, x.avatar, x.id), members)
     member_count = len(members) if len(members) != 0 else 1
-    return discord.Guild(
-        state=test_state,
+    guild = discord.Guild(
+        state=get_state(),
         data={
             'name': name,
             'roles': roles,
             'channels': channels,
             'members': members,
             'member_count': member_count,
-            'id': id_num
+            'id': id_num,
+            'owner_id': get_state().user.id if owner else 0
         }
     )
+    get_state()._add_guild(guild)
+    return guild
 
 
 def make_text_channel(name, guild, position=-1, id_num=-1):
@@ -127,7 +165,7 @@ def make_text_channel(name, guild, position=-1, id_num=-1):
     if position == -1:
         position = len(guild.channels) + 1
     channel = discord.TextChannel(
-        state=test_state,
+        state=get_state(),
         guild=guild,
         data={
             'id': id_num,
@@ -143,7 +181,7 @@ def make_user(username, discriminator, avatar=None, id_num=-1):
     if id_num == -1:
         id_num = make_id()
     return discord.User(
-        state=test_state,
+        state=get_state(),
         data=make_user_dict(username, discriminator, avatar, id_num)
     )
 
@@ -156,7 +194,7 @@ def make_member(username, discriminator, guild, nick=None, roles=None, avatar=No
     if nick is None:
         nick = username
     member = discord.Member(
-        state=test_state,
+        state=get_state(),
         guild=guild,
         data=make_member_dict(username, discriminator, nick, roles, avatar, id_num)
     )
@@ -169,7 +207,7 @@ def make_message(content, author, channel, pinned=False, id_num=-1):
         id_num = make_id()
     author = make_member_dict(author.name, author.discriminator, author.nick, author.roles, author.avatar, author.id)
     return discord.Message(
-        state=test_state,
+        state=get_state(),
         channel=channel,
         data={
             'content': content,
@@ -180,11 +218,18 @@ def make_message(content, author, channel, pinned=False, id_num=-1):
     )
 
 
+async def run_all_events():
+    pending = filter(lambda x: x._coro.__name__ == "_run_event", asyncio.Task.all_tasks())
+    for task in pending:
+        if not (task.done() or task.cancelled()):
+            await task
+
+
 async def make_context(callback, message, bot):
     view = dview.StringView(message.content)
     ctx = FakeContext(callback=callback, prefix=None, view=view, bot=bot, message=message)
 
-    if bot._skip_check(message.author.id, test_state.user.id):
+    if bot._skip_check(message.author.id, get_state().user.id):
         return ctx
 
     prefix = bot.DEFAULT_PREFIX
@@ -202,6 +247,28 @@ async def make_context(callback, message, bot):
     ctx.invoked_with = invoker
     ctx.prefix = invoked_prefix
     ctx.command = bot.all_commands.get(invoker)
+    if ctx.command is not None:
+
+        def make_handler(old_error):
+            async def new_error(ctx, error):
+                try:
+                    await old_error(ctx, error)
+                    await run_all_events()
+                except Exception as e:
+                    print(e)
+                raise error
+            new_error.new = True
+            return new_error
+
+        old_handler = ctx.command.dispatch_error
+        if getattr(old_handler, "new", None) is None:
+            ctx.command.dispatch_error = make_handler(old_handler)
+
+        if isinstance(ctx.command, commands.Group):
+            for command in ctx.command.commands:
+                old_handler = command.dispatch_error
+                if getattr(old_handler, "new", None) is None:
+                    command.dispatch_error = make_handler(old_handler)
     return ctx
 
 

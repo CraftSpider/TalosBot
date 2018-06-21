@@ -6,4 +6,4 @@ cache: pip
 
 python: "3.6"
 
-script: pytest Tests
+script: PYTHONPATH=./Discord python3 -m pytest Tests

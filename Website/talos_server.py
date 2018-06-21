@@ -4,6 +4,7 @@ import logging
 import aiohttp.web as web
 
 log = logging.getLogger("talosserver")
+log.setLevel(logging.INFO)
 
 
 HTML_PATH = pathlib.Path.home() / "public_html"
@@ -35,7 +36,8 @@ class ServerError(Exception):
 
 class TalosPrimaryHandler:
 
-    async def do_get(self, request: web.Request) -> web.Response:
+    async def site_get(self, request):
+        log.info("Site GET")
         path = await self.get_path(request.path)
         if isinstance(path, int):
             response = await self.error_code(path)
@@ -43,13 +45,19 @@ class TalosPrimaryHandler:
             response = await self.get_response(path)
         return response
 
-    async def do_head(self, request: web.Request):
-        response = await self.do_get(request)
+    async def api_get(self, request):
+        log.info("API GET")
+        return web.Response(text="Talos API Coming soon")
+
+    async def do_head(self, request):
+        log.info("Site HEAD")
+        response = await self.site_get(request)
         response = web.Response(headers=response.headers, status=response.status)
         return response
 
-    async def do_post(self):
-        log.warning("End POST")
+    async def api_post(self):
+        log.info("API POST")
+        return web.Response(text="Talos API Coming soon")
 
     async def get_path(self, path):
         # any hardcoded redirects here
@@ -102,9 +110,10 @@ def main():
     app = web.Application()
     handler = TalosPrimaryHandler()
     app.add_routes([
-        web.get("/{tail:.*}", handler.do_get),
-        web.head("/{tail:.*}", handler.do_head),
-        web.post("/api/{tail:.*}", handler.do_post)
+        web.get("/{tail:(?!api/).*}", handler.site_get),
+        web.head("/{tail:(?!api/).*}", handler.do_head),
+        web.get("/api/{tail:.*}", handler.api_get),
+        web.post("/api/{tail:.*}", handler.api_post)
     ])
     web.run_app(app, port=80)
 
