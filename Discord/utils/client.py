@@ -9,7 +9,7 @@ log = logging.getLogger("talos.utils")
 
 class TalosHTTPClient(aiohttp.ClientSession):
 
-    __slots__ = ("username", "password", "btn_key", "cat_key")
+    __slots__ = ("username", "password", "btn_key", "cat_key", "nano_tries")
 
     NANO_URL = "https://nanowrimo.org/"
     BTN_URL = "https://www.behindthename.com/"
@@ -26,6 +26,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         self.password = kwargs.pop("password", "")
         self.btn_key = kwargs.pop("btn_key", "")
         self.cat_key = kwargs.pop("cat_key", "")
+        self.nano_tries = 0
 
         super().__init__(*args, **kwargs)
 
@@ -74,6 +75,9 @@ class TalosHTTPClient(aiohttp.ClientSession):
                 return await response.text()
             elif response.status == 403:
                 response = await self.nano_login_client()
+                if response != 200 and self.nano_tries >= 3:
+                    self.nano_tries = 0
+                    return None, None
                 log.debug("Login Status: {}".format(response))
                 return await self.nano_get_user(username)
             else:
@@ -104,6 +108,9 @@ class TalosHTTPClient(aiohttp.ClientSession):
             elif response.status == 403:
                 response = await self.nano_login_client()
                 log.debug("Login Status: {}".format(response))
+                if response != 200 and self.nano_tries >= 3:
+                    self.nano_tries = 0
+                    return None, None
                 return await self.nano_get_novel(username, novel_name)
             elif response.status == 404:
                 return None, None
@@ -119,6 +126,9 @@ class TalosHTTPClient(aiohttp.ClientSession):
             elif response.status == 403:
                 response = await self.nano_login_client()
                 log.debug("Login Status: {}".format(response))
+                if response != 200 and self.nano_tries >= 3:
+                    self.nano_tries = 0
+                    return None, None
                 return await self.nano_get_novel(username, novel_name)
             elif response.status == 404:
                 return None, None
@@ -143,6 +153,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             "user_session[remember_me]": "0",
             "commit": "Sign+in"
         }
+        self.nano_tries += 1
         async with self.post(self.NANO_URL + "sign_in", data=params) as response:
             return response.status
 
