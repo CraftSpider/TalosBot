@@ -46,7 +46,7 @@ class Talos(commands.Bot):
     """
 
     # Current Talos version. Loosely incremented.
-    VERSION = "2.7.0"
+    VERSION = "2.8.0"
     # Time Talos started
     BOOT_TIME = dt.datetime.utcnow()
     # Time, in UTC, that the prompt task kicks off each day.
@@ -61,8 +61,6 @@ class Talos(commands.Bot):
     DEVS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
     # This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
     SQL_ADDRESS = "127.0.0.1:3306"
-    # Discordbots bot list token
-    discordbots_token = ""
 
     def __init__(self, sql_conn=None, **kwargs):
         """
@@ -93,6 +91,12 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         self.remove_command("help")
         self.command(name="help", aliases=["man"], description="Shows this message")(self._talos_help_command)
 
+    def __setattr__(self, key, value):
+        if key == key.upper():
+            log.warning(f"Attempt to set Talos attribute: {key} {value}")
+        else:
+            super().__setattr__(key, value)
+
     def load_extensions(self, extensions=None):
         """
             Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None.
@@ -103,12 +107,12 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         clean = 0
         for extension in (self.STARTUP_EXTENSIONS if extensions is None else extensions):
             try:
-                log.debug("Loading extension {}".format(extension))
+                log.debug(f"Loading extension {extension}")
                 self.load_extension(extension)
             except Exception as err:
                 clean = 1
-                exc = '{}: {}'.format(type(err).__name__, err)
-                log.warning('Failed to load extension {}\n{}'.format(extension, exc))
+                exc = f"{type(err).__name__}: {err}"
+                log.warning(f"Failed to load extension {extension}\n{exc}")
         return clean
 
     def unload_extensions(self, extensions=None):
@@ -120,11 +124,11 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         if extensions is None:
             while len(self.extensions) > 0:
                 extension = self.extensions.popitem()
-                log.debug("Unloading extension {}".format(extension))
+                log.debug(f"Unloading extension {extension}")
                 self.unload_extension(extension, False)
         else:
             for extension in extensions:
-                log.debug("Unloading extension {}".format(extension))
+                log.debug(f"Unloading extension {extension}")
                 self.unload_extension(extension)
 
     def load_extension(self, name, prefix=True):
@@ -271,9 +275,9 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         :return: None
         """
         log.debug("OnReady Event")
-        log.info('| Now logged in as')
-        log.info('| {}'.format(self.user.name))
-        log.info('| {}'.format(self.user.id))
+        log.info("| Now logged in as")
+        log.info(f"| {self.user.name}")
+        log.info(f"| {self.user.id}")
         await self.change_presence(activity=discord.Game(name="Taking over the World", type=0))
         if self.discordbots_token != "":
             log.info("Posting guilds to Discordbots")
@@ -292,7 +296,7 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         :return: None
         """
         log.debug("OnGuildJoin Event")
-        log.info("Joined Guild {}, {} after boot".format(guild.name, dt.datetime.now() - self.BOOT_TIME))
+        log.info(f"Joined Guild {guild.name}, {dt.datetime.now() - self.BOOT_TIME} after boot")
 
     async def on_guild_remove(self, guild):
         """
@@ -301,7 +305,7 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         :return: None
         """
         log.debug("OnGuildRemove Event")
-        log.info("Left Guild {}, {} after boot".format(guild.name, dt.datetime.now() - self.BOOT_TIME))
+        log.info(f"Left Guild {guild.name}, {dt.datetime.now() - self.BOOT_TIME} after boot")
         self.database.clean_guild(guild.id)
 
     async def get_context(self, message, *, cls=commands.Context):
@@ -343,28 +347,27 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             if self.database.is_connected() and (ctx.guild is None or
                                                  self.database.get_guild_options(ctx.guild.id).fail_message):
                 cur_pref = (await self.get_prefix(ctx.message))[0]
-                await ctx.send("Sorry, I don't understand \"{}\". May I suggest {}help?".format(ctx.invoked_with,
-                                                                                                cur_pref))
+                await ctx.send(f"Sorry, I don't understand \"{ctx.invoked_with}\". May I suggest {cur_pref}help?")
         elif isinstance(exception, commands.BotMissingPermissions):
             await ctx.send("I lack the permissions to run that command.")
         elif isinstance(exception, commands.NoPrivateMessage):
             await ctx.send("This command can only be used in a guild. Apologies.")
         elif isinstance(exception, commands.CheckFailure):
-            # log.info("Woah, {} tried to run command {} without permissions!".format(ctx.author, ctx.command))
+            # log.info(f"Woah, {ctx.author} tried to run command {ctx.command} without permissions!")
             await ctx.send("You lack the permission to run that command.")
         elif isinstance(exception, commands.BadArgument):
             await ctx.send(exception)
         elif isinstance(exception, commands.MissingRequiredArgument):
-            await ctx.send("Missing parameter `{}`".format(exception.param))
+            await ctx.send(f"Missing parameter `{exception.param}`")
         elif isinstance(exception, NotRegistered):
-            await ctx.send("User {} isn't registered, command could not be executed.".format(exception))
+            await ctx.send(f"User {exception} isn't registered, command could not be executed.")
         elif isinstance(exception, CustomCommandError):
-            await ctx.send("Malformed CommandLang syntax: {}".format(exception))
+            await ctx.send(f"Malformed CommandLang syntax: {exception}")
         else:
-            log.warning('Ignoring exception `{}` in command {}'.format(exception, ctx.command))
+            log.warning(f"Ignoring exception `{exception}` in command {ctx.command}")
             try:
                 if ctx.author.id in self.DEVS:
-                    await ctx.send("""```{}```""".format(exception))
+                    await ctx.send(f"```{exception}```")
             except Exception as e:
                 log.error(e)
             traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
@@ -460,7 +463,7 @@ def load_nano_login():
     try:
         return file[2].strip().split(":")
     except IndexError:
-        return []
+        return ["", ""]
 
 
 def load_btn_key():
@@ -484,7 +487,7 @@ def load_sql_data():
     try:
         return file[4].strip().split(":")
     except IndexError:
-        return []
+        return ["", ""]
 
 
 def load_cat_key():

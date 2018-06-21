@@ -65,7 +65,7 @@ class UserCommands(utils.TalosCog):
                 for item in colour:
                     result += item*2
                 discord_colour = discord.Colour(int(result, 16))
-                colour = "#{}".format(result)
+                colour = f"#{result}"
         except ValueError:
             await ctx.send("That isn't a valid hexadecimal colour!")
             return
@@ -88,7 +88,7 @@ class UserCommands(utils.TalosCog):
                 log.error(e.args)
             await ctx.author.add_roles(colour_role)
 
-        await ctx.send("{0.name}'s colour changed to {1}!".format(ctx.message.author, colour))
+        await ctx.send(f"{ctx.message.author.display_name}'s colour changed to {colour}!")
 
     @commands.command(description="Display current guild perms")
     @commands.guild_only()
@@ -114,8 +114,9 @@ class UserCommands(utils.TalosCog):
     async def deregister(self, ctx):
         """Deregisters you from Talos. All collected data is wiped, no account info will be saved until """\
             """you re-register."""
-        if self.database.get_user(ctx.author.id):
-            self.database.deregister_user(ctx.author.id)
+        user = self.database.get_user(ctx.author.id)
+        if user:
+            self.database.remove_item(user)
             await ctx.send("Deregistered user")
         else:
             raise utils.NotRegistered(ctx.author)
@@ -126,28 +127,28 @@ class UserCommands(utils.TalosCog):
             """of a user to display instead."""
         if user is None:
             user = ctx.author
-        profile = self.database.get_user(user.id)
-        if not profile:
+        tal_user = self.database.get_user(user.id)
+        if not tal_user:
             raise utils.NotRegistered(user)
-        favorite_command = profile.get_favorite_command()
+        favorite_command = tal_user.get_favorite_command()
+        description = tal_user.profile.description if tal_user.profile.description else "User has not set a description"
         if self.bot.should_embed(ctx):
             with utils.PaginatedEmbed() as embed:
-                embed.title = profile.cur_title
-                embed.description = profile.description if profile.description else "User has not set a description"
+                embed.title = tal_user.profile.title
+                embed.description = description
                 embed.set_author(name=user.name, icon_url=user.avatar_url)
-                value = "Total Invoked Commands: {0}\nFavorite Command: `{1[0]}`, invoked {1[1]} times.".format(
-                    profile.total_commands, favorite_command
-                )
+                value = f"Total Invoked Commands: {tal_user.profile.commands_invoked}\n" \
+                        f"Favorite Command: `{favorite_command[0]}`, invoked {favorite_command[1]} times."
                 embed.add_field(name="Command Stats", value=value)
             for page in embed:
                 await ctx.send(embed=page)
         else:
             out = "```md\n"
-            out += "{}\n".format(user.name)
-            out += "{}\n".format(profile.description if profile.description else "User has not set a description")
+            out += f"{user.name}\n"
+            out += f"{description}\n"
             out += "# Command Stats:\n"
-            out += "-  Total Invoked: {}\n".format(profile.total_commands)
-            out += "-  Favorite Command: {0[0]}, invoked {0[1]} times.".format(favorite_command)
+            out += f"-  Total Invoked: {tal_user.profile.commands_invoked}\n"
+            out += f"-  Favorite Command: {favorite_command[0]}, invoked {favorite_command[1]} times."
             out += "```"
             await ctx.send(out)
 
@@ -161,19 +162,19 @@ class UserCommands(utils.TalosCog):
         elif ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'options', 'stats', 'title', 'description', 'set', and 'remove'")
             return
-        ctx.profile = profile
+        ctx.t_user = profile
 
     @user.command(name="titles", description="List available titles")
     async def _titles(self, ctx):
         """Lists current titles that you have unlocked. Use the title command if you want to set your current title """\
             """to one of these"""
-        titles = ctx.profile.titles
+        titles = ctx.t_user.titles
         if len(titles) == 0:
             await ctx.send("No available titles")
             return
         out = "```"
         for title in titles:
-            out += title + "\n"
+            out += title.title + "\n"
         out += "```"
         await ctx.send(out)
 
@@ -182,13 +183,15 @@ class UserCommands(utils.TalosCog):
         """If given no arguments will clear your title, if given a title will make that your title if you own that """\
             """title."""
         if title:
-            result = ctx.profile.set_title(title)
+            result = ctx.t_user.set_title(title)
+            self.database.save_item(ctx.t_user)
             if result:
-                await ctx.send("Title successfully set to `{}`".format(title))
+                await ctx.send(f"Title successfully set to `{title}`")
             else:
                 await ctx.send("You do not have that title")
         else:
-            ctx.profile.clear_title()
+            ctx.t_user.clear_title()
+            self.database.save_item(ctx.t_user)
             await ctx.send("Title successfully cleared")
 
     @user.command(name="options", description="List your current user options")
@@ -198,8 +201,8 @@ class UserCommands(utils.TalosCog):
         prefix: what prefix Talos will use in PMs with you"""
         out = "```"
         options = self.database.get_user_options(ctx.author.id)
-        for item in options.__slots__[2:]:
-            out += "{}: {}\n".format(item, getattr(options, item))
+        for item in options.__slots__[1:]:
+            out += f"{item}: {getattr(options, item)}\n"
         out += "```"
         if out == "``````":
             await ctx.send("No options available.")
@@ -210,57 +213,53 @@ class UserCommands(utils.TalosCog):
     async def _stats(self, ctx):
         """Will show just about everything Talos knows about you."""
         out = "```"
-        out += "Desc: {}\n".format(ctx.profile.description)
-        out += "Total Invoked: {}\n".format(ctx.profile.total_commands)
+        out += f"Desc: {ctx.t_user.profile.description}\n"
+        out += f"Total Invoked: {ctx.t_user.profile.total_commands}\n"
         out += "Command Stats:\n"
-        for command in ctx.profile.invoked_data:
-            out += "    {}: {}\n".format(command[0], command[1])
+        for command in ctx.t_user.invoked:
+            out += f"    {command.command_name}: {command.times_invoked}\n"
         out += "```"
         await ctx.send(out)
 
     @user.command(name="description", description="Set your user description")
     async def _description(self, ctx, *, text):
         """Change what the user description on your profile is. Max size of 2048 characters."""
-        self.database.set_description(ctx.author.id, text)
+        ctx.t_user.profile.description = text
+        self.database.save_item(ctx.t_user.profile)
         await ctx.send("Description set.")
 
     @user.command(name="set", description="Set your user options")
     async def _set(self, ctx, option, value):
         """Set user options for your account. See `^help user options` for available options."""
         try:
-            option_type = self.database.get_column_type("user_options", option)
-        except ValueError:
-            await ctx.send("Eh eh eh, letters and numbers only.")
-            return
-        if option_type == "tinyint":
-            if value.upper() == "ALLOW" or value.upper() == "TRUE":
-                value = True
-            elif value.upper() == "FORBID" or value.upper() == "FALSE":
-                value = False
-            else:
-                await ctx.send("Sorry, that option only accepts true or false values.")
-                return
-        if option_type == "varchar":
-            value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
-            value = re.sub(r"\\\\", r"\\", value)
-        if option_type is not None:
-            self.database.set_user_option(ctx.author.id, option, value)
-            await ctx.send("Option {} set to `{}` for {}".format(option, value, ctx.author.display_name))
-        else:
+            user_options = self.database.get_user_options(ctx.author.id)
+            cur_val = getattr(user_options, option)
+            if isinstance(cur_val, (bool, int)):
+                if value.upper() == "ALLOW" or value.upper() == "TRUE":
+                    value = True
+                elif value.upper() == "FORBID" or value.upper() == "FALSE":
+                    value = False
+                else:
+                    await ctx.send("Sorry, that option only accepts true or false values.")
+                    return
+            elif isinstance(cur_val, str):
+                value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
+                value = re.sub(r"\\\\", r"\\", value)
+            setattr(user_options, option, value)
+            self.database.save_item(user_options)
+            await ctx.send(f"Option {option} set to `{value}` for {ctx.author.display_name}")
+        except AttributeError:
             await ctx.send("I don't recognize that option.")
 
     @user.command(name="remove", description="Set a user option to default")
     async def _remove(self, ctx, option):
         """Reset a user option to default. See `^help user options` for available options."""
         try:
-            data_type = self.database.get_column_type("user_options", option)
-        except ValueError:
-            await ctx.send("Eh eh eh, letters and numbers only.")
-            return
-        if data_type is not None:
-            self.database.remove_user_option(ctx.author.id, option)
-            await ctx.send("Option {} set to default for {}".format(option, ctx.author.display_name))
-        else:
+            user_options = self.database.get_user_options(ctx.author.id)
+            setattr(user_options, option, None)
+            self.database.save_item(user_options)
+            await ctx.send(f"Option {option} set to default for {ctx.author.display_name}")
+        except AttributeError:
             await ctx.send("I don't recognize that option.")
 
     

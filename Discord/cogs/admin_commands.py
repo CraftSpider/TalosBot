@@ -96,7 +96,7 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("Nickname must be 32 characters or fewer")
             return
         await ctx.me.edit(nick=nickname)
-        await ctx.send("Nickname changed to {}".format(nickname))
+        await ctx.send(f"Nickname changed to {nickname}")
 
     @commands.command(description="Makes Talos repeat you")
     async def repeat(self, ctx, *, text):
@@ -114,14 +114,14 @@ class AdminCommands(utils.TalosCog):
             if number >= 100 and (len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]):
                 rand_key = key_generator()
                 secure_keys[str(ctx.guild.id)] = rand_key
-                await ctx.send("Are you sure? If so, re-invoke with {} on the end.".format(rand_key))
+                await ctx.send(f"Are you sure? If so, re-invoke with {rand_key} on the end.")
             else:
                 await ctx.channel.purge(limit=number)
         else:
             if len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]:
                 rand_key = key_generator()
                 secure_keys[str(ctx.guild.id)] = rand_key
-                await ctx.send("Are you sure? If so, re-invoke with {} on the end.".format(rand_key))
+                await ctx.send(f"Are you sure? If so, re-invoke with {rand_key} on the end.")
             elif key[0] == secure_keys[str(ctx.guild.id)]:
                 await ctx.channel.purge(limit=None)
                 secure_keys[str(ctx.guild.id)] = ""
@@ -148,9 +148,10 @@ class AdminCommands(utils.TalosCog):
     @commands.guild_only()
     async def _ad_add(self, ctx, member: discord.Member):
         """Adds a user to the guild admin list."""
-        if member.id not in self.database.get_admins(ctx.guild.id):
-            self.database.add_admin(ctx.guild.id, member.id)
-            await ctx.send("Added admin {0.name}!".format(member))
+        new_admin = utils.TalosAdmin((ctx.guild.id, member.id))
+        if new_admin not in self.database.get_admins(ctx.guild.id):
+            self.database.save_item(new_admin)
+            await ctx.send(f"Added admin {member.name}!")
         else:
             await ctx.send("That user is already an admin!")
 
@@ -166,10 +167,12 @@ class AdminCommands(utils.TalosCog):
             member = member_object.id
         elif member.isnumeric():
             member = int(member)
-        if member in self.database.get_admins(ctx.guild.id):
-            self.database.remove_admin(ctx.guild.id, member)
+
+        admin = list(filter(lambda x: x.user_id == member, self.database.get_admins(ctx.guild.id)))
+        if admin:
+            self.database.remove_item(admin[0])
             if member_object:
-                await ctx.send("Removed admin from {0.name}".format(member_object))
+                await ctx.send(f"Removed admin from {member_object.name}")
             else:
                 await ctx.send("Removed admin from invalid user")
         else:
@@ -183,8 +186,9 @@ class AdminCommands(utils.TalosCog):
         if len(admin_list) > 0:
             out = "```"
             for admin in admin_list:
-                admin_name = self.bot.get_user(admin)
-                out += "{}\n".format(str(admin_name) if admin_name is not None else admin)
+                admin_name = self.bot.get_user(admin.user_id)
+                admin_name = str(admin_name) if admin_name is not None else admin.user_id
+                out += f"{admin_name}\n"
             out += "```"
             await ctx.send(out)
         else:
@@ -197,12 +201,13 @@ class AdminCommands(utils.TalosCog):
         all_admins = self.database.get_all_admins()
         consumed = []
         out = "```"
-        for key in all_admins:
-            if key[0] not in consumed:
-                out += "Guild: {}\n".format(self.bot.get_guild(key[0]))
-                consumed.append(key[0])
-            admin = self.bot.get_user(key[1])
-            out += "    {}\n".format(str(admin) if admin is not None else key[1])
+        for admin in all_admins:
+            if admin.guild_id not in consumed:
+                out += f"Guild: {self.bot.get_guild(admin.guild_id)}\n"
+                consumed.append(admin.guild_id)
+            admin = self.bot.get_user(admin.user_id)
+            admin = str(admin) if admin is not None else admin.user_id
+            out += f"    {admin}\n"
         if out != "```":
             out += "```"
             await ctx.send(out)
@@ -253,11 +258,15 @@ class AdminCommands(utils.TalosCog):
             elif level == "guild":
                 name = ""
             if name is None:
-                await ctx.send("Sorry, I couldn't find the user {}!".format(old_name))
+                await ctx.send(f"Sorry, I couldn't find the user {old_name}!")
                 return
-            name = str(name) if name != "" else None
-            self.database.set_perm_rule(ctx.guild.id, command, level, allow, priority, name)
-            await ctx.send("Permissions for command **{}** at level **{}** updated.".format(command, level))
+
+            name = str(name) if name != "" else "SELF"
+            priority = priority or utils.sql._levels[level]
+
+            perm_rule = utils.PermissionRule((ctx.guild.id, command, level, name, priority, allow))
+            self.database.save_item(perm_rule)
+            await ctx.send(f"Permissions for command **{command}** at level **{level}** updated.")
         elif command not in self.bot.all_commands:
             await ctx.send("I don't recognize that command, so I can't set permissions for it!")
         else:
@@ -278,18 +287,16 @@ class AdminCommands(utils.TalosCog):
                     name = str(discord.utils.find(lambda r: r.name == name, ctx.guild.roles))
                 elif level == "channel":
                     name = str(discord.utils.find(lambda c: c.name == name, ctx.guild.channels))
-            self.database.remove_perm_rules(ctx.guild.id, command, level, name)
+            perm_rule = utils.PermissionRule((ctx.guild.id, command, level, name, None, None))
+            self.database.remove_item(perm_rule, general=True)
             if command is None:
                 await ctx.send("Permissions for guild cleared")
-                return
-            if level is None:
-                await ctx.send("Permissions for command **{}** at all levels cleared.".format(command))
-                return
-            if name is None:
-                await ctx.send("Permissions for command **{}** at level **{}** cleared.".format(command, level))
-                return
-            out = "Permissions for command **{}** at level **{}** for **{}** cleared.".format(command, level, name)
-            await ctx.send(out)
+            elif level is None:
+                await ctx.send(f"Permissions for command **{command}** at all levels cleared.")
+            elif name is None:
+                await ctx.send(f"Permissions for command **{command}** at level **{level}** cleared.")
+            else:
+                await ctx.send(f"Permissions for command **{command}** at level **{level}** for **{name}** cleared.")
         else:
             await ctx.send("Unrecognized permission level.")
 
@@ -299,7 +306,7 @@ class AdminCommands(utils.TalosCog):
         """Displays a list of all permissions rules for the current guild"""
         result = self.database.get_perm_rules(ctx.guild.id)
         if len(result) == 0:
-            await ctx.send("No permissions set for this guild, with all data about them.")
+            await ctx.send("No permissions set for this guild.")
             return
         guild_perms = {}
         for perm in result:
@@ -311,14 +318,14 @@ class AdminCommands(utils.TalosCog):
 
         out = "```"
         for command in guild_perms:
-            out += "Command: {}\n".format(command)
+            out += f"Command: {command}\n"
             for level in sorted(guild_perms[command], key=lambda a: self.LEVELS[a]):
-                out += "    Level: {}\n".format(level)
+                out += f"    Level: {level}\n"
                 if level == "guild":
-                    out += "        {}\n".format(guild_perms[command][level])
+                    out += f"        {guild_perms[command][level]}\n"
                 else:
                     for detail in guild_perms[command][level]:
-                        out += "        {1}-{0}: {2}\n".format(detail[0], detail[1], bool(detail[2]))
+                        out += f"        {detail[1]}-{detail[0]}: {bool(detail[2])}\n"
         out += "```"
         await ctx.send(out)
 
@@ -331,28 +338,30 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("All permissions default")
             return
         guild_perms = {}
-        for line in result:
-            if guild_perms.get(line[0], None) is None:
-                guild_perms[line[0]] = {}
-            if guild_perms.get(line[0]).get(line[1], None) is None:
-                guild_perms[line[0]][line[1]] = {}
-            if guild_perms.get(line[0]).get(line[1]).get(line[2], None) is None:
-                guild_perms[line[0]][line[1]][line[2]] = []
-            guild_perms[line[0]][line[1]][line[2]].append([line[3], line[4], line[5]])
+        for permission in result:
+            if guild_perms.get(permission.id, None) is None:
+                guild_perms[permission.id] = {}
+            if guild_perms.get(permission.id).get(permission.command, None) is None:
+                guild_perms[permission.id][permission.command] = {}
+            if guild_perms.get(permission.id).get(permission.command).get(permission.perm_type, None) is None:
+                guild_perms[permission.id][permission.command][permission.perm_type] = []
+            guild_perms[permission.id][permission.command][permission.perm_type].append([permission.target,
+                                                                                         permission.priority,
+                                                                                         permission.allow])
 
         out = "```"
         for guild in guild_perms:
             guild_name = self.bot.get_guild(guild)
-            out += "Guild: {}\n".format(guild_name)
+            out += f"Guild: {guild_name}\n"
             for command in guild_perms[guild]:
-                out += "    Command: {}\n".format(command)
+                out += f"    Command: {command}\n"
                 for level in sorted(guild_perms[guild][command], key=lambda a: self.LEVELS[a]):
-                    out += "        Level: {}\n".format(level)
+                    out += f"        Level: {level}\n"
                     if level == "guild":
-                        out += "            {}\n".format(guild_perms[guild][command][level])
+                        out += f"            {guild_perms[guild][command][level]}\n"
                     else:
                         for detail in guild_perms[guild][command][level]:
-                            out += "            {1}-{0}: {2}\n".format(detail[0], detail[1], bool(detail[2]))
+                            out += f"            {detail[1]}-{detail[0]}: {bool(detail[2])}\n"
         out += "```"
         await ctx.send(out)
 
@@ -368,25 +377,23 @@ class AdminCommands(utils.TalosCog):
     async def _opt_set(self, ctx, option, value):
         """Set an option. Most options are true or false. See `^help options list` for available options"""
         try:
-            option_type = self.database.get_column_type("guild_options", option)
-        except ValueError:
-            await ctx.send("Eh eh eh, letters and numbers only.")
-            return
-        if option_type == "tinyint":
-            if value.upper() == "ALLOW" or value.upper() == "TRUE":
-                value = True
-            elif value.upper() == "FORBID" or value.upper() == "FALSE":
-                value = False
-            else:
-                await ctx.send("Sorry, that option only accepts true or false values.")
-                return
-        if option_type == "varchar":
-            value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
-            value = re.sub(r"\\\\", r"\\", value)
-        if option_type is not None:
-            self.database.set_guild_option(ctx.guild.id, option, value)
-            await ctx.send("Option {} set to `{}`".format(option, value))
-        else:
+            guild_options = self.database.get_guild_options(ctx.guild.id)
+            cur_val = getattr(guild_options, option)
+            if isinstance(cur_val, (int, bool)):
+                if value.upper() == "ALLOW" or value.upper() == "TRUE":
+                    value = True
+                elif value.upper() == "FORBID" or value.upper() == "FALSE":
+                    value = False
+                else:
+                    await ctx.send("Sorry, that option only accepts true or false values.")
+                    return
+            if isinstance(cur_val, str):
+                value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
+                value = re.sub(r"\\\\", r"\\", value)
+            setattr(guild_options, option, value)
+            self.database.save_item(guild_options)
+            await ctx.send(f"Option {option} set to `{value}`")
+        except AttributeError:
             await ctx.send("I don't recognize that option.")
 
     @options.command(name="list", description="Display guild options")
@@ -405,8 +412,8 @@ class AdminCommands(utils.TalosCog):
         timezone: what timezone for Talos to use for displayed times, supports any timezone abbreviation"""
         out = "```"
         options = self.database.get_guild_options(ctx.guild.id)
-        for item in options.__slots__[2:]:
-            out += "{}: {}\n".format(item, getattr(options, item))
+        for item in options.__slots__[1:]:
+            out += f"{item}: {getattr(options, item)}\n"
         out += "```"
         if out == "``````":
             await ctx.send("No options available.")
@@ -418,14 +425,11 @@ class AdminCommands(utils.TalosCog):
     async def _opt_default(self, ctx, option):
         """Sets an option to its default value, as in a guild Talos had just joined."""
         try:
-            data_type = self.database.get_column_type("guild_options", option)
-        except ValueError:
-            await ctx.send("Eh eh eh, letters and numbers only.")
-            return
-        if data_type is not None:
-            self.database.remove_guild_option(ctx.guild.id, option)
-            await ctx.send("Option {} set to default".format(option))
-        else:
+            guild_options = self.database.get_guild_options(ctx.guild.id)
+            setattr(guild_options, option, None)
+            self.database.save_item(guild_options)
+            await ctx.send(f"Option {option} set to default")
+        except AttributeError:
             await ctx.send("I don't recognize that option.")
 
     @options.command(name="all", hidden=True, description="Display all guild options")
@@ -435,12 +439,12 @@ class AdminCommands(utils.TalosCog):
         all_options = self.database.get_all_guild_options()
         out = "```"
         for options in all_options:
-            out += "Guild: {}\n".format(self.bot.get_guild(options.id))
-            for item in options.__slots__[2:]:
+            out += f"Guild: {self.bot.get_guild(options.id)}\n"
+            for item in options.__slots__[1:]:
                 option = getattr(options, item)
                 if option is None:
                     continue
-                out += "    {}: {}\n".format(item, option)
+                out += f"    {item}: {option}\n"
         out += "```"
         if out == "``````":
             await ctx.send("No options available.")
@@ -465,8 +469,8 @@ class AdminCommands(utils.TalosCog):
         elif self.database.get_guild_command(ctx.guild.id, name):
             await ctx.send("That command already exists. Maybe you meant to `edit` it instead?")
             return
-        self.database.set_guild_command(ctx.guild.id, name, text)
-        await ctx.send("Command {} created".format(name))
+        self.database.save_item(utils.GuildCommand((ctx.guild.id, name, text)))
+        await ctx.send(f"Command {name} created")
 
     @command.command(name="edit", description="Edit existing command")
     async def _c_edit(self, ctx, name, *, text):
@@ -474,8 +478,8 @@ class AdminCommands(utils.TalosCog):
         if not self.database.get_guild_command(ctx.guild.id, name):
             await ctx.send("That command doesn't exist. Maybe you meant to `add` it instead?")
             return
-        self.database.set_guild_command(ctx.guild.id, name, text)
-        await ctx.send("Command {} successfully edited".format(name))
+        self.database.save_item(utils.GuildCommand((ctx.guild.id, name, text)))
+        await ctx.send(f"Command {name} successfully edited")
 
     @command.command(name="remove", description="Remove existing command")
     async def _c_remove(self, ctx, name):
@@ -483,8 +487,8 @@ class AdminCommands(utils.TalosCog):
         if self.database.get_guild_command(ctx.guild.id, name) is None:
             await ctx.send("That command doesn't exist, sorry.")
             return
-        self.database.remove_guild_command(ctx.guild.id, name)
-        await ctx.send("Command {} successfully removed".format(name))
+        self.database.remove_item(utils.GuildCommand((ctx.guild.id, name)), True)
+        await ctx.send(f"Command {name} successfully removed")
 
     @command.command(name="list", description="List existing commands")
     async def _c_list(self, ctx):
@@ -495,7 +499,7 @@ class AdminCommands(utils.TalosCog):
             return
         out = "```\nServer Commands:\n"
         for name, text in command_list:
-            out += "{}: {}\n".format(name, text)
+            out += f"{name}: {text}\n"
         out += "```"
         await ctx.send(out)
 
@@ -514,8 +518,9 @@ class AdminCommands(utils.TalosCog):
         if self.database.get_guild_event(ctx.guild.id, name):
             await ctx.send("That event already exists. Maybe you meant to `edit` it instead?")
             return
-        self.database.set_guild_event(ctx.guild.id, name, period, ctx.channel.id, text)
-        await ctx.send("Event {} created".format(name))
+        event = utils.GuildEvent((ctx.guild.id, name, period, ctx.channel.id, text))
+        self.database.save_item(event)
+        await ctx.send(f"Event {name} created")
 
     @event.command(name="edit", description="Edit an existing event")
     async def _e_edit(self, ctx, name, *, text):
@@ -524,8 +529,10 @@ class AdminCommands(utils.TalosCog):
         if not event:
             await ctx.send("That event doesn't exist. Maybe you meant to `add` it instead?")
             return
-        self.database.set_guild_event(ctx.guild.id, name, str(event.period), ctx.channel.id, text)
-        await ctx.send("Event {} successfully edited".format(name))
+        event.name = name
+        event.text = text
+        self.database.save_item(event)
+        await ctx.send(f"Event {name} successfully edited")
 
     @event.command(name="remove", description="Remove an event")
     async def _e_remove(self, ctx, name):
@@ -533,8 +540,9 @@ class AdminCommands(utils.TalosCog):
         if self.database.get_guild_event(ctx.guild.id, name) is None:
             await ctx.send("That event doesn't exist, sorry.")
             return
-        self.database.remove_guild_event(ctx.guild.id, name)
-        await ctx.send("Event {} successfully removed".format(name))
+        event = utils.GuildEvent((ctx.guild.id, name, None, None, None, None))
+        self.database.remove_item(event, True)
+        await ctx.send(f"Event {name} successfully removed")
 
     @event.command(name="list", description="List all events")
     async def _e_list(self, ctx):
@@ -545,7 +553,7 @@ class AdminCommands(utils.TalosCog):
             return
         out = "```\nServer Events:\n"
         for event in event_list:
-            out += "{} - {}: {}\n".format(event.name, event.period, event.text)
+            out += f"{event.name} - {event.period}: {event.text}\n"
         out += "```"
         await ctx.send(out)
 

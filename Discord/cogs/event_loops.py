@@ -207,9 +207,11 @@ class EventLoops(utils.TalosCog):
             prompt = random.choice(possibilities)
 
             log.debug(prompt)
-            out = "__Daily Prompt {}__\n\n".format(date.today().strftime("%m/%d"))
-            out += "{}\n\n".format(prompt[0].strip("\""))
-            out += "({} by {})".format(("Original prompt" if prompt[1].upper() == "YES" else "Submitted"), prompt[2])
+            out = f"__Daily Prompt {date.today().strftime('%m/%d')}__\n\n"
+            prompt[0] = prompt[0].strip("\"")
+            out += f"{prompt[0]}\n\n"
+            original = "Original prompt" if prompt[1].upper() == "YES" else "Submitted"
+            out += f"({original} by {prompt[2]})"
             for guild in self.bot.guilds:
                 if not self.database.get_guild_options(guild.id).writing_prompts:
                     continue
@@ -219,7 +221,7 @@ class EventLoops(utils.TalosCog):
 
             prompt.append("POSTED")
             self.set_spreadsheet(prompt_sheet_id, [prompt],
-                                 "Form Responses 1!B{0}:E{0}".format(values.index(prompt) + 1))
+                                 f"Form Responses 1!B{values.index(prompt) + 1}:E{values.index(prompt) + 1}")
 
             now = datetime.now()
             delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME - 1)) % 24, minutes=60 - now.minute,

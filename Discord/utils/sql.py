@@ -3,7 +3,6 @@ import utils.data as data
 
 import logging
 import re
-import datetime as dt
 import mysql.connector.abstracts as mysql_abstracts
 
 log = logging.getLogger("talos.utils")
@@ -308,6 +307,52 @@ class TalosDatabase:
             return None
         return result
 
+    # Generic methods
+
+    def save_item(self, item):
+        """
+            Save any TalosDatabase compatible object to the database, inserting or updating that row.
+        :param item: Item to save. May be a Row, a MultiRow, or any duck type of those two.
+        """
+        try:
+            table_name = item.table_name()
+            row = item.to_row()
+            columns = list(map(lambda x: re.match(r"`(.*?)`", x).group(1), talos_tables[table_name]["columns"]))
+            replace_str = ", ".join("%s" for _ in range(len(columns)))
+            update_str = ", ".join(f"{i} = VALUES({i})" for i in columns)
+            query = f"INSERT INTO talos_data.{table_name} VALUES ({replace_str}) "\
+                    "ON DUPLICATE KEY UPDATE "\
+                    f"{update_str}"
+            log.debug(query)
+            self._cursor.execute(query, row)
+        except AttributeError:
+            for row in item:
+                self.save_item(row)
+
+    def remove_item(self, item, general=False):
+        """
+            Remove any TalosDatabase compatible object from the database.
+        :param item: Item to remove. May be a Row, a MultiRow, or any duck type of those two.
+        :param general: Whether to delete all similar items. If true, nulls aren't included in the delete search
+        """
+        try:
+            table_name = item.table_name()
+            row = item.to_row()
+            columns = list(map(lambda x: re.match(r"`(.*?)`", x).group(1), talos_tables[table_name]["columns"]))
+            if not general:
+                delete_str = " AND ".join(f"{i} = %s" for i in columns)
+            else:
+                delete_str = " AND ".join(
+                    f"{columns[i]} = %s" for i in range(len(columns)) if getattr(item, item.__slots__[i]) is not None
+                )
+                row = list(filter(None, row))
+            query = f"DELETE FROM talos_data.{table_name} WHERE {delete_str}"
+            log.debug(query)
+            self._cursor.execute(query, row)
+        except AttributeError:
+            for row in item:
+                self.remove_item(row, general)
+
     # Guild option methods
 
     def get_guild_defaults(self):
@@ -319,9 +364,9 @@ class TalosDatabase:
         self._cursor.execute(query)
         result = self._cursor.fetchone()
         if result:
-            return data.GuildOptions(self, result)
+            return data.GuildOptions(result)
         else:
-            return data.GuildOptions(self, talos_tables["guild_options"]["defaults"][0])
+            return data.GuildOptions(talos_tables["guild_options"]["defaults"][0])
 
     def get_guild_options(self, guild_id):
         """
@@ -335,6 +380,7 @@ class TalosDatabase:
         guild_defaults = self.get_guild_defaults()
         guild_data = []
         if result is None:
+            guild_defaults.id = guild_id
             return guild_defaults
         else:
             rows = self.get_columns("guild_options")
@@ -343,7 +389,7 @@ class TalosDatabase:
                     guild_data.append(getattr(guild_defaults, rows[item][0]))
                 else:
                     guild_data.append(result[item])
-        return data.GuildOptions(self, guild_data)
+        return data.GuildOptions(guild_data)
 
     def get_all_guild_options(self):
         """
@@ -352,35 +398,7 @@ class TalosDatabase:
         """
         query = "SELECT * FROM talos_data.guild_options"
         self._cursor.execute(query)
-        out = []
-        for row in self._cursor:
-            out.append(data.GuildOptions(self, row))
-        return out
-
-    def set_guild_option(self, guild_id, option_name, value):
-        """
-            Set an option for a specific guild
-        :param guild_id: id of the guild to set option
-        :param option_name: option to set in the guild
-        :param value: thing to set option to
-        """
-        if re.match("[^a-zA-Z0-9_-]", option_name):
-            raise ValueError("SQL Injection Detected!")
-        query = "INSERT INTO talos_data.guild_options (guild_id, {0}) VALUES (%s, %s) "\
-                "ON DUPLICATE KEY UPDATE "\
-                "{0} = VALUES({0})".format(option_name)
-        self._cursor.execute(query, [guild_id, value])
-
-    def remove_guild_option(self, guild_id, option_name):
-        """
-            Clear a guild option, resetting it to null
-        :param guild_id: id to clear option of
-        :param option_name: option to clear
-        """
-        if re.match("[^a-zA-Z0-9_-]", option_name):
-            raise ValueError("SQL Injection Detected!")
-        query = "UPDATE talos_data.guild_options SET {} = null WHERE guild_id = %s".format(option_name)
-        self._cursor.execute(query, [guild_id])
+        return [data.GuildOptions(x) for x in self._cursor]
 
     # User option methods
 
@@ -393,9 +411,9 @@ class TalosDatabase:
         self._cursor.execute(query)
         result = self._cursor.fetchone()
         if result:
-            return data.UserOptions(self, result)
+            return data.UserOptions(result)
         else:
-            return data.UserOptions(self, talos_tables["user_options"]["defaults"][0])
+            return data.UserOptions(talos_tables["user_options"]["defaults"][0])
 
     def get_user_options(self, user_id):
         """
@@ -409,6 +427,7 @@ class TalosDatabase:
         user_defaults = self.get_user_defaults()
         user_data = []
         if result is None:
+            user_defaults.id = user_id
             return user_defaults
         else:
             rows = self.get_columns("user_options")
@@ -418,7 +437,7 @@ class TalosDatabase:
                 else:
                     user_data.append(result[item])
 
-        return data.UserOptions(self, user_data)
+        return data.UserOptions(user_data)
 
     def get_all_user_options(self):
         """
@@ -427,35 +446,7 @@ class TalosDatabase:
         """
         query = "SELECT * FROM talos_data.user_options"
         self._cursor.execute(query)
-        out = []
-        for row in self._cursor:
-            out.append(data.UserOptions(self, row))
-        return out
-
-    def set_user_option(self, user_id, option_name, value):
-        """
-            Set an option for a specific user
-        :param user_id: id of the user to set option
-        :param option_name: option to set of the user
-        :param value: thing to set option to
-        """
-        if re.match("[^a-zA-Z0-9_-]", option_name):
-            raise ValueError("SQL Injection Detected!")
-        query = "INSERT INTO talos_data.user_options (user_id, {0}) VALUES (%s, %s) "\
-                "ON DUPLICATE KEY UPDATE "\
-                "{0} = VALUES({0})".format(option_name)
-        self._cursor.execute(query, [user_id, value])
-
-    def remove_user_option(self, user_id, option_name):
-        """
-            Clear a user option, resetting it to null
-        :param user_id: id to clear option of
-        :param option_name: option to clear
-        """
-        if re.match("[^a-zA-Z0-9_-]", option_name):
-            raise ValueError("SQL Injection Detected!")
-        query = "UPDATE talos_data.user_options SET {} = null WHERE user_id = %s".format(option_name)
-        self._cursor.execute(query, [user_id])
+        return [data.UserOptions(x) for x in self._cursor]
 
     # User profile methods
 
@@ -469,18 +460,6 @@ class TalosDatabase:
         query = "INSERT INTO talos_data.user_profiles (user_id) VALUES (%s)"
         self._cursor.execute(query, [user_id])
 
-    def deregister_user(self, user_id):
-        """
-            De-register a user from Talos. Removes values in user_profiles, user_options, and invoked_commands.
-        :param user_id: id of user to remove
-        """
-        query = "DELETE FROM talos_data.user_options WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-        query = "DELETE FROM talos_data.user_profiles WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-        query = "DELETE FROM talos_data.invoked_commands WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-
     def get_user(self, user_id):
         """
             Return everything about a registered user
@@ -490,62 +469,24 @@ class TalosDatabase:
         user_data = {}
         query = "SELECT * FROM talos_data.user_profiles WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
-        user_data["profile"] = self._cursor.fetchone()
+        profile_response = self._cursor.fetchone()
+        if profile_response is None:
+            return None
+        user_data["profile"] = data.UserProfile(profile_response)
         if user_data.get("profile") is None:
             return None
 
-        query = "SELECT command_name, times_invoked FROM talos_data.invoked_commands WHERE user_id = %s "\
-                "ORDER BY times_invoked"
+        query = "SELECT * FROM talos_data.invoked_commands WHERE user_id = %s ORDER BY times_invoked"
         self._cursor.execute(query, [user_id])
-        user_data["invoked"] = self._cursor.fetchall()
+        user_data["invoked"] = [data.InvokedCommand(x) for x in self._cursor]
 
-        query = "SELECT title FROM talos_data.user_titles WHERE user_id = %s"
+        query = "SELECT * FROM talos_data.user_titles WHERE user_id = %s"
         self._cursor.execute(query, [user_id])
-        user_data["titles"] = self._cursor.fetchall()
+        user_data["titles"] = [data.UserTitle(x) for x in self._cursor]
 
         user_data["options"] = self.get_user_options(user_id)
 
-        return data.TalosUser(self, user_data)
-
-    def set_description(self, user_id, desc):
-        """
-            Set the description of a user
-        :param user_id: id of the user to set the description of
-        :param desc: thing to set description to
-        """
-        query = "UPDATE talos_data.user_profiles SET description = %s WHERE user_id = %s"
-        self._cursor.execute(query, [desc, user_id])
-
-    def add_title(self, user_id, title):
-        """
-            Add a title to a user
-        :param user_id: id of the user to add the title to
-        :param title: title to give the user access to
-        """
-        query = "INSERT INTO talos_data.user_titles VALUES (%s, %s)"
-        self._cursor.execute(query, [user_id, title])
-
-    def remove_title(self, user_id, title):
-        """
-            Remove a title from a user
-        :param user_id: id of the user to remove the title from
-        :param title: title to remove from the user
-        """
-        query = "DELETE FROM talos_data.user_titles WHERE user_id = %s AND title = %s"
-        self._cursor.execute(query, [user_id, title])
-
-    def set_title(self, user_id, title):
-        """
-            Set the title of a user
-        :param user_id: id of the user to set the title for
-        :param title: the title to set for the user
-        """
-        if title is None:
-            query = "UPDATE talos_data.user_profiles SET title = NULL WHERE user_id = %s"
-            self._cursor.execute(query, [user_id])
-        else:
-            query = "UPDATE talos_data.user_profiles SET title = %s WHERE user_id = %s"
-            self._cursor.execute(query, [title, user_id])
+        return data.TalosUser(user_data)
 
     def user_invoked_command(self, user_id, command):
         """
@@ -570,10 +511,7 @@ class TalosDatabase:
         """
         query = "SELECT guild_id, opname FROM talos_data.admins"
         self._cursor.execute(query)
-        out = []
-        for row in self._cursor:
-            out.append(row)
-        return out
+        return [data.TalosAdmin(x) for x in self._cursor]
 
     def get_admins(self, guild_id):
         """
@@ -581,30 +519,9 @@ class TalosDatabase:
         :param guild_id: id of the guild to get the admin list for
         :return: list of admins for input guild
         """
-        query = "SELECT opname FROM talos_data.admins WHERE guild_id = %s"
+        query = "SELECT guild_id, opname FROM talos_data.admins WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
-        out = []
-        for row in self._cursor:
-            out.append(row[0])
-        return out
-
-    def add_admin(self, guild_id, admin_name):
-        """
-            Add an admin to a guild
-        :param guild_id: id of the guild to add admin to
-        :param admin_name: id of the admin to add to the guild
-        """
-        query = "INSERT INTO talos_data.admins VALUES (%s, %s)"
-        self._cursor.execute(query, [guild_id, admin_name])
-
-    def remove_admin(self, guild_id, admin_name):
-        """
-            Remove an admin from a guild
-        :param guild_id: id of the guild to remove admin from
-        :param admin_name: id of the admin to be removed from the guild
-        """
-        query = "DELETE FROM talos_data.admins WHERE guild_id = %s AND opname = %s"
-        self._cursor.execute(query, [guild_id, admin_name])
+        return [data.TalosAdmin(x) for x in self._cursor]
 
     # Perms methods
 
@@ -621,7 +538,7 @@ class TalosDatabase:
                 " target = %s"
         self._cursor.execute(query, [guild_id, command, perm_type, target])
         response = self._cursor.fetchone()
-        return data.PermissionRule(self, response)
+        return data.PermissionRule(response)
 
     def get_perm_rules(self, guild_id=-1, command=None, perm_type=None, target=None):
         """
@@ -650,71 +567,16 @@ class TalosDatabase:
             query += "target = %s"
             args.append(target)
         self._cursor.execute(query, [guild_id] + args)
-        response = self._cursor.fetchall()
-        out = []
-        for item in response:
-            out.append(data.PermissionRule(self, item))
-        return out
+        return [data.PermissionRule(x) for x in self._cursor]
 
     def get_all_perm_rules(self):
         """
             Get all permission rules in the database
         :return: List of all permission rules
         """
-        query = "SELECT guild_id, command, perm_type, target, priority, allow FROM talos_data.perm_rules"
+        query = "SELECT * FROM talos_data.perm_rules"
         self._cursor.execute(query)
-        return self._cursor.fetchall()
-
-    def set_perm_rule(self, guild_id, command, perm_type, allow, priority=None, target=None):
-        """
-            Create or update a permission rule
-        :param guild_id: id of the guild to set rule for
-        :param command: name of the command to set rule for
-        :param perm_type: type of the rule to set
-        :param allow: whether to allow or forbid
-        :param priority: priority of the rule
-        :param target: target of the rule
-        """
-        if priority is None:
-            priority = _levels[perm_type]
-        if target is None:
-            target = "SELF"
-        query = "INSERT INTO talos_data.perm_rules VALUES (%s, %s, %s, %s, %s, %s)"\
-                "ON DUPLICATE KEY UPDATE "\
-                "guild_id = VALUES(guild_id),"\
-                "command = VALUES(command),"\
-                "perm_type = VALUES(perm_type),"\
-                "target = VALUES(target),"\
-                "priority = VALUES(priority),"\
-                "allow = VALUES(allow)"
-        self._cursor.execute(query, [guild_id, command, perm_type, target, priority, allow])
-
-    def remove_perm_rules(self, guild_id: int, command=None, perm_type=None, target=None):
-        """
-            Remove permissions rules fitting a specified context
-        :param guild_id: id of the guild to remove rules from
-        :param command: name of the command to remove rules for. Any if None
-        :param perm_type: type of the rules to remove. Any if None
-        :param target: target to remove rules for. Any if None
-        """
-        query = "DELETE FROM talos_data.perm_rules WHERE guild_id = %s"
-        if command or perm_type or target:
-            query += " AND "
-        args = []
-        if command:
-            query += "command = %s"
-            args.append(command)
-            if perm_type or target:
-                query += " AND "
-        if perm_type:
-            query += "perm_type = %s"
-            args.append(perm_type)
-            if target:
-                query += " AND "
-        if target:
-            query += "target = %s"
-            args.append(target)
-        self._cursor.execute(query, [guild_id] + args)
+        return [data.PermissionRule(x) for x in self._cursor]
 
     # Custom guild commands
 
@@ -739,11 +601,11 @@ class TalosDatabase:
         :param name: name of the command
         :return: text of the command or None
         """
-        query = "SELECT text FROM talos_data.guild_commands WHERE guild_id = %s and name = %s"
+        query = "SELECT * FROM talos_data.guild_commands WHERE guild_id = %s and name = %s"
         self._cursor.execute(query, [guild_id, name])
         result = self._cursor.fetchone()
         if result:
-            result = result[0]
+            result = data.GuildCommand(result)
         return result
 
     def get_guild_commands(self, guild_id):
@@ -752,9 +614,9 @@ class TalosDatabase:
         :param guild_id: id of the guild
         :return: List of commands
         """
-        query = "SELECT name, text FROM talos_data.guild_commands WHERE guild_id = %s"
+        query = "SELECT * FROM talos_data.guild_commands WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
-        return self._cursor.fetchall()
+        return [data.GuildCommand(x) for x in self._cursor]
 
     def remove_guild_command(self, guild_id, name):
         """
@@ -767,38 +629,6 @@ class TalosDatabase:
 
     # Custom guild events
 
-    def set_guild_event(self, guild_id, name, period, channel, text):
-        """
-            Set the text for a custom guild event
-        :param guild_id: id of the guild
-        :param name: name of the event
-        :param period: frequency of the event
-        :param text: text of the event
-        """
-        period_time = int(data.EventPeriod(period))
-        timestamp = int(dt.datetime.now().timestamp())
-        last_active = int(timestamp / period_time)
-
-        query = "INSERT INTO talos_data.guild_events VALUES (%s, %s, %s, %s, %s, %s) "\
-                "ON DUPLICATE KEY UPDATE "\
-                "guild_id = VALUES(guild_id),"\
-                "name = VALUES(name),"\
-                "period = VALUES(period),"\
-                "last_active = VALUES(last_active),"\
-                "channel = VALUES(channel),"\
-                "text = VALUES(text)"
-        self._cursor.execute(query, [guild_id, name, period, last_active, channel, text])
-
-    def update_guild_event(self, guild_id, name, last_active):
-        """
-            Update the last time this event was run
-        :param guild_id: id of the guild
-        :param name: name of the event
-        :param last_active: last time this event was active
-        """
-        query = "UPDATE talos_data.guild_events SET last_active = %s WHERE guild_id = %s AND name = %s"
-        self._cursor.execute(query, [last_active, guild_id, name])
-
     def get_guild_event(self, guild_id, name):
         """
             Get the text and period for a custom guild event
@@ -810,7 +640,7 @@ class TalosDatabase:
         self._cursor.execute(query, [guild_id, name])
         result = self._cursor.fetchone()
         if result:
-            result = data.GuildEvent(self, result)
+            result = data.GuildEvent(result)
         return result
 
     def get_guild_events(self, guild_id):
@@ -822,16 +652,7 @@ class TalosDatabase:
         query = "SELECT * FROM talos_data.guild_events WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
         results = self._cursor.fetchall()
-        return list(map(lambda x: data.GuildEvent(self, x), results))
-
-    def remove_guild_event(self, guild_id, name):
-        """
-            Remove a custom guild event
-        :param guild_id: id of the guild
-        :param name: name of the event
-        """
-        query = "DELETE FROM talos_data.guild_events WHERE guild_id = %s AND name = %s"
-        self._cursor.execute(query, [guild_id, name])
+        return [data.GuildEvent(x) for x in results]
 
     # Uptime methods
 

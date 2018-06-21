@@ -1,25 +1,87 @@
 
-class TalosUser:
+import abc
 
-    __slots__ = ("database", "id", "description", "total_commands", "cur_title", "invoked_data", "titles", "options")
 
-    def __init__(self, database, data):
-        self.database = database
+class Row(metaclass=abc.ABCMeta):
 
-        profile_data = data.get("profile", [])
-        self.id = profile_data[0]
-        self.description = profile_data[1]
-        self.total_commands = profile_data[2]
-        self.cur_title = profile_data[3] or ""
+    __slots__ = ()
 
-        self.invoked_data = data["invoked"]
+    def __init__(self, row, conv_bool=False):
+        for index in range(len(self.__slots__)):
+            slot = self.__slots__[index]
+            value = row[index]
+            if conv_bool and value == 0 or value == 1:
+                value = bool(value)
+            setattr(self, slot, value)
 
-        self.titles = list(map(lambda x: x[0], data["titles"]))
+    def to_row(self):
+        out = []
+        for slot in self.__slots__:
+            value = getattr(self, slot)
+            if isinstance(value, SqlConvertable):
+                value = value.sql_safe()
+            out.append(value)
+        return out
 
-        self.options = data["options"]
+    @abc.abstractmethod
+    def table_name(self): ...
+
+
+class MultiRow(metaclass=abc.ABCMeta):
+
+    __slots__ = ()
+
+    def __init__(self, data):
+        for slot in self.__slots__:
+            value = data[slot]
+            setattr(self, slot, value)
+
+    def __iter__(self):
+        """
+            Return an iterable of all Row like objects in the MultiRow. Override this if not all slots are Rows
+        :return: Iterable of rows
+        """
+        return iter(getattr(self, x) for x in self.__slots__)
+
+
+class SqlConvertable(metaclass=abc.ABCMeta):
+
+    __slots__ = ()
+
+    @abc.abstractmethod
+    def sql_safe(self): ...
+
+
+class TalosAdmin(Row):
+
+    __slots__ = ("guild_id", "user_id")
+
+    def table_name(self):
+        return "admins"
+
+
+class InvokedCommand(Row):
+
+    __slots__ = ("id", "command_name", "times_invoked")
+
+    def table_name(self):
+        return "invoked_commands"
+
+
+class UserTitle(Row):
+
+    __slots__ = ("id", "title")
+
+    def table_name(self):
+        return "user_titles"
+
+
+class TalosUser(MultiRow):
+
+    __slots__ = ("profile", "invoked", "titles", "options")
 
     def get_favorite_command(self):
-        return self.invoked_data[len(self.invoked_data) - 1]
+        return self.invoked[len(self.invoked) - 1]
 
     def check_title(self, title):
         print(title, self.titles)
@@ -29,56 +91,51 @@ class TalosUser:
 
     def set_title(self, title):
         if self.check_title(title):
-            self.database.set_title(self.id, title)
+            self.profile.title = title
             return True
         return False
 
     def clear_title(self):
-        self.database.set_title(self.id, None)
+        self.profile.title = None
 
 
-class UserOptions:
+class UserProfile(Row):
 
-    __slots__ = ("database", "id", "rich_embeds", "prefix")
+    __slots__ = ("id", "description", "commands_invoked", "title")
 
-    def __init__(self, database, data):
-        self.database = database
-
-        self.id = data[0]
-        self.rich_embeds = bool(data[1])
-        self.prefix = data[2]
+    def table_name(self):
+        return "user_profiles"
 
 
-class GuildOptions:
+class UserOptions(Row):
 
-    __slots__ = ("database", "id", "rich_embeds", "fail_message", "pm_help", "any_color", "commands", "user_commands",
+    __slots__ = ("id", "rich_embeds", "prefix")
+
+    def __init__(self, row):
+        super().__init__(row, True)
+
+    def table_name(self):
+        return "user_options"
+
+
+class GuildOptions(Row):
+
+    __slots__ = ("id", "rich_embeds", "fail_message", "pm_help", "any_color", "commands", "user_commands",
                  "joke_commands", "writing_prompts", "prompts_channel", "prefix", "timezone")
 
-    def __init__(self, database, data):
-        self.database = database
+    def __init__(self, row):
+        super().__init__(row, True)
 
-        self.id = data[0]
-        i = 1
-        for item in self.__slots__[2:]:
-            option = data[i]
-            if isinstance(option, int) and option == 1 or option == 0:
-                option = bool(option)
-            setattr(self, item, option)
-            i += 1
+    def table_name(self):
+        return "guild_options"
 
 
-class PermissionRule:
+class PermissionRule(Row):
 
-    __slots__ = ("database", "id", "command", "perm_type", "target", "priority", "allow")
+    __slots__ = ("id", "command", "perm_type", "target", "priority", "allow")
 
-    def __init__(self, database, data):
-        self.database = database
-
-        self.id = data[0]
-        i = 1
-        for item in self.__slots__[2:]:
-            setattr(self, item, data[i])
-            i += 1
+    def __init__(self, row):
+        super().__init__(row, True)
 
     def __lt__(self, other):
         if isinstance(other, PermissionRule):
@@ -88,12 +145,28 @@ class PermissionRule:
         if isinstance(other, PermissionRule):
             return self.priority > other.priority
 
+    def table_name(self):
+        return "perm_rules"
 
-class EventPeriod:
+
+class GuildCommand(Row):
+
+    __slots__ = ("id", "name", "text")
+
+    def table_name(self):
+        return "guild_commands"
+
+
+class EventPeriod(SqlConvertable):
 
     __slots__ = ("days", "hours", "minutes")
 
     def __init__(self, period):
+        if isinstance(period, EventPeriod):
+            self.days = period.days
+            self.hours = period.hours
+            self.minutes = period.minutes
+            return
         num = ""
         self.days = 0
         self.hours = 0
@@ -123,17 +196,17 @@ class EventPeriod:
     def __int__(self):
         return self.days * 86400 + self.hours * 3600 + self.minutes * 60
 
+    def sql_safe(self):
+        return str(self)
 
-class GuildEvent:
 
-    __slots__ = ("database", "id", "name", "period", "last_active", "channel", "text")
+class GuildEvent(Row):
 
-    def __init__(self, database, data):
-        self.database = database
+    __slots__ = ("id", "name", "period", "last_active", "channel", "text")
 
-        self.id = data[0]
-        self.name = data[1]
-        self.period = EventPeriod(data[2])
-        self.last_active = data[3]
-        self.channel = data[4]
-        self.text = data[5]
+    def __init__(self, row):
+        super().__init__(row, False)
+        self.period = EventPeriod(self.period)
+
+    def table_name(self):
+        return "guild_events"

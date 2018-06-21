@@ -40,26 +40,26 @@ class DevCommands(utils.TalosCog):
     async def playing(self, ctx, *, playing):
         """Changes what Talos is playing, the thing displayed under the name in the user list."""
         await self.bot.change_presence(activity=discord.Game(name=playing))
-        await ctx.send("Now playing {}".format(playing))
+        await ctx.send(f"Now playing {playing}")
 
     @commands.command(hidden=True, description="Change what Talos is streaming")
     async def streaming(self, ctx, *, streaming):
         """Changes what Talos is streaming, the thing displayed under the name in the user list."""
         await self.bot.change_presence(
             activity=discord.Streaming(name=streaming, url="http://www.twitch.tv/talos_bot_", type=1))
-        await ctx.send("Now streaming {}".format(streaming))
+        await ctx.send(f"Now streaming {streaming}")
 
     @commands.command(hidden=True, description="Change what Talos is listening to")
     async def listening(self, ctx, *, listening):
         """Changes what Talos is listening to, the thing displayed under the name in the user list."""
         await self.bot.change_presence(activity=discord.Activity(name=listening, type=discord.ActivityType.listening))
-        await ctx.send("Now listening to {}".format(listening))
+        await ctx.send(f"Now listening to {listening}")
 
     @commands.command(hidden=True, description="Change what Talos is watching")
     async def watching(self, ctx, *, watching):
         """Changes what Talos is watching, the thing displayed under the name in the user list."""
         await self.bot.change_presence(activity=discord.Activity(name=watching, type=discord.ActivityType.watching))
-        await ctx.send("Now watching {}".format(watching))
+        await ctx.send(f"Now watching {watching}")
 
     @commands.command(hidden=True, description="Kills Talos process. Speak, hands for me!")
     async def stop(self, ctx):
@@ -72,7 +72,7 @@ class DevCommands(utils.TalosCog):
         """Sets Talos' nickname in all guilds it is in."""
         for guild in self.bot.guilds:
             await guild.me.edit(nick=nick)
-        await ctx.send("Nickname universally changed to {}".format(nick))
+        await ctx.send(f"Nickname universally changed to {nick}")
 
     @commands.command(hidden=True, description="List various IDs")
     async def idlist(self, ctx):
@@ -80,10 +80,10 @@ class DevCommands(utils.TalosCog):
         out = "```\n"
         out += "Roles:\n"
         for role in ctx.guild.roles:
-            out += "  {}: {}\n".format(role.name, role.id).replace("@everyone", "@\u200beveryone")
+            out += f"  {role.name}: {role.id}\n".replace("@everyone", "@\u200beveryone")
         out += "Channels:\n"
         for channel in ctx.guild.channels:
-            out += "  {}: {}\n".format(channel.name, channel.id)
+            out += f"  {channel.name}: {channel.id}\n"
         out += "```"
         await ctx.send(out)
 
@@ -100,8 +100,8 @@ class DevCommands(utils.TalosCog):
         profile = self.database.get_user(user.id)
         if not profile:
             raise utils.NotRegistered(user)
-        self.database.add_title(user.id, title)
-        await ctx.send("Title `{}` granted to {}".format(title, str(user)))
+        self.database.save_item(utils.UserTitle((user.id, title)))
+        await ctx.send(f"Title `{title}` granted to {user}")
 
     @commands.command(hidden=True, description="Remove a title from a user. Now go in disgrace.")
     async def revoke_title(self, ctx, user: discord.User, *, title):
@@ -109,8 +109,8 @@ class DevCommands(utils.TalosCog):
         profile = self.database.get_user(user.id)
         if not profile:
             raise utils.NotRegistered(user)
-        self.database.remove_title(user.id, title)
-        await ctx.send("Title `{}` revoked from {}".format(title, str(user)))
+        self.database.remove_item(utils.UserTitle((user.id, title)))
+        await ctx.send(f"Title `{title}` revoked from {user}")
 
     @commands.command(hidden=True, description="Reload a Talos extension. Allows command updates without reboot.")
     async def reload(self, ctx, name):
@@ -129,9 +129,9 @@ class DevCommands(utils.TalosCog):
             result = str(eval(program))
             if result is not None and result is not "":
                 result = re.sub(r"([`])", "\g<1>\u200b", result)
-                await ctx.send("```py\n{}\n```".format(result))
+                await ctx.send(f"```py\n{result}\n```")
         except Exception as e:
-            await ctx.send("Program failed with {}: {}".format(e.__class__.__name__, e))
+            await ctx.send(f"Program failed with {type(e).__name__}: {e}")
 
     @commands.command(hidden=True, description="Run exec on input. I laugh in the face of danger.")
     async def exec(self, ctx, *, program):
@@ -142,19 +142,19 @@ class DevCommands(utils.TalosCog):
             program = re.sub(r"```(?:py)?", "", program, count=2)
         program = re.sub(r"(?<!\\)\\((?:\\\\)*)t", "\t", program)
         program = program.replace("\n", "\n        ")
-        program = """
+        program = f"""
 async def gyfiuqo(self, ctx):
     try:
         {program}
     except Exception as e:
-        await ctx.send("Program failed with {{}}: {{}}".format(e.__class__.__name__, e))
+        await ctx.send(f"Program failed with {{type(e).__name__}}: {{e}}")
         return
 self.bot.loop.create_task(gyfiuqo(self, ctx))
-""".format(program=program)
+"""
         try:
             exec(program)
         except Exception as e:
-            await ctx.send("Program failed with {}: {}".format(e.__class__.__name__, e))
+            await ctx.send(f"Program failed with {type(e).__name__}: {e}")
 
     @commands.command(hidden=True, description="Run a SQL statement. Weeh, Injection!")
     async def sql(self, ctx, *, statement):
@@ -162,7 +162,7 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
         try:
             await ctx.send(self.bot.database.raw_exec(statement))
         except Exception as e:
-            await ctx.send("Statement failed with {}: {}".format(e.__class__.__name__, e))
+            await ctx.send(f"Statement failed with {type(e).__name__}: {e}")
 
     @commands.command(hidden=True, description="Close and reopen the SQL database connection. Whoops.")
     async def reset_sql(self, ctx):

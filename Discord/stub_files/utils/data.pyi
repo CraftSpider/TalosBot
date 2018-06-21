@@ -1,21 +1,71 @@
 
-from typing import Dict, List, Any, Tuple, Union
-from utils.sql import TalosDatabase
+from typing import Dict, List, Any, Tuple, Union, Iterable
+import abc
+
+SqlRow = Tuple[Union[str, int], ...]
+
+class Row(metaclass=abc.ABCMeta):
+
+    __slots__ = ()
+
+    def __init__(self, row: SqlRow, conv_bool: bool = ...) -> None: ...
+
+    def to_row(self) -> List[str, int]: ...
+
+    @abc.abstractmethod
+    def table_name(self) -> str: ...
+
+class MultiRow(metaclass=abc.ABCMeta):
+
+    __slots__ = ()
+
+    def __init__(self, data: Dict[str, Union[type(Row), List[type(Row)], Dict[Any, type(Row)]]]) -> None: ...
+
+    def __iter__(self) -> Iterable[type(Row)]: ...
+
+class SqlConvertable(metaclass=abc.ABCMeta):
+
+    __slots__ = ()
+
+    @abc.abstractmethod
+    def sql_safe(self) -> Union[str, int]: ...
+
+class TalosAdmin(Row):
+
+    __slots__ = ("guild_id", "user_id")
+
+    guild_id: int
+    user_id: int
+
+    def table_name(self) -> str: ...
+
+class InvokedCommand(Row):
+
+    __slots__ = ("id", "command_name", "times_invoked")
+
+    id: int
+    command_name: str
+    times_invoked: int
+
+    def table_name(self) -> str: ...
+
+class UserTitle(Row):
+
+    __slots__ = ("id", "title")
+
+    id: int
+    title: str
+
+    def table_name(self) -> str: ...
 
 class TalosUser:
 
-    __slots__ = ("database", "id", "description", "total_commands", "cur_title", "invoked_data", "titles", "options")
+    __slots__ = ("profile", "invoked", "titles", "options")
 
-    database: TalosDatabase
-    id: int
-    description: str
-    total_commands: int
-    cur_title: str
-    invoked_data: List
-    titles: List[str]
+    profile: UserProfile
+    invoked: List[InvokedCommand]
+    titles: List[UserTitle]
     options: UserOptions
-
-    def __init__(self, database: TalosDatabase, data: Dict[str, List[Any]]) -> None: ...
 
     def get_favorite_command(self) -> Tuple[str, int]: ...
 
@@ -25,23 +75,34 @@ class TalosUser:
 
     def clear_title(self) -> None: ...
 
-class UserOptions:
+class UserProfile(Row):
 
-    __slots__ = ("database", "id", "rich_embeds", "prefix")
+    __slots__ = ("id", "description", "commands_invoked", "title")
 
     id: int
-    database: TalosDatabase
+    description: str
+    commands_invoked: int
+    title: str
+
+    def table_name(self) -> str: ...
+
+class UserOptions(Row):
+
+    __slots__ = ("id", "rich_embeds", "prefix")
+
+    id: int
     rich_embeds: bool
     prefix: str
 
-    def __init__(self, database: TalosDatabase, data: List[Union[str, int]]) -> None: ...
+    def __init__(self, row: SqlRow) -> None: ...
 
-class GuildOptions:
+    def table_name(self) -> str: ...
 
-    __slots__ = ("database", "id", "rich_embeds", "fail_message", "pm_help", "commands", "user_commands",
+class GuildOptions(Row):
+
+    __slots__ = ("id", "rich_embeds", "fail_message", "pm_help", "commands", "user_commands",
                   "joke_commands", "writing_prompts", "prompts_channel", "prefix", "timezone")
 
-    database: TalosDatabase
     id: int
     rich_embeds: bool
     fail_message: bool
@@ -54,13 +115,14 @@ class GuildOptions:
     prefix: str
     timezone: str
 
-    def __init__(self, database: TalosDatabase, data: List[Union[str, int]]) -> None: ...
+    def __init__(self, row: SqlRow) -> None: ...
 
-class PermissionRule:
+    def table_name(self) -> str: ...
 
-    __slots__ = ("database", "id", "command", "perm_type", "target", "priority", "allow")
+class PermissionRule(Row):
 
-    database: TalosDatabase
+    __slots__ = ("id", "command", "perm_type", "target", "priority", "allow")
+
     id: int
     command: str
     perm_type: str
@@ -68,13 +130,21 @@ class PermissionRule:
     priority: int
     allow: bool
 
-    def __init__(self, database: TalosDatabase, data: List[Union[str, int]]) -> None: ...
+    def __init__(self, row: SqlRow) -> None: ...
 
     def __lt__(self, other: Any) -> bool: ...
 
     def __gt__(self, other: Any) -> bool: ...
 
-class EventPeriod:
+    def table_name(self) -> str: ...
+
+class GuildCommand(Row):
+
+    __slots__ = ("id", "name", "text")
+
+    def table_name(self) -> str: ...
+
+class EventPeriod(SqlConvertable):
 
     __slots__ = ("days", "hours", "minutes")
 
@@ -82,17 +152,18 @@ class EventPeriod:
     hours: int
     minutes: int
 
-    def __init__(self, period: str) -> None: ...
+    def __init__(self, period: Union[EventPeriod, str]) -> None: ...
 
     def __str__(self) -> str: ...
 
     def __int__(self) -> int: ...
 
-class GuildEvent:
+    def sql_safe(self) -> str: ...
 
-    __slots__ = ("database", "id", "name", "period", "last_active", "channel", "text")
+class GuildEvent(Row):
 
-    database: TalosDatabase
+    __slots__ = ("id", "name", "period", "last_active", "channel", "text")
+
     id: int
     name: str
     period: EventPeriod
@@ -100,4 +171,6 @@ class GuildEvent:
     channel: str
     text: str
 
-    def __init__(self, database: TalosDatabase, data: List[Union[str, int]]) -> None: ...
+    def __init__(self, data: SqlRow) -> None: ...
+
+    def table_name(self) -> str: ...
