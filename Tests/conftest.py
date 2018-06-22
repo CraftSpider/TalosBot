@@ -1,12 +1,13 @@
 
 import asyncio
+import pathlib
 import pytest
 
 import class_factories as dfacts
 import talos as dtalos
 
 
-dtalos.TOKEN_FILE = "../Discord/token.txt"
+dtalos.TOKEN_FILE = "../Discord/token.json"
 
 
 @pytest.fixture
@@ -20,13 +21,9 @@ def testlos():
 
 @pytest.fixture(scope="module")
 def testlos_m(request):
-
-    try:
-        nano_login, btn_key, cat_key = dtalos.load_nano_login(), dtalos.load_btn_key(), dtalos.load_cat_key()
-    except FileNotFoundError:
-        nano_login, btn_key, cat_key = ["", ""], "", ""
-
-    testlos = dtalos.Talos(nano_login=nano_login, btn_key=btn_key, cat_key=cat_key)
+    tokens = dtalos.json_load(dtalos.TOKEN_FILE)
+    nano = tokens.get("nano", ["", ""])
+    testlos = dtalos.Talos(nano_login=nano, btn_key=tokens.get("btn"), cat_key=tokens.get("cat"))
     testlos._connection = dfacts.get_state()
     testlos.load_extensions()
     request.module.testlos = testlos
@@ -38,3 +35,12 @@ def testlos_m(request):
 @pytest.fixture(scope="module")
 def loop():
     return asyncio.get_event_loop()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def ensure_tokens():
+    path = pathlib.Path(dtalos.TOKEN_FILE)
+    if path.is_file():
+        return
+    with open(path, "w+") as file:
+        file.write('{"token": "", "sql": ["root", ""]}')

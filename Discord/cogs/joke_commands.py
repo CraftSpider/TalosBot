@@ -69,7 +69,6 @@ class JokeCommands(utils.TalosCog):
         img_data = discord.File(data["img_data"])
         img = data["img"]
         alt = data["alt"]
-        print(img)
         if ctx.bot.should_embed(ctx):
             with utils.PaginatedEmbed() as embed:
                 embed.title = title

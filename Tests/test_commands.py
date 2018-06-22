@@ -2,12 +2,13 @@
 import asyncio
 import logging
 import pytest
+import talos
 
 import class_factories as dfacts
 import discord.ext.commands as commands
 
 log = logging.getLogger("talos.tests")
-testlos = None
+testlos: talos.Talos = None
 test_values = {}
 sent_queue = asyncio.queues.Queue()
 
@@ -28,6 +29,7 @@ def module_test_values():
         test_values["member_{}".format(i + 1)] = dfacts.make_member("Test", "{:04}".format(i), test_values["guild"])
     test_values["me"] = dfacts.make_member("Testlos", f"{i+1:04}", test_values["guild"],
                                            id_num=dfacts.get_state().user.id)
+    test_values["dev"] = dfacts.make_member("Dev", f"{i+1:04}", test_values["guild"], id_num=talos.Talos.DEVS[0])
 
     yield
 
@@ -92,15 +94,15 @@ async def command_callback(content, **kwargs):
     await sent_queue.put(response)
 
 
-async def call(content, bot=None, callback=command_callback, channel=1, member=1):
+async def call(content, bot=None, callback=command_callback, channel=1, member="member_1"):
     if bot is None:
         bot = testlos
     if len(test_values) == 0:
         log.error("Attempted to make call before context prepared")
         return
     message = dfacts.make_message(content,
-                                  test_values["member_{}".format(member)],
-                                  test_values["channel_{}".format(channel)])
+                                  test_values[member],
+                                  test_values[f"channel_{channel}"])
     ctx = await dfacts.make_context(callback, message, bot)
     await bot.invoke(ctx)
 
@@ -131,6 +133,9 @@ def test_user_commands(loop):
 
 
 async def commands_async():
+    # Ensure database is setup correctly. This function relies on things tested in test_utils
+    testlos.database.verify_schema()
+
     with pytest.raises(commands.MissingRequiredArgument):
         await call("^choose")
     await empty_queue()  # Clear out error message, that's tested somewhere else
@@ -214,11 +219,11 @@ async def commands_async():
     verify_message("Please specify the length of your word war (in minutes).")
     await call("^ww 0")
     verify_message("Please choose a length between 1 and 60 minutes.")
-    await call("^ww 1")
-    await dfacts.run_all_events()
-    verify_message()
-    await asyncio.sleep(61)
-    verify_message()
+    # await call("^ww 1")
+    # await dfacts.run_all_events()
+    # verify_message()
+    # await asyncio.sleep(61)
+    # verify_message()
 
 
 async def admin_commands_async():

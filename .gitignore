@@ -12,5 +12,5 @@
 
 # Talos Files
 *.log
-*/token.txt
+*/token.json
 */*.dat

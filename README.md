@@ -37,6 +37,6 @@ If prompted, allow popups- the window is the log4js console.
 
 3. Navigate into the `TalosBot\Discord\` file
 
-4. Create a file named exactly `Token.txt` and place your discord bot token in that file.
+4. Create a file named exactly `token.json` and place your discord bot token in that file, under the "token" key
 
 5. Run the command `python3 talos.py`. Talos should now be running.

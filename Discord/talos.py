@@ -20,7 +20,7 @@ from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered,
 #
 
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
-TOKEN_FILE = "token.txt"
+TOKEN_FILE = "token.json"
 
 #
 #   Command Vars
@@ -318,7 +318,7 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         ctx = await super().get_context(message, cls=cls)
         if ctx.command is None and message.guild is not None:
             try:
-                text = self.database.get_guild_command(message.guild.id, ctx.invoked_with)
+                text = self.database.get_guild_command(message.guild.id, ctx.invoked_with).text
             except mysql.connector.Error:
                 text = None
             ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
@@ -417,89 +417,21 @@ def talos_prefix(bot, message):
             return [bot.DEFAULT_PREFIX, mention]
 
 
-def string_load(filename):
+def json_load(filename):
     """
         Loads a file as an array of strings and returns that
     :param filename: name of file to load
     :return: array of strings, each string one line in the file.
     """
-    out = []
+    out = {}
+    import json
     with open(filename, 'a+') as file:
         try:
             file.seek(0)
-            out = file.readlines()
+            out = json.load(file)
         except Exception as ex:
             log.error(ex)
     return out
-
-
-def load_token():
-    """
-        Loads the token file and returns the token
-    :return: Talos client Token
-    """
-    file = string_load(TOKEN_FILE)
-    return file[0].strip()
-
-
-def load_botlist_token():
-    """
-        Load the discord-botlist token from the token file.
-    :return: Talos discord botlist token
-    """
-    file = string_load(TOKEN_FILE)
-    try:
-        return file[1].strip()
-    except IndexError:
-        return ""
-
-
-def load_nano_login():
-    """
-        Load the NaNoWriMo login info from the token file.
-    :return: Talos NaNoWriMo login info
-    """
-    file = string_load(TOKEN_FILE)
-    try:
-        return file[2].strip().split(":")
-    except IndexError:
-        return ["", ""]
-
-
-def load_btn_key():
-    """
-        Load the BehindTheName key from the token file.
-    :return: Talos BehindTheName token
-    """
-    file = string_load(TOKEN_FILE)
-    try:
-        return file[3].strip()
-    except IndexError:
-        return ""
-
-
-def load_sql_data():
-    """
-        Load the SQL database login.
-    :return:  Talos SQL login info, list.
-    """
-    file = string_load(TOKEN_FILE)
-    try:
-        return file[4].strip().split(":")
-    except IndexError:
-        return ["", ""]
-
-
-def load_cat_key():
-    """
-        Load the TheCatAPI key from the token file.
-    :return:
-    """
-    file = string_load(TOKEN_FILE)
-    try:
-        return file[5].strip()
-    except IndexError:
-        return ""
 
 
 def main():
@@ -508,39 +440,48 @@ def main():
     :return: None
     """
     # Load Talos tokens
-    bot_token = ""
-    try:
-        bot_token = load_token()
-    except IndexError:
+    tokens = json_load(TOKEN_FILE)
+
+    bot_token = tokens.get("token")
+    if not bot_token:
         log.fatal("Bot token missing, talos cannot start.")
         exit(126)
 
-    botlist_token = load_botlist_token()
+    botlist_token = tokens.get("botlist")
     if not botlist_token:
         log.warning("Botlist token missing, stats will not be posted.")
 
-    nano_login = load_nano_login()
+    nano_login = tokens.get("nano")
     if not nano_login:
         log.warning("Nano Login missing, nano commands will likely fail")
 
-    btn_key = load_btn_key()
+    btn_key = tokens.get("btn")
     if not btn_key:
         log.warning("Behind The Name key missing, name commands will fail.")
 
-    cat_key = load_cat_key()
+    cat_key = tokens.get("cat")
     if not cat_key:
         log.warning("TheCatAPI key missing, catpic command will fail.")
 
     # Load Talos database
-    cnx = None
     login = []
+    cnx = None
     try:
         sql = Talos.SQL_ADDRESS.split(":")
-        login = load_sql_data()
-        cnx = mysql.connector.connect(user=login[0], password=login[1], host=sql[0], port=int(sql[1]),
-                                      database=login[2], autocommit=True)
+        login = tokens.get("sql", ["", ""])
+        cnx = mysql.connector.connect(user=login[0], password=login[1], host=sql[0], port=int(sql[1]), autocommit=True)
         if cnx is None:
             log.warning("Talos database missing, no data will be saved this session.")
+        else:
+            try:
+                cnx.cursor().execute("USE talos_data")
+            except mysql.connector.DatabaseError:
+                log.info("Talos Schema non-extant, creating")
+                try:
+                    cnx.cursor().execute("CREATE SCHEMA talos_data")
+                except mysql.connector.DatabaseError:
+                    log.warning("Talos Schema could not be created, dropping connection")
+                    cnx = None
     except Exception as e:
         log.warning(e)
         log.warning("Database connection dropped, no data will be saved this session.")
