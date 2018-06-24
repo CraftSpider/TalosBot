@@ -189,16 +189,16 @@ class Room:
             self.password = password
 
         join_data = await self._prelim_join()
+        print("Join Data:", join_data)
 
         async with self.session.post(self.url, data=join_data) as response:
             page = await response.text()
             resplog.debug("Join Room Main:")
             resplog.debug(page)
-            print(page)
+            # print(page)
             parser = ScriptVarsParser()
             parser.feed(page)
             vars = parser.close()
-            print(next(filter(lambda x: x[0] == KEY_DICT["ROOM_OFFSET"], vars)))
             self.offset = next(filter(lambda x: x[0] == KEY_DICT["ROOM_OFFSET"], vars))
             self.key = next(filter(lambda x: x[0] == KEY_DICT["ROOM_KEY"], vars))
 
