@@ -49,6 +49,8 @@ def html_to_markdown(html_text):
 class Commands(utils.TalosCog):
     """These commands can be used by anyone, as long as Talos is awake.\nThey don't care who is using them."""
 
+    __slots__ = ("__local_check",)
+
     # keep track of active WWs
     active_wws = {}
 
@@ -56,9 +58,8 @@ class Commands(utils.TalosCog):
     #   Generator Strings
     #
     noun = ["dog", "cat", "robot", "astronaut", "man", "woman", "person", "child", "giant", "elephant", "zebra",
-            "animal", "box", "tree", "wizard", "mage", "swordsman", "soldier", "inventor", "doctor", "Talos", "East"
-                                                                                                              "dinosaur",
-            "insect", "nerd", "dancer", "singer", "actor", "barista", "acrobat", "gamer", "writer",
+            "animal", "box", "tree", "wizard", "mage", "swordsman", "soldier", "inventor", "doctor", "Talos", "East",
+            "dinosaur", "insect", "nerd", "dancer", "singer", "actor", "barista", "acrobat", "gamer", "writer",
             "dragon"]
     adjective = ["happy", "sad", "athletic", "giant", "tiny", "smart", "silly", "unintelligent", "funny",
                  "coffee-loving", "lazy", "spray-tanned", "angry", "disheveled", "annoying", "loud", "quiet", "shy",
@@ -238,45 +239,45 @@ class Commands(utils.TalosCog):
             await ctx.send("Sorry, I couldn't find that user or novel.")
             return
         # Get basic novel info
-        avatar = "https:" + re.search(r"<img alt=\".*?\" class=\".*?avatar_thumb.*?\" src=\"(.*?)\" />",
-                                      novel_page).group(1)
-        novel_title = re.search(r"<strong>Novel:</strong>\n(.*)", novel_page).group(1)
-        novel_cover = re.search(r"<img .*?id=\"novel_cover_thumb\".*?src=\"(.*?)\" />", novel_page)
-        if novel_cover is not None:
-            novel_cover = "https:" + novel_cover.group(1)
-        novel_genre = re.search(r"<strong>Genre:</strong>\n(.*)", novel_page).group(1)
-        novel_synopsis = html_to_markdown(re.search(r"<div id='novel_synopsis'>(.*?)</div>", novel_page, re.S).group(1))
+        avatar = "https:" + novel_page.get_by_class("avatar_thumb")[0].get_attribute("src")
+        novel_title = novel_page.get_by_class("media-heading")[0].innertext
+        novel_cover = novel_page.get_by_id("novel_cover_thumb")
+        if novel_cover:
+            novel_cover = "https:" + novel_cover.get_attribute("src")
+        novel_genre = novel_page.get_by_class("genre")[0].innertext
+        novel_synopsis = html_to_markdown(novel_page.get_by_id("novel_synopsis").first_child.innertext)
         if novel_synopsis.strip() == "":
             novel_synopsis = None
         elif len(novel_synopsis) > 1024:
             novel_synopsis = novel_synopsis[:1021] + "..."
-        novel_excerpt = html_to_markdown(re.search(r"<div id='novel_excerpt'>(.*?)</div>", novel_page, re.S).group(1))
+        novel_excerpt = html_to_markdown(novel_page.get_by_id("novel_excerpt").first_child.innertext)
         if novel_excerpt.strip() == "":
             novel_excerpt = None
         elif len(novel_excerpt) > 1024:
             novel_excerpt = novel_excerpt[:1021] + "..."
         # Get novel statistics
-        base_regex = r"<div class='title'>{}</div>\n<div class='value'>\n?(.*?)(?:\n|</div>)"
-        titles = ["Your Average Per Day", "Words Written Today", "Total Words Written",
-                  "Target Average Words Per Day", "Words Remaining"]
-        stats = []
-        for item in titles:
-            match = re.search(base_regex.format(item), novel_stats)
-            if match is None:
-                stats.append(0)
-                continue
-            stats.append(
-                int(match.group(1).replace(",", ""))
-            )
-        stats[3] = stats[3] - stats[1]
+        stats_el = novel_stats.get_by_id("novel_stats")
+        stat_list = novel_stats.get_by_class("stat", stats_el)
+
+        title_transform = {
+            "Your Average Per Day": "Daily Avg",
+            "Words Written Today": "Words Today",
+            "Total Words Written": "Words Total",
+            "Target Average Words Per Day": "Target Avg",
+            "Words Remaining": "Remaining Total"
+        }
+        stats = {}
+        for element in stat_list:
+            title = element.child_nodes[0].innertext
+            number = element.child_nodes[1].innertext
+            stats[title_transform.get(title, title)] = int(number.replace(",", ""))
         if self.bot.should_embed(ctx):
             # Construct Embed
             description = f"*Title:* {novel_title} *Genre:* {novel_genre}\n**Wordcount Details**\n"
-            description += f"Daily Avg: {stats[0]:,}\n"
-            description += f"Words Today: {stats[1]:,}\n"
-            description += f"Words Total: {stats[2]:,}\n"
-            description += f"Remaining Today: {stats[3]:,}\n"
-            description += f"Remaining Total: {stats[4]:,}\n"
+            for stat in stats:
+                description += f"{stat}: {stats[stat]:,}\n"
+            if stats.get("Words Today") and stats.get("Target Avg"):
+                description += f"Remaining Total: {stats['Target Avg'] - stats['Words Today']:,}\n"
             with utils.PaginatedEmbed() as embed:
                 embed.title = "__Novel Details__"
                 embed.description = description
@@ -291,46 +292,43 @@ class Commands(utils.TalosCog):
                 await ctx.send(embed=page)
 
     @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
-    async def _profile(self, ctx, username):  # TODO: Convert to an HTML Parser
+    async def _profile(self, ctx, username):
         """Fetches detailed info on a user's profile from the NaNo website."""
         site_name = username.lower().replace(" ", "-")
         site_name = site_name.lower().replace(".", "-")
 
-        page = await self.bot.session.nano_get_user(site_name)
-        if page is None:
+        doc = await self.bot.session.nano_get_user(site_name)
+        if doc is None:
             await ctx.send("Sorry, I couldn't find that user on the NaNo site.")
             return
         # Get member info
-        member_age = re.search(r"<div class='member_for'>(.*?)</div>", page).group(1)
-        author_bio = re.search(r"<h3>Author Bio</h3>.*?<div class='panel-body'>(.*?)</div>", page, re.S)
-        if author_bio is not None:
-            author_bio = author_bio.group(1)
-            author_bio = html_to_markdown(author_bio)
-            if len(member_age) + len(author_bio) > 2048:
-                author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
-            author_bio = author_bio.strip()
-        else:
-            author_bio = ""
-        avatar = "https:" + re.search(r"<img alt=\".*?\" class=\".*?avatar_thumb.*?\" src=\"(.*?)\" />", page).group(1)
+        member_age = doc.get_by_class("member_for")[0].innertext
+        bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
+                                doc.get_by_class("panel-heading")))
+        author_bio = bio_panel.parent.next_child(bio_panel).first_child.innertext
+        if len(member_age) + len(author_bio) > 2048:
+            author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
+        author_bio = author_bio.strip()
+        avatar = "https:" + doc.get_by_class("avatar_thumb")[0].get_attribute("src")
         # Get basic novel stats
-        novel_title = re.search(r"<strong>Novel:</strong>\n(.*)", page)
-        if novel_title is not None:
-            novel_title = novel_title.group(1)
-            novel_genre = re.search(r"<strong>Genre:</strong>\n(.*)", page).group(1)
-            novel_words = re.search("<strong>(\d*)</strong>\nwords(?: so far)?", page).group(1)
+        novel_data = doc.get_by_class("panel-default")[1].first_child.first_child
+        data_marks = doc.get_by_tag("li", novel_data)
+        novel_title = None
+        if data_marks:
+            novel_title = data_marks[0].innertext
+            novel_genre = data_marks[1].innertext
+            novel_words = data_marks[2].first_child.innertext
         else:
             novel_genre = None
             novel_words = None
         # Get fact sheet
-        fact_sheet = re.search(r"<dl>(.*?)</dl>", page, flags=re.S).group(1)
-        if fact_sheet.strip() != "":
-            fact_sheet = re.sub(r"<dd>|</dd>", "", fact_sheet)
-            fact_sheet = re.sub(r"<dt>|</dt>", "**", fact_sheet)
-            fact_sheet = re.sub(r"\*\*Website:\*\*\n<.*?href=\"http://\".*?>.*?</a>\n?", "", fact_sheet)
-            fact_sheet = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", fact_sheet)
-            fact_sheet = fact_sheet.strip()
-        else:
-            fact_sheet = None
+        fact_sheet = ""
+        fact_table = doc.get_by_class("profile-fact-sheet")[0].child_nodes[1].child_nodes[0]
+        for child in fact_table.child_nodes:
+            if child.tag == "dt":
+                fact_sheet += f"**{child.innertext}**\n"
+            elif child.tag == "dd":
+                fact_sheet += f"{child.innertext}\n"
         if self.bot.should_embed(ctx):
             # Build Embed
             with utils.PaginatedEmbed() as embed:
@@ -343,7 +341,7 @@ class Commands(utils.TalosCog):
                         name="__Novel Info__",
                         value=f"**Title:** {novel_title}\n**Genre:** {novel_genre}\n**Words:** {novel_words}"
                     )
-                if fact_sheet is not None:
+                if fact_sheet:
                     embed.add_field(
                         name="__Fact Sheet__",
                         value=fact_sheet

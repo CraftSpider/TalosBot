@@ -498,8 +498,8 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("This server has no custom commands")
             return
         out = "```\nServer Commands:\n"
-        for name, text in command_list:
-            out += f"{name}: {text}\n"
+        for command in command_list:
+            out += f"{command.name}: {command.text}\n"
         out += "```"
         await ctx.send(out)
 

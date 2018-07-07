@@ -321,6 +321,8 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
                 text = self.database.get_guild_command(message.guild.id, ctx.invoked_with).text
             except mysql.connector.Error:
                 text = None
+            except AttributeError:
+                text = None
             ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
         return ctx
 

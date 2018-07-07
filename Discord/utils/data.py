@@ -14,6 +14,22 @@ class Row(metaclass=abc.ABCMeta):
                 value = bool(value)
             setattr(self, slot, value)
 
+    def __str__(self):
+        return f"{type(self).__name__}({', '.join(str(getattr(self, x)) for x in self.__slots__)})"
+
+    def __repr__(self):
+        return f"{type(self).__name__}([{', '.join(repr(getattr(self, x)) for x in self.__slots__)}])"
+
+    def __eq__(self, other):
+        for slot in self.__slots__:
+            sval = getattr(self, slot, complex)
+            oval = getattr(other, slot, complex)
+            if sval == complex or oval == complex:
+                return False
+            if sval != oval:
+                return False
+        return True
+
     def to_row(self):
         out = []
         for slot in self.__slots__:
@@ -29,24 +45,32 @@ class Row(metaclass=abc.ABCMeta):
 
 class MultiRow(metaclass=abc.ABCMeta):
 
-    __slots__ = ()
+    __slots__ = ("_removed",)
 
     def __init__(self, data):
+        self._removed = []
         for slot in self.__slots__:
-            value = data[slot]
+            value = data.get(slot)
             setattr(self, slot, value)
 
     def __iter__(self):
         """
-            Return an iterable of all Row like objects in the MultiRow. Override this if not all slots are Rows
-        :return: Iterable of rows
+            Return an iterable of all Row like objects or iterable of row like objects in the MultiRow.
+            Override this if not all slots are Rows or iterables of rows
+        :return: Iterable of rows or iterable containing rows
         """
         return iter(getattr(self, x) for x in self.__slots__)
+
+    @abc.abstractmethod
+    def removed_items(self): ...
 
 
 class SqlConvertable(metaclass=abc.ABCMeta):
 
     __slots__ = ()
+
+    def __eq__(self, other):
+        return self.sql_safe() == other.sql_safe()
 
     @abc.abstractmethod
     def sql_safe(self): ...
@@ -76,29 +100,6 @@ class UserTitle(Row):
         return "user_titles"
 
 
-class TalosUser(MultiRow):
-
-    __slots__ = ("profile", "invoked", "titles", "options")
-
-    def get_favorite_command(self):
-        return self.invoked[len(self.invoked) - 1]
-
-    def check_title(self, title):
-        print(title, self.titles)
-        if title in self.titles:
-            return True
-        return False
-
-    def set_title(self, title):
-        if self.check_title(title):
-            self.profile.title = title
-            return True
-        return False
-
-    def clear_title(self):
-        self.profile.title = None
-
-
 class UserProfile(Row):
 
     __slots__ = ("id", "description", "commands_invoked", "title")
@@ -116,6 +117,50 @@ class UserOptions(Row):
 
     def table_name(self):
         return "user_options"
+
+
+class TalosUser(MultiRow):
+
+    __slots__ = ("profile", "invoked", "titles", "options")
+
+    @property
+    def id(self):
+        return self.profile.id
+
+    @property
+    def title(self):
+        return self.profile.title
+
+    def removed_items(self):
+        return self._removed
+
+    def get_favorite_command(self):
+        return self.invoked[0]
+
+    def add_title(self, title):
+        if not self.check_title(title):
+            self.titles.append(UserTitle([self.id, title]))
+
+    def check_title(self, title):
+        for user_title in self.titles:
+            if user_title.title == title:
+                return True
+        return False
+
+    def set_title(self, title):
+        if self.check_title(title):
+            self.profile.title = title
+            return True
+        return False
+
+    def clear_title(self):
+        self.profile.title = None
+
+    def remove_title(self, title):
+        removed = filter(lambda x: x.title == title, self.titles)
+        for item in removed:
+            self.titles.remove(item)
+            self._removed.append(item)
 
 
 class GuildOptions(Row):

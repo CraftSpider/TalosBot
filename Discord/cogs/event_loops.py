@@ -11,8 +11,7 @@ import random
 import argparse
 import utils
 import command_lang
-import discord.ext.commands as commands
-from datetime import datetime, timedelta, date
+import datetime as dt
 from apiclient import discovery
 from oauth2client import client, tools
 from oauth2client.file import Storage
@@ -125,30 +124,31 @@ class EventLoops(utils.TalosCog):
     async def minute_task(self):
         """Called once at the start of every minute"""
         log.info("Starting minute task")
-        now = datetime.now()
-        delta = timedelta(seconds=60 - now.second)
+        now = dt.datetime.now()
+        delta = dt.timedelta(seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
             for guild in self.bot.guilds:
                 events = self.database.get_guild_events(guild.id)
                 for event in events:
                     period = int(event.period)
-                    time = int(datetime.now().timestamp())
+                    time = int(dt.datetime.now().timestamp())
                     current = int(time / period)
                     if current > event.last_active:
                         channel = list(filter(lambda x: x.id == event.channel, guild.channels))[0]
                         log.info("Kicking off event " + event.name)
                         await channel.send(cl_parser.parse_lang(channel, event.text))
-                        self.database.update_guild_event(guild.id, event.name, current)
+                        event.last_active = current
+                        self.database.save_item(event)
 
-            delta = timedelta(seconds=60 - now.second)
+            delta = dt.timedelta(seconds=60 - now.second)
             await asyncio.sleep(delta.total_seconds())
 
     async def hourly_task(self):
         """Called once at the top of every hour."""
         log.info("Starting hourly task")
-        now = datetime.now()
-        delta = timedelta(minutes=60 - now.minute, seconds=60 - now.second)
+        now = dt.datetime.now()
+        delta = dt.timedelta(minutes=60 - now.minute, seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Hourly task runs")
@@ -160,39 +160,39 @@ class EventLoops(utils.TalosCog):
                 api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
                 await self.bot.session.post(api_url, data=data, headers=headers)
 
-            delta = timedelta(minutes=60 - now.minute, seconds=60 - now.second)
+            delta = dt.timedelta(minutes=60 - now.minute, seconds=60 - now.second)
             await asyncio.sleep(delta.total_seconds())
 
     async def daily_task(self):
         """Called once every day at midnight, does most time-consuming tasks."""
         log.info("Starting daily task")
-        now = datetime.now()
-        delta = timedelta(hours=24 - now.hour, minutes=60 - now.minute, seconds=60 - now.second)
+        now = dt.datetime.now()
+        delta = dt.timedelta(hours=24 - now.hour, minutes=60 - now.minute, seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Daily task runs")
-            self.database.remove_uptime(int((datetime.now() - timedelta(days=30)).timestamp()))
+            self.database.remove_uptime(int((dt.datetime.now() - dt.timedelta(days=30)).timestamp()))
 
-            delta = timedelta(hours=24 - now.hour, minutes=60 - now.minute, seconds=60 - now.second)
+            delta = dt.timedelta(hours=24 - now.hour, minutes=60 - now.minute, seconds=60 - now.second)
             await asyncio.sleep(delta.total_seconds())
 
     async def uptime_task(self):
         """Called once a minute, to verify uptime. Old uptimes cleaned once a day."""
         log.info("Starting uptime task")
-        delta = timedelta(seconds=60 - datetime.now().replace(microsecond=0).second)
+        delta = dt.timedelta(seconds=60 - dt.datetime.now().replace(microsecond=0).second)
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Uptime task runs")
-            self.database.add_uptime(int(datetime.now().replace(microsecond=0).timestamp()))
+            self.database.add_uptime(int(dt.datetime.now().replace(microsecond=0).timestamp()))
 
-            delta = timedelta(seconds=60 - datetime.now().replace(microsecond=0).second)
+            delta = dt.timedelta(seconds=60 - dt.datetime.now().replace(microsecond=0).second)
             await asyncio.sleep(delta.total_seconds())
 
     async def prompt_task(self):
         """Once a day, grabs a prompt from google sheets and posts it to the defined prompts chat, if enabled."""
         log.info("Starting prompt task")
-        now = datetime.now()
-        delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24, minutes=60 - now.minute,
+        now = dt.datetime.now()
+        delta = dt.timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24, minutes=60 - now.minute,
                           seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
@@ -207,7 +207,7 @@ class EventLoops(utils.TalosCog):
             prompt = random.choice(possibilities)
 
             log.debug(prompt)
-            out = f"__Daily Prompt {date.today().strftime('%m/%d')}__\n\n"
+            out = f"__Daily Prompt {dt.date.today().strftime('%m/%d')}__\n\n"
             prompt[0] = prompt[0].strip("\"")
             out += f"{prompt[0]}\n\n"
             original = "Original prompt" if prompt[1].upper() == "YES" else "Submitted"
@@ -223,8 +223,8 @@ class EventLoops(utils.TalosCog):
             self.set_spreadsheet(prompt_sheet_id, [prompt],
                                  f"Form Responses 1!B{values.index(prompt) + 1}:E{values.index(prompt) + 1}")
 
-            now = datetime.now()
-            delta = timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME - 1)) % 24, minutes=60 - now.minute,
+            now = dt.datetime.now()
+            delta = dt.timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME - 1)) % 24, minutes=60 - now.minute,
                               seconds=60 - now.second)
             await asyncio.sleep(delta.total_seconds())
 

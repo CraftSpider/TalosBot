@@ -328,6 +328,12 @@ class TalosDatabase:
         except AttributeError:
             for row in item:
                 self.save_item(row)
+            try:
+                removed_items = item.removed_items()
+                for removed in removed_items:
+                    self.remove_item(removed)
+            except AttributeError:  # So iterables not having this property is just ignored
+                pass
 
     def remove_item(self, item, general=False):
         """
@@ -476,7 +482,7 @@ class TalosDatabase:
         if user_data.get("profile") is None:
             return None
 
-        query = "SELECT * FROM talos_data.invoked_commands WHERE user_id = %s ORDER BY times_invoked"
+        query = "SELECT * FROM talos_data.invoked_commands WHERE user_id = %s ORDER BY times_invoked DESC"
         self._cursor.execute(query, [user_id])
         user_data["invoked"] = [data.InvokedCommand(x) for x in self._cursor]
 

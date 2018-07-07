@@ -1,16 +1,17 @@
 
 import pathlib
 import logging
+import secrets
+import json
 import aiohttp.web as web
 
 log = logging.getLogger("talosserver")
 log.setLevel(logging.INFO)
 
 
-HTML_PATH = pathlib.Path.home() / "public_html"
+SETTINGS_FILE = "settings.json"
 
 
-WEBMASTER_EMAIL = "talos.ptp@gmail.com"
 BACKUP_ERROR = """
 While attempting to handle HTTP code {0}, an unexpected error occured resulting in HTTP code {1}.
 
@@ -29,12 +30,31 @@ KNOWN_MIMES = {
     ".svg": "image/svg+xml"
 }
 
+counter = 0
+
 
 class ServerError(Exception):
     pass
 
 
 class TalosPrimaryHandler:
+
+    _instance = None
+
+    def __new__(cls, settings=None):
+
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+
+        return cls._instance
+
+    def __init__(self, settings=None):
+        if getattr(self, "_settings", None) is None:
+            if settings is None:
+                raise ServerError("Missing settings on server handler creation")
+            self._settings = settings
+            self.webmaster = self._settings.get("webmaster")
+            self.base_path = pathlib.Path(self._settings.get("basepath"))
 
     async def site_get(self, request):
         log.info("Site GET")
@@ -55,15 +75,37 @@ class TalosPrimaryHandler:
         response = web.Response(headers=response.headers, status=response.status)
         return response
 
-    async def api_post(self):
+    async def api_post(self, request):
         log.info("API POST")
+        path = request.path.lstrip("/").replace("/", "_")
+        print(request.headers)
+        try:
+            data = await request.json()
+            user_token = data.get("token")
+            username = data.get("username")
+            server_token = self._settings["tokens"].get(username)
+            if user_token is None or server_token is None:
+                return web.Response(text="Invalid Token/Unknown User", status=403)
+            known = secrets.compare_digest(user_token, server_token)
+            if not known:
+                return web.Response(text="Invalid Token/Unknown User", status=403)
+            # And finally we can do what the request is asking
+            method = getattr(self, path, None)
+            if method is not None:
+                return await method(data)
+        except json.JSONDecodeError:
+            return web.Response(text="Malformed JSON in request", status=400)
         return web.Response(text="Talos API Coming soon")
+
+    async def api_commands(self, data):
+        
+        return web.Response(text="Talos Command posting is WIP")
 
     async def get_path(self, path):
         # any hardcoded redirects here
         if path == "/":
             path = "/index"
-        path = HTML_PATH.joinpath(path.lstrip("/"))
+        path = self.base_path.joinpath(path.lstrip("/"))
 
         # Now do logic to find the desired file. If found, return that path. If not, return an error code
         if pathlib.Path.is_file(path):
@@ -98,7 +140,8 @@ class TalosPrimaryHandler:
             return await self.backup_error_code(status, path, e)
 
     async def backup_error_code(self, old_code, new_code, error=None):
-        return web.Response(text=BACKUP_ERROR.format(old_code, new_code, error, WEBMASTER_EMAIL), status=new_code)
+        return web.Response(text=BACKUP_ERROR.format(old_code, new_code, error, self.webmaster["email"]),
+                            status=new_code)
 
     async def guess_mime(self, path):
         if KNOWN_MIMES.get(path.suffix):
@@ -106,9 +149,17 @@ class TalosPrimaryHandler:
         return "application/octet-stream"
 
 
+def load_settings():
+    with open(SETTINGS_FILE, "r+") as file:
+        import json
+        data = json.load(file)
+    return data
+
+
 def main():
+    settings = load_settings()
     app = web.Application()
-    handler = TalosPrimaryHandler()
+    handler = TalosPrimaryHandler(settings)
     app.add_routes([
         web.get("/{tail:(?!api/).*}", handler.site_get),
         web.head("/{tail:(?!api/).*}", handler.do_head),

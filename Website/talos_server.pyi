@@ -1,15 +1,22 @@
 
-from typing import Dict
+from typing import Dict, Any
 import aiohttp.web as web
 import pathlib
 
 Path = pathlib.Path
-HTML_PATH: pathlib.Path = ...
-WEBMASTER_EMAIL: str = ...
+SETTINGS_FILE: str = ...
 BACKUP_ERROR: str = ...
 KNOWN_MIMES: Dict[str, str]
 
 class TalosPrimaryHandler:
+
+    _settings: Dict[str, Any]
+    webmaster: Dict[str, str]
+    base_path: Path
+
+    def __new__(cls, settings: Dict[str, Any] = ...) -> TalosPrimaryHandler:
+
+    def __init__(self, settings: Dict[str, Any] = ...) -> None:
 
     async def site_get(self, request: web.Request) -> web.Response: ...
 

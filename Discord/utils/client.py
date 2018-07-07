@@ -3,8 +3,18 @@ import aiohttp
 import io
 import logging
 import re
+import json
+import utils.parsers as parse
 
 log = logging.getLogger("talos.utils")
+
+
+def parse_dom(page):
+    if page is None:
+        return None
+    parser = parse.TreeGen()
+    parser.feed(page)
+    return parser.close()
 
 
 class TalosHTTPClient(aiohttp.ClientSession):
@@ -38,7 +48,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :return: text of the requested page
         """
         async with self.get(url, **kwargs) as response:
-            return await response.text()
+            return parse_dom(await response.text())
 
     async def btn_get_names(self, gender="", usage="", number=1, surname=False):
         """
@@ -56,8 +66,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
                                                                                            number, gender, usage)
         async with self.get(url) as response:
             if response.status == 200:
-                text = await response.text()
-                return re.findall(r"<name>(.*?)</name>", text)
+                doc = parse_dom(await response.text())
+                return [x.innertext for x in doc.get_by_tag("name")]
             else:
                 log.warning("BTN returned {}".format(response.status))
                 return None
@@ -73,7 +83,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             if response.status == 200:
                 if not str(response.url).startswith(self.NANO_URL + re.sub(r"/.*", "", url)):
                     return None
-                return await response.text()
+                return parse_dom(await response.text())
             elif response.status == 403:
                 response = await self.nano_login_client()
                 if response == 200:
@@ -92,7 +102,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         """
         return await self.nano_get_page(f"participants/{username}")
 
-    async def nano_get_novel(self, username, novel_name=""):  # TODO: Convert to an HTML Parser
+    async def nano_get_novel(self, username, novel_name=""):
         """
             Returns the novel of a given NaNo user. This year's novel, if specific name not given.
         :param username: user to get novel of.
@@ -103,23 +113,30 @@ class TalosHTTPClient(aiohttp.ClientSession):
             user_page = await self.nano_get_user(username)
             if user_page is None:
                 return None, None
-            novel_name = re.search("<a href=\"/participants/{}/novels/(.*?)/stats\">".format(username), user_page)
-            if novel_name is None:
+            try:
+                navs = user_page.get_by_class("nav-tabs")[0]
+                stats = user_page.get_by_tag("li", navs)[-1].first_child
+
+                novel_name = re.search("/participants/{}/novels/(.*?)/stats".format(username),
+                                       stats.get_attribute("href")).group(1)
+            except Exception as e:
+                log.error(e)
                 return None, None
-            novel_name = novel_name.group(1)
         novel_page = await self.nano_get_page(f"participants/{username}/novels/{novel_name}")
         novel_stats = await self.nano_get_page(f"participants/{username}/novels/{novel_name}/stats")
         return novel_page, novel_stats
 
-    async def nano_login_client(self):  # TODO: Convert to an HTML Parser, add tries before giving up in here
+    async def nano_login_client(self):
         """
             Login the client to the NaNo site.
         :return: status of login request.
         """
         self.nano_tries += 1
         login_page = await self.get_site(self.NANO_URL + "sign_in")
-        pattern = re.compile(r"<input name=\"authenticity_token\" .*? value=\"(.*?)\" />")
-        auth_key = pattern.search(login_page).group(1)
+        auth_el = login_page.get_by_name("authenticity_token")
+        auth_key = ""
+        if auth_el:
+            auth_key = auth_el.get_attribute("value")
         params = {
             "utf8": "✓",
             "authenticity_token": auth_key,
@@ -129,9 +146,10 @@ class TalosHTTPClient(aiohttp.ClientSession):
             "commit": "Sign+in"
         }
         async with self.post(self.NANO_URL + "sign_in", data=params) as response:
-            page = await response.text()
+            doc = parse_dom(await response.text())
             status = response.status
-            if re.search(r"<a href=\"/sign_in\">Sign In</a></li>", page):
+            sign_in = list(filter(lambda x: x.get_attribute("href") == "/sign_in", doc.get_by_tag("a")))
+            if sign_in:
                 if self.nano_tries < 3:
                     return await self.nano_login_client()
                 else:
@@ -166,7 +184,6 @@ class TalosHTTPClient(aiohttp.ClientSession):
         """
         async with self.get(self.XKCD_URL + (f"{xkcd}/" if xkcd else "") + "info.0.json") as response:
             data = await response.text()
-            import json
             data = json.loads(data)
         async with self.get(data["img"]) as response:
             data["img_data"] = io.BytesIO(await response.read()), data["img"].split("/")[-1]

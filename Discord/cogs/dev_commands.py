@@ -100,7 +100,8 @@ class DevCommands(utils.TalosCog):
         profile = self.database.get_user(user.id)
         if not profile:
             raise utils.NotRegistered(user)
-        self.database.save_item(utils.UserTitle((user.id, title)))
+        profile.add_title(title)
+        self.database.save_item(profile)
         await ctx.send(f"Title `{title}` granted to {user}")
 
     @commands.command(hidden=True, description="Remove a title from a user. Now go in disgrace.")
@@ -109,7 +110,8 @@ class DevCommands(utils.TalosCog):
         profile = self.database.get_user(user.id)
         if not profile:
             raise utils.NotRegistered(user)
-        self.database.remove_item(utils.UserTitle((user.id, title)))
+        profile.remove_title(title)
+        self.database.remove_item(profile)
         await ctx.send(f"Title `{title}` revoked from {user}")
 
     @commands.command(hidden=True, description="Reload a Talos extension. Allows command updates without reboot.")
@@ -165,7 +167,7 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
             await ctx.send(f"Statement failed with {type(e).__name__}: {e}")
 
     @commands.command(hidden=True, description="Close and reopen the SQL database connection. Whoops.")
-    async def reset_sql(self, ctx):
+    async def resetsql(self, ctx):
         """Closes and deletes the current TalosDatabase, then attempts to open a new one."""
         await ctx.send("Reconnecting to SQL Database...")
         sql = ctx.bot.SQL_ADDRESS.split(":")

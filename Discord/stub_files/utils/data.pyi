@@ -10,6 +10,12 @@ class Row(metaclass=abc.ABCMeta):
 
     def __init__(self, row: SqlRow, conv_bool: bool = ...) -> None: ...
 
+    def __str__(self) -> str: ...
+
+    def __repr__(self) -> str: ...
+
+    def __eq__(self, other) -> bool: ...
+
     def to_row(self) -> List[str, int]: ...
 
     @abc.abstractmethod
@@ -17,15 +23,22 @@ class Row(metaclass=abc.ABCMeta):
 
 class MultiRow(metaclass=abc.ABCMeta):
 
-    __slots__ = ()
+    __slots__ = ("_removed",)
+
+    _removed: List[type(Row)]
 
     def __init__(self, data: Dict[str, Union[type(Row), List[type(Row)], Dict[Any, type(Row)]]]) -> None: ...
 
     def __iter__(self) -> Iterable[type(Row)]: ...
 
+    @abc.abstractmethod
+    def removed_items(self) -> List[type(Row)]: ...
+
 class SqlConvertable(metaclass=abc.ABCMeta):
 
     __slots__ = ()
+
+    def __eq__(self, other) -> bool: ...
 
     @abc.abstractmethod
     def sql_safe(self) -> Union[str, int]: ...
@@ -58,7 +71,7 @@ class UserTitle(Row):
 
     def table_name(self) -> str: ...
 
-class TalosUser:
+class TalosUser(MultiRow):
 
     __slots__ = ("profile", "invoked", "titles", "options")
 
@@ -67,13 +80,25 @@ class TalosUser:
     titles: List[UserTitle]
     options: UserOptions
 
+    @property
+    def id(self) -> int: ...
+
+    @property
+    def title(self) -> str: ...
+
+    def removed_items(self) -> List[type(Row)]: ...
+
     def get_favorite_command(self) -> Tuple[str, int]: ...
+
+    def add_title(self, title: str) -> None: ...
 
     def check_title(self, title: str) -> bool: ...
 
     def set_title(self, title: str) -> bool: ...
 
     def clear_title(self) -> None: ...
+
+    def remove_title(self, title: str) -> None: ...
 
 class UserProfile(Row):
 
@@ -100,13 +125,14 @@ class UserOptions(Row):
 
 class GuildOptions(Row):
 
-    __slots__ = ("id", "rich_embeds", "fail_message", "pm_help", "commands", "user_commands",
-                  "joke_commands", "writing_prompts", "prompts_channel", "prefix", "timezone")
+    __slots__ = ("id", "rich_embeds", "fail_message", "pm_help", "any_color", "commands", "user_commands",
+                 "joke_commands", "writing_prompts", "prompts_channel", "prefix", "timezone")
 
     id: int
     rich_embeds: bool
     fail_message: bool
     pm_help: bool
+    any_color: bool
     commands: bool
     user_commands: bool
     joke_commands: bool
@@ -141,6 +167,10 @@ class PermissionRule(Row):
 class GuildCommand(Row):
 
     __slots__ = ("id", "name", "text")
+
+    id: int
+    name: str
+    text: str
 
     def table_name(self) -> str: ...
 

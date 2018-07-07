@@ -1,8 +1,11 @@
 """
-    Talos CommandLang interpreter
+    Talos CommandLang interpreter. Defines the base command lang parser, which should be subclassed to override
+    the command execution and value processing for specific platforms
 
     author: CraftSpider
 """
+
+import io
 import re
 import abc
 
@@ -61,11 +64,13 @@ class CommandLangError(Exception):
 
 class CommandLangInterpreter(metaclass=abc.ABCMeta):
 
+    __slots__ = ("_buffer",)
+
     DEFAULT_PRIORITY = _op_priority
     DEFAULT_FUNCS = _op_functions
 
     @staticmethod
-    def operators_exist(command_str):
+    def _operators_exist(command_str):
         """
             Checks that a string contains at least one CommandLang operator.
         :param command_str: String to check
@@ -74,7 +79,7 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
         return bool(re.search(r"\[(?:if|elif|else) .+?\]\(.+?\)|{[\w :]+?}", command_str))
 
     @staticmethod
-    def get_exec_list(expression):
+    def _get_exec_list(expression):
         """
             Creates an execution list from a string. Splits into pieces, then removes dangling spaces and lines.
         :param expression: Boolean Expression
@@ -94,25 +99,25 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
         exec_list = list(filter(None, map(lambda x: x.strip(), exec_list)))
         return exec_list
 
-    def exec_op(self, ops, values):
+    def _exec_op(self, ops, values):
         try:
             val1 = values.pop()
             op = ops.pop()
             if op != "not":
                 val2 = values.pop()
-                values.append(self.get_function(op)(val2, val1))
+                values.append(self._get_function(op)(val2, val1))
             else:
-                values.append(self.get_function(op)(val1))
+                values.append(self._get_function(op)(val1))
         except IndexError:
             raise CommandLangError("One value supplied to two value operator")
 
-    def get_priority(self, operator):
+    def _get_priority(self, operator):
         return self.DEFAULT_PRIORITY[operator]
 
-    def get_function(self, operator):
+    def _get_function(self, operator):
         return self.DEFAULT_FUNCS.get(operator, lambda: None)
 
-    def evaluate(self, ctx, exec_list):
+    def _evaluate(self, ctx, exec_list):
         """
             Performs boolean evaluation on a list of values and operators
         :param ctx: commands.Context object
@@ -126,127 +131,214 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
                 if item == "(":
                     op_stack.append(item)
                     continue
-                cur = self.get_priority(item)
-                if len(op_stack) and cur < self.get_priority(op_stack[-1]):
+                cur = self._get_priority(item)
+                if len(op_stack) and cur < self._get_priority(op_stack[-1]):
                     # if priority is lower, evaluate things until it's not
-                    while len(op_stack) and cur < self.get_priority(op_stack[-1]) and op_stack[-1] != "(":
-                        self.exec_op(op_stack, val_stack)
+                    while len(op_stack) and cur < self._get_priority(op_stack[-1]) and op_stack[-1] != "(":
+                        self._exec_op(op_stack, val_stack)
                     if len(op_stack) and op_stack[-1] == "(":
                         op_stack.pop()
                 if item != ")":
                     op_stack.append(item)
             except KeyError:
-                val_stack.append(self.process_val(ctx, item))
+                val_stack.append(self._process_val(ctx, item))
         while len(val_stack) and len(op_stack):
-            self.exec_op(op_stack, val_stack)
+            self._exec_op(op_stack, val_stack)
         # If we have dangling operators or variables, something went wrong.
         if len(val_stack) != 1 or len(op_stack) != 0:
             raise CommandLangError("Invalid Boolean Expression")
         return bool(val_stack[0])
 
+    def _lex_str(self, command_str):
+
+        self._buffer = io.StringIO(command_str)
+        escape = False
+        raw = ""
+        exec_stack = []
+
+        char = None
+        while char != "":
+            char = self._buffer.read(1)
+
+            if escape:
+                raw += char
+                escape = False
+
+            if char == "\\":
+                escape = True
+            elif char == "[":
+                if raw:
+                    exec_stack.append(("raw", raw))
+                type, statement, text = self._lex_if()
+                exec_stack.append((type, statement, text))
+            elif char == "{":
+                if raw:
+                    exec_stack.append(("raw", raw))
+                text = self._lex_exec()
+                exec_stack.append(("exec", text))
+            elif char == "" and raw:
+                exec_stack.append(("raw", raw))
+            else:
+                raw += char
+
+        return exec_stack
+
+    def _lex_if(self):
+
+        end = False
+        maybe_escape = False
+        escape = False
+        type_known = False
+        maybe_text = False
+        in_text = False
+        depth = 0
+        raw = ""
+        type = ""
+        statement = ""
+        text = ""
+
+        char = None
+        while char != "" and not end:
+            char = self._buffer.read(1)
+
+            if escape:
+                raw += char
+                escape = False
+
+            if char == "\\" and not in_text:
+                escape = True
+            elif char == "\\":
+                maybe_escape = True
+            elif char == " " and not type_known:
+                type = raw
+                if type not in ("if", "elif", "else"):
+                    raise CommandLangError("Invalid if statement type")
+                type_known = True
+                raw = ""
+            elif char == "]" and not in_text:
+                maybe_text = True
+            elif char == "(" and maybe_text:
+                if not type_known:
+                    type = raw
+                    if type not in ("if", "elif", "else"):
+                        raise CommandLangError("Invalid if statement type")
+                    type_known = True
+                    raw = ""
+                statement = raw
+                raw = ""
+                maybe_text = False
+                in_text = True
+            elif char == "(" and in_text:
+                depth += 1
+            elif char == ")" and in_text:
+                if not maybe_escape:
+                    text = raw
+                    end = True
+                else:
+                    raw += ")"
+                    maybe_escape = False
+            else:
+                if maybe_escape:
+                    raw += "\\"
+                    maybe_escape = False
+                if maybe_text:
+                    raw += "]"
+                    maybe_text = False
+                raw += char
+
+        if type != "else" and statement == "":
+            raise CommandLangError("If statement missing boolean expression")
+        elif type == "else" and statement != "":
+            raise CommandLangError("Else statement contains unexpected boolean expression")
+        if not in_text:
+            raise CommandLangError("If statement missing result")
+        if char == "":
+            raise CommandLangError("Unexpected end of expression")
+
+        return type, statement, text
+
+    def _lex_exec(self):
+
+        end = False
+        escape = False
+        raw = ""
+
+        char = None
+        while char != "" and not end:
+            char = self._buffer.read(1)
+
+            if escape:
+                raw += char
+                escape = False
+
+            if char == "\\":
+                escape = True
+            if char == "}":
+                end = True
+
+        return raw
+
     def parse_lang(self, context, command_str):
-        if not CommandLangInterpreter.operators_exist(command_str):
+        if not self._operators_exist(command_str):
             # if it's obviously not in the language, we're already done processing.
             return command_str
         # split input into list of execution items
-        exec_stack = []
-        depth = 0
-        raw = ""
-        escape = False
-        in_logic = False
-        in_if = False
-        for char in command_str:
-            if escape is False:
-                if char == "\\" and depth == 0:
-                    escape = True
-                elif char == "[" or char == "{":
-                    if depth == 0 and raw != "":
-                        exec_stack.append("|" + raw)
-                        raw = ""
-                    if char == "[":
-                        in_logic = True
-                        in_if = True
-                    depth += 1
-                    raw += char
-                elif (char == ")" and not in_logic and in_if) or char == "}":
-                    # first part is to make sure we're at the end
-                    depth -= 1  # of the if block, not in the middle.
-                    raw += char
-                    if depth == 0:
-                        in_if = False
-                    if depth == 0 and raw != "":
-                        exec_stack.append(raw)
-                        raw = ""
-                elif char == "]" and in_logic is True:
-                    in_logic = False
-                    raw += char
-                else:
-                    raw += char
-            else:
-                raw += char
-                escape = False
-        if raw != "":
-            if depth != 0:
-                raise CommandLangError
-            exec_stack.append("|" + raw)
+        exec_stack = self._lex_str(command_str)
         # evaluate new list of items
         out = ""
         if_else = False
         for item in exec_stack:
-            if item.startswith("["):
-                # pull out if/elif/else and boolean expression
-                # evaluate expression
-                # if true, parse internals and set if_else to false
-                # if false, set if_else to true and continue
-                match = re.match(r"\[(if|elif|else)(.*?)\]\((.+)\)", item)
-                if match is None:
-                    raise CommandLangError("Malformed if block")
-                which_if = match.group(1)
-                expression = match.group(2).lstrip()
-                statement = match.group(3)
-                if (which_if == "else" and expression != "") or (which_if != "else" and expression == ""):
-                    raise CommandLangError("Invalid if statement block")
-                if which_if == "elif" or which_if == "else" and if_else is False:
-                    continue
-                exec_list = self.get_exec_list(expression)
-                if which_if == "else" or self.evaluate(context, exec_list):
-                    out += self.parse_lang(context, statement)
+            if item[0] == "if":
+                exec_list = self._get_exec_list(item[1])
+                if self._evaluate(context, exec_list):
+                    out += self.parse_lang(context, item[2])
                     if_else = False
                 else:
                     if_else = True
-            elif item.startswith("{"):
+            elif item[0] == "elif" and if_else:
+                exec_list = self._get_exec_list(item[1])
+                if self._evaluate(context, exec_list):
+                    out += self.parse_lang(context, item[2])
+                    if_else = False
+            elif item[0] == "else" and if_else:
+                out += self.parse_lang(context, item[2])
+                if_else = False
+            else:
+                if_else = False
+            if item[0] == "exec":
                 # Evaluate invoke block. First check if anything matches a variable, if so, return that. Otherwise run
                 # the command.
                 if ":" in item:
-                    item = item[1:-1].split(":")
+                    item = item[1].split(":")
                     try:
-                        item = get_sub(self.process_val(context, item[0]), self.process_val(context, item[1]))
+                        item = get_sub(self._process_val(context, item[0]), self._process_val(context, item[1]))
                     except AttributeError:
                         raise CommandLangError("Attempt to access invalid attribute")
                 else:
-                    item = self.process_val(context, item[1:-1])
-
-                result = self.execute_command(context, item[1:-1])
+                    item = self._process_val(context, item[1])
+                result = self._execute_command(context, item[1])
                 if not result:
                     out += str(item)
                 elif isinstance(result, str):
                     out += result
-            elif item.startswith("|"):
-                out += item[1:]
+            elif item[0] == "raw":
+                out += item[1]
         return out
 
     @abc.abstractmethod
-    def process_val(self, context, val):
+    def _process_val(self, context, val):
         return NotImplemented
 
     @abc.abstractmethod
-    def execute_command(self, context, val):
+    def _execute_command(self, context, val):
         return NotImplemented
 
 
 class DiscordCL(CommandLangInterpreter):
 
-    def execute_command(self, ctx, item):
+    __slots__ = ()
+
+    def _execute_command(self, ctx, item):
         if isinstance(item, str) and " " in item:
             item = item.split()
             command = item[0]
@@ -263,7 +355,7 @@ class DiscordCL(CommandLangInterpreter):
             return True
         return False
 
-    def process_val(self, ctx, val):
+    def _process_val(self, ctx, val):
         try:
             return float(val)
         except ValueError:
@@ -290,5 +382,7 @@ class DiscordCL(CommandLangInterpreter):
 
 class ContextLessCL(DiscordCL):
 
-    def process_val(self, ctx, val):
+    __slots__ = ()
+
+    def _process_val(self, ctx, val):
         return str(val)
