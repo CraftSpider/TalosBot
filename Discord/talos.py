@@ -13,7 +13,8 @@ import re
 import mysql.connector
 import datetime as dt
 import command_lang
-from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, CustomCommandError, tz_map
+from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, CustomCommandError, tz_map,\
+    PaginatedEmbed
 
 #
 #   Constants
@@ -33,11 +34,24 @@ _mentions_transforms = {
 }
 _mention_pattern = re.compile('|'.join(_mentions_transforms.keys()))
 
+_log_event_colors = {
+    "kick": discord.Colour(int("fcd116", 16)),
+    "ban": discord.Colour.red(),
+    "silence": discord.Colour.dark_blue()
+}
+
 # Initiate Logging
 fh = logging.FileHandler("talos.log")
 sh = logging.StreamHandler(sys.stderr)
 logging.basicConfig(level=logging.INFO, handlers=[fh, sh])
 log = logging.getLogger("talos")
+
+
+class FakeMessage:
+    def __init__(self, guild, channel):
+        self.guild = guild
+        self.channel = channel
+        self.author = None
 
 
 class Talos(commands.Bot):
@@ -70,8 +84,8 @@ class Talos(commands.Bot):
         :return: None
         """
         # Set default values to pass to super
-        description = '''Greetings. I'm Talos, chat helper. Here are my commands. If you like me and have the money, \
-please support me on [Patreon](https://www.patreon.com/TalosBot)'''
+        description = '''Greetings. I'm Talos, chat helper. Here are my command types. If you like me and have the \
+money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         if not kwargs.get("formatter", None):
             kwargs["formatter"] = kwargs.get("formatter", TalosFormatter())
         super().__init__(talos_prefix, description=description, **kwargs)
@@ -234,6 +248,9 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
                     return
 
             pages = await self.formatter.format_help_for(ctx, command)
+        elif ''.join(map(str.capitalize, args)) in self.cogs:
+            command = self.cogs[''.join(map(str.capitalize, args))]
+            pages = await self.formatter.format_help_for(ctx, command)
         else:
             name = _mention_pattern.sub(repl, args[0])
             command = self.all_commands.get(name)
@@ -268,6 +285,43 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
                 await destination.send(embed=page)
             else:
                 await destination.send(page)
+
+    async def get_context(self, message, *, cls=commands.Context):
+        """
+            Gets a context object from a message
+        :param message: discord.Message instance
+        :param cls: Class to instantiate, by default a normal context
+        :return: completed context object
+        """
+        ctx = await super().get_context(message, cls=cls)
+        if ctx.command is None and message.guild is not None:
+            try:
+                text = self.database.get_guild_command(message.guild.id, ctx.invoked_with).text
+            except mysql.connector.Error:
+                text = None
+            except AttributeError:
+                text = None
+            ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
+        return ctx
+
+    async def mod_log(self, ctx, event, user, message):
+        if not self.database.get_guild_options(ctx.guild.id).mod_log:
+            return False
+        if self.should_embed(ctx):
+            with PaginatedEmbed() as embed:
+                embed.title = event.capitalize()
+                embed.colour = _log_event_colors.get(event, discord.Colour.purple())
+                embed.add_field(name="User", value=str(user), inline=True)
+                embed.add_field(name="Madmin", value=str(ctx.author), inline=True)
+                embed.add_field(name="Reason", value=message)
+            for page in embed.pages:
+                await ctx.send(embed=page)
+        else:
+            out = f"{event.capitalize()}"
+            out += f"User: {str(user)}"
+            out += f"Madmin: {str(ctx.author)}"
+            out += f"Reason: {message}"
+            await ctx.send(out)
 
     async def on_ready(self):
         """
@@ -308,23 +362,16 @@ please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         log.info(f"Left Guild {guild.name}, {dt.datetime.now() - self.BOOT_TIME} after boot")
         self.database.clean_guild(guild.id)
 
-    async def get_context(self, message, *, cls=commands.Context):
-        """
-            Gets a context object from a message
-        :param message: discord.Message instance
-        :param cls: Class to instantiate, by default a normal context
-        :return: completed context object
-        """
-        ctx = await super().get_context(message, cls=cls)
-        if ctx.command is None and message.guild is not None:
-            try:
-                text = self.database.get_guild_command(message.guild.id, ctx.invoked_with).text
-            except mysql.connector.Error:
-                text = None
-            except AttributeError:
-                text = None
-            ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
-        return ctx
+    async def on_member_ban(self, guild, user):
+        options = self.database.get_guild_options(guild.id)
+        if not options.mod_log:
+            return
+        channel = list(filter(lambda x: x.name == options.log_channel, guild.channels))
+        if channel:
+            channel = channel[0]
+            ctx = commands.Context()
+            ctx.message = FakeMessage(guild, channel)
+            await self.mod_log(channel, "ban", user, "User banned for unknown reason")
 
     async def on_command(self, ctx):
         """

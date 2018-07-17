@@ -166,7 +166,7 @@ class TalosUser(MultiRow):
 class GuildOptions(Row):
 
     __slots__ = ("id", "rich_embeds", "fail_message", "pm_help", "any_color", "commands", "user_commands",
-                 "joke_commands", "writing_prompts", "prompts_channel", "prefix", "timezone")
+                 "joke_commands", "writing_prompts", "prompts_channel", "mod_log", "log_channel", "prefix", "timezone")
 
     def __init__(self, row):
         super().__init__(row, True)

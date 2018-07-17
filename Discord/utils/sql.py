@@ -8,7 +8,7 @@ import mysql.connector.abstracts as mysql_abstracts
 log = logging.getLogger("talos.utils")
 
 # Default priority levels
-_levels = {
+levels = {
     "guild": 10,
     "channel": 20,
     "role": 30,
@@ -87,9 +87,10 @@ talos_tables = {
                     "`any_color` tinyint(1) DEFAULT NULL", "`commands` tinyint(1) DEFAULT NULL",
                     "`user_commands` tinyint(1) DEFAULT NULL", "`joke_commands` tinyint(1) DEFAULT NULL",
                     "`writing_prompts` tinyint(1) DEFAULT NULL", "`prompts_channel` varchar(64) DEFAULT NULL",
+                    "`mod_log` tinyint(1) DEFAULT NULL", "`log_channel` varchar(64) DEFAULT NULL",
                     "`prefix` varchar(32) DEFAULT NULL", "`timezone` varchar(5) DEFAULT NULL"],
         "primary": "PRIMARY KEY (`guild_id`)",
-        "defaults": [(-1, True, False, False, True, True, True, True, False, "prompts", "^", "UTC")]
+        "defaults": [(-1, True, False, False, True, True, True, True, False, "prompts", False, "mod-log", "^", "UTC")]
     },
     "admins": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"],
@@ -216,7 +217,6 @@ class TalosDatabase:
                             log.warning("  Column {} didn't match expected type, attempting to fix.".format(name))
                             column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
                                                       talos_tables[table]["columns"]))
-                            print(talos_modify_column.format(table, column_spec))
                             self._cursor.execute(talos_modify_column.format(table, column_spec))
                         else:
                             log.info("  Found column {}".format(name))

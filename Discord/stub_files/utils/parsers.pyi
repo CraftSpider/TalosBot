@@ -3,6 +3,8 @@ from typing import Tuple
 from utils.element import Document, Node
 import html.parser as parser
 
+def to_dom(html: str) -> Document: ...
+
 class TreeGen(parser.HTMLParser):
 
     head: Node

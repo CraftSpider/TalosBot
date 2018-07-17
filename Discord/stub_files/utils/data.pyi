@@ -126,7 +126,7 @@ class UserOptions(Row):
 class GuildOptions(Row):
 
     __slots__ = ("id", "rich_embeds", "fail_message", "pm_help", "any_color", "commands", "user_commands",
-                 "joke_commands", "writing_prompts", "prompts_channel", "prefix", "timezone")
+                 "joke_commands", "writing_prompts", "prompts_channel", "mod_log", "log_channel", "prefix", "timezone")
 
     id: int
     rich_embeds: bool
@@ -138,6 +138,8 @@ class GuildOptions(Row):
     joke_commands: bool
     writing_prompts: bool
     prompts_channel: str
+    mod_log: bool
+    log_channel: str
     prefix: str
     timezone: str
 

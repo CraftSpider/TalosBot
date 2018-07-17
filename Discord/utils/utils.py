@@ -8,7 +8,6 @@ import itertools
 import logging
 import discord
 import discord.ext.commands as dcommands
-import datetime as dt
 from .paginators import PaginatedEmbed
 
 
@@ -88,8 +87,7 @@ class TalosFormatter(dcommands.HelpFormatter):
 
     async def get_ending_note(self):
         command_name = self.context.invoked_with
-        return "Type {0}{1} command for more info on a command.\n" \
-               "You can also type {0}{1} category for more info on a category.".format(
+        return "Type `{0}{1} category` for a list of commands in a category.".format(
                    await self.clean_prefix, command_name
                )
 
@@ -160,32 +158,23 @@ class TalosFormatter(dcommands.HelpFormatter):
                 self._paginator.close()
                 return self._paginator.pages
 
-        def category(tup):
-            cog = tup[1].cog_name
-            # we insert the zero width space there to give it approximate
-            # last place sorting position.
-            return self.capital_split(cog) + ':' if cog is not None else '\u200bBase Commands:'
-
         filtered = await self.filter_command_list()
         if self.is_bot():
             self._paginator.title = "Talos Help"
             self._paginator.description = description+"\n"+await self.get_ending_note()
 
-            data = sorted(filtered, key=category)
-            for category, commands in itertools.groupby(data, key=category):
-                commands = sorted(commands)
-                title = None
-                if len(commands) > 0:
-                    title = category
-                if title:
-                    value = self._subcommands_field_value(commands)
-                    self._paginator.add_field(name=title, value=value)
+            for cog in self.command.cogs:
+                if cog == "EventLoops" or cog == "DevCommands":
+                    continue
+                value = inspect.getdoc(self.command.cogs[cog])
+                self._paginator.add_field(name=self.capital_split(cog), value=value)
         else:
             filtered = sorted(filtered)
             if filtered:
                 value = self._subcommands_field_value(filtered)
                 self._paginator.add_field(name='Commands', value=value)
 
+        self._paginator.set_footer(text="Contact CraftSpider in the Talos discord (^info) for further help")
         self._paginator.close()
         return self._paginator.pages
 

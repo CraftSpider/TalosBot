@@ -15,6 +15,12 @@ def attrs_to_dict(attrs):
     return out
 
 
+def to_dom(html):
+    gen = TreeGen()
+    gen.feed(html)
+    return gen.close()
+
+
 class TreeGen(parser.HTMLParser):
 
     def __init__(self):
@@ -34,11 +40,11 @@ class TreeGen(parser.HTMLParser):
         if self.cur is not None:
             self.cur.add_child(element)
 
-        if tag != "br" and tag != "meta" and tag != "link":
+        if tag not in el.Element.SELF_CLOSING:
             self.cur = element
 
     def handle_endtag(self, tag):
-        if tag != "meta" and tag != "link":
+        if tag not in el.Element.SELF_CLOSING:
             self.cur = self.cur.parent
 
     def handle_data(self, data):

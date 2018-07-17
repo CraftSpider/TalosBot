@@ -11,4 +11,3 @@ from .sql import TalosDatabase
 from .data import TalosUser, TalosAdmin, PermissionRule, GuildEvent, UserTitle, GuildCommand
 from .errors import *
 from .paginators import PaginatedEmbed
-from .parsers import TreeGen

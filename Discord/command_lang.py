@@ -349,7 +349,10 @@ class DiscordCL(CommandLangInterpreter):
         command = ctx.bot.all_commands.get(command)
         if command:
             try:
-                ctx.bot.loop.create_task(ctx.invoke(command, *args))
+                if command.can_run(ctx):
+                    ctx.bot.loop.create_task(ctx.invoke(command))
+                else:
+                    ctx.bot.loop.create_task(ctx.send("Cannot Execute Command: Insufficient Permissions"))
             except Exception as e:
                 print(e)
             return True

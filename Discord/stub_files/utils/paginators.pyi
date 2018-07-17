@@ -1,6 +1,6 @@
 
 import datetime as dt
-from typing import Union, List, Dict, overload
+from typing import Union, List, Dict, overload, Any
 import discord
 from discord.embeds import Embed, EmbedProxy
 
@@ -32,7 +32,7 @@ class PaginatedEmbed(Embed):
     repeat_author: bool
 
     # noinspection PyMissingConstructor
-    def __init__(self, **kwargs: Dict[str, ...]) -> None: ...
+    def __init__(self, **kwargs: Any) -> None: ...
 
     def __enter__(self) -> PaginatedEmbed: ...
 

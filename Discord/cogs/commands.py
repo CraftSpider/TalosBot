@@ -47,7 +47,8 @@ def html_to_markdown(html_text):
 
 
 class Commands(utils.TalosCog):
-    """These commands can be used by anyone, as long as Talos is awake.\nThey don't care who is using them."""
+    """General Talos commands. Get bot info, check the time, or run a wordwar from here. These commands generally """\
+        """aren't very user-specific, most commands are in this category."""
 
     __slots__ = ("__local_check",)
 
@@ -371,7 +372,7 @@ class Commands(utils.TalosCog):
         await self.bot.application_info()
         end = dt.datetime.utcnow()
         milliseconds = (end - start).microseconds / 1000
-        await ctx.send(f"Current Ping: `{milliseconds}`")
+        await ctx.send(f"Current Ping: `{milliseconds}ms`")
 
     @commands.group(aliases=["pw", "PW"], description="Want Talos to help you run a productivity war?")
     @commands.guild_only()

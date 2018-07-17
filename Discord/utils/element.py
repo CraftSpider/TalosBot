@@ -1,4 +1,6 @@
 
+from functools import lru_cache
+
 
 class Document:
 
@@ -11,22 +13,23 @@ class Document:
         cur = start
         if cur is None:
             cur = self._head
-        while cur is not None:
+        elif cur.first_child is None:
+            yield cur
+            return
+        while True:
             yield cur
 
             next_node = None
             if cur.first_child is not None:
                 next_node = cur.first_child
-            elif cur == start:
-                raise StopIteration
             else:
                 while next_node is None:
                     parent = cur.parent
                     if parent is None:
-                        raise StopIteration
+                        return
                     next_node = parent.next_child(cur)
                     if next_node is None and parent == start:
-                        raise StopIteration
+                        return
                     if next_node is None:
                         cur = parent
             cur = next_node
@@ -60,19 +63,22 @@ class Document:
 
 class Node:
 
-    __slots__ = ("parent", "child_nodes")
+    __slots__ = ("parent", "child_nodes", "_pos_map")
 
     def __init__(self):
         self.parent = None
         self.child_nodes = []
+        self._pos_map = {}
 
     @property
+    @lru_cache()
     def depth(self):
         if self.parent is None:
             return 0
         return self.parent.depth + 1
 
     @property
+    @lru_cache()
     def first_child(self):
         if not self.child_nodes:
             return None
@@ -91,21 +97,25 @@ class Node:
     def add_child(self, el, pos=-1):
         if pos < 0:
             pos = len(self.child_nodes)
+            self._pos_map[el] = pos
+
         self.child_nodes.insert(pos, el)
         el.set_parent(self)
 
+        if pos != len(self.child_nodes):
+            for i in range(pos, len(self.child_nodes)):
+                el = self.child_nodes[i]
+                self._pos_map[el] = i
+
+    @lru_cache()
     def next_child(self, el):
-        mark = False
-        node = None
-        for node in self.child_nodes:
-            if mark:
-                mark = False
-                break
-            if node == el:
-                mark = True
-        if mark:
+        length = len(self.child_nodes)
+        if length == 1:
             return None
-        return node
+        pos = self._pos_map.get(el)
+        if pos + 1 < length:
+            return self.child_nodes[pos + 1]
+        return None
 
     def remove_child(self, el):
         if el.parent == self:
@@ -122,11 +132,15 @@ class Content(Node):
         self.value = data
 
     def __str__(self):
-        spacing = " " * self.depth
-        return f"{spacing}\"{self.value}\"\n"
+        return f"{self.value}"
 
     def __repr__(self):
-        return f"{self.value}"
+        spacing = "  " * self.depth
+        lines = self.value.split("\n")
+        out = ""
+        for line in lines:
+            out += spacing + line + "\n"
+        return out
 
     def add_child(self, el, pos=-1):
         raise TypeError("Content cannot have children")
@@ -139,6 +153,8 @@ class Element(Node):
 
     __slots__ = ("tag", "_attrs")
 
+    SELF_CLOSING = ["br", "meta", "link", "img"]
+
     def __init__(self, tag, attrs):
         super().__init__()
         self.tag = tag
@@ -146,37 +162,82 @@ class Element(Node):
         self.parent = None
 
     def __str__(self):
-        spacing = " " * self.depth
         attrs = " ".join(f"{x}=\"{self._attrs[x]}\"" for x in self._attrs)
         if attrs:
             attrs = " " + attrs
+        if self.tag in self.SELF_CLOSING:
+            return f"<{self.tag}{attrs} />"
+        return f"<{self.tag}{attrs}>"
+
+    def __repr__(self):
+        spacing = "  " * self.depth
+        attrs = " ".join(f"{x}=\"{self._attrs[x]}\"" for x in self._attrs)
+        if attrs:
+            attrs = " " + attrs
+
+        if self.tag in self.SELF_CLOSING or (self.tag == "script" and self.get_attribute("src")):
+            return f"{spacing}<{self.tag}{attrs} />\n"
+
         out = f"{spacing}<{self.tag}{attrs}>\n"
         for child in self.child_nodes:
-            out += str(child)
+            out += repr(child)
         out += f"{spacing}</{self.tag}>\n"
         return out
 
-    def __repr__(self):
-        attrs = " ".join(f"{x}=\"{self._attrs[x]}\"" for x in self._attrs)
-        if attrs:
-            attrs = " " + attrs
-        return f"<{self.tag}{attrs}>"
-
     @property
+    @lru_cache()
     def classes(self):
         return self._attrs.get("class", "").split()
 
     @property
+    @lru_cache()
     def id(self):
         return self._attrs.get("id", None)
 
     @property
+    @lru_cache()
     def name(self):
         return self._attrs.get("name", None)
 
     @property
+    @lru_cache()
     def innertext(self):
         return "\n".join(map(lambda x: x.value, filter(lambda x: isinstance(x, Content), self.child_nodes)))
+
+    @property
+    @lru_cache()
+    def innerhtml(self):
+        out = ""
+        for child in self.child_nodes:
+            if isinstance(child, Content):
+                for line in child.value.split("\n"):
+                    out += line + "\n"
+            if isinstance(child, Element):
+                for line in child.outerhtml.split("\n"):
+                    out += line + "\n"
+        return out
+
+    @property
+    @lru_cache()
+    def outerhtml(self):
+        spacing = "  "
+        attrs = " ".join(f"{x}=\"{self._attrs[x]}\"" for x in self._attrs)
+        if attrs:
+            attrs = " " + attrs
+
+        if self.tag in self.SELF_CLOSING or (self.tag == "script" and self.get_attribute("src")):
+            return f"<{self.tag}{attrs} />"
+
+        out = f"<{self.tag}{attrs}>\n"
+        for child in self.child_nodes:
+            if isinstance(child, Content):
+                for line in child.value.split("\n"):
+                    out += spacing + line + "\n"
+            if isinstance(child, Element):
+                for line in child.outerhtml.split("\n"):
+                    out += spacing + line + "\n"
+        out += f"</{self.tag}>"
+        return out
 
     def get_attribute(self, attr, default=None):
         return self._attrs.get(attr, default)

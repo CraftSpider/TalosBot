@@ -9,14 +9,6 @@ import utils.parsers as parse
 log = logging.getLogger("talos.utils")
 
 
-def parse_dom(page):
-    if page is None:
-        return None
-    parser = parse.TreeGen()
-    parser.feed(page)
-    return parser.close()
-
-
 class TalosHTTPClient(aiohttp.ClientSession):
 
     __slots__ = ("username", "password", "btn_key", "cat_key", "nano_tries")
@@ -48,7 +40,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :return: text of the requested page
         """
         async with self.get(url, **kwargs) as response:
-            return parse_dom(await response.text())
+            return parse.to_dom(await response.text())
 
     async def btn_get_names(self, gender="", usage="", number=1, surname=False):
         """
@@ -66,7 +58,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
                                                                                            number, gender, usage)
         async with self.get(url) as response:
             if response.status == 200:
-                doc = parse_dom(await response.text())
+                doc = parse.to_dom(await response.text())
                 return [x.innertext for x in doc.get_by_tag("name")]
             else:
                 log.warning("BTN returned {}".format(response.status))
@@ -83,7 +75,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             if response.status == 200:
                 if not str(response.url).startswith(self.NANO_URL + re.sub(r"/.*", "", url)):
                     return None
-                return parse_dom(await response.text())
+                return parse.to_dom(await response.text())
             elif response.status == 403:
                 response = await self.nano_login_client()
                 if response == 200:
@@ -117,10 +109,11 @@ class TalosHTTPClient(aiohttp.ClientSession):
                 navs = user_page.get_by_class("nav-tabs")[0]
                 stats = user_page.get_by_tag("li", navs)[-1].first_child
 
-                novel_name = re.search("/participants/{}/novels/(.*?)/stats".format(username),
+                novel_name = re.search(f"/participants/{username}/novels/(.*?)/stats",
                                        stats.get_attribute("href")).group(1)
             except Exception as e:
-                log.error(e)
+                log.info("NaNo User not found, reason:")
+                log.info(e)
                 return None, None
         novel_page = await self.nano_get_page(f"participants/{username}/novels/{novel_name}")
         novel_stats = await self.nano_get_page(f"participants/{username}/novels/{novel_name}/stats")
@@ -146,7 +139,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             "commit": "Sign+in"
         }
         async with self.post(self.NANO_URL + "sign_in", data=params) as response:
-            doc = parse_dom(await response.text())
+            doc = parse.to_dom(await response.text())
             status = response.status
             sign_in = list(filter(lambda x: x.get_attribute("href") == "/sign_in", doc.get_by_tag("a")))
             if sign_in:

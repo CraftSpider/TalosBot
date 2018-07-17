@@ -25,8 +25,8 @@ def space_replace(match):
 
 
 class UserCommands(utils.TalosCog):
-    """These commands can be used by anyone, as long as Talos is awake.\n"""\
-        """The effects will apply to the person using the command."""
+    """These are commands that effect specific users. May change your roles in a guild, or alter your Talos-specific"""\
+        """ settings and info."""
 
     @commands.command(aliases=["color"], signature="colour <hex-code>", description="Set your role colour")
     @commands.guild_only()

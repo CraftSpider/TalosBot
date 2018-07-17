@@ -16,7 +16,7 @@ class Document:
 
     def get_by_id(self, id: str) -> Optional[Element]: ...
 
-    def get_by_name(self, str: str) -> Optional[Element]:
+    def get_by_name(self, str: str) -> Optional[Element]: ...
 
     def get_by_class(self, classname: str, start: Element = ...) -> List[Element]: ...
 
@@ -55,16 +55,21 @@ class Content(Node):
 
     def __str__(self) -> str: ...
 
+    def __repr__(self) -> str: ...
+
 class Element(Node):
 
      __slots__ = ("tag", "_attrs")
 
      tag: str
      _attrs: Dict[str, str]
+     SELF_CLOSING: List[str]
 
      def __init__(self, tag: str, attrs: Dict[str, str]) -> None: ...
 
      def __str__(self) -> str: ...
+
+     def __repr__(self) -> str: ...
 
      @property
      def classes(self) -> List[str]: ...
@@ -77,6 +82,12 @@ class Element(Node):
 
      @property
      def innertext(self) -> str: ...
+
+     @property
+     def innerhtml(self) -> str: ...
+
+     @property
+     def outerhtml(self) -> str: ...
 
      def get_attribute(self, attr: str, default: Any = ...) -> Optional[str]: ...
 

@@ -83,7 +83,7 @@ def dev_check():
 #
 class AdminCommands(utils.TalosCog):
     """These commands can only be used by Admins or Devs, and will work at any time.
-    If no admins exist, anyone with administrator role permission can use admin commands"""
+    If no admins list is set, anyone with administrator role permission can use admin commands"""
 
     LEVELS = {"guild": 0, "channel": 1, "role": 2, "user": 3}
     __local_check = admin_check
@@ -125,6 +125,42 @@ class AdminCommands(utils.TalosCog):
             elif key[0] == secure_keys[str(ctx.guild.id)]:
                 await ctx.channel.purge(limit=None)
                 secure_keys[str(ctx.guild.id)] = ""
+
+    @commands.command(description="Kick a user from chat")
+    @commands.guild_only()
+    async def kick(self, ctx, user: discord.Member, reason="Kicked from guild by Talos"):
+        """Kicks a given user from the current guild. Only accepts a user who is currently in the guild"""
+        await user.kick(reason=reason)
+        await self.bot.mod_log(ctx, "kick", user, reason)
+        await ctx.send(f"User {user} kicked")
+
+    @commands.command(description="Ban a user from chat")
+    @commands.guild_only()
+    async def ban(self, ctx, user: discord.Member, reason="Banned from guild by Talos"):
+        """Bans a given user from the current guild. Currently only accepts a user who is currently in the guild"""
+        await user.ban(reason=reason)
+        await self.bot.mod_log(ctx, "ban", user, reason)
+        await ctx.send(f"User {user} banned")
+
+    @commands.command(aliases=["mute"], description="Silence a user")
+    @commands.guild_only()
+    async def silence(self, ctx, user: discord.Member, length=None, reason="Silenced by Talos"):
+        """Silences a user, optionally takes in a length of time and a reason for silencing. A role called 'Muted' """\
+            """or 'Silenced' with the necessary permissions in place must exist for this to work."""
+        muted = list(filter(lambda x: x.name.lower() == "muted" or x.name.lower() == "silenced", ctx.guild.roles))
+        if not muted:
+            ctx.send("No Muted or Silenced role")
+            return
+        role = muted[0]
+        await user.add_roles(role)
+        await self.bot.mod_log(ctx, "silence", user, reason)
+        await ctx.send(f"User {user} silenced")
+        if length is not None:
+            if isinstance(length, str):
+                period = utils.data.EventPeriod(length)
+            elif isinstance(length, int):
+                period = utils.data.EventPeriod("")
+                period.minutes = length
 
     @commands.command(description="Display current Talos perms")
     @commands.guild_only()
@@ -262,7 +298,7 @@ class AdminCommands(utils.TalosCog):
                 return
 
             name = str(name) if name != "" else "SELF"
-            priority = priority or utils.sql._levels[level]
+            priority = priority or utils.sql.levels[level]
 
             perm_rule = utils.PermissionRule((ctx.guild.id, command, level, name, priority, allow))
             self.database.save_item(perm_rule)
