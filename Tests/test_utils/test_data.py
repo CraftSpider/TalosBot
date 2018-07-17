@@ -117,7 +117,7 @@ def test_talos_user():
 
 def test_guild_options():
 
-    test_data = [1, 1, 0, 0, 1, 1, 1, 0, 1, "prompts", "^", "UTC"]
+    test_data = [1, 1, 0, 0, 1, 1, 1, 0, 1, "prompts", 0, "mod_log", "^", "UTC"]
     options = data.GuildOptions(test_data)
 
     assert options.id == 1
@@ -130,6 +130,8 @@ def test_guild_options():
     assert options.joke_commands is False
     assert options.writing_prompts is True
     assert options.prompts_channel == "prompts"
+    assert options.mod_log is False
+    assert options.log_channel == "mod_log"
     assert options.prefix == "^"
     assert options.timezone == "UTC"
 

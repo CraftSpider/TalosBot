@@ -305,6 +305,13 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         return ctx
 
     async def mod_log(self, ctx, event, user, message):
+        """
+            Logs a message to a guild's mod log, if Talos is set up to do so
+        :param ctx: Context object so we can know the guild
+        :param event: Name of the event being logged
+        :param user: User who is the target of the event
+        :param message: The reason or details associated with the action
+        """
         if not self.database.get_guild_options(ctx.guild.id).mod_log:
             return False
         if self.should_embed(ctx):
@@ -363,6 +370,11 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         self.database.clean_guild(guild.id)
 
     async def on_member_ban(self, guild, user):
+        """
+            Called upon a member being banned from a guild
+        :param guild: Guild the user was banned from
+        :param user: User who was banned
+        """
         options = self.database.get_guild_options(guild.id)
         if not options.mod_log:
             return
