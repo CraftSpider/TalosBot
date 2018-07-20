@@ -28,8 +28,8 @@ class JokeCommands(utils.TalosCog):
     @commands.command(description="Feed your cat addiction")
     async def catpic(self, ctx):
         """Returns a random cat picture. Sourced from The Cap API."""
-        stream = await self.bot.session.get_cat_pic()
-        file = discord.File(stream)
+        stream, filename = await self.bot.session.get_cat_pic()
+        file = discord.File(stream, filename=filename)
         await ctx.send(file=file)
 
     @commands.command(description="Ask Talos for a favor, or have them ask others for one...")
