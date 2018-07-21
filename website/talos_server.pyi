@@ -1,6 +1,7 @@
 
 from typing import Dict, Any
 import aiohttp.web as web
+import aiohttp
 import pathlib
 
 Path = pathlib.Path
@@ -13,6 +14,7 @@ class TalosPrimaryHandler:
     _settings: Dict[str, Any]
     webmaster: Dict[str, str]
     base_path: Path
+    session: aiohttp.ClientSession
 
     def __new__(cls, settings: Dict[str, Any] = ...) -> TalosPrimaryHandler:
 
@@ -25,6 +27,8 @@ class TalosPrimaryHandler:
     async def do_head(self, request: web.Request) -> web.Response: ...
 
     async def api_post(self, request: web.Request) -> web.Response: ...
+
+    async def auth_get(self, request: web.Request) -> web.Response: ...
 
     async def get_path(self, path: str) -> Path: ...
 

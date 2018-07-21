@@ -3,6 +3,7 @@ import pathlib
 import logging
 import secrets
 import json
+import aiohttp
 import aiohttp.web as web
 
 log = logging.getLogger("talosserver")
@@ -55,8 +56,10 @@ class TalosPrimaryHandler:
             self._settings = settings
             self.webmaster = self._settings.get("webmaster")
             self.base_path = pathlib.Path(self._settings.get("basepath")).expanduser()
+            self.session = aiohttp.ClientSession()
 
     async def site_get(self, request):
+        print(request.url)
         log.info("Site GET")
         path = await self.get_path(request.path)
         if isinstance(path, int):
@@ -101,12 +104,24 @@ class TalosPrimaryHandler:
         
         return web.Response(text="Talos Command posting is WIP")
 
-    async def auth_get(self, data):
-        print(data.url)
+    async def auth_get(self, request):
+        if len(request.query) > 0:
+            code = request.query["code"]
+            params = {
+                "client_id": self._settings["twitch_id"],
+                "client_secret": self._settings["twitch_secret"],
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": self._settings["twitch_redirect"]
+            }
+            async with self.session.post("https://id.twitch.tv/oauth2/token", params=params) as response:
+                result = json.loads(await response.text())
+                print(result)
+            return web.Response(text="All set!")
         params = {
             "client_id": self._settings["twitch_id"],
-            "redirect_uri": "http://talosbot.org/auth",
-            "response_type": "token",
+            "redirect_uri": self._settings["twitch_redirect"],
+            "response_type": "code",
             "scope": "channel_subscriptions"
         }
         return web.HTTPFound("https://id.twitch.tv/oauth2/authorize?" + '&'.join(x + "=" + params[x] for x in params))
