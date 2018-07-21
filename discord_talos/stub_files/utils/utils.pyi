@@ -2,19 +2,15 @@
     Talos utils stub file
 """
 
-from typing import Dict, Union, List, Tuple, Any, Optional, overload
+from typing import Dict, Union, List
 
-from Discord.talos import Talos
+from discord.talos import Talos
 import logging
-import aiohttp
 import discord
 import discord.ext.commands as dcommands
-import datetime as dt
-import utils.sql as tsql
-import mysql.connector.cursor_cext as cursor_cext
-import mysql.connector.abstracts as mysql_abstracts
+import utils as tsql
 
-import utils.paginators as paginators
+import utils as paginators
 
 log: logging.Logger = ...
 fullwidth_transform: Dict[str, str] = ...

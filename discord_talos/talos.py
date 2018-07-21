@@ -10,6 +10,7 @@ import traceback
 import sys
 import logging
 import re
+import pathlib
 import mysql.connector
 import datetime as dt
 import command_lang
@@ -21,7 +22,7 @@ from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered,
 #
 
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
-TOKEN_FILE = "token.json"
+TOKEN_FILE = pathlib.Path(__file__).parent / "token.json"
 
 #
 #   Command Vars
@@ -506,7 +507,7 @@ def main():
     bot_token = tokens.get("token")
     if not bot_token:
         log.fatal("Bot token missing, talos cannot start.")
-        exit(126)
+        return 126
 
     botlist_token = tokens.get("botlist")
     if not botlist_token:
@@ -561,6 +562,7 @@ def main():
             cnx.close()
         except AttributeError:
             pass
+    return 0
 
 
 if __name__ == "__main__":

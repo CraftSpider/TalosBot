@@ -71,8 +71,7 @@ def channel_specific(channel):
     return airc.check(pred)
 
 
-if __name__ == "__main__":
-
+def main():
     with open("token.txt") as tokens:
         bot_token = tokens.read()
 
@@ -111,3 +110,7 @@ if __name__ == "__main__":
         await ctx.send("Implementation soon" + title)
 
     talos.run(uri=uri, username="talos_bot_", password=password)
+
+
+if __name__ == "__main__":
+    main()

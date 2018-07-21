@@ -1,6 +1,6 @@
 
 from typing import Tuple, Optional, Dict, List, Union, overload
-from utils.element import Document
+from utils import Document
 import aiohttp
 import io
 

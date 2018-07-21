@@ -5,7 +5,7 @@
 """
 
 from typing import Match
-from Discord.talos import Talos
+from discord.talos import Talos
 import logging
 import utils
 import discord

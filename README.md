@@ -23,7 +23,7 @@ If you wish to run this bot for yourself, here's how.
 1. Open up a new Chatzy tab, and log into the room you wish to run in.
 Make sure that timestamps are enabled in the room. The bot will not run without this setting being enabled. The setting can be changed by a room admin with the 'Room Properties' menu.
 
-2. Open the console and paste in the code from the 'Chatzy\TalosStart.js' file. Hit 'enter'.
+2. Open the console and paste in the code from the 'chatzy\TalosStart.js' file. Hit 'enter'.
 If prompted, allow popups- the window is the log4js console.
 
     - If you were prompted to allow popups, after doing so you may want to refresh and repeat step 2 so the log4js console actually opens.
@@ -35,7 +35,7 @@ If prompted, allow popups- the window is the log4js console.
 
 2. Install the discord.py library, the google API library, the mysql connector, and the pillow library using the command `python3 -m pip install -r requirements.txt`
 
-3. Navigate into the `TalosBot\Discord\` file
+3. Navigate into the `TalosBot\discord\` file
 
 4. Create a file named exactly `token.json` and place your discord bot token in that file, under the "token" key
 

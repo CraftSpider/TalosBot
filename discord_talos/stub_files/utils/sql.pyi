@@ -1,6 +1,6 @@
 
-from typing import Tuple, Dict, List, Union, Optional, Any, Iterable, Type
-from utils.data import TalosAdmin, Row, TalosUser, GuildOptions, UserOptions, PermissionRule, GuildEvent, MultiRow, GuildCommand
+from typing import Tuple, Dict, List, Union, Optional, Any, Iterable
+from utils import TalosAdmin, Row, TalosUser, GuildOptions, UserOptions, PermissionRule, GuildEvent, MultiRow, GuildCommand
 import logging
 import mysql.connector.cursor_cext as cursor_cext
 import mysql.connector.abstracts as mysql_abstracts

@@ -9,7 +9,7 @@ import asyncio
 import discord.ext.commands as commands
 import datetime as dt
 import utils
-from Discord.talos import Talos
+from discord.talos import Talos
 
 active_pw: Dict[int, utils.PW] = ...
 log: logging.Logger = ...

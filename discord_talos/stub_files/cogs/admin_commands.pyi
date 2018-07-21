@@ -6,7 +6,7 @@
 
 from typing import Match, Callable, Dict
 from collections import defaultdict
-from Discord.talos import Talos
+from discord.talos import Talos
 import logging
 import utils
 import discord

@@ -22,10 +22,11 @@ class Document:
 
 class Node:
 
-    __slots__ = ("parent", "child_nodes")
+    __slots__ = ("parent", "child_nodes", "_pos_map")
 
     parent: Node
     child_nodes: List[Node]
+    _pos_map: Dict[Node, int]
 
     def __init__(self) -> None: ...
 
