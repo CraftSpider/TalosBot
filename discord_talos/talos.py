@@ -13,7 +13,7 @@ import re
 import pathlib
 import mysql.connector
 import datetime as dt
-import command_lang
+import utils.command_lang as command_lang
 from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, CustomCommandError, tz_map,\
     PaginatedEmbed
 
@@ -71,7 +71,7 @@ class Talos(commands.Bot):
     # Folder which extensions are stored in
     EXTENSION_DIRECTORY = "cogs"
     # Extensions to load on Talos boot. Can be standard discord.py extensions, though Talos also allows some more stuff.
-    STARTUP_EXTENSIONS = ["commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops"]
+    STARTUP_EXTENSIONS = ("commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops")
     # Hardcoded Developer List. Craft, Dino, Hidd, Hidd
     DEVS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
     # This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
@@ -537,10 +537,12 @@ def main():
         else:
             try:
                 cnx.cursor().execute("USE talos_data")
+                log.info("Talos database connection established")
             except mysql.connector.DatabaseError:
                 log.info("Talos Schema non-extant, creating")
                 try:
                     cnx.cursor().execute("CREATE SCHEMA talos_data")
+                    cnx.cursor().execute("USER talos_data")
                 except mysql.connector.DatabaseError:
                     log.warning("Talos Schema could not be created, dropping connection")
                     cnx = None
