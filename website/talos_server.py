@@ -9,7 +9,7 @@ log = logging.getLogger("talosserver")
 log.setLevel(logging.INFO)
 
 
-SETTINGS_FILE = "settings.json"
+SETTINGS_FILE = pathlib.Path(__file__).parent / "settings.json"
 
 
 BACKUP_ERROR = """
@@ -54,7 +54,7 @@ class TalosPrimaryHandler:
                 raise ServerError("Missing settings on server handler creation")
             self._settings = settings
             self.webmaster = self._settings.get("webmaster")
-            self.base_path = pathlib.Path(self._settings.get("basepath"))
+            self.base_path = pathlib.Path(self._settings.get("basepath")).expanduser()
 
     async def site_get(self, request):
         log.info("Site GET")
@@ -100,6 +100,16 @@ class TalosPrimaryHandler:
     async def api_commands(self, data):
         
         return web.Response(text="Talos Command posting is WIP")
+
+    async def auth_get(self, data):
+        print(data.url)
+        params = {
+            "client_id": self._settings["twitch_id"],
+            "redirect_uri": "http://talosbot.org/auth",
+            "response_type": "token",
+            "scope": "channel_subscriptions"
+        }
+        return web.HTTPFound("https://id.twitch.tv/oauth2/authorize?" + '&'.join(x + "=" + params[x] for x in params))
 
     async def get_path(self, path):
         # any hardcoded redirects here
@@ -161,12 +171,14 @@ def main():
     app = web.Application()
     handler = TalosPrimaryHandler(settings)
     app.add_routes([
-        web.get("/{tail:(?!api/).*}", handler.site_get),
-        web.head("/{tail:(?!api/).*}", handler.do_head),
+        web.get("/{tail:(?!api/|auth/).*}", handler.site_get),
+        web.head("/{tail:(?!api/|auth/).*}", handler.do_head),
         web.get("/api/{tail:.*}", handler.api_get),
-        web.post("/api/{tail:.*}", handler.api_post)
+        web.post("/api/{tail:.*}", handler.api_post),
+        web.get("/auth/{tail:.*}", handler.auth_get)
     ])
     web.run_app(app, port=80)
+    return 0
 
 
 if __name__ == "__main__":
