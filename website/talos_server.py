@@ -3,8 +3,11 @@ import pathlib
 import logging
 import secrets
 import json
-import aiohttp
+import types
+import importlib
+import importlib.machinery
 import aiohttp.web as web
+import utils.twitch as twitch
 
 log = logging.getLogger("talosserver")
 log.setLevel(logging.INFO)
@@ -56,10 +59,12 @@ class TalosPrimaryHandler:
             self._settings = settings
             self.webmaster = self._settings.get("webmaster")
             self.base_path = pathlib.Path(self._settings.get("basepath")).expanduser()
-            self.session = aiohttp.ClientSession()
+            self.session = None
+            self.twitch_app = twitch.TwitchApp(cid=self._settings["twitch_id"],
+                                               secret=self._settings["twitch_secret"],
+                                               redirect=self._settings["twitch_redirect"])
 
     async def site_get(self, request):
-        print(request.url)
         log.info("Site GET")
         path = await self.get_path(request.path)
         if isinstance(path, int):
@@ -107,16 +112,7 @@ class TalosPrimaryHandler:
     async def auth_get(self, request):
         if len(request.query) > 0:
             code = request.query["code"]
-            params = {
-                "client_id": self._settings["twitch_id"],
-                "client_secret": self._settings["twitch_secret"],
-                "code": code,
-                "grant_type": "authorization_code",
-                "redirect_uri": self._settings["twitch_redirect"]
-            }
-            async with self.session.post("https://id.twitch.tv/oauth2/token", params=params) as response:
-                result = json.loads(await response.text())
-                print(result)
+            self.twitch_app.get_oauth(code)
             return web.Response(text="All set!")
         params = {
             "client_id": self._settings["twitch_id"],
@@ -151,6 +147,13 @@ class TalosPrimaryHandler:
             return 404
 
     async def get_response(self, path, status=200):
+        if path.is_file() and path.suffix == ".psp":
+            loader = importlib.machinery.SourceFileLoader("psp", path.__fspath__())
+            psp = types.ModuleType(loader.name)
+            loader.exec_module(psp)
+            headers = dict()
+            headers["Content-Type"] = "text/html"
+            return web.Response(text=psp.page(self, path, status), status=status, headers=headers)
         headers = dict()
         headers["Content-Type"] = await self.guess_mime(path)
         return web.FileResponse(path=path, status=status, headers=headers)

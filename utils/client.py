@@ -11,7 +11,7 @@ log = logging.getLogger("talos.utils")
 
 class TalosHTTPClient(aiohttp.ClientSession):
 
-    __slots__ = ("username", "password", "btn_key", "cat_key", "nano_tries")
+    __slots__ = ("nano_login", "btn_key", "cat_key", "nano_tries")
 
     NANO_URL = "https://nanowrimo.org/"
     BTN_URL = "https://www.behindthename.com/"
@@ -24,8 +24,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :param args: arguments to pass on
         :param kwargs: keyword args to use and pass on
         """
-        self.username = kwargs.pop("username", "")
-        self.password = kwargs.pop("password", "")
+        self.nano_login = kwargs.pop("nano_login", "")
         self.btn_key = kwargs.pop("btn_key", "")
         self.cat_key = kwargs.pop("cat_key", "")
         self.nano_tries = 0
@@ -133,8 +132,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
         params = {
             "utf8": "✓",
             "authenticity_token": auth_key,
-            "user_session[name]": self.username,
-            "user_session[password]": self.password,
+            "user_session[name]": self.nano_login[0],
+            "user_session[password]": self.nano_login[1],
             "user_session[remember_me]": "0",
             "commit": "Sign+in"
         }

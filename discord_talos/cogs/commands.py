@@ -229,7 +229,7 @@ class Commands(utils.TalosCog):
             await ctx.send("Valid options are 'novel' and 'profile'.")
 
     @nanowrimo.command(name="novel", description="Fetch a user's nano novel.")
-    async def _novel(self, ctx, username, novel_name=""):  # TODO: Convert to an HTML Parser
+    async def _novel(self, ctx, username, novel_name=""):
         """Fetches detailed info on a user's novel from the NaNo site. If no novel name is given, it grabs the most """ \
             """recent."""
         username = username.lower().replace(" ", "-")
@@ -498,7 +498,7 @@ class Commands(utils.TalosCog):
                     try:
                         time = int(time[1:])
                         if time < 0 or time > 59:
-                            ctx.send("Please give a time between 0 and 60.")
+                            await ctx.send("Please give a time between 0 and 60.")
                             return
                         now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
                         time_delta = abs(
@@ -507,7 +507,7 @@ class Commands(utils.TalosCog):
                         await ctx.send(f"Starting PW at :{time:02}")
                         await asyncio.sleep(time_delta.total_seconds())
                     except ValueError:
-                        ctx.send("Time needs to be a number.")
+                        await ctx.send("Time needs to be a number.")
                 await ctx.send("Starting PW")
                 active_pw[ctx.guild.id].begin(self.bot.get_timezone(ctx))
             else:

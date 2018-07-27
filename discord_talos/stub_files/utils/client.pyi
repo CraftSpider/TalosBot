@@ -1,6 +1,6 @@
 
 from typing import Tuple, Optional, Dict, List, Union, overload
-from utils import Document
+from utils.element import Document
 import aiohttp
 import io
 
@@ -8,15 +8,14 @@ def parse_dom(page: str) -> Optional[Document]: ...
 
 class TalosHTTPClient(aiohttp.ClientSession):
 
-    __slots__ = ("username", "password", "btn_key", "cat_key", "nano_tries")
+    __slots__ = ("nano_login", "btn_key", "cat_key", "nano_tries")
 
     NANO_URL: str = ...
     BTN_URL: str = ...
     CAT_URL: str = ...
     XKCD_URL: str = ...
 
-    username: str
-    password: str
+    nano_login: Tuple[str, str]
     btn_key: str
     cat_key: str
     nano_tries: int

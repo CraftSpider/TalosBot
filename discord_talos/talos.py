@@ -42,7 +42,7 @@ _log_event_colors = {
 }
 
 # Initiate Logging
-fh = logging.FileHandler("talos.log")
+fh = logging.FileHandler(pathlib.Path(__file__).parent / "talos.log")
 sh = logging.StreamHandler(sys.stderr)
 logging.basicConfig(level=logging.INFO, handlers=[fh, sh])
 log = logging.getLogger("talos")
@@ -69,7 +69,7 @@ class Talos(commands.Bot):
     # Default Prefix, in case the options are unavailable.
     DEFAULT_PREFIX = "^"
     # Folder which extensions are stored in
-    EXTENSION_DIRECTORY = "cogs"
+    EXTENSION_DIRECTORY = "discord_talos.cogs"
     # Extensions to load on Talos boot. Can be standard discord.py extensions, though Talos also allows some more stuff.
     STARTUP_EXTENSIONS = ("commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops")
     # Hardcoded Developer List. Craft, Dino, Hidd, Hidd
@@ -77,7 +77,7 @@ class Talos(commands.Bot):
     # This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
     SQL_ADDRESS = "127.0.0.1:3306"
 
-    def __init__(self, sql_conn=None, **kwargs):
+    def __init__(self, **kwargs):
         """
             Initialize Talos object. Safe to pass nothing in.
         :param sql_conn: MySQL Database connection object
@@ -92,14 +92,16 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         super().__init__(talos_prefix, description=description, **kwargs)
 
         # Set talos specific things
-        self.database = TalosDatabase(sql_conn)
-        self.discordbots_token = kwargs.get("db_token", "")
+        self.__tokens = kwargs.get("tokens", {})
 
-        nano_login = kwargs.get("nano_login", ["", ""])
-        btn_key = kwargs.get("btn_key", "")
-        cat_key = kwargs.get("cat_key", "")
-        self.session = TalosHTTPClient(username=nano_login[0], password=nano_login[1], btn_key=btn_key, cat_key=cat_key,
-                                       read_timeout=60, loop=self.loop)
+        sql = self.SQL_ADDRESS.split(":")
+        address, port = sql[0], int(sql[1])
+        self.database = TalosDatabase(address, port, *self.__tokens.get("sql"))
+        nano_login = self.__tokens.get("nano", ["", ""])
+        btn_key = self.__tokens.get("btn", "")
+        cat_key = self.__tokens.get("cat", "")
+        self.session = TalosHTTPClient(nano_login=nano_login, btn_key=btn_key, cat_key=cat_key, read_timeout=60,
+                                       loop=self.loop)
 
         # Override things set by super init that we don't want
         self._skip_check = self.skip_check
@@ -341,12 +343,12 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         log.info(f"| {self.user.name}")
         log.info(f"| {self.user.id}")
         await self.change_presence(activity=discord.Game(name="Taking over the World", type=0))
-        if self.discordbots_token != "":
+        if self.__tokens.get("botlist") != "":
             log.info("Posting guilds to Discordbots")
             guild_count = len(self.guilds)
             self.cogs["EventLoops"].last_guild_count = guild_count
             headers = {
-                'Authorization': self.discordbots_token}
+                'Authorization': self.__tokens["botlist"]}
             data = {'server_count': guild_count}
             api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
             await self.session.post(api_url, data=data, headers=headers)
@@ -509,61 +511,26 @@ def main():
         log.fatal("Bot token missing, talos cannot start.")
         return 126
 
-    botlist_token = tokens.get("botlist")
-    if not botlist_token:
+    if not tokens.get("botlist"):
         log.warning("Botlist token missing, stats will not be posted.")
 
-    nano_login = tokens.get("nano")
-    if not nano_login:
+    if not tokens.get("nano"):
         log.warning("Nano Login missing, nano commands will likely fail")
 
-    btn_key = tokens.get("btn")
-    if not btn_key:
+    if not tokens.get("btn"):
         log.warning("Behind The Name key missing, name commands will fail.")
 
-    cat_key = tokens.get("cat")
-    if not cat_key:
+    if not tokens.get("cat"):
         log.warning("TheCatAPI key missing, catpic command will fail.")
 
-    # Load Talos database
-    login = []
-    cnx = None
-    try:
-        sql = Talos.SQL_ADDRESS.split(":")
-        login = tokens.get("sql", ["", ""])
-        cnx = mysql.connector.connect(user=login[0], password=login[1], host=sql[0], port=int(sql[1]), autocommit=True)
-        if cnx is None:
-            log.warning("Talos database missing, no data will be saved this session.")
-        else:
-            try:
-                cnx.cursor().execute("USE talos_data")
-                log.info("Talos database connection established")
-            except mysql.connector.DatabaseError:
-                log.info("Talos Schema non-extant, creating")
-                try:
-                    cnx.cursor().execute("CREATE SCHEMA talos_data")
-                    cnx.cursor().execute("USER talos_data")
-                except mysql.connector.DatabaseError:
-                    log.warning("Talos Schema could not be created, dropping connection")
-                    cnx = None
-    except Exception as e:
-        log.warning(e)
-        log.warning("Database connection dropped, no data will be saved this session.")
-
     # Create and run Talos
-    talos = Talos(sql_conn=cnx, db_token=botlist_token, nano_login=nano_login, btn_key=btn_key, cat_key=cat_key)
+    talos = Talos(tokens=tokens)
 
     try:
-        talos.sql_login = login
         talos.load_extensions()
         talos.run(bot_token)
     finally:
         print("Talos Exiting")
-        try:
-            cnx.commit()
-            cnx.close()
-        except AttributeError:
-            pass
     return 0
 
 

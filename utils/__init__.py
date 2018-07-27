@@ -4,6 +4,8 @@
     author: CraftSpider
 """
 
+import twitch
+
 from .utils import fullwidth_transform, tz_map, TalosFormatter, TalosCog
 from .pw_classes import PW, PWMember
 from .client import TalosHTTPClient

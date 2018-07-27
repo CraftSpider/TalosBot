@@ -3,6 +3,7 @@ import utils.data as data
 
 import logging
 import re
+import mysql.connector
 import mysql.connector.abstracts as mysql_abstracts
 
 log = logging.getLogger("talos.utils")
@@ -76,7 +77,7 @@ class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
 
 
 talos_create_schema = "CREATE SCHEMA talos_data DEFAULT CHARACTER SET utf8"
-talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8".format("{}", "{}")
 talos_add_column = "ALTER TABLE {} ADD COLUMN {} {}".format("{}", "{}", "{}")  # Makes pycharm not complain
 talos_remove_column = "ALTER TABLE {} DROP COLUMN {}".format("{}", "{}")
 talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}".format("{}", "{}")
@@ -144,20 +145,25 @@ class TalosDatabase:
         (Schema matching can be enforced with verify_schema)
     """
 
-    __slots__ = ("_sql_conn", "_cursor", "_guild_cache")
+    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port")
 
-    def __init__(self, sql_conn):
+    def __init__(self, address, port, username, password, schema):
         """
             Initializes a TalosDatabase object. If passed None, then it replaces the cursor with a dummy class.
-        :param sql_conn: MySQL connection object.
+        :param address: Address of the SQL database
+        :param port: Port of the SQL database
+        :param username: SQL username
+        :param password: SQL password
+        :param schema: SQL schema
         """
-        if sql_conn is not None:
-            self._sql_conn = sql_conn
-            self._cursor = sql_conn.cursor()
-        else:
-            self._sql_conn = None
-            self._cursor = EmptyCursor()
-        self._guild_cache = None
+        self._username = username
+        self._password = password
+        self._schema = schema
+        self._host = address
+        self._port = port
+        self._sql_conn = None
+        self._cursor = None
+        self.reset_connection()
 
     def verify_schema(self):
         """
@@ -258,13 +264,38 @@ class TalosDatabase:
         """
         return self._sql_conn is not None and not isinstance(self._cursor, EmptyCursor)
 
-    def new_connection(self, sql_conn):
-        self.commit()
+    def reset_connection(self):
+
         if self._sql_conn:
+            self.commit()
             self._sql_conn.close()
-        if sql_conn is not None:
-            self._sql_conn = sql_conn
-            self._cursor = sql_conn.cursor()
+
+        cnx = None
+        try:
+            cnx = mysql.connector.connect(user=self._username, password=self._password, host=self._host,
+                                          port=self._port, autocommit=True)
+            if cnx is None:
+                log.warning("Talos database missing, no data will be saved this session.")
+            else:
+                try:
+                    cnx.cursor().execute("USE talos_data")
+                    log.info("Talos database connection established")
+                except mysql.connector.DatabaseError:
+                    log.info("Talos Schema non-extant, creating")
+                    try:
+                        cnx.cursor().execute("CREATE SCHEMA talos_data")
+                        cnx.cursor().execute("USER talos_data")
+                        log.info("Talos database connection established")
+                    except mysql.connector.DatabaseError:
+                        log.warning("Talos Schema could not be created, dropping connection")
+                        cnx = None
+        except Exception as e:
+            log.warning(e)
+            log.warning("Database connection dropped, no data will be saved this session.")
+
+        if cnx is not None:
+            self._sql_conn = cnx
+            self._cursor = cnx.cursor()
         else:
             self._sql_conn = None
             self._cursor = EmptyCursor()
@@ -586,20 +617,6 @@ class TalosDatabase:
 
     # Custom guild commands
 
-    def set_guild_command(self, guild_id, name, text):
-        """
-            Set the text for a custom guild command
-        :param guild_id: id of the guild
-        :param name: name of the command
-        :param text: text of the command
-        """
-        query = "INSERT INTO talos_data.guild_commands VALUES (%s, %s, %s) " \
-                "ON DUPLICATE KEY UPDATE " \
-                "guild_id = VALUES(guild_id)," \
-                "name = VALUES(name)," \
-                "text = VALUES(text)"
-        self._cursor.execute(query, [guild_id, name, text])
-
     def get_guild_command(self, guild_id, name):
         """
             Get the text for a custom guild command
@@ -623,15 +640,6 @@ class TalosDatabase:
         query = "SELECT * FROM talos_data.guild_commands WHERE guild_id = %s"
         self._cursor.execute(query, [guild_id])
         return [data.GuildCommand(x) for x in self._cursor]
-
-    def remove_guild_command(self, guild_id, name):
-        """
-            Remove a custom guild command
-        :param guild_id: id of the guild
-        :param name: name of the command to remove
-        """
-        query = "DELETE FROM talos_data.guild_commands WHERE guild_id = %s and name = %s"
-        self._cursor.execute(query, [guild_id, name])
 
     # Custom guild events
 

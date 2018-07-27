@@ -130,7 +130,7 @@ class UserCommands(utils.TalosCog):
         tal_user = self.database.get_user(user.id)
         if not tal_user:
             raise utils.NotRegistered(user)
-        favorite_command = tal_user.get_favorite_command()
+        fav_command = tal_user.get_favorite_command()
         description = tal_user.profile.description if tal_user.profile.description else "User has not set a description"
         if self.bot.should_embed(ctx):
             with utils.PaginatedEmbed() as embed:
@@ -138,7 +138,7 @@ class UserCommands(utils.TalosCog):
                 embed.description = description
                 embed.set_author(name=user.name, icon_url=user.avatar_url)
                 value = f"Total Invoked Commands: {tal_user.profile.commands_invoked}\n" \
-                        f"Favorite Command: `{favorite_command[0]}`, invoked {favorite_command[1]} times."
+                        f"Favorite Command: `{fav_command.command_name}`, invoked {fav_command.times_invoked} times."
                 embed.add_field(name="Command Stats", value=value)
             for page in embed:
                 await ctx.send(embed=page)
@@ -148,7 +148,7 @@ class UserCommands(utils.TalosCog):
             out += f"{description}\n"
             out += "# Command Stats:\n"
             out += f"-  Total Invoked: {tal_user.profile.commands_invoked}\n"
-            out += f"-  Favorite Command: {favorite_command[0]}, invoked {favorite_command[1]} times."
+            out += f"-  Favorite Command: {fav_command.command_name}, invoked {fav_command.times_invoked} times."
             out += "```"
             await ctx.send(out)
 

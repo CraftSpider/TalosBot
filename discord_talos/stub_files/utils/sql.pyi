@@ -49,13 +49,17 @@ talos_tables: Dict[str, Dict[str, Union[List[str], List[Tuple[str, int, ...]], s
 
 class TalosDatabase:
 
-    __slots__ = ("_sql_conn", "_cursor", "_guild_cache")
+    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port")
 
     _sql_conn: Optional[mysql_abstracts.MySQLConnectionAbstract]
     _cursor: Union[cursor_cext.CMySQLCursor, EmptyCursor]
-    _guild_cache: GuildOptions
+    _username: str
+    _password: str
+    _schema: str
+    _host: str
+    _port: int
 
-    def __init__(self, sql_conn: Optional[mysql_abstracts.MySQLConnectionAbstract]) -> None: ...
+    def __init__(self, address: str, port: int, username: str, password: str, schema: str) -> None: ...
 
     def verify_schema(self) -> None: ...
 
@@ -64,6 +68,8 @@ class TalosDatabase:
     def commit(self) -> bool: ...
 
     def is_connected(self) -> bool: ...
+
+    def reset_connection(self) -> None: ...
 
     def raw_exec(self, statement: str) -> List: ...
 

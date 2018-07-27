@@ -10,7 +10,7 @@ import logging
 import random
 import argparse
 import utils
-import command_lang
+import utils.command_lang as command_lang
 import datetime as dt
 from apiclient import discovery
 from oauth2client import client, tools

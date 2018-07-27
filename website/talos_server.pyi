@@ -3,6 +3,7 @@ from typing import Dict, Any
 import aiohttp.web as web
 import aiohttp
 import pathlib
+from utils.twitch.twitch_app import TwitchApp
 
 Path = pathlib.Path
 SETTINGS_FILE: str = ...
@@ -15,6 +16,7 @@ class TalosPrimaryHandler:
     webmaster: Dict[str, str]
     base_path: Path
     session: aiohttp.ClientSession
+    twitch_app: TwitchApp
 
     def __new__(cls, settings: Dict[str, Any] = ...) -> TalosPrimaryHandler:
 
