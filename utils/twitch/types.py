@@ -38,7 +38,7 @@ class OAuth:
         self._refresh = data["refresh_token"]
         self.expiration_time = data.get("expires_in", 3600)
         self.expires = dt.datetime.now() + dt.timedelta(seconds=self.expiration_time)
-        self.scopes = set(data["scope"].split(","))
+        self.scopes = set(data["scope"])
         self.type = data.get("token_type", "")
 
 

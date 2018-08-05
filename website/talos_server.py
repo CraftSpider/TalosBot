@@ -123,7 +123,7 @@ class TalosPrimaryHandler:
                 "client_id": self._settings["twitch_id"],
                 "redirect_uri": self._settings["twitch_redirect"],
                 "response_type": "code",
-                "scope": request.query["scopes"]
+                "scope": " ".join(request.query["scopes"].split(","))
             }
         except KeyError as er:
             return await self.error_code(500, er)
@@ -195,7 +195,7 @@ class TalosPrimaryHandler:
                 resp = psp.page(self, path, status)
 
             if isinstance(resp, int):
-                return self.error_code(resp)
+                return await self.error_code(resp)
             elif isinstance(resp, str):
                 return web.Response(text=resp, status=status, headers=headers)
             elif isinstance(resp, dict):

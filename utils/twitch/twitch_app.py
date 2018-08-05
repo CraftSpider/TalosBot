@@ -10,6 +10,10 @@ class InsufficientPerms(Exception):
         super().__init__(*args, **kwargs)
 
 
+class NotASubscriber(Exception):
+    pass
+
+
 class TwitchApp:
 
     __slots__ = ("_cid", "_secret", "_redirect", "_oauths", "session", "_users")
@@ -29,7 +33,7 @@ class TwitchApp:
         return {
             "Accept": "application/vnd.twitchtv.v5+json",
             "Client-ID": self._cid,
-            "Authorization": "OAuth " + (self._oauths[name] if self._oauths.get(name) is not None else name)
+            "Authorization": "OAuth " + (self._oauths[name].token if self._oauths.get(name) is not None else name)
         }
 
     async def get_oauth(self, code):
@@ -49,17 +53,20 @@ class TwitchApp:
 
     async def _get_user_oauth(self, oauth):
         headers = self.build_request_headers(oauth.token)
+        # TODO: requires channel read, figure out how to handle this
         async with self.session.get(const.KRAKEN + "channel/", headers=headers) as response:
             result = json.loads(await response.text())
             self._oauths[result["name"]] = oauth
 
     async def get_user(self, name):
+        if self.session is None:
+            self.session = aiohttp.ClientSession()
         user = self._users.get(name)
         if user is not None:
             return user
         async with self.session.get(const.KRAKEN + "users?login=" + name, headers=self.build_request_headers(name)) as response:
             result = json.loads(await response.text())
-            user = types.User(result)
+            user = types.User(result["users"][0])
             self._users[user.name] = user
             return user
 
@@ -78,6 +85,12 @@ class TwitchApp:
                                         headers=self.build_request_headers(name),
                                         params=params) as response:
                 result = json.loads(await response.text())
+                if result.get("error") is not None:
+                    if result.get("status") == 401:
+                        raise InsufficientPerms("channel_subscriptions")
+                    elif result.get("status") == 400:
+                        raise NotASubscriber
+                    raise Exception
                 total = result["_total"]
                 out += map(lambda x: types.Subscription(x), result["subscriptions"])
             offset += 100
