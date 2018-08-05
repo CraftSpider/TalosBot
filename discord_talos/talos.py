@@ -243,6 +243,8 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             name = _mention_pattern.sub(repl, args[0])
             if name in self.cogs:
                 command = self.cogs[name]
+            elif name.capitalize() in self.cogs:
+                command = self.cogs[name.capitalize()]
             else:
                 command = self.all_commands.get(name)
                 if command is None:
