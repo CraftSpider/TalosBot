@@ -43,12 +43,6 @@ class ServerError(Exception):
     pass
 
 
-class HTTPSRedirecter:
-
-    async def all(self, request):
-        return web.HTTPFound("https://talosbot.org/" + request.path[1:])
-
-
 class TalosPrimaryHandler:
 
     _instance = None
@@ -249,11 +243,6 @@ def load_settings():
     return data
 
 
-def setup_redirector(*args, **kwargs):
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    web.run_app(*args, **kwargs)
-
-
 def main():
     settings = load_settings()
 
@@ -262,17 +251,6 @@ def main():
         cert = pathlib.Path(__file__).parent / settings["tokens"]["ssl_cert"]
         key = pathlib.Path(__file__).parent / settings["tokens"]["ssl_key"]
         sslcontext.load_cert_chain(cert, key)
-
-        app = web.Application()
-        handler = HTTPSRedirecter()
-        app.add_routes([
-            web.get("/{tail:.*}", handler.all),
-            web.post("/{tail:.*}", handler.all),
-            web.head("/{tail:.*}", handler.all)
-        ])
-        import threading
-        thread = threading.Thread(target=setup_redirector, args=(app,), kwargs={"port": 80})
-        thread.start()
     else:
         sslcontext = None
 
