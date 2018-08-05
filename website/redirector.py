@@ -17,3 +17,7 @@ def main():
         web.head("/{tail:.*}", handler.all)
     ])
     web.run_app(app, port=80)
+
+
+if __name__ == '__main__':
+    main()
