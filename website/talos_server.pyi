@@ -18,9 +18,9 @@ class TalosPrimaryHandler:
     session: aiohttp.ClientSession
     twitch_app: TwitchApp
 
-    def __new__(cls, settings: Dict[str, Any] = ...) -> TalosPrimaryHandler:
+    def __new__(cls, settings: Dict[str, Any] = ...) -> TalosPrimaryHandler: ...
 
-    def __init__(self, settings: Dict[str, Any] = ...) -> None:
+    def __init__(self, settings: Dict[str, Any] = ...) -> None: ...
 
     async def site_get(self, request: web.Request) -> web.Response: ...
 

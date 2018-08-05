@@ -4,7 +4,7 @@
     author: CraftSpider
 """
 
-import twitch
+from . import twitch
 
 from .utils import fullwidth_transform, tz_map, TalosFormatter, TalosCog
 from .pw_classes import PW, PWMember

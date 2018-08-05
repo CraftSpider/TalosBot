@@ -1,10 +1,13 @@
 
 import aiohttp
 import json
-from . import types
+from . import types, constants as const
 
 
-BASE_URL = "https://api.twitch.tv/kraken/"
+class InsufficientPerms(Exception):
+
+    def __init__(self, required, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class TwitchApp:
@@ -22,6 +25,13 @@ class TwitchApp:
     async def open(self):
         self.session = aiohttp.ClientSession()
 
+    def build_request_headers(self, name):
+        return {
+            "Accept": "application/vnd.twitchtv.v5+json",
+            "Client-ID": self._cid,
+            "Authorization": "OAuth " + (self._oauths[name] if self._oauths.get(name) is not None else name)
+        }
+
     async def get_oauth(self, code):
         params = {
             "client_id": self._cid,
@@ -30,13 +40,14 @@ class TwitchApp:
             "grant_type": "authorization_code",
             "redirect_uri": self._redirect
         }
-        async with self.session.post("https://id.twitch.tv/oauth2/token", params=params) as response:
+        async with self.session.post(const.OAUTH + "token", params=params) as response:
             result = json.loads(await response.text())
-            self._get_user_oauth(result)
+            oauth = types.OAuth(result, self)
+            await self._get_user_oauth(oauth)
 
     async def _get_user_oauth(self, oauth):
-        headers = self.build_request_headers(oauth["access_token"])
-        async with self.session.get(BASE_URL + "channel/", headers=headers) as response:
+        headers = self.build_request_headers(oauth.token)
+        async with self.session.get(const.KRAKEN + "channel/", headers=headers) as response:
             result = json.loads(await response.text())
             self._oauths[result["name"]] = oauth
 
@@ -44,22 +55,15 @@ class TwitchApp:
         user = self._users.get(name)
         if user is not None:
             return user
-        async with self.session.get(BASE_URL + "users?login=" + name, headers=self.build_request_headers(name)) as response:
+        async with self.session.get(const.KRAKEN + "users?login=" + name, headers=self.build_request_headers(name)) as response:
             result = json.loads(await response.text())
             user = types.User(result)
             self._users[user.name] = user
             return user
 
-    def build_request_headers(self, name):
-        return {
-            "Accept": "application/vnd.twitchtv.v5+json",
-            "Client-ID": self._cid,
-            "Authorization": "OAuth " + (self._oauths[name] if self._oauths.get(name) is not None else name)
-        }
-
     async def get_all_subs(self, name):
         user = await self.get_user(name)
-        # TODO: request raised permissions if necessary
+        # TODO: raise permission error if missing
         total = None
         offset = 0
         out = []
@@ -68,7 +72,7 @@ class TwitchApp:
                 "limit": 100,
                 "offset": offset,
             }
-            async with self.session.get(BASE_URL + f"channels/{user.id}/subscriptions",
+            async with self.session.get(const.KRAKEN + f"channels/{user.id}/subscriptions",
                                         headers=self.build_request_headers(name),
                                         params=params) as response:
                 result = json.loads(await response.text())

@@ -1,9 +1,11 @@
 
+import asyncio
 import pathlib
 import logging
 import secrets
 import json
 import types
+import ssl
 import importlib
 import importlib.machinery
 import aiohttp.web as web
@@ -59,7 +61,6 @@ class TalosPrimaryHandler:
             self._settings = settings
             self.webmaster = self._settings.get("webmaster")
             self.base_path = pathlib.Path(self._settings.get("basepath")).expanduser()
-            self.session = None
             self.twitch_app = twitch.TwitchApp(cid=self._settings["twitch_id"],
                                                secret=self._settings["twitch_secret"],
                                                redirect=self._settings["twitch_redirect"])
@@ -110,19 +111,28 @@ class TalosPrimaryHandler:
         return web.Response(text="Talos Command posting is WIP")
 
     async def auth_get(self, request):
-        if len(request.query) > 0:
+        if request.query.get("code") is not None:
             code = request.query["code"]
-            self.twitch_app.get_oauth(code)
+            await self.twitch_app.get_oauth(code)
+            if self.t_redirect is not None:
+                return web.HTTPFound(self.t_redirect)
             return web.Response(text="All set!")
+        self.t_redirect = request.query.get("redirect", None)
         params = {
             "client_id": self._settings["twitch_id"],
             "redirect_uri": self._settings["twitch_redirect"],
             "response_type": "code",
-            "scope": "channel_subscriptions"
+            "scope": ",".join(request.query["scopes"])
         }
         return web.HTTPFound("https://id.twitch.tv/oauth2/authorize?" + '&'.join(x + "=" + params[x] for x in params))
 
     async def get_path(self, path):
+        """
+            Resolves a string path from a GET request to a path on the file system
+            Does safety checks to make sure they're not getting something forbidden
+        :param path: String path to reolve
+        :return: Path object resolved, or an int representing status code
+        """
         # any hardcoded redirects here
         if path == "/":
             path = "/index"
@@ -147,18 +157,60 @@ class TalosPrimaryHandler:
             return 404
 
     async def get_response(self, path, status=200):
+        """
+            Takes in a Path object guaranteed to be a file on disk.
+            If it's a dynamic page type, we run it and return that
+            Otherwise we just respond with the path itself.
+        :param path: Path to file to respond with
+        :param status: status code, if we want to set a non-standard one.
+        :return: web.Response to send to the user
+        """
         if path.is_file() and path.suffix == ".psp":
-            loader = importlib.machinery.SourceFileLoader("psp", path.__fspath__())
-            psp = types.ModuleType(loader.name)
-            loader.exec_module(psp)
-            headers = dict()
-            headers["Content-Type"] = "text/html"
-            return web.Response(text=psp.page(self, path, status), status=status, headers=headers)
+            return self.python_page(path, status)
         headers = dict()
         headers["Content-Type"] = await self.guess_mime(path)
         return web.FileResponse(path=path, status=status, headers=headers)
 
-    async def error_code(self, status):
+    async def python_page(self, path, status=200):
+        """
+            Takes in a path to a .psp file
+            Runs the .psp and returns the result
+        :param path: Path to .psp file to run
+        :param status: status code, if we want to set a non-standard one.
+        :return: web.Response to send to the user
+        """
+        loader = importlib.machinery.SourceFileLoader("psp", path.__fspath__())
+        psp = types.ModuleType(loader.name)
+        loader.exec_module(psp)
+        headers = dict()
+        headers["Content-Type"] = "text/html"
+        try:
+            # TODO: psp should use reflection and pass in values requested
+            if asyncio.iscoroutine(psp.page):
+                resp = await psp.page(self, path, status)
+            else:
+                resp = psp.page(self, path, status)
+
+            if isinstance(resp, int):
+                return self.error_code(resp)
+            elif isinstance(resp, str):
+                return web.Response(text=resp, status=status, headers=headers)
+            elif isinstance(resp, dict):
+                return web.Response(text=resp.get("text", ""),
+                                    status=resp.get("status", status),
+                                    headers=resp.get("headers", headers))
+            else:
+                return resp
+        except Exception as e:
+            return self.error_code(500)
+
+    async def error_code(self, status, error=None):
+        """
+            Takes in an error code and returns the relevant handler page
+        :param status: Status code being thrown out
+        :param error: Error that goes along with it, if relevant
+        :return: web.Response object
+        """
         path = await self.get_path(f"{status}.html")
         try:
             if isinstance(path, int):
@@ -168,6 +220,13 @@ class TalosPrimaryHandler:
             return await self.backup_error_code(status, path, e)
 
     async def backup_error_code(self, old_code, new_code, error=None):
+        """
+            Called if error_code can't find a handler. Returns the default handler.
+        :param old_code: Original code being thrown
+        :param new_code: Code thrown from the error handler
+        :param error: Error  that goes along with code, if relevant
+        :return: web.Response object
+        """
         return web.Response(text=BACKUP_ERROR.format(old_code, new_code, error, self.webmaster["email"]),
                             status=new_code)
 
@@ -186,6 +245,12 @@ def load_settings():
 
 def main():
     settings = load_settings()
+
+    sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    cert = pathlib.Path(__file__).parent / settings["tokens"]["ssl_cert"]
+    key = pathlib.Path(__file__).parent / settings["tokens"]["ssl_key"]
+    sslcontext.load_cert_chain(cert, key)
+
     app = web.Application()
     handler = TalosPrimaryHandler(settings)
     app.add_routes([
@@ -195,7 +260,7 @@ def main():
         web.post("/api/{tail:.*}", handler.api_post),
         web.get("/auth/{tail:.*}", handler.auth_get)
     ])
-    web.run_app(app, port=80)
+    web.run_app(app, port=443, ssl_context=sslcontext)
     return 0
 
 
