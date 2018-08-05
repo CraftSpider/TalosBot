@@ -122,7 +122,7 @@ class TalosPrimaryHandler:
             "client_id": self._settings["twitch_id"],
             "redirect_uri": self._settings["twitch_redirect"],
             "response_type": "code",
-            "scope": ",".join(request.query["scopes"])
+            "scope": request.query["scopes"]
         }
         return web.HTTPFound("https://id.twitch.tv/oauth2/authorize?" + '&'.join(x + "=" + params[x] for x in params))
 
@@ -166,7 +166,7 @@ class TalosPrimaryHandler:
         :return: web.Response to send to the user
         """
         if path.is_file() and path.suffix == ".psp":
-            return self.python_page(path, status)
+            return await self.python_page(path, status)
         headers = dict()
         headers["Content-Type"] = await self.guess_mime(path)
         return web.FileResponse(path=path, status=status, headers=headers)
@@ -186,7 +186,7 @@ class TalosPrimaryHandler:
         headers["Content-Type"] = "text/html"
         try:
             # TODO: psp should use reflection and pass in values requested
-            if asyncio.iscoroutine(psp.page):
+            if asyncio.iscoroutinefunction(psp.page):
                 resp = await psp.page(self, path, status)
             else:
                 resp = psp.page(self, path, status)
