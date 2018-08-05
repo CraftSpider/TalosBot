@@ -118,12 +118,15 @@ class TalosPrimaryHandler:
                 return web.HTTPFound(self.t_redirect)
             return web.Response(text="All set!")
         self.t_redirect = request.query.get("redirect", None)
-        params = {
-            "client_id": self._settings["twitch_id"],
-            "redirect_uri": self._settings["twitch_redirect"],
-            "response_type": "code",
-            "scope": request.query["scopes"]
-        }
+        try:
+            params = {
+                "client_id": self._settings["twitch_id"],
+                "redirect_uri": self._settings["twitch_redirect"],
+                "response_type": "code",
+                "scope": request.query["scopes"]
+            }
+        except KeyError as er:
+            return await self.error_code(500, er)
         return web.HTTPFound("https://id.twitch.tv/oauth2/authorize?" + '&'.join(x + "=" + params[x] for x in params))
 
     async def get_path(self, path):

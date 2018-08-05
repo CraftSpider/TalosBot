@@ -33,6 +33,8 @@ class TwitchApp:
         }
 
     async def get_oauth(self, code):
+        if self.session is None:
+            self.session = aiohttp.ClientSession()
         params = {
             "client_id": self._cid,
             "client_secret": self._secret,
