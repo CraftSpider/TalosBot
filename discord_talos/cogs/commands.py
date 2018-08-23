@@ -595,7 +595,7 @@ class Commands(utils.TalosCog):
         await ctx.send(f"Version: {self.bot.VERSION}")
     
     @commands.command(aliases=["ww", "WW"], description="Have Talos help run a Word War")
-    async def wordwar(self, ctx, length, start="", name="", wpm: int=30):
+    async def wordwar(self, ctx, length, start="", name="", atPeople="", wpm: int=30):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
             """number of words in the given time period. `^wordwar cancel [id]` to cancel a running ww."""
         if length.lower() == "cancel":
@@ -651,7 +651,7 @@ class Commands(utils.TalosCog):
                 await ctx.send(f"Starting WW {ww_name} at :{start:02}")
                 await asyncio.sleep(dif.total_seconds())
             minute = 'minutes' if length != 1 else 'minute'
-            await ctx.send(f"Word War {ww_name} for {length:g} {minute}.")
+            await ctx.send(f"Word War {ww_name} for {length:g} {minute}. {atPeople}");
             await asyncio.sleep(length * 60)
 
             if wpm != 0:
@@ -665,10 +665,12 @@ class Commands(utils.TalosCog):
         wwid = name or 0
         while self.active_wws.get(wwid):
             if isinstance(wwid, str):
-                wwid += "_"
+                await ctx.send("Please enter a numeric value.");
+                return
             else:
                 wwid += 1
         self.active_wws[wwid] = task
+
 
 
 def setup(bot):
