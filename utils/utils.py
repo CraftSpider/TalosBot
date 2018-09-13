@@ -270,16 +270,10 @@ def _perms_check(self, ctx):
         return True
     perms.sort()
     for perm in perms:
-        if perm.perm_type == "user" and perm.target == str(ctx.author):
-            return perm.allow
-        elif perm.perm_type == "role":
-            for role in ctx.author.roles:
-                if perm.target == str(role):
-                    return perm.allow
-        elif perm.perm_type == "channel" and perm.target == str(ctx.channel):
-            return perm.allow
-        elif perm.perm_type == "guild":
-            return perm.allow
+        result = perm.get_allowed(ctx)
+        if result is None:
+            continue
+        return result
     return True
 
 

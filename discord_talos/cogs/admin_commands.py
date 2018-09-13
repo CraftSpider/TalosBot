@@ -58,16 +58,10 @@ def admin_check(self, ctx):
         return False
     perms.sort()
     for perm in perms:
-        if perm.perm_type == "user" and perm.target == str(ctx.author):
-            return perm.allow
-        elif perm.perm_type == "role":
-            for role in ctx.author.roles:
-                if perm.target == str(role):
-                    return perm.allow
-        elif perm.perm_type == "channel" and perm.target == str(ctx.channel):
-            return perm.allow
-        elif perm.perm_type == "guild":
-            return perm.allow
+        result = perm.get_allowed(ctx)
+        if result is None:
+            continue
+        return result
     return False
 
 
@@ -105,13 +99,13 @@ class AdminCommands(utils.TalosCog):
 
     @commands.command(usage="[number=10]", description="Remove messages from a channel")
     @commands.guild_only()
-    async def purge(self, ctx, number="10", *key):
+    async def purge(self, ctx, number="10", key=None):
         """Purges messages from a channel. By default, this will be 10 (including the invoking command)."""\
             """ Use 'all' to purge whole channel. Confirmation keys should be tacked on the end, so """\
             """`^purge 100 [key]`"""
         if number != "all":
             number = int(number)
-            if number >= 100 and (len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]):
+            if number >= 100 and (key is None or key != secure_keys[str(ctx.guild.id)]):
                 rand_key = key_generator()
                 secure_keys[str(ctx.guild.id)] = rand_key
                 await ctx.send(f"Are you sure? If so, re-invoke with {rand_key} on the end.")
@@ -592,6 +586,18 @@ class AdminCommands(utils.TalosCog):
             out += f"{event.name} - {event.period}: {event.text}\n"
         out += "```"
         await ctx.send(out)
+
+    @commands.group()
+    async def quote(self, ctx, author, *, quote):
+        """Quote the best lines from chat for posterity"""
+        if not ctx.invoked_subcommand:
+            quote = utils.Quote([ctx.guild.id, None, author, quote])
+            self.database.save_item(quote)
+
+    @quote.command(name="remove")
+    async def _q_remove(self, ctx, id: int):
+        """Remove the quote with a specific ID"""
+        self.database.remove_item(utils.Quote([ctx.guild.id, id, None, None]), True)
 
 
 def setup(bot):

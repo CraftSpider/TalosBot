@@ -193,6 +193,23 @@ class PermissionRule(Row):
     def table_name(self):
         return "perm_rules"
 
+    def get_allowed(self, ctx, default=None):
+        if self.perm_type == "user":
+            if self.target == str(ctx.author):
+                return self.allow
+        elif self.perm_type == "role":
+            for role in ctx.author.roles:
+                if self.target == str(role):
+                    return self.allow
+        elif self.perm_type == "channel":
+            if self.target == str(ctx.channel):
+                return self.allow
+        elif self.perm_type == "guild":
+            return self.allow
+        else:
+            raise AttributeError("self.perm_type of unknown value")
+        return default
+
 
 class GuildCommand(Row):
 
@@ -255,3 +272,11 @@ class GuildEvent(Row):
 
     def table_name(self):
         return "guild_events"
+
+
+class Quote(Row):
+
+    __slots__ = ("guild_id", "id", "author", "quote")
+
+    def table_name(self):
+        return "quotes"
