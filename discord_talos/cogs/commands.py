@@ -602,8 +602,7 @@ class Commands(utils.TalosCog):
             try:
                 start = int(start) - 1
             except ValueError:
-                await ctx.send("ID must be a number.")
-                return
+                pass
             try:
                 self.active_wws[start].cancel()
             except KeyError:
@@ -612,6 +611,7 @@ class Commands(utils.TalosCog):
             del self.active_wws[start]
             await ctx.send("WW cancelled!")
             return
+
         try:
             length = float(length)
         except ValueError:
