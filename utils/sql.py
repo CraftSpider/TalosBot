@@ -135,6 +135,11 @@ talos_tables = {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`period` varchar(32) NOT NULL",
                     "`last_active` int NOT NULL", "`channel` bigint(20) NOT NULL", "`text` text NOT NULL"],
         "primary": "PRIMARY KEY (`guild_id`,`name`)"
+    },
+    "quotes": {
+        "columns": ["`guild_id` bigint(20) NOT NULL", "`id` bigint NOT NULL AUTO_INCREMENT", "`author` text",
+                    "`quote` text"],
+        "primary": "PRIMARY KEY (`guild_id`, `id`)"
     }
 }
 

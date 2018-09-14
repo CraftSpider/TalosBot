@@ -4,6 +4,7 @@
     Author: CraftSpider
 """
 import os
+import pathlib
 import httplib2
 import asyncio
 import logging
@@ -75,6 +76,8 @@ class EventLoops(utils.TalosCog):
         Returns:
             Credentials, the obtained credential.
         """
+        if not pathlib.Path(CLIENT_SECRET_FILE).is_file():
+            raise FileNotFoundError("No client secret file")
         home_dir = os.path.expanduser('~')
         credential_dir = os.path.join(home_dir, '.credentials')
         if not os.path.exists(credential_dir):
@@ -93,12 +96,16 @@ class EventLoops(utils.TalosCog):
 
     def create_service(self):
         """Creates and returns a google API service"""
-        credentials = self.get_credentials()
-        http = credentials.authorize(httplib2.Http())
-        discovery_url = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
-        service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discovery_url,
-                                  cache_discovery=False)
-        return service
+        try:
+            credentials = self.get_credentials()
+            http = credentials.authorize(httplib2.Http())
+            discovery_url = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
+            service = discovery.build('sheets', 'v4', http=http, discoveryServiceUrl=discovery_url,
+                                      cache_discovery=False)
+            return service
+        except FileNotFoundError:
+            log.error("Couldn't load client_secret.dat for google services")
+            return None
 
     def get_spreadsheet(self, sheet_id, sheet_range):
         """Get a google spreadsheet range from service"""
@@ -190,6 +197,9 @@ class EventLoops(utils.TalosCog):
 
     async def prompt_task(self):
         """Once a day, grabs a prompt from google sheets and posts it to the defined prompts chat, if enabled."""
+        if self.service is None:
+            log.warning("No google service, prompt task quitting")
+            return
         log.info("Starting prompt task")
         now = dt.datetime.now()
         delta = dt.timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24, minutes=60 - now.minute,

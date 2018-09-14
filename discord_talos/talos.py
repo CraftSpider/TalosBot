@@ -23,6 +23,9 @@ from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered,
 
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = pathlib.Path(__file__).parent / "token.json"
+FILE_BASE = {
+    "token": "", "botlist": "", "nano": ["user", "pass"], "btn": "", "cats": "", "sql": ["user", "pass", "schema"]
+}
 
 #
 #   Command Vars
@@ -488,13 +491,25 @@ def json_load(filename):
     """
     out = {}
     import json
-    with open(filename, 'a+') as file:
-        try:
-            file.seek(0)
-            out = json.load(file)
-        except Exception as ex:
-            log.error(ex)
+    try:
+        with open(filename, 'r') as file:
+            try:
+                out = json.load(file)
+            except Exception as ex:
+                log.error(ex)
+    except FileNotFoundError:
+        log.error("Token file not found")
     return out
+
+
+def make_token_file(filename):
+    """
+        Creates a token file with the given filename
+    :param filename: name of file to create
+    """
+    import json
+    with open(filename, "w") as file:
+        json.dump(FILE_BASE, file)
 
 
 def main():
@@ -504,6 +519,8 @@ def main():
     """
     # Load Talos tokens
     tokens = json_load(TOKEN_FILE)
+    if not tokens:
+        make_token_file(TOKEN_FILE)
 
     bot_token = tokens.get("token")
     if not bot_token:

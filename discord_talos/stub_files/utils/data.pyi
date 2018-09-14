@@ -1,6 +1,7 @@
 
-from typing import Dict, List, Any, Tuple, Union, Iterable
+from typing import Dict, List, Any, Tuple, Union, Iterable, Optional
 import abc
+import discord.ext.commands as commands
 
 SqlRow = Tuple[Union[str, int], ...]
 
@@ -165,6 +166,8 @@ class PermissionRule(Row):
     def __gt__(self, other: Any) -> bool: ...
 
     def table_name(self) -> str: ...
+
+    def get_allowed(self, ctx: commands.Context) -> Optional[bool]: ...
 
 class GuildCommand(Row):
 
