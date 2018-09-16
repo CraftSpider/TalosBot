@@ -304,12 +304,18 @@ class Commands(utils.TalosCog):
             return
         # Get member info
         member_age = doc.get_by_class("member_for")[0].innertext
-        bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
-                                doc.get_by_class("panel-heading")))
-        author_bio = bio_panel.parent.next_child(bio_panel).first_child.innertext
-        if len(member_age) + len(author_bio) > 2048:
-            author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
-        author_bio = author_bio.strip()
+
+        author_bio = ""
+        try:
+            bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
+                                    doc.get_by_class("panel-heading")))
+            author_bio = bio_panel.parent.next_child(bio_panel).first_child.innertext
+            if len(member_age) + len(author_bio) > 2048:
+                author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
+            author_bio = author_bio.strip()
+        except StopIteration:
+            pass
+
         avatar = "https:" + doc.get_by_class("avatar_thumb")[0].get_attribute("src")
         # Get basic novel stats
         novel_data = doc.get_by_class("panel-default")[1].first_child.first_child
