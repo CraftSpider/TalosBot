@@ -244,6 +244,7 @@ class AdminCommands(utils.TalosCog):
         else:
             await ctx.send("No admins currently")
 
+    # TODO: Perms for groups
     @commands.group(description="Permissions related commands")
     async def perms(self, ctx):
         """Talos permissions are divided into 4 levels, with each level having a default priority. The levels, in """\
@@ -588,11 +589,20 @@ class AdminCommands(utils.TalosCog):
         await ctx.send(out)
 
     @commands.group()
-    async def quote(self, ctx, author, *, quote):
+    async def quote(self, ctx, author=None, *, quote):
         """Quote the best lines from chat for posterity"""
         if not ctx.invoked_subcommand:
-            quote = utils.Quote([ctx.guild.id, None, author, quote])
-            self.database.save_item(quote)
+            if author is None:
+                quote = self.database.get_random_quote(ctx.guild.id)
+                await ctx.send(f"{.author}: {.quote}")
+                return
+            try:
+                author = int(author)
+                quote = self.database.get_quote(ctx.guild.id, author)
+                await ctx.send(f"{.author}: {.quote}")
+            except TypeError:
+                quote = utils.Quote([ctx.guild.id, None, author, quote])
+                self.database.save_item(quote)
 
     @quote.command(name="remove")
     async def _q_remove(self, ctx, id: int):

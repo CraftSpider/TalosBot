@@ -305,6 +305,7 @@ class Commands(utils.TalosCog):
         # Get member info
         member_age = doc.get_by_class("member_for")[0].innertext
 
+        # TODO: support bios with multiple internal elements
         author_bio = ""
         try:
             bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
