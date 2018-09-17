@@ -130,7 +130,7 @@ def test_talos_database(database):
 
 def test_data_classes(database):
     options = tutils.data.UserOptions([2, 0, "^"])
-    profile = tutils.TalosUser({"profile": tutils.data.UserOptions([1, "", 100, ""]),
+    profile = tutils.data.TalosUser({"profile": tutils.data.UserProfile([1, "", 100, ""]),
                                      "invoked": {},
                                      "titles": [],
                                      "options": options})
