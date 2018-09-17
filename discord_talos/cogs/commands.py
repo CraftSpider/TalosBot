@@ -663,7 +663,7 @@ class Commands(utils.TalosCog):
 
             if wpm != 0:
                 words_written = int(wpm * length + random.randint(-2 * length, 2 * length))
-                await ctx.send(f"I wrote {words_written} words. How many did you write?")
+                await ctx.send(f"I wrote {words_written} words in \" {ww_name} \". How many did you write?")
             else:
                 await ctx.send(f"The word war \"{ww_name}\" is over. How did you do?")
             del self.active_wws[wwid]
