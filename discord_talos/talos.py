@@ -523,7 +523,9 @@ def main():
     # Load Talos tokens
     tokens = json_load(TOKEN_FILE)
     if not tokens:
+        log.fatal("Bot Token file missing, creating file and exiting")
         make_token_file(TOKEN_FILE)
+        return 2
 
     bot_token = tokens.get("token")
     if not bot_token:
