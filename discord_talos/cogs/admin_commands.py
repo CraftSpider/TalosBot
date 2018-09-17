@@ -591,15 +591,17 @@ class AdminCommands(utils.TalosCog):
     @commands.group()
     async def quote(self, ctx, author=None, *, quote):
         """Quote the best lines from chat for posterity"""
+
+        format_str = "{.author}: {.quote}"
         if not ctx.invoked_subcommand:
             if author is None:
                 quote = self.database.get_random_quote(ctx.guild.id)
-                await ctx.send(f"{.author}: {.quote}")
+                await ctx.send(format_str.format(quote))
                 return
             try:
                 author = int(author)
                 quote = self.database.get_quote(ctx.guild.id, author)
-                await ctx.send(f"{.author}: {.quote}")
+                await ctx.send(format_str.format(quote))
             except TypeError:
                 quote = utils.Quote([ctx.guild.id, None, author, quote])
                 self.database.save_item(quote)
