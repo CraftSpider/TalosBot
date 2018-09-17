@@ -588,10 +588,9 @@ class AdminCommands(utils.TalosCog):
         out += "```"
         await ctx.send(out)
 
-    @commands.group()
+    @commands.group(description="Add or retrieve a quote")
     async def quote(self, ctx, author=None, *, quote):
         """Quote the best lines from chat for posterity"""
-
         format_str = "{.author}: {.quote}"
         if not ctx.invoked_subcommand:
             if author is None:
@@ -606,7 +605,7 @@ class AdminCommands(utils.TalosCog):
                 quote = utils.Quote([ctx.guild.id, None, author, quote])
                 self.database.save_item(quote)
 
-    @quote.command(name="remove")
+    @quote.command(name="remove", description="Remove a quote")
     async def _q_remove(self, ctx, id: int):
         """Remove the quote with a specific ID"""
         self.database.remove_item(utils.Quote([ctx.guild.id, id, None, None]), True)

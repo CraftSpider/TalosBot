@@ -44,21 +44,21 @@ def test_extension_load(testlos):
 
 def test_paginated_helpers():
 
-    assert utils.paginators._suffix(1) is "st"
-    assert utils.paginators._suffix(2) is "nd"
-    assert utils.paginators._suffix(3) is "rd"
-    assert utils.paginators._suffix(4) is "th"
+    assert tutils.paginators._suffix(1) is "st"
+    assert tutils.paginators._suffix(2) is "nd"
+    assert tutils.paginators._suffix(3) is "rd"
+    assert tutils.paginators._suffix(4) is "th"
 
-    assert utils.paginators._suffix(11) is "th"
-    assert utils.paginators._suffix(21) is "st"
+    assert tutils.paginators._suffix(11) is "th"
+    assert tutils.paginators._suffix(21) is "st"
 
-    assert utils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=1)) == "1st"
-    assert utils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=2)) == "2nd"
-    assert utils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=3)) == "3rd"
-    assert utils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=4)) == "4th"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=1)) == "1st"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=2)) == "2nd"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=3)) == "3rd"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=4)) == "4th"
 
-    assert utils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=11)) == "11th"
-    assert utils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=21)) == "21st"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=11)) == "11th"
+    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=21)) == "21st"
 
 
 def test_paginated_embed():  # TODO: Need to redo due to change to PaginatedEmbed
@@ -100,7 +100,7 @@ def test_paginated_embed():  # TODO: Need to redo due to change to PaginatedEmbe
 
 
 def test_empty_cursor():
-    cursor = utils.sql.EmptyCursor()
+    cursor = tutils.sql.EmptyCursor()
 
     with pytest.raises(StopIteration):
         cursor.__iter__().__next__()
@@ -133,15 +133,15 @@ def test_talos_database():
 def test_data_classes():
     database = tutils.TalosDatabase(None)
 
-    options = utils.data.UserOptions([2, 0, "^"])
-    profile = tutils.TalosUser({"profile": utils.data.UserOptions([1, "", 100, ""]),
+    options = tutils.data.UserOptions([2, 0, "^"])
+    profile = tutils.TalosUser({"profile": tutils.data.UserOptions([1, "", 100, ""]),
                                      "invoked": {},
                                      "titles": [],
                                      "options": options})
     database.save_item(options)
     database.save_item(profile)
-    # database.remove_item(options)
-    # database.remove_item(profile)
+    database.remove_item(options)
+    database.remove_item(profile)
 
 
 def test_pw_member():
