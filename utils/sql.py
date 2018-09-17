@@ -81,7 +81,7 @@ talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8"
 talos_add_column = "ALTER TABLE {} ADD COLUMN {} {}".format("{}", "{}", "{}")  # Makes pycharm not complain
 talos_remove_column = "ALTER TABLE {} DROP COLUMN {}".format("{}", "{}")
 talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}".format("{}", "{}")
-talos_create_trigger = "CREATE TRIGGER {} {} on {} {} END $$"
+talos_create_trigger = "CREATE TRIGGER {} {} on {} {} END;"
 talos_tables = {
     "guild_options": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
@@ -244,13 +244,11 @@ class TalosDatabase:
                     for values in talos_tables[table]["defaults"]:
                         self._cursor.execute("REPLACE INTO {} VALUES {}".format(table, values))
 
-            self._cursor.execute("DELIMITER $$")
             for name in talos_triggers:
                 cause = talos_triggers[name]["cause"]
                 table = talos_triggers[name]["table"]
                 text = talos_triggers[name]["text"]
                 self._cursor.execute(talos_create_trigger.format(name, cause, table, text))
-            self._cursor.execute("DELIMITER ;")
 
     def clean_guild(self, guild_id):
         """
