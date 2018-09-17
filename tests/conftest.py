@@ -42,5 +42,4 @@ def ensure_tokens():
     path = pathlib.Path(dtalos.TOKEN_FILE)
     if path.is_file():
         return
-    with open(path, "w+") as file:
-        file.write('{"token": "", "sql": ["root", ""]}')
+    dtalos.make_token_file(path)
