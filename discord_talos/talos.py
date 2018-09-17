@@ -483,11 +483,11 @@ def talos_prefix(bot, message):
             return [bot.DEFAULT_PREFIX, mention]
 
 
-def json_load(filename):
+def load_token_file(filename):
     """
-        Loads a file as an array of strings and returns that
+        Loads a json token file for Talos
     :param filename: name of file to load
-    :return: array of strings, each string one line in the file.
+    :return: Dict with results of parsing file as json
     """
     out = {}
     import json
@@ -518,7 +518,7 @@ def main():
     :return: None
     """
     # Load Talos tokens
-    tokens = json_load(TOKEN_FILE)
+    tokens = load_token_file(TOKEN_FILE)
     if not tokens:
         log.fatal("Bot Token file missing, creating file and exiting")
         make_token_file(TOKEN_FILE)

@@ -18,9 +18,8 @@ def testlos():
 
 @pytest.fixture(scope="module")
 def testlos_m(request):
-    tokens = dtalos.json_load(dtalos.TOKEN_FILE)
-    nano = tokens.get("nano", ["", ""])
-    testlos = dtalos.Talos(nano_login=nano, btn_key=tokens.get("btn"), cat_key=tokens.get("cat"))
+    tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
+    testlos = dtalos.Talos(tokens=tokens)
     testlos._connection = dfacts.get_state()
     testlos.load_extensions()
     request.module.testlos = testlos
