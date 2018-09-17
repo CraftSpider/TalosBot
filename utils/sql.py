@@ -270,6 +270,10 @@ class TalosDatabase:
         return self._sql_conn is not None and not isinstance(self._cursor, EmptyCursor)
 
     def reset_connection(self):
+        """
+            Reset the database connection, commit if one currently exists and make a new database connection.
+            If connection fails, it is set to None and cursor is the empty cursor
+        """
 
         if self._sql_conn:
             self.commit()
@@ -676,11 +680,22 @@ class TalosDatabase:
     # Quote methods
 
     def get_quote(self, guild_id, id):
+        """
+            Get a specified quote from the quote table
+        :param guild_id: Guild the quote is from
+        :param id: ID of the quote
+        :return: Quote object, assuming quote exists
+        """
         query = "SELECT * FROM talos_data.quotes WHERE guild_id = %s AND id = %s"
         self._cursor.execute(query, [guild_id, id])
         return data.Quote(self._cursor.fetchone())
 
     def get_random_quote(self, guild_id):
+        """
+            Get a random quote from the quote table
+        :param guild_id: Guild the quote should be from
+        :return: Quote object
+        """
         query = "SELECT * FROM talos_data.quote WHERE guild_id = %s ORDER BY RAND() LIMIT 1"
         self._cursor.execute(query, [guild_id])
         return data.Quote(self._cursor.fetchone())
