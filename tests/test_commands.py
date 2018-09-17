@@ -219,11 +219,11 @@ async def commands_async():
     verify_message("Please specify the length of your word war (in minutes).")
     await call("^ww 0")
     verify_message("Please choose a length between 1 and 60 minutes.")
-    # await call("^ww 1")
-    # await dfacts.run_all_events()
-    # verify_message()
-    # await asyncio.sleep(61)
-    # verify_message()
+    await call("^ww 1")
+    await dfacts.run_all_events()
+    verify_message()
+    await asyncio.sleep(61)
+    verify_message()
 
 
 async def admin_commands_async():

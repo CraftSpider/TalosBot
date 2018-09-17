@@ -9,8 +9,10 @@ import talos as dtalos
 
 @pytest.fixture
 def testlos():
-    testlos = dtalos.Talos()
+    tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
+    testlos = dtalos.Talos(tokens=tokens)
     testlos._connection = dfacts.get_state()
+    testlos.load_extensions()
     yield testlos
     loop = asyncio.get_event_loop()
     loop.run_until_complete(testlos.close())
