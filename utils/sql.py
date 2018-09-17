@@ -81,6 +81,7 @@ talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8"
 talos_add_column = "ALTER TABLE {} ADD COLUMN {} {}".format("{}", "{}", "{}")  # Makes pycharm not complain
 talos_remove_column = "ALTER TABLE {} DROP COLUMN {}".format("{}", "{}")
 talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}".format("{}", "{}")
+talos_create_trigger = "CREATE TRIGGER {} {} on {} {} END $$"
 talos_tables = {
     "guild_options": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
@@ -137,9 +138,16 @@ talos_tables = {
         "primary": "PRIMARY KEY (`guild_id`,`name`)"
     },
     "quotes": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`id` bigint NOT NULL AUTO_INCREMENT", "`author` text",
+        "columns": ["`guild_id` bigint(20) NOT NULL", "`id` bigint NOT NULL", "`author` text",
                     "`quote` text"],
         "primary": "PRIMARY KEY (`guild_id`, `id`)"
+    }
+}
+talos_triggers = {
+    "quote_increment": {
+        "cause": "before insert",
+        "table": "quotes",
+        "text": "FOR EACH ROW BEGIN SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes WHERE quild_id = NEW.guild_id);"
     }
 }
 
@@ -173,7 +181,7 @@ class TalosDatabase:
     def verify_schema(self):
         """
             Verifies the schema of the connected Database. If the expected schema doesn't exist, or it doesn't match the
-            expected table forms, it will be updated to match.
+            expected table forms, it will be updated to match. This requires basically root on the database.
         """
         if self.is_connected():
             self._cursor.execute("SELECT * FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = 'talos_data'")
@@ -183,30 +191,23 @@ class TalosDatabase:
                 log.warning("talos_data doesn't exist, creating schema")
                 self._cursor.execute(talos_create_schema)
             for table in talos_tables:
-                self._cursor.execute(
-                    "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'talos_data' AND TABLE_NAME = %s",
-                    [table]
-                )
-                if self._cursor.fetchone():
+                if self.has_table(table):
                     log.info("Found table {}".format(table))
 
                     from collections import defaultdict
-                    columns = defaultdict(lambda: [0, ""])
-                    self._cursor.execute(
-                        "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s",
-                        [table]
-                    )
-                    for item in self._cursor:
-                        columns[item[0]][0] += 1
-                        columns[item[0]][1] = item[1]
+                    columndat = defaultdict(lambda: [0, ""])
+                    columns = self.get_columns(table)
+                    for item in columns:
+                        columndat[item[0]][0] += 1
+                        columndat[item[0]][1] = item[1]
                     for item in talos_tables[table]["columns"]:
                         details = re.search(r"`(.*?)` (\w+)", item)
                         name, col_type = details.group(1), details.group(2)
-                        columns[name][0] += 2
-                        columns[name][1] = columns[name][1] == col_type
+                        columndat[name][0] += 2
+                        columndat[name][1] = columndat[name][1] == col_type
 
-                    for name in columns:
-                        exists, type_match = columns[name]
+                    for name in columndat:
+                        exists, type_match = columndat[name]
                         if exists == 1:
                             log.warning("  Found column {} that shouldn't exist, removing".format(name))
                             self._cursor.execute(talos_remove_column.format(table, name))
@@ -242,6 +243,14 @@ class TalosDatabase:
                 if talos_tables[table].get("defaults") is not None:
                     for values in talos_tables[table]["defaults"]:
                         self._cursor.execute("REPLACE INTO {} VALUES {}".format(table, values))
+
+            self._cursor.execute("DELIMITER $$")
+            for name in talos_triggers:
+                cause = talos_triggers[name]["cause"]
+                table = talos_triggers[name]["table"]
+                text = talos_triggers[name]["text"]
+                self._cursor.execute(talos_create_trigger.format(name, cause, table, text))
+            self._cursor.execute("DELIMITER ;")
 
     def clean_guild(self, guild_id):
         """
@@ -346,6 +355,13 @@ class TalosDatabase:
         if len(result) is 0:
             return None
         return result
+
+    def has_table(self, table):
+        self._cursor.execute(
+            "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'talos_data' AND TABLE_NAME = %s",
+            [table]
+        )
+        return self._cursor.fetchone() is not None
 
     # Generic methods
 
