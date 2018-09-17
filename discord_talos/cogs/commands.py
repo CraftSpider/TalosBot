@@ -304,12 +304,19 @@ class Commands(utils.TalosCog):
             return
         # Get member info
         member_age = doc.get_by_class("member_for")[0].innertext
-        bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
-                                doc.get_by_class("panel-heading")))
-        author_bio = bio_panel.parent.next_child(bio_panel).first_child.innertext
-        if len(member_age) + len(author_bio) > 2048:
-            author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
-        author_bio = author_bio.strip()
+
+        # TODO: support bios with multiple internal elements
+        author_bio = ""
+        try:
+            bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
+                                    doc.get_by_class("panel-heading")))
+            author_bio = bio_panel.parent.next_child(bio_panel).first_child.innertext
+            if len(member_age) + len(author_bio) > 2048:
+                author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
+            author_bio = author_bio.strip()
+        except StopIteration:
+            pass
+
         avatar = "https:" + doc.get_by_class("avatar_thumb")[0].get_attribute("src")
         # Get basic novel stats
         novel_data = doc.get_by_class("panel-default")[1].first_child.first_child
@@ -602,8 +609,7 @@ class Commands(utils.TalosCog):
             try:
                 start = int(start) - 1
             except ValueError:
-                await ctx.send("ID must be a number.")
-                return
+                pass
             try:
                 self.active_wws[start].cancel()
             except KeyError:
@@ -612,6 +618,7 @@ class Commands(utils.TalosCog):
             del self.active_wws[start]
             await ctx.send("WW cancelled!")
             return
+
         try:
             length = float(length)
         except ValueError:
@@ -656,9 +663,9 @@ class Commands(utils.TalosCog):
 
             if wpm != 0:
                 words_written = int(wpm * length + random.randint(-2 * length, 2 * length))
-                await ctx.send(f"I wrote {words_written} words. How many did you write?")
+                await ctx.send(f"I wrote {words_written} words in \"{ww_name}\". How many did you write?")
             else:
-                await ctx.send("The word war is over. How did you do?")
+                await ctx.send(f"The word war \"{ww_name}\" is over. How did you do?")
             del self.active_wws[wwid]
 
         task = self.bot.loop.create_task(active_wordwar())

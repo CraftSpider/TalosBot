@@ -205,7 +205,8 @@ class TalosPrimaryHandler:
             else:
                 return resp
         except Exception as e:
-            return self.error_code(500)
+            log.error(f"Encountered {e} while attempting to load page {path}")
+            return await self.error_code(500, e)
 
     async def error_code(self, status, error=None):
         """

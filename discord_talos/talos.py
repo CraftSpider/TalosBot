@@ -294,14 +294,10 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             else:
                 await destination.send(page)
 
-    async def get_context(self, message, *, cls=commands.Context):
-        """
-            Gets a context object from a message
-        :param message: discord.Message instance
-        :param cls: Class to instantiate, by default a normal context
-        :return: completed context object
-        """
-        ctx = await super().get_context(message, cls=cls)
+    async def process_commands(self, message):
+        ctx = await self.get_context(message)
+
+        # Check for custom command
         if ctx.command is None and message.guild is not None:
             try:
                 text = self.database.get_guild_command(message.guild.id, ctx.invoked_with).text
@@ -310,7 +306,8 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             except AttributeError:
                 text = None
             ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
-        return ctx
+
+        await self.invoke(ctx)
 
     async def mod_log(self, ctx, event, user, message):
         """
@@ -531,16 +528,12 @@ def main():
     if not bot_token:
         log.fatal("Bot token missing, talos cannot start.")
         return 126
-
     if not tokens.get("botlist"):
         log.warning("Botlist token missing, stats will not be posted.")
-
     if not tokens.get("nano"):
         log.warning("Nano Login missing, nano commands will likely fail")
-
     if not tokens.get("btn"):
         log.warning("Behind The Name key missing, name commands will fail.")
-
     if not tokens.get("cat"):
         log.warning("TheCatAPI key missing, catpic command will fail.")
 
@@ -556,4 +549,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())

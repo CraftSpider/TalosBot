@@ -673,6 +673,18 @@ class TalosDatabase:
         results = self._cursor.fetchall()
         return [data.GuildEvent(x) for x in results]
 
+    # Quote methods
+
+    def get_quote(self, guild_id, id):
+        query = "SELECT * FROM talos_data.quotes WHERE guild_id = %s AND id = %s"
+        self._cursor.execute(query, [guild_id, id])
+        return data.Quote(self._cursor.fetchone())
+
+    def get_random_quote(self, guild_id):
+        query = "SELECT * FROM talos_data.quote WHERE guild_id = %s ORDER BY RAND() LIMIT 1"
+        self._cursor.execute(query, [guild_id])
+        return data.Quote(self._cursor.fetchone())
+
     # Uptime methods
 
     def add_uptime(self, uptime):

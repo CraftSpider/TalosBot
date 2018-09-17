@@ -209,3 +209,14 @@ class GuildEvent(Row):
     def __init__(self, data: SqlRow) -> None: ...
 
     def table_name(self) -> str: ...
+
+class Quote(Row):
+
+    __slots__ = ("guild_id", "id", "author", "quote")
+
+    guild_id: int
+    id: int
+    author: str
+    quote: str
+
+    def table_name(self) -> str: ...
