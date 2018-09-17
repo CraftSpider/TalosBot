@@ -1,4 +1,4 @@
-import utils as data
+import utils.data as data
 import pytest
 
 
