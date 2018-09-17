@@ -119,9 +119,7 @@ def test_empty_cursor():
     assert cursor.lastrowid is None, "lastrowid not None"
 
 
-def test_talos_database():
-    database = tutils.TalosDatabase(None)
-
+def test_talos_database(database):
     database.commit()
     assert database.is_connected() is False, "Empty database considered connected"
     assert database.raw_exec("SELECT * FROM admins") == list(), "raw_exec didn't return empty fetchall"
@@ -130,9 +128,7 @@ def test_talos_database():
     pass  # TODO test all the database functions
 
 
-def test_data_classes():
-    database = tutils.TalosDatabase(None)
-
+def test_data_classes(database):
     options = tutils.data.UserOptions([2, 0, "^"])
     profile = tutils.TalosUser({"profile": tutils.data.UserOptions([1, "", 100, ""]),
                                      "invoked": {},

@@ -5,6 +5,14 @@ import pytest
 
 import class_factories as dfacts
 import talos as dtalos
+import utils as tutils
+
+
+@pytest.fixture()
+def database():
+    database = tutils.TalosDatabase("localhost", "3306", "root", "", "")
+    database.verify_schema()
+    return database
 
 
 @pytest.fixture
