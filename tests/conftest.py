@@ -7,9 +7,6 @@ import class_factories as dfacts
 import talos as dtalos
 
 
-dtalos.TOKEN_FILE = "../discord_talos/token.json"
-
-
 @pytest.fixture
 def testlos():
     testlos = dtalos.Talos()
