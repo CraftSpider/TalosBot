@@ -72,7 +72,6 @@ class TwitchApp:
 
     async def get_all_subs(self, name):
         user = await self.get_user(name)
-        # TODO: raise permission error if missing
         total = None
         offset = 0
         out = []
@@ -90,7 +89,7 @@ class TwitchApp:
                         raise InsufficientPerms("channel_subscriptions")
                     elif result.get("status") == 400:
                         raise NotASubscriber
-                    raise Exception
+                    raise Exception("Unkown error getting subscribers")
                 total = result["_total"]
                 out += map(lambda x: types.Subscription(x), result["subscriptions"])
             offset += 100
