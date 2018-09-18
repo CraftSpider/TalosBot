@@ -7,6 +7,7 @@ import json
 import types
 import ssl
 import importlib
+import inspect
 import importlib.machinery
 import aiohttp.web as web
 import utils.twitch as twitch
@@ -189,6 +190,9 @@ class TalosPrimaryHandler:
         headers["Content-Type"] = "text/html"
         try:
             # TODO: psp should use reflection and pass in values requested
+            possible_args = {"handler": self, "path": path, "status": status}
+            print(inspect.getargs(psp.page))
+
             if asyncio.iscoroutinefunction(psp.page):
                 resp = await psp.page(self, path, status)
             else:
