@@ -256,7 +256,7 @@ class TalosDatabase:
         # Drop existing triggers
         query = "SELECT trigger_name FROM information_schema.TRIGGERS WHERE trigger_schema = SCHEMA();"
         self._cursor.execute(query)
-        triggers = self._cursor.fetchall()
+        triggers = map(lambda x: x[0], self._cursor.fetchall())
         for trigger in triggers:
             self._cursor.execute(f"DROP TRIGGER {trigger}")
 
