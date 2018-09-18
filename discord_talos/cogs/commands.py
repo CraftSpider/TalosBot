@@ -39,7 +39,7 @@ def html_to_markdown(html_text):
     html_text = re.sub(r"</p>|<br>", "\n", html_text)
     html_text = re.sub(r"<strong>|</strong>", "**", html_text)
     html_text = re.sub(r"<em>|</em>", "*", html_text)
-    html_text = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\g<2>](\g<1>)", html_text)
+    html_text = re.sub(r"<a.*?href=\"(.*?)\".*?>(.*?)</a>", "[\\g<2>](\\g<1>)", html_text)
     html_text = re.sub(r"<li>", "- ", html_text)
     html_text = re.sub(r"<.*?>\n?", "", html_text)
     html_text = html.unescape(html_text)

@@ -130,7 +130,7 @@ class DevCommands(utils.TalosCog):
         try:
             result = str(eval(program))
             if result is not None and result is not "":
-                result = re.sub(r"([`])", "\g<1>\u200b", result)
+                result = re.sub(r"([`])", "\\g<1>\u200b", result)
                 await ctx.send(f"```py\n{result}\n```")
         except Exception as e:
             await ctx.send(f"Program failed with {type(e).__name__}: {e}")
