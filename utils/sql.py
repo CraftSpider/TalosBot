@@ -148,7 +148,7 @@ talos_triggers = {
         "cause": "before insert",
         "table": "quotes",
         "text": "FOR EACH ROW BEGIN SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes "
-                "WHERE quild_id = NEW.guild_id);"
+                "WHERE guild_id = NEW.guild_id);"
     }
 }
 
