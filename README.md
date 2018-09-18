@@ -37,6 +37,10 @@ If prompted, allow popups- the window is the log4js console.
 
 3. Install the discord.py library, the google API library, the mysql connector, and the pillow library using the command `python3 -m pip install -r requirements.txt`
 
-4. Create a file named exactly `token.json` in the `discord_talos` file and place your discord bot token in that file, under the "token" key
+4. Run the command `python3 runner.py discord` to generate the Talos token file.
 
-5. Run the command `python3 runner.py discord`. Talos should now be running.
+5. Place your token in "token" key in token.json, and fill in any other tokens you may wish to use. For example, to have Talos use a database connection, put the connection info under "sql".
+
+6. Run the command `python3 runner.py discord` again. Talos should now be running.
+
+7. If you are running Talos with a database connected, give it the `^verifysql` command and it will build its own database schema.
