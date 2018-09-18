@@ -592,7 +592,7 @@ class AdminCommands(utils.TalosCog):
     @commands.group(description="Add or retrieve a quote")
     async def quote(self, ctx, author=None, *, quote=None):
         """Quote the best lines from chat for posterity"""
-        format_str = "{.author}: {.quote}"
+        format_str = "{0.author}: {0.quote}"
         if not ctx.invoked_subcommand:
             if author is None:
                 quote = self.database.get_random_quote(ctx.guild.id)
