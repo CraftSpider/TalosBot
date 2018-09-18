@@ -184,72 +184,88 @@ class TalosDatabase:
             Verifies the schema of the connected Database. If the expected schema doesn't exist, or it doesn't match the
             expected table forms, it will be updated to match. This requires basically root on the database.
         """
-        if self.is_connected():
-            self._cursor.execute("SELECT * FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = 'talos_data'")
-            if self._cursor.fetchone():
-                log.info("found schema talos_data")
-            else:
-                log.warning("talos_data doesn't exist, creating schema")
-                self._cursor.execute(talos_create_schema)
-            for table in talos_tables:
-                if self.has_table(table):
-                    log.info("Found table {}".format(table))
+        if not self.is_connected():
+            log.warning("Attempt to verify schema when database not connected")
+            return
 
-                    from collections import defaultdict
-                    columndat = defaultdict(lambda: [0, ""])
-                    columns = self.get_columns(table)
-                    for item in columns:
-                        columndat[item[0]][0] += 1
-                        columndat[item[0]][1] = item[1]
-                    for item in talos_tables[table]["columns"]:
-                        details = re.search(r"`(.*?)` (\w+)", item)
-                        name, col_type = details.group(1), details.group(2)
-                        columndat[name][0] += 2
-                        columndat[name][1] = columndat[name][1] == col_type
+        # Verify schema is extant
+        self._cursor.execute("SELECT * FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = 'talos_data'")
+        if self._cursor.fetchone():
+            log.info("found schema talos_data")
+        else:
+            log.warning("talos_data doesn't exist, creating schema")
+            self._cursor.execute(talos_create_schema)
 
-                    for name in columndat:
-                        exists, type_match = columndat[name]
-                        if exists == 1:
-                            log.warning("  Found column {} that shouldn't exist, removing".format(name))
-                            self._cursor.execute(talos_remove_column.format(table, name))
-                        elif exists == 2:
-                            log.warning("  Could not find column {}, creating column".format(name))
-                            column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
-                                                      talos_tables[table]["columns"]))
-                            column_index = talos_tables[table]["columns"].index(column_spec)
-                            if column_index == 0:
-                                column_place = "FIRST"
-                            else:
-                                column_place = "AFTER " +\
-                                               re.search(
-                                                   r"`(.*?)`",
-                                                   talos_tables[table]["columns"][column_index-1]
-                                               ).group(1)
-                            self._cursor.execute(talos_add_column.format(table, column_spec, column_place))
-                        elif exists == 3 and type_match is not True:
-                            log.warning("  Column {} didn't match expected type, attempting to fix.".format(name))
-                            column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
-                                                      talos_tables[table]["columns"]))
-                            self._cursor.execute(talos_modify_column.format(table, column_spec))
+        # Verify tables match expected
+        for table in talos_tables:
+            if self.has_table(table):
+                log.info("Found table {}".format(table))
+
+                from collections import defaultdict
+                columndat = defaultdict(lambda: [0, ""])
+                columns = self.get_columns(table)
+                for item in columns:
+                    columndat[item[0]][0] += 1
+                    columndat[item[0]][1] = item[1]
+                for item in talos_tables[table]["columns"]:
+                    details = re.search(r"`(.*?)` (\w+)", item)
+                    name, col_type = details.group(1), details.group(2)
+                    columndat[name][0] += 2
+                    columndat[name][1] = columndat[name][1] == col_type
+
+                for name in columndat:
+                    exists, type_match = columndat[name]
+                    if exists == 1:
+                        log.warning("  Found column {} that shouldn't exist, removing".format(name))
+                        self._cursor.execute(talos_remove_column.format(table, name))
+                    elif exists == 2:
+                        log.warning("  Could not find column {}, creating column".format(name))
+                        column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
+                                                  talos_tables[table]["columns"]))
+                        column_index = talos_tables[table]["columns"].index(column_spec)
+                        if column_index == 0:
+                            column_place = "FIRST"
                         else:
-                            log.info("  Found column {}".format(name))
-                else:
-                    log.info("Could not find table {}, creating table".format(table))
-                    self._cursor.execute(
-                        talos_create_table.format(
-                            table, ',\n'.join(talos_tables[table]["columns"] + [talos_tables[table]["primary"]])
-                        )
+                            column_place = "AFTER " +\
+                                           re.search(
+                                               r"`(.*?)`",
+                                               talos_tables[table]["columns"][column_index-1]
+                                           ).group(1)
+                        self._cursor.execute(talos_add_column.format(table, column_spec, column_place))
+                    elif exists == 3 and type_match is not True:
+                        log.warning("  Column {} didn't match expected type, attempting to fix.".format(name))
+                        column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
+                                                  talos_tables[table]["columns"]))
+                        self._cursor.execute(talos_modify_column.format(table, column_spec))
+                    else:
+                        log.info("  Found column {}".format(name))
+            else:
+                log.info("Could not find table {}, creating table".format(table))
+                self._cursor.execute(
+                    talos_create_table.format(
+                        table, ',\n'.join(talos_tables[table]["columns"] + [talos_tables[table]["primary"]])
                     )
-            for table in talos_tables:
-                if talos_tables[table].get("defaults") is not None:
-                    for values in talos_tables[table]["defaults"]:
-                        self._cursor.execute("REPLACE INTO {} VALUES {}".format(table, values))
+                )
 
-            for name in talos_triggers:
-                cause = talos_triggers[name]["cause"]
-                table = talos_triggers[name]["table"]
-                text = talos_triggers[name]["text"]
-                self._cursor.execute(talos_create_trigger.format(name, cause, table, text))
+        # Fill tables with default values
+        for table in talos_tables:
+            if talos_tables[table].get("defaults") is not None:
+                for values in talos_tables[table]["defaults"]:
+                    self._cursor.execute("REPLACE INTO {} VALUES {}".format(table, values))
+
+        # Drop existing triggers
+        query = "SELECT trigger_name FROM information_schema.TRIGGERS WHERE trigger_schema = SCHEMA();"
+        self._cursor.execute(query)
+        triggers = self._cursor.fetchall()
+        for trigger in triggers:
+            self._cursor.execute(f"DROP TRIGGER {trigger}")
+
+        # Add all triggers
+        for name in talos_triggers:
+            cause = talos_triggers[name]["cause"]
+            table = talos_triggers[name]["table"]
+            text = talos_triggers[name]["text"]
+            self._cursor.execute(talos_create_trigger.format(name, cause, table, text))
 
     def clean_guild(self, guild_id):
         """
@@ -301,7 +317,7 @@ class TalosDatabase:
                     log.info("Talos Schema non-extant, creating")
                     try:
                         cnx.cursor().execute("CREATE SCHEMA talos_data")
-                        cnx.cursor().execute("USER talos_data")
+                        cnx.cursor().execute("USE talos_data")
                         log.info("Talos database connection established")
                     except mysql.connector.DatabaseError:
                         log.warning("Talos Schema could not be created, dropping connection")
