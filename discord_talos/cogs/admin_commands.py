@@ -593,7 +593,7 @@ class AdminCommands(utils.TalosCog):
     async def quote(self, ctx, author=None, *, quote=None):
         """Quote the best lines from chat for posterity"""
         format_str = "{0.author}: {0.quote}"
-        if not ctx.invoked_subcommand:
+        if ctx.invoked_subcommand is None:
             if author is None:
                 quote = self.database.get_random_quote(ctx.guild.id)
                 if quote is None:
@@ -610,7 +610,9 @@ class AdminCommands(utils.TalosCog):
                     await ctx.send(format_str.format(quote))
             except ValueError:
                 if quote is None:
-                    raise
+                    await ctx.send("If looking up a quote, ID must be a whole number. If adding a quote, "
+                                   "I require both an author and a quote.")
+                    return
                 quote = utils.Quote([ctx.guild.id, None, author, quote])
                 self.database.save_item(quote)
                 await ctx.send(f"Quote from {author} added!")
