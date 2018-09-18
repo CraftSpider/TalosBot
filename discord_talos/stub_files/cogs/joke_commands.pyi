@@ -4,7 +4,7 @@
     author: CraftSpider
 """
 
-from discord.talos import Talos
+from discord_talos.talos import Talos
 import logging
 import utils
 import discord.ext.commands as commands

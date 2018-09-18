@@ -96,6 +96,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
 
         # Set talos specific things
         self.__tokens = kwargs.get("tokens", {})
+        self.botlist = self.__tokens.get("botlist", "")  # TODO: make this more elegant for event loops
 
         sql = self.SQL_ADDRESS.split(":")
         address, port = sql[0], int(sql[1])

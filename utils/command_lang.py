@@ -169,8 +169,8 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
             elif char == "[":
                 if raw:
                     exec_stack.append(("raw", raw))
-                type, statement, text = self._lex_if()
-                exec_stack.append((type, statement, text))
+                stype, statement, text = self._lex_if()
+                exec_stack.append((stype, statement, text))
             elif char == "{":
                 if raw:
                     exec_stack.append(("raw", raw))
@@ -193,7 +193,7 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
         in_text = False
         depth = 0
         raw = ""
-        type = ""
+        stype = ""
         statement = ""
         text = ""
 
@@ -210,8 +210,8 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
             elif char == "\\":
                 maybe_escape = True
             elif char == " " and not type_known:
-                type = raw
-                if type not in ("if", "elif", "else"):
+                stype = raw
+                if stype not in ("if", "elif", "else"):
                     raise CommandLangError("Invalid if statement type")
                 type_known = True
                 raw = ""
@@ -219,8 +219,8 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
                 maybe_text = True
             elif char == "(" and maybe_text:
                 if not type_known:
-                    type = raw
-                    if type not in ("if", "elif", "else"):
+                    stype = raw
+                    if stype not in ("if", "elif", "else"):
                         raise CommandLangError("Invalid if statement type")
                     type_known = True
                     raw = ""
@@ -246,16 +246,16 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
                     maybe_text = False
                 raw += char
 
-        if type != "else" and statement == "":
+        if stype != "else" and statement == "":
             raise CommandLangError("If statement missing boolean expression")
-        elif type == "else" and statement != "":
+        elif stype == "else" and statement != "":
             raise CommandLangError("Else statement contains unexpected boolean expression")
         if not in_text:
             raise CommandLangError("If statement missing result")
         if char == "":
             raise CommandLangError("Unexpected end of expression")
 
-        return type, statement, text
+        return stype, statement, text
 
     def _lex_exec(self):
 
@@ -339,18 +339,18 @@ class DiscordCL(CommandLangInterpreter):
     __slots__ = ()
 
     def _execute_command(self, ctx, item):
+        args = []
         if isinstance(item, str) and " " in item:
             item = item.split()
             command = item[0]
             args = item[1:]
         else:
             command = item
-            args = []
         command = ctx.bot.all_commands.get(command)
         if command:
             try:
                 if command.can_run(ctx):
-                    ctx.bot.loop.create_task(ctx.invoke(command))
+                    ctx.bot.loop.create_task(ctx.invoke(command, *args))
                 else:
                     ctx.bot.loop.create_task(ctx.send("Cannot Execute Command: Insufficient Permissions"))
             except Exception as e:

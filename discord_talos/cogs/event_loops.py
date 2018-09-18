@@ -160,9 +160,9 @@ class EventLoops(utils.TalosCog):
         while True:
             log.debug("Hourly task runs")
             guild_count = len(self.bot.guilds)
-            if self.bot.discordbots_token != "" and guild_count != self.last_guild_count:
+            if self.bot.botlist != "" and guild_count != self.last_guild_count:
                 self.last_guild_count = guild_count
-                headers = {'Authorization': self.bot.discordbots_token}
+                headers = {'Authorization': self.bot.botlist}
                 data = {'server_count': guild_count}
                 api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
                 await self.bot.session.post(api_url, data=data, headers=headers)
@@ -202,8 +202,9 @@ class EventLoops(utils.TalosCog):
             return
         log.info("Starting prompt task")
         now = dt.datetime.now()
-        delta = dt.timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24, minutes=60 - now.minute,
-                          seconds=60 - now.second)
+        delta = dt.timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME-1)) % 24,
+                             minutes=60 - now.minute,
+                             seconds=60 - now.second)
         await asyncio.sleep(delta.total_seconds())
         while True:
             log.debug("Prompt task runs")
@@ -234,8 +235,9 @@ class EventLoops(utils.TalosCog):
                                  f"Form Responses 1!B{values.index(prompt) + 1}:E{values.index(prompt) + 1}")
 
             now = dt.datetime.now()
-            delta = dt.timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME - 1)) % 24, minutes=60 - now.minute,
-                              seconds=60 - now.second)
+            delta = dt.timedelta(hours=(24 - now.hour + (self.bot.PROMPT_TIME - 1)) % 24,
+                                 minutes=60 - now.minute,
+                                 seconds=60 - now.second)
             await asyncio.sleep(delta.total_seconds())
 
 

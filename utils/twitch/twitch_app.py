@@ -64,7 +64,8 @@ class TwitchApp:
         user = self._users.get(name)
         if user is not None:
             return user
-        async with self.session.get(const.KRAKEN + "users?login=" + name, headers=self.build_request_headers(name)) as response:
+        async with self.session.get(const.KRAKEN + "users?login=" + name,
+                                    headers=self.build_request_headers(name)) as response:
             result = json.loads(await response.text())
             user = types.User(result["users"][0])
             self._users[user.name] = user

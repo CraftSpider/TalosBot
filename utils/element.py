@@ -41,9 +41,9 @@ class Document:
                 out.append(node)
         return out
 
-    def get_by_id(self, id):
+    def get_by_id(self, nid):
         for node in self._depth_iterator():
-            if isinstance(node, Element) and node.id == id:
+            if isinstance(node, Element) and node.id == nid:
                 return node
         return None
 

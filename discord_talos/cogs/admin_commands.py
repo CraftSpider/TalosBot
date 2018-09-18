@@ -143,7 +143,7 @@ class AdminCommands(utils.TalosCog):
             """or 'Silenced' with the necessary permissions in place must exist for this to work."""
         muted = list(filter(lambda x: x.name.lower() == "muted" or x.name.lower() == "silenced", ctx.guild.roles))
         if not muted:
-            ctx.send("No Muted or Silenced role")
+            await ctx.send("No Muted or Silenced role")
             return
         role = muted[0]
         await user.add_roles(role)
@@ -155,6 +155,7 @@ class AdminCommands(utils.TalosCog):
             elif isinstance(length, int):
                 period = utils.data.EventPeriod("")
                 period.minutes = length
+            # TODO: start task to unmute after period
 
     @commands.command(description="Display current Talos perms")
     @commands.guild_only()
@@ -589,26 +590,34 @@ class AdminCommands(utils.TalosCog):
         await ctx.send(out)
 
     @commands.group(description="Add or retrieve a quote")
-    async def quote(self, ctx, author=None, *, quote):
+    async def quote(self, ctx, author=None, *, quote=None):
         """Quote the best lines from chat for posterity"""
         format_str = "{.author}: {.quote}"
         if not ctx.invoked_subcommand:
             if author is None:
                 quote = self.database.get_random_quote(ctx.guild.id)
-                await ctx.send(format_str.format(quote))
+                if quote is None:
+                    await ctx.send("There are no quotes available for this guild")
+                else:
+                    await ctx.send(format_str.format(quote))
                 return
             try:
                 author = int(author)
                 quote = self.database.get_quote(ctx.guild.id, author)
-                await ctx.send(format_str.format(quote))
-            except TypeError:
+                if quote is None:
+                    await ctx.send(f"No quote for ID {author}")
+                else:
+                    await ctx.send(format_str.format(quote))
+            except ValueError:
+                if quote is None:
+                    raise
                 quote = utils.Quote([ctx.guild.id, None, author, quote])
                 self.database.save_item(quote)
 
     @quote.command(name="remove", description="Remove a quote")
-    async def _q_remove(self, ctx, id: int):
+    async def _q_remove(self, ctx, num: int):
         """Remove the quote with a specific ID"""
-        self.database.remove_item(utils.Quote([ctx.guild.id, id, None, None]), True)
+        self.database.remove_item(utils.Quote([ctx.guild.id, num, None, None]), True)
 
 
 def setup(bot):

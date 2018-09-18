@@ -5,7 +5,7 @@
 """
 
 from typing import List, Dict, Union, Tuple
-from discord.talos import Talos
+from discord_talos.talos import Talos
 import command_lang
 import logging
 import argparse

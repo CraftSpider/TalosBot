@@ -1,6 +1,6 @@
 
 from typing import Tuple, Dict, List, Union, Optional, Any, Iterable
-from utils import TalosAdmin, Row, TalosUser, GuildOptions, UserOptions, PermissionRule, GuildEvent, MultiRow, GuildCommand
+from utils.data import TalosAdmin, Row, TalosUser, GuildOptions, UserOptions, PermissionRule, GuildEvent, MultiRow, GuildCommand
 import logging
 import mysql.connector.cursor_cext as cursor_cext
 import mysql.connector.abstracts as mysql_abstracts
@@ -79,6 +79,8 @@ class TalosDatabase:
 
     def get_columns(self, table_name: str) -> Optional[List[Tuple[str, str]]]: ...
 
+    def has_table(self, table: str) -> bool: ...
+
     # Generic methods
 
     def save_item(self, item: Union[type(Row), type(MultiRow)]) -> None: ...
@@ -137,7 +139,7 @@ class TalosDatabase:
 
     # Quote methods
 
-    def get_quote(self, guild_id: int, id: int): ...
+    def get_quote(self, guild_id: int, qid: int): ...
 
     def get_random_quote(self, guild_id: int): ...
 

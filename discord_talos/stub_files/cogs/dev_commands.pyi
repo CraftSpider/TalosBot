@@ -5,7 +5,7 @@
 """
 
 from typing import Callable
-from discord.talos import Talos
+from discord_talos.talos import Talos
 import logging
 import utils
 import discord
@@ -15,7 +15,7 @@ log: logging.Logger = ...
 
 class DevCommands(utils.TalosCog):
 
-    __local_check: Callable[Talos, commands.Context] = ...
+    __local_check: Callable[[DevCommands, commands.Context], bool] = ...
 
     async def playing(self, ctx: commands.Context, *, playing: str) -> None: ...
 

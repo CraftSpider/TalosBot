@@ -1,6 +1,6 @@
 
 from typing import Tuple
-from utils import Document, Node
+from utils.element import Document, Node
 import html.parser as parser
 
 def to_dom(html: str) -> Document: ...
@@ -13,6 +13,8 @@ class TreeGen(parser.HTMLParser):
     def __init__(self) -> None: ...
 
     def close(self) -> Document: ...
+
+    def error(self, message: str) -> None: ...
 
     def handle_starttag(self, tag: str, attrs: Tuple[Tuple[str, str]]) -> None: ...
 

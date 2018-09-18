@@ -230,7 +230,7 @@ class Commands(utils.TalosCog):
 
     @nanowrimo.command(name="novel", description="Fetch a user's nano novel.")
     async def _novel(self, ctx, username, novel_name=""):
-        """Fetches detailed info on a user's novel from the NaNo site. If no novel name is given, it grabs the most """ \
+        """Fetches detailed info on a user's novel from the NaNo site. If no novel name is given, it grabs the most """\
             """recent."""
         username = username.lower().replace(" ", "-")
         novel_name = novel_name.lower().replace(" ", "-")
@@ -333,6 +333,8 @@ class Commands(utils.TalosCog):
         fact_sheet = ""
         fact_table = doc.get_by_class("profile-fact-sheet")[0].child_nodes[1].child_nodes[0]
         for child in fact_table.child_nodes:
+            if not isinstance(child, utils.Element):
+                continue
             if child.tag == "dt":
                 fact_sheet += f"**{child.innertext}**\n"
             elif child.tag == "dd":

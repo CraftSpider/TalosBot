@@ -14,8 +14,8 @@ log = logging.getLogger("talos.joke")
 
 
 class JokeCommands(utils.TalosCog):
-    """They commmands are really just for fun. Some of them may not be really obvious in their purpose, make of them"""\
-        """ as you will."""
+    """These commands are really just for fun. Some of them may not have an obvious purpose, make of them as you"""\
+        """ will."""
 
     @commands.command(description="Sometimes you just need it louder looking")
     async def aesthetic(self, ctx, *, text):

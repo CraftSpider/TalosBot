@@ -45,8 +45,8 @@ class FakeState:
             self._users[user_id] = user = discord.User(state=self, data=data)
             return user
 
-    def get_user(self, id):
-        return self._users.get(id)
+    def get_user(self, uid):
+        return self._users.get(uid)
 
     def _get_private_channel_by_user(self, user_id):
         return self._private_channels_by_user.get(user_id)
@@ -250,9 +250,9 @@ async def make_context(callback, message, bot):
     if ctx.command is not None:
 
         def make_handler(old_error):
-            async def new_error(ctx, error):
+            async def new_error(n_ctx, error):
                 try:
-                    await old_error(ctx, error)
+                    await old_error(n_ctx, error)
                     await run_all_events()
                 except Exception as e:
                     print(e)

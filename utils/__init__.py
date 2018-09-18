@@ -13,3 +13,4 @@ from .sql import TalosDatabase
 from .data import TalosUser, TalosAdmin, PermissionRule, GuildEvent, UserTitle, GuildCommand, Quote
 from .errors import *
 from .paginators import PaginatedEmbed
+from .element import Element, Node, Document

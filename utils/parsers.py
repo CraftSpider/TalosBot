@@ -32,6 +32,9 @@ class TreeGen(parser.HTMLParser):
         super().close()
         return el.Document(self.head)
 
+    def error(self, message):
+        print("Parser Error:", message)
+
     def handle_starttag(self, tag, attrs):
         element = el.Element(tag, attrs_to_dict(attrs))
         if self.head is None:

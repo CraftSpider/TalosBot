@@ -4,7 +4,7 @@
 
 from typing import Dict, Union, List
 
-from discord.talos import Talos
+from discord_talos.talos import Talos
 import logging
 import discord
 import discord.ext.commands as dcommands

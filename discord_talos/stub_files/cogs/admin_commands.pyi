@@ -6,7 +6,7 @@
 
 from typing import Match, Callable, Dict
 from collections import defaultdict
-from discord.talos import Talos
+from discord_talos.talos import Talos
 import logging
 import utils
 import discord
@@ -24,7 +24,7 @@ def dev_check() -> Callable: ...
 class AdminCommands(utils.TalosCog):
 
     LEVELS: Dict[str, int] = ...
-    __local_check: Callable[Talos, commands.Context] = ...
+    __local_check: Callable[[AdminCommands, commands.Context], bool] = ...
 
     async def nick(self, ctx: commands.Context, *, nickname: str) -> None: ...
 

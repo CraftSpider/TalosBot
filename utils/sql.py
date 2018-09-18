@@ -147,7 +147,8 @@ talos_triggers = {
     "quote_increment": {
         "cause": "before insert",
         "table": "quotes",
-        "text": "FOR EACH ROW BEGIN SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes WHERE quild_id = NEW.guild_id);"
+        "text": "FOR EACH ROW BEGIN SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes "
+                "WHERE quild_id = NEW.guild_id);"
     }
 }
 
@@ -693,16 +694,19 @@ class TalosDatabase:
 
     # Quote methods
 
-    def get_quote(self, guild_id, id):
+    def get_quote(self, guild_id, qid):
         """
             Get a specified quote from the quote table
         :param guild_id: Guild the quote is from
-        :param id: ID of the quote
+        :param qid: ID of the quote
         :return: Quote object, assuming quote exists
         """
         query = "SELECT * FROM talos_data.quotes WHERE guild_id = %s AND id = %s"
-        self._cursor.execute(query, [guild_id, id])
-        return data.Quote(self._cursor.fetchone())
+        self._cursor.execute(query, [guild_id, qid])
+        row = self._cursor.fetchone()
+        if row is None:
+            return row
+        return data.Quote(row)
 
     def get_random_quote(self, guild_id):
         """
@@ -712,7 +716,10 @@ class TalosDatabase:
         """
         query = "SELECT * FROM talos_data.quote WHERE guild_id = %s ORDER BY RAND() LIMIT 1"
         self._cursor.execute(query, [guild_id])
-        return data.Quote(self._cursor.fetchone())
+        row = self._cursor.fetchone()
+        if row is None:
+            return row
+        return data.Quote(row)
 
     # Uptime methods
 
