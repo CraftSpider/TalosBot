@@ -730,7 +730,7 @@ class TalosDatabase:
         :param guild_id: Guild the quote should be from
         :return: Quote object
         """
-        query = "SELECT * FROM talos_data.quote WHERE guild_id = %s ORDER BY RAND() LIMIT 1"
+        query = "SELECT * FROM talos_data.quotes WHERE guild_id = %s ORDER BY RAND() LIMIT 1"
         self._cursor.execute(query, [guild_id])
         row = self._cursor.fetchone()
         if row is None:

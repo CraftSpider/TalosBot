@@ -613,6 +613,7 @@ class AdminCommands(utils.TalosCog):
                     raise
                 quote = utils.Quote([ctx.guild.id, None, author, quote])
                 self.database.save_item(quote)
+                await ctx.send(f"Quote from {author} added!")
 
     @quote.command(name="remove", description="Remove a quote")
     async def _q_remove(self, ctx, num: int):
