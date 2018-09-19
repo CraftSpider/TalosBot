@@ -201,6 +201,11 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         return dt.timezone(dt.timedelta(), "UTC")
 
     def find_command(self, command):
+        """
+            Given a string command, attempts to find it iteratively through command groups
+        :param command: Command to find in Talos. Can have spaces if necessary
+        :return: Command object if found, None otherwise
+        """
         if command in self.all_commands:
             return self.all_commands[command]
         command = command.split(" ")
@@ -309,6 +314,10 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
                 await destination.send(page)
 
     async def process_commands(self, message):
+        """
+            Processes incoming messages from Discord, generates a ctx and invokes it.
+        :param message: Message to process
+        """
         ctx = await self.get_context(message)
 
         # Check for custom command
