@@ -2,6 +2,8 @@
 import asyncio
 import pathlib
 import pytest
+import logging
+import io
 
 import class_factories as dfacts
 import talos as dtalos
@@ -15,7 +17,7 @@ def database():
     return database
 
 
-@pytest.fixture
+@pytest.fixture()
 def testlos():
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
@@ -43,7 +45,25 @@ def loop():
     return asyncio.get_event_loop()
 
 
+@pytest.fixture(scope="session")
+def logcatch():
+    return io.StringIO()
+
+
 @pytest.fixture(scope="session", autouse=True)
+def session_setup(logcatch):
+    ensure_tokens()
+    setup_logging(logcatch)
+
+
+def setup_logging(logcatch):
+    logging.root.handlers = []
+    talos_log = logging.getLogger("talos")
+    sh = logging.StreamHandler(logcatch)
+    talos_log.addHandler(sh)
+    talos_log.propagate = False
+
+
 def ensure_tokens():
     path = pathlib.Path(dtalos.TOKEN_FILE)
     if path.is_file():

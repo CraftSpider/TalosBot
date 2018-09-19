@@ -6,7 +6,7 @@ import re
 import mysql.connector
 import mysql.connector.abstracts as mysql_abstracts
 
-log = logging.getLogger("talos.utils")
+log = logging.getLogger("talos.utils.sql")
 
 # Default priority levels
 levels = {
