@@ -4,6 +4,7 @@
 
     Author: CraftSpider
 """
+import asyncio
 import discord
 import logging
 import random
@@ -146,7 +147,7 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("No Muted or Silenced role")
             return
         role = muted[0]
-        await user.add_roles(role)
+        await user.add_roles(role, reason=reason)
         await self.bot.mod_log(ctx, "silence", user, reason)
         await ctx.send(f"User {user} silenced")
         if length is not None:
@@ -155,7 +156,12 @@ class AdminCommands(utils.TalosCog):
             elif isinstance(length, int):
                 period = utils.data.EventPeriod("")
                 period.minutes = length
-            # TODO: start task to unmute after period
+
+            async def unmuter():
+                await asyncio.sleep(int(period))
+                await user.remove_roles(role, reason="Silence timer up")
+
+            self.bot.loop.create_task(unmuter())
 
     @commands.command(description="Display current Talos perms")
     @commands.guild_only()
@@ -275,7 +281,8 @@ class AdminCommands(utils.TalosCog):
             await ctx.send("I can only 'allow' or 'forbid', sorry!")
             return
 
-        if command in self.bot.all_commands and level in self.LEVELS:
+        found = self.bot.find_command(command) is not None
+        if found and level in self.LEVELS:
             if name is None and level != "guild":
                 await ctx.send("You need to include both a name and either 'allow' or 'forbid'")
                 return
@@ -299,7 +306,7 @@ class AdminCommands(utils.TalosCog):
             perm_rule = utils.PermissionRule((ctx.guild.id, command, level, name, priority, allow))
             self.database.save_item(perm_rule)
             await ctx.send(f"Permissions for command **{command}** at level **{level}** updated.")
-        elif command not in self.bot.all_commands:
+        elif not found:
             await ctx.send("I don't recognize that command, so I can't set permissions for it!")
         else:
             await ctx.send("Unrecognized permission level.")

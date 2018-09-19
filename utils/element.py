@@ -84,15 +84,14 @@ class Node:
             return None
         return self.child_nodes[0]
 
-    def set_parent(self, el):
-        if self.parent is not None:
-            self.parent.remove_child(self)
-        self.parent = el
+    @first_child.setter
+    def first_child(self, value):
+        old = self.child_nodes[0]
+        old.parent = None
+        del self._pos_map[old]
 
-    def remove_parent(self):
-        if self.parent is not None:
-            self.parent.remove_child(self)
-        self.parent = None
+        self.child_nodes[0] = value
+        self._pos_map[value] = 0
 
     def add_child(self, el, pos=-1):
         if pos < 0:
@@ -121,6 +120,16 @@ class Node:
         if el.parent == self:
             self.child_nodes.remove(el)
             el.remove_parent()
+
+    def set_parent(self, el):
+        if self.parent is not None:
+            self.parent.remove_child(self)
+        self.parent = el
+
+    def remove_parent(self):
+        if self.parent is not None:
+            self.parent.remove_child(self)
+        self.parent = None
 
 
 class Content(Node):

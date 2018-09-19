@@ -200,6 +200,19 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
                 return dt.timezone(dt.timedelta(hours=tz_map[timezone.upper()]), timezone.upper())
         return dt.timezone(dt.timedelta(), "UTC")
 
+    def find_command(self, command):
+        if command in self.all_commands:
+            return self.all_commands[command]
+        command = command.split(" ")
+        if len(command) > 1:
+            cur = self
+            for sub in command:
+                cur = cur.all_commands.get(sub)
+                if cur is None:
+                    return None
+            return cur
+        return None
+
     def run(self, token, *args, **kwargs):
         """
             Run Talos. Logs into discord and runs event loop forever.
