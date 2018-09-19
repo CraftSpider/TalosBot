@@ -119,11 +119,22 @@ def test_empty_cursor():
     assert cursor.lastrowid is None, "lastrowid not None"
 
 
-def test_talos_database(database):
-    database.commit()
+def test_empty_database():
+    database = tutils.TalosDatabase("", 0, "", "", "")
+
     assert database.is_connected() is False, "Empty database considered connected"
     assert database.raw_exec("SELECT * FROM admins") == list(), "raw_exec didn't return empty fetchall"
     assert database.commit() is False, "Database committed despite not existing?"
+
+    pass  # TODO test all the database functions
+
+
+def test_talos_database(database):
+    if database.is_connected() is False:
+        pytest.skip("Test database not found")
+
+    assert database.is_connected() is True, "Connected database considered empty"
+    assert database.commit() is True, "Database committed despite not existing?"
 
     pass  # TODO test all the database functions
 
