@@ -1,5 +1,5 @@
 
-import talos
+from . import talos
 
 
 def main():

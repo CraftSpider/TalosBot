@@ -1,5 +1,5 @@
 
-import discord_talos.talos as talos
+from . import talos
 
 
 def main():

@@ -12,6 +12,8 @@ testlos: talos.Talos = None
 test_values = {}
 sent_queue = asyncio.queues.Queue()
 
+pytestmark = pytest.mark.usefixtures("testlos_m")
+
 
 @pytest.fixture(scope="module", autouse=True)
 def module_test_values():
@@ -112,27 +114,7 @@ async def call(content, bot=None, callback=command_callback, channel=1, member="
 #
 
 
-def test_commands(testlos_m, loop):
-    loop.run_until_complete(commands_async())
-
-
-def test_admin_commands(loop):
-    loop.run_until_complete(admin_commands_async())
-
-
-def test_dev_commands(loop):
-    loop.run_until_complete(dev_commands_async())
-
-
-def test_joke_commands(testlos_m, loop):
-    loop.run_until_complete(joke_commands_async())
-
-
-def test_user_commands(loop):
-    loop.run_until_complete(user_commands_async())
-
-
-async def commands_async():
+async def test_commands():
     # Ensure database is setup correctly. This function relies on things tested in test_utils
     testlos.database.verify_schema()
 
@@ -226,15 +208,15 @@ async def commands_async():
     verify_message()
 
 
-async def admin_commands_async():
+async def test_admin_commands():
     pass  # TODO: Admin Command Testing
 
 
-async def dev_commands_async():
+async def test_dev_commands():
     pass  # TODO: Dev Command Testing
 
 
-async def joke_commands_async():
+async def test_joke_commands():
     await call("^aesthetic Sphinx of black quartz, judge my vow")
     verify_message("Ｓｐｈｉｎｘ　ｏｆ　ｂｌａｃｋ　ｑｕａｒｔｚ，　ｊｕｄｇｅ　ｍｙ　ｖｏｗ")
 
@@ -251,5 +233,5 @@ async def joke_commands_async():
     verify_embed()
 
 
-async def user_commands_async():
+async def test_user_commands():
     pass  # TODO: User Command Testing

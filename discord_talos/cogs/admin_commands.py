@@ -596,39 +596,46 @@ class AdminCommands(utils.TalosCog):
         out += "```"
         await ctx.send(out)
 
-    @commands.group(description="Add or retrieve a quote")
+    # TODO: fix how groups work and make this a group
+    @commands.command(description="Add or retrieve a quote")
     async def quote(self, ctx, author=None, *, quote=None):
         """Quote the best lines from chat for posterity"""
         format_str = "{0.author}: \"{0.quote}\""
-        await ctx.send(str(ctx.invoked_subcommand))
-        if ctx.invoked_subcommand is None:
-            if author is None:
-                quote = self.database.get_random_quote(ctx.guild.id)
-                if quote is None:
-                    await ctx.send("There are no quotes available for this guild")
-                else:
-                    await ctx.send(format_str.format(quote))
-                return
+        if author is None:
+            quote = self.database.get_random_quote(ctx.guild.id)
+            if quote is None:
+                await ctx.send("There are no quotes available for this guild")
+            else:
+                await ctx.send(format_str.format(quote))
+            return
+        if author == "remove":
             try:
-                author = int(author)
-                quote = self.database.get_quote(ctx.guild.id, author)
-                if quote is None:
-                    await ctx.send(f"No quote for ID {author}")
-                else:
-                    await ctx.send(format_str.format(quote))
+                quote = int(quote)
+                self.database.remove_item(utils.Quote([ctx.guild.id, quote, None, None]), True)
+                await ctx.send(f"Removed quote {quote}")
             except ValueError:
-                if quote is None:
-                    await ctx.send("If looking up a quote, ID must be a whole number. If adding a quote, "
-                                   "I require both an author and a quote.")
-                    return
-                quote = utils.Quote([ctx.guild.id, None, author, quote])
-                self.database.save_item(quote)
-                await ctx.send(f"Quote from {author} added!")
+                await ctx.send("Quotes can only be removed by ID reference")
+            return
+        try:
+            author = int(author)
+            quote = self.database.get_quote(ctx.guild.id, author)
+            if quote is None:
+                await ctx.send(f"No quote for ID {author}")
+            else:
+                await ctx.send(format_str.format(quote))
+        except ValueError:
+            if quote is None:
+                await ctx.send("If looking up a quote, ID must be a whole number. If adding a quote, "
+                               "I require both an author and a quote.")
+                return
+            quote = utils.Quote([ctx.guild.id, None, author, quote])
+            self.database.save_item(quote)
+            await ctx.send(f"Quote from {author} added!")
 
-    @quote.command(name="remove", description="Remove a quote")
-    async def _q_remove(self, ctx, num: int):
-        """Remove the quote with a specific ID"""
-        self.database.remove_item(utils.Quote([ctx.guild.id, num, None, None]), True)
+    # @quote.command(name="remove", description="Remove a quote")
+    # async def _q_remove(self, ctx, num: int):
+    #     """Remove the quote with a specific ID"""
+    #     self.database.remove_item(utils.Quote([ctx.guild.id, num, None, None]), True)
 
 
 def setup(bot):
