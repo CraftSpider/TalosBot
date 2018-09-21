@@ -100,13 +100,14 @@ async def call(content, bot=None, callback=command_callback, channel=1, member="
     if bot is None:
         bot = testlos
     if len(test_values) == 0:
-        log.error("Attempted to make call before context prepared")
+        log.error("Attempted to make call before test values prepared")
         return
     message = dfacts.make_message(content,
                                   test_values[member],
                                   test_values[f"channel_{channel}"])
-    ctx = await dfacts.make_context(callback, message, bot)
+    ctx = await dfacts.make_context(bot, message, callback)
     await bot.invoke(ctx)
+    await dfacts.run_all_events()
 
 
 #
@@ -202,7 +203,6 @@ async def test_commands():
     await call("^ww 0")
     verify_message("Please choose a length between 1 and 60 minutes.")
     await call("^ww 1")
-    await dfacts.run_all_events()
     verify_message()
     await asyncio.sleep(61)
     verify_message()
