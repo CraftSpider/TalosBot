@@ -184,8 +184,8 @@ class UserCommands(utils.TalosCog):
             """title."""
         if title:
             result = ctx.t_user.set_title(title)
-            self.database.save_item(ctx.t_user)
             if result:
+                self.database.save_item(ctx.t_user)
                 await ctx.send(f"Title successfully set to `{title}`")
             else:
                 await ctx.send("You do not have that title")

@@ -453,13 +453,19 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         elif isinstance(exception, CustomCommandError):
             await ctx.send(f"Malformed CommandLang syntax: {exception}")
         else:
-            log.warning(f"Ignoring exception `{exception}` in command {ctx.command}")
+            timestamp = int(dt.datetime.now().timestamp())
+            log.warning(f"Ignoring exception `{exception}` in command {ctx.command}. Reference ID: {timestamp}")
             try:
                 if ctx.author.id in self.DEVS:
-                    await ctx.send(f"```{exception}```")
+                    await ctx.send(f"```{exception} | {timestamp}```")
+                else:
+                    await ctx.send(
+                        "Unknown error in command. Please contact devs through `contact@talosbot.org` "
+                        f"or by posting an issue on the github. Error timestamp: {timestamp}"
+                    )
             except Exception as e:
                 log.error(e)
-            traceback.print_exception(type(exception), exception, exception.__traceback__, file=sys.stderr)
+            log.warning("".join(traceback.format_exception(type(exception), exception, exception.__traceback__)))
 
 
 cl_parser = command_lang.DiscordCL()
