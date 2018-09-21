@@ -212,9 +212,10 @@ class UserCommands(utils.TalosCog):
     @user.command(name="stats", description="List your current user stats")
     async def _stats(self, ctx):
         """Will show just about everything Talos knows about you."""
+        ctx.t_user: utils.TalosUser
         out = "```"
         out += f"Desc: {ctx.t_user.profile.description}\n"
-        out += f"Total Invoked: {ctx.t_user.profile.total_commands}\n"
+        out += f"Total Invoked: {ctx.t_user.profile.commands_invoked}\n"
         out += "Command Stats:\n"
         for command in ctx.t_user.invoked:
             out += f"    {command.command_name}: {command.times_invoked}\n"
