@@ -15,11 +15,13 @@ generated_ids = 0
 
 class FakeState:
 
-    def __init__(self):
+    def __init__(self, user=None):
+        if user is None:
+            user = make_user_dict("State", "0000", None, make_id())
         self._users = {}
         self._guilds = {}
         self._voice_clients = {}
-        self.user = discord.ClientUser(state=self, data=make_user_dict("State", "0000", None, make_id()))
+        self.user = discord.ClientUser(state=self, data=user)
         self._private_channels_by_user = {}
         self.shard_count = None
 
@@ -53,6 +55,9 @@ class FakeState:
 
     def _add_guild(self, guild):
         self._guilds[guild.id] = guild
+
+    def parse_user_update(self, data):
+        self.user = discord.ClientUser(state=self, data=data)
 
 
 class FakeContext(commands.Context):
@@ -225,28 +230,12 @@ async def run_all_events():
             await task
 
 
-async def make_context(callback, message, bot):
-    view = dview.StringView(message.content)
-    ctx = FakeContext(callback=callback, prefix=None, view=view, bot=bot, message=message)
+async def make_context(bot, message, callback):
+    # Get the context as the bot wants
+    ctx = await bot.get_context(message, cls=FakeContext)
 
-    if bot._skip_check(message.author.id, get_state().user.id):
-        return ctx
-
-    prefix = bot.DEFAULT_PREFIX
-    invoked_prefix = prefix
-
-    if isinstance(prefix, str):
-        if not view.skip_string(prefix):
-            return ctx
-    else:
-        invoked_prefix = discord.utils.find(view.skip_string, prefix)
-        if invoked_prefix is None:
-            return ctx
-
-    invoker = view.get_word()
-    ctx.invoked_with = invoker
-    ctx.prefix = invoked_prefix
-    ctx.command = bot.all_commands.get(invoker)
+    # Make sure that the command calls back
+    ctx.callback = callback
     if ctx.command is not None:
 
         def make_handler(old_error):

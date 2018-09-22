@@ -184,8 +184,8 @@ class UserCommands(utils.TalosCog):
             """title."""
         if title:
             result = ctx.t_user.set_title(title)
-            self.database.save_item(ctx.t_user)
             if result:
+                self.database.save_item(ctx.t_user)
                 await ctx.send(f"Title successfully set to `{title}`")
             else:
                 await ctx.send("You do not have that title")
@@ -212,9 +212,10 @@ class UserCommands(utils.TalosCog):
     @user.command(name="stats", description="List your current user stats")
     async def _stats(self, ctx):
         """Will show just about everything Talos knows about you."""
+        ctx.t_user: utils.TalosUser
         out = "```"
         out += f"Desc: {ctx.t_user.profile.description}\n"
-        out += f"Total Invoked: {ctx.t_user.profile.total_commands}\n"
+        out += f"Total Invoked: {ctx.t_user.profile.commands_invoked}\n"
         out += "Command Stats:\n"
         for command in ctx.t_user.invoked:
             out += f"    {command.command_name}: {command.times_invoked}\n"
