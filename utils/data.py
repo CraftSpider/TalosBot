@@ -10,7 +10,7 @@ class Row(metaclass=abc.ABCMeta):
         for index in range(len(self.__slots__)):
             slot = self.__slots__[index]
             value = row[index]
-            if conv_bool and value == 0 or value == 1:
+            if conv_bool and (value == 0 or value == 1):
                 value = bool(value)
             setattr(self, slot, value)
 

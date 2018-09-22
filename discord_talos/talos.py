@@ -45,9 +45,6 @@ _log_event_colors = {
 }
 
 # Initiate Logging
-fh = logging.FileHandler(pathlib.Path(__file__).parent / "talos.log")
-sh = logging.StreamHandler(sys.stderr)
-logging.basicConfig(level=logging.INFO, handlers=[fh, sh])
 log = logging.getLogger("talos")
 
 
@@ -411,7 +408,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             channel = channel[0]
             ctx = commands.Context()
             ctx.message = FakeMessage(guild, channel)
-            await self.mod_log(channel, "ban", user, "User banned for unknown reason")
+            await self.mod_log(ctx, "ban", user, "User banned for unknown reason")
 
     async def on_command(self, ctx):
         """
@@ -506,6 +503,27 @@ def talos_prefix(bot, message):
             return [bot.DEFAULT_PREFIX, mention]
 
 
+def configure_logging():
+    fh = logging.FileHandler(pathlib.Path(__file__).parent / "talos.log")
+    sh = logging.StreamHandler(sys.stderr)
+
+    ff = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+    sf = ff
+
+    fh.setFormatter(ff)
+    sh.setFormatter(sf)
+
+    log.addHandler(fh)
+    log.addHandler(sh)
+    log.propagate = False
+    log.setLevel(logging.DEBUG)
+
+    dlog = logging.getLogger("discord")
+    dlog.addHandler(fh)
+    dlog.addHandler(sh)
+    dlog.setLevel(logging.INFO)
+
+
 def load_token_file(filename):
     """
         Loads a json token file for Talos
@@ -540,6 +558,8 @@ def main():
         Run Talos as main process. Say hello to our new robot overlord.
     :return: None
     """
+    configure_logging()
+
     # Load Talos tokens
     tokens = load_token_file(TOKEN_FILE)
     if not tokens:
