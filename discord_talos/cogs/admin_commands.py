@@ -597,7 +597,7 @@ class AdminCommands(utils.TalosCog):
         await ctx.send(out)
 
     @commands.group(description="Retrieve a quote from the database", invoke_without_command=True)
-    async def quote(self, ctx, author=None):
+    async def quote(self, ctx, author=None, *, quote=None):
         """Quote the best lines from chat for posterity"""
         if author is None:
             quote = self.database.get_random_quote(ctx.guild.id)
@@ -612,7 +612,14 @@ class AdminCommands(utils.TalosCog):
                     await ctx.send(f"No quote for ID {author}")
                     return
             except ValueError:
-                await ctx.send("Quote ID must be a whole number.")
+                if quote is None:
+                    await ctx.send("Quote ID must be a whole number.")
+                    return
+                command = self.bot.find_command("quote add")
+                if await command.can_run(ctx):
+                    await ctx.invoke(command, author, quote=quote)
+                else:
+                    await ctx.send("You don't have permission to do that, sorry")
                 return
 
         if self.bot.should_embed(ctx):

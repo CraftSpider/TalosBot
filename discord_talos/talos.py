@@ -522,7 +522,7 @@ def configure_logging():
     log.addHandler(fh)
     log.addHandler(sh)
     log.propagate = False
-    log.setLevel(logging.DEBUG)
+    log.setLevel(logging.INFO)
 
     dlog = logging.getLogger("discord")
     dlog.addHandler(fh)
