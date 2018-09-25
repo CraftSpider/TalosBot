@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 
 import sys
 import importlib
@@ -13,7 +14,7 @@ name_folder = {
 def main():
     args = sys.argv[1:]
     if len(args) == 0:
-        print("Usage: python3 runner.py <talos program>")
+        print("Usage: runner.py <talos program>")
         exit(0)
     item = args[0]
     sys.argv = sys.argv[0:1] + sys.argv[2:]
@@ -22,7 +23,8 @@ def main():
         result = talos.main()
         exit(result)
     else:
-        print("Unrecognized program")
+        print("Unrecognized program. Valid programs are:")
+        print(", ".join(name_folder.keys()))
         exit(1)
 
 
