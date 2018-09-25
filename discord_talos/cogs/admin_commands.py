@@ -266,9 +266,9 @@ class AdminCommands(utils.TalosCog):
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'create', 'list', and 'remove'.")
 
-    @perms.command(name="create", description="Create or alter permission rules")
+    @perms.command(name="add", aliases=["create"], description="Create or alter permission rules")
     @commands.guild_only()
-    async def _p_create(self, ctx, command, level, allow, name=None, priority: int=None):
+    async def _p_add(self, ctx, command, level, allow, name=None, priority: int=None):
         """Provide a command, one of the four levels (see `^help perms`), whether to allow or forbid the command, """\
             """a name (If level is guild, this is ignored), and a priority if you don't want default."""
         level = level.lower()
@@ -311,7 +311,7 @@ class AdminCommands(utils.TalosCog):
         else:
             await ctx.send("Unrecognized permission level.")
 
-    @perms.command(name="remove", description="Remove permission rules")
+    @perms.command(name="remove", aliases=["delete"], description="Remove permission rules")
     @commands.guild_only()
     async def _p_remove(self, ctx, command=None, level=None, name=None):
         """Remove a permissions rule or set of rules. Be careful, as simply `^perms remove` will clear all guild """\
@@ -596,46 +596,58 @@ class AdminCommands(utils.TalosCog):
         out += "```"
         await ctx.send(out)
 
-    # TODO: fix how groups work and make this a group
-    @commands.command(description="Add or retrieve a quote")
+    @commands.group(description="Retrieve a quote from the database", invoke_without_command=True)
     async def quote(self, ctx, author=None, *, quote=None):
         """Quote the best lines from chat for posterity"""
-        format_str = "{0.author}: \"{0.quote}\""
         if author is None:
             quote = self.database.get_random_quote(ctx.guild.id)
             if quote is None:
                 await ctx.send("There are no quotes available for this guild")
-            else:
-                await ctx.send(format_str.format(quote))
-            return
-        if author == "remove":
-            try:
-                quote = int(quote)
-                self.database.remove_item(utils.Quote([ctx.guild.id, quote, None, None]), True)
-                await ctx.send(f"Removed quote {quote}")
-            except ValueError:
-                await ctx.send("Quotes can only be removed by ID reference")
-            return
-        try:
-            author = int(author)
-            quote = self.database.get_quote(ctx.guild.id, author)
-            if quote is None:
-                await ctx.send(f"No quote for ID {author}")
-            else:
-                await ctx.send(format_str.format(quote))
-        except ValueError:
-            if quote is None:
-                await ctx.send("If looking up a quote, ID must be a whole number. If adding a quote, "
-                               "I require both an author and a quote.")
                 return
-            quote = utils.Quote([ctx.guild.id, None, author, quote])
-            self.database.save_item(quote)
-            await ctx.send(f"Quote from {author} added!")
+        else:
+            try:
+                author = int(author)
+                quote = self.database.get_quote(ctx.guild.id, author)
+                if quote is None:
+                    await ctx.send(f"No quote for ID {author}")
+                    return
+            except ValueError:
+                if quote is None:
+                    await ctx.send("Quote ID must be a whole number.")
+                    return
+                command = self.bot.find_command("quote add")
+                if await command.can_run(ctx):
+                    await ctx.invoke(command, author, quote=quote)
+                else:
+                    await ctx.send("You don't have permission to do that, sorry")
+                return
 
-    # @quote.command(name="remove", description="Remove a quote")
-    # async def _q_remove(self, ctx, num: int):
-    #     """Remove the quote with a specific ID"""
-    #     self.database.remove_item(utils.Quote([ctx.guild.id, num, None, None]), True)
+        if self.bot.should_embed(ctx):
+            with utils.PaginatedEmbed() as embed:
+                embed.set_author(name=quote.author)
+                embed.description = quote.quote
+                embed.set_footer(text=f"#{quote.id}")
+            for e in embed:
+                await ctx.send(embed=e)
+        else:
+            await ctx.send(f"{quote.author}: \"{quote.quote}\" ({quote.id})")
+
+    @quote.command(name="add", aliases=["create"], description="Add a new quote to the list")
+    async def _q_add(self, ctx, author, *, quote):
+        """Adds a new quote to this guild's list of quotes"""
+        quote = utils.Quote([ctx.guild.id, None, author, quote])
+        self.database.save_item(quote)
+        await ctx.send(f"Quote from {author} added!")
+
+    @quote.command(name="remove", description="Remove a quote")
+    async def _q_remove(self, ctx, num: int):
+        """Remove the quote with a specific ID"""
+        quote = self.database.get_quote(ctx.guild.id, num)
+        if quote is not None:
+            self.database.remove_item(utils.Quote([ctx.guild.id, num, None, None]), True)
+            await ctx.send(f"Removed quote {num}")
+        else:
+            await ctx.send(f"No quote for ID {num}")
 
 
 def setup(bot):
