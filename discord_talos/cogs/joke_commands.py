@@ -4,6 +4,8 @@
 
     Author: CraftSpider
 """
+import typing
+import datetime as dt
 import discord
 import asyncio
 import logging
@@ -70,14 +72,49 @@ class JokeCommands(utils.TalosCog):
         img_data = discord.File(data["img_data"])
         img = data["img"]
         alt = data["alt"]
-        if ctx.bot.should_embed(ctx):
+        if self.bot.should_embed(ctx):
             with utils.PaginatedEmbed() as embed:
                 embed.title = title
                 embed.set_image(url=img)
                 embed.set_footer(text=alt)
+                embed.timestamp = dt.datetime(year=int(data["year"]), month=int(data["month"]), day=int(data["day"]))
             await ctx.send(embed=embed)
         else:
             await ctx.send("**" + title + "**\n" + alt, file=img_data)
+
+    @commands.command(description="SMBC: XKCD but philosophy and butt jokes")
+    async def smbc(self, ctx, comic: typing.Union[utils.DateConverter, int, str] = None):
+        if isinstance(comic, int) and comic <= 0:
+            await ctx.send("Comic number should be greater than 0")
+        if comic is None:
+            comic = 0
+        comic_list = await self.bot.session.get_smbc_list()
+        if isinstance(comic, dt.datetime):
+            await ctx.send("Comic selection by date is not yet supported")
+            # TODO
+            return
+        elif isinstance(comic, int):
+            comic_id = comic_list[comic - 1].get_attribute("value")
+        else:
+            for el in comic_list:
+                if el.get_attribute("value") == comic:
+                    comic_id = comic
+                    break
+            else:
+                await ctx.send(f"No comic with id {comic} found")
+                return
+
+        data = await self.bot.session.get_smbc(comic_id)
+
+        if self.bot.should_embed(ctx):
+            with utils.PaginatedEmbed() as embed:
+                embed.title = data["title"]
+                embed.set_image(url=data["img"])
+                embed.set_footer(text=data["alt"])
+                embed.timestamp = data["time"]
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("**" + data["title"] + "**\n" + data["alt"], file=discord.File(data["img_data"]))
 
 
 def setup(bot):

@@ -4,6 +4,7 @@ import io
 import logging
 import re
 import json
+import datetime as dt
 import utils.parsers as parse
 
 log = logging.getLogger("talos.utils")
@@ -17,6 +18,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
     BTN_URL = "https://www.behindthename.com/"
     CAT_URL = "https://thecatapi.com/api/"
     XKCD_URL = "https://xkcd.com/"
+    SMBC_URL = "https://smbc-comics.com/"
 
     def __init__(self, *args, **kwargs):
         """
@@ -177,6 +179,36 @@ class TalosHTTPClient(aiohttp.ClientSession):
         async with self.get(self.XKCD_URL + (f"{xkcd}/" if xkcd else "") + "info.0.json") as response:
             data = await response.text()
             data = json.loads(data)
+        async with self.get(data["img"]) as response:
+            data["img_data"] = io.BytesIO(await response.read()), data["img"].split("/")[-1]
+        return data
+
+    async def get_smbc_list(self):
+        """
+            Get the list of current SMBC comics from the smbc archive
+        :return: List of elements
+        """
+        async with self.get(self.SMBC_URL + "comic/archive/") as response:
+            dom = parse.to_dom(await response.text())
+            selector = dom.get_by_name("comic")
+            return selector.child_nodes[1:]
+
+    async def get_smbc(self, smbc):
+        """
+            Get the data for an SMBC from its ID
+        :param smbc: SMBC to get, or None if current
+        :return: Dict of JSON data
+        """
+        data = {}
+        async with self.get(self.SMBC_URL + f"comic/{smbc}", headers={"user-agent": ""}) as response:
+            dom = parse.to_dom(await response.text())
+            data["title"] = "-".join(dom.get_by_tag("title")[0].innertext.split("-")[1:]).strip()
+            comic = dom.get_by_id("cc-comic")
+            data["img"] = comic.get_attribute("src")
+            data["alt"] = comic.get_attribute("title")
+            time = dom.get_by_class("cc-publishtime")[0]
+            date = dt.datetime.strptime(time.innertext, "Posted %B %d, %Y at %I:%M %p")
+            data["time"] = date
         async with self.get(data["img"]) as response:
             data["img_data"] = io.BytesIO(await response.read()), data["img"].split("/")[-1]
         return data

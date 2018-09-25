@@ -8,6 +8,7 @@
 import discord
 import discord.ext.commands as commands
 import discord.errors as errors
+import typing
 import logging
 import asyncio
 import utils
@@ -31,7 +32,7 @@ class UserCommands(utils.TalosCog):
     @commands.command(aliases=["color"], signature="colour <hex-code>", description="Set your role colour")
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
-    async def colour(self, ctx, colour):
+    async def colour(self, ctx, colour: typing.Union[commands.ColourConverter, str]):
         """Changes the User's colour, if Talos has role permissions."""\
             """ Input must be a hexadecimal colour prefixed by `#` or the word 'clear' to remove all Talos colours."""
         # If we want to remove Talos Colour
@@ -44,8 +45,9 @@ class UserCommands(utils.TalosCog):
             await ctx.send("Talos colour removed")
             return
 
-        if not colour.startswith("#") or len(colour) is not 7 and len(colour) is not 4:
-            await ctx.send("That isn't a valid hexadecimal colour!")
+        if isinstance(colour, str):
+            await ctx.send("Unrecognized colour format. Valid formats include `#123456`, `0x123456`, and some names "
+                           "such as teal or orange")
             return
 
         for role in ctx.author.roles:
@@ -54,29 +56,13 @@ class UserCommands(utils.TalosCog):
                 if not len(role.members):
                     await role.delete()
 
-        # Convert to hexadecimal number
-        discord_colour = None
-        try:
-            if len(colour) == 7:
-                discord_colour = discord.Colour(int(colour[1:], 16))
-            elif len(colour) == 4:
-                colour = colour[1:]
-                result = ""
-                for item in colour:
-                    result += item*2
-                discord_colour = discord.Colour(int(result, 16))
-                colour = f"#{result}"
-        except ValueError:
-            await ctx.send("That isn't a valid hexadecimal colour!")
-            return
-
         # Find and add or create and add the role.
-        colour_role = discord.utils.find(lambda x: x.name.startswith("<TALOS COLOR>") and x.colour == discord_colour,
+        colour_role = discord.utils.find(lambda x: x.name.startswith("<TALOS COLOR>") and x.colour == colour,
                                          ctx.guild.roles)
         if colour_role is not None:
             await ctx.author.add_roles(colour_role)
         else:
-            colour_role = await ctx.guild.create_role(name="<TALOS COLOR>", colour=discord_colour)
+            colour_role = await ctx.guild.create_role(name="<TALOS COLOR>", colour=colour)
             try:
                 await asyncio.sleep(.1)
                 try:
