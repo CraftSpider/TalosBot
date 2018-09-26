@@ -249,6 +249,35 @@ def to_snake_case(text):
     return out.strip("_")
 
 
+def zero_pad(text, length):
+    """
+        Zero pad numbers in a string
+    :param text: String to pad
+    :param length: length to pad numbers to
+    :return: padded string
+    """
+    out = ""
+    temp = ""
+    numeric = False
+    for char in text:
+        if char.isnumeric():
+            numeric = True
+            temp += char
+        elif numeric:
+            numeric = False
+            if len(temp) < length:
+                temp = "0"*(length-len(temp)) + temp
+            out += temp + char
+            temp = ""
+        else:
+            out += char
+    if numeric:
+        if len(temp) < length:
+            temp = "0" * (length - len(temp)) + temp
+        out += temp
+    return out
+
+
 def _perms_check(self, ctx):
     """
         Determine whether the command can is allowed to run in this context.
