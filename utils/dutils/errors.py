@@ -11,8 +11,6 @@ import discord.ext.commands as commands
 class NotRegistered(commands.CommandError):
     """Error raised when a Talos command requires a registered user, and the given user isn't."""
 
-    __slots__ = ()
-
     def __init__(self, message, *args):
         if type(message) == discord.Member or type(message) == discord.User:
             message = str(message)
@@ -20,5 +18,4 @@ class NotRegistered(commands.CommandError):
 
 
 class CustomCommandError(commands.CommandError):
-
-    __slots__ = ()
+    pass

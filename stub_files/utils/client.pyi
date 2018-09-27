@@ -4,8 +4,6 @@ from utils.element import Document, Element
 import aiohttp
 import io
 
-def parse_dom(page: str) -> Optional[Document]: ...
-
 class TalosHTTPClient(aiohttp.ClientSession):
 
     __slots__ = ("nano_login", "btn_key", "cat_key", "nano_tries")

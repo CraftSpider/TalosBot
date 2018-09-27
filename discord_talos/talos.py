@@ -14,8 +14,8 @@ import pathlib
 import mysql.connector
 import datetime as dt
 import utils.command_lang as command_lang
-from utils import TalosFormatter, TalosDatabase, TalosHTTPClient, NotRegistered, CustomCommandError, tz_map,\
-    PaginatedEmbed
+import utils
+import utils.dutils as dutils
 
 #
 #   Constants
@@ -88,7 +88,7 @@ class Talos(commands.Bot):
         description = '''Greetings. I'm Talos, chat helper. Here are my command types. If you like me and have the \
 money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         if not kwargs.get("formatter", None):
-            kwargs["formatter"] = kwargs.get("formatter", TalosFormatter())
+            kwargs["formatter"] = kwargs.get("formatter", utils.TalosFormatter())
         super().__init__(talos_prefix, description=description, **kwargs)
 
         # Set talos specific things
@@ -97,11 +97,11 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
 
         sql = self.SQL_ADDRESS.split(":")
         address, port = sql[0], int(sql[1])
-        self.database = TalosDatabase(address, port, *self.__tokens.get("sql"))
+        self.database = utils.TalosDatabase(address, port, *self.__tokens.get("sql"))
         nano_login = self.__tokens.get("nano", ["", ""])
         btn_key = self.__tokens.get("btn", "")
         cat_key = self.__tokens.get("cat", "")
-        self.session = TalosHTTPClient(nano_login=nano_login, btn_key=btn_key, cat_key=cat_key, read_timeout=60,
+        self.session = utils.TalosHTTPClient(nano_login=nano_login, btn_key=btn_key, cat_key=cat_key, read_timeout=60,
                                        loop=self.loop)
 
         # Override things set by super init that we don't want
@@ -194,7 +194,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         if self.database.is_connected():
             if ctx.guild is not None:
                 timezone = self.database.get_guild_options(ctx.guild.id).timezone
-                return dt.timezone(dt.timedelta(hours=tz_map[timezone.upper()]), timezone.upper())
+                return dt.timezone(dt.timedelta(hours=utils.tz_map[timezone.upper()]), timezone.upper())
         return dt.timezone(dt.timedelta(), "UTC")
 
     def find_command(self, command):
@@ -340,7 +340,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         if not self.database.get_guild_options(ctx.guild.id).mod_log:
             return False
         if self.should_embed(ctx):
-            with PaginatedEmbed() as embed:
+            with dutils.PaginatedEmbed() as embed:
                 embed.title = event.capitalize()
                 embed.colour = _log_event_colors.get(event, discord.Colour.purple())
                 embed.add_field(name="User", value=str(user), inline=True)
@@ -444,10 +444,11 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         elif isinstance(exception, commands.BadArgument):
             await ctx.send(exception)
         elif isinstance(exception, commands.MissingRequiredArgument):
+            exception: commands.MissingRequiredArgument
             await ctx.send(f"Missing parameter `{exception.param}`")
-        elif isinstance(exception, NotRegistered):
+        elif isinstance(exception, dutils.NotRegistered):
             await ctx.send(f"User {exception} isn't registered, command could not be executed.")
-        elif isinstance(exception, CustomCommandError):
+        elif isinstance(exception, dutils.CustomCommandError):
             await ctx.send(f"Malformed CommandLang syntax: {exception}")
         else:
             timestamp = int(dt.datetime.now().timestamp())
@@ -480,7 +481,7 @@ def custom_creator(name, text):
         try:
             out = cl_parser.parse_lang(ctx, text)
         except command_lang.CommandLangError as e:
-            raise CustomCommandError(*e.args)
+            raise dutils.CustomCommandError(*e.args)
         if out.strip() != "":
             await ctx.send(out)
 

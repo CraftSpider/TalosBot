@@ -13,6 +13,7 @@ import logging
 import datetime as dt
 import class_factories as dfacts
 import utils as tutils
+import utils.dutils as dutils
 
 log = logging.getLogger("talos.tests")
 
@@ -44,25 +45,25 @@ def test_extension_load(testlos):
 
 def test_paginated_helpers():
 
-    assert tutils.paginators._suffix(1) is "st"
-    assert tutils.paginators._suffix(2) is "nd"
-    assert tutils.paginators._suffix(3) is "rd"
-    assert tutils.paginators._suffix(4) is "th"
+    assert dutils.paginators._suffix(1) is "st"
+    assert dutils.paginators._suffix(2) is "nd"
+    assert dutils.paginators._suffix(3) is "rd"
+    assert dutils.paginators._suffix(4) is "th"
 
-    assert tutils.paginators._suffix(11) is "th"
-    assert tutils.paginators._suffix(21) is "st"
+    assert dutils.paginators._suffix(11) is "th"
+    assert dutils.paginators._suffix(21) is "st"
 
-    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=1)) == "1st"
-    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=2)) == "2nd"
-    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=3)) == "3rd"
-    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=4)) == "4th"
+    assert dutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=1)) == "1st"
+    assert dutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=2)) == "2nd"
+    assert dutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=3)) == "3rd"
+    assert dutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=4)) == "4th"
 
-    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=11)) == "11th"
-    assert tutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=21)) == "21st"
+    assert dutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=11)) == "11th"
+    assert dutils.paginators._custom_strftime("{D}", dt.datetime(year=1, month=1, day=21)) == "21st"
 
 
 def test_paginated_embed():  # TODO: Need to redo due to change to PaginatedEmbed
-    page = tutils.PaginatedEmbed()
+    page = dutils.PaginatedEmbed()
 
     # Test empty embed
     assert page.size is 8, "Base size is not 8"

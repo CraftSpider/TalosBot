@@ -82,6 +82,7 @@ talos_add_column = "ALTER TABLE {} ADD COLUMN {} {}".format("{}", "{}", "{}")  #
 talos_remove_column = "ALTER TABLE {} DROP COLUMN {}".format("{}", "{}")
 talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}".format("{}", "{}")
 talos_create_trigger = "CREATE TRIGGER {} {} on {} {} END;"
+
 talos_tables = {
     "guild_options": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",

@@ -1,7 +1,9 @@
 
-from typing import Tuple
+from typing import Tuple, Dict, List
 from utils.element import Document, Node
 import html.parser as parser
+
+def attrs_to_dict(attrs: List[Tuple[str, str]]) -> Dict[str, List[str]]: ...
 
 def to_dom(html: str) -> Document: ...
 

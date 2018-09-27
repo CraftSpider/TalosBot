@@ -10,6 +10,8 @@ import io
 
 T = TypeVar("T")
 
+allowed_attributes: List[str] = ...
+
 def get_sub(obj: Any, attribute: str) -> Any: ...
 
 _op_priority: Dict[str, int] = ...
@@ -55,10 +57,14 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
 
 class DiscordCL(CommandLangInterpreter):
 
+    __slots__ = ()
+
     def _execute_command(self, ctx: commands.Context, item: str) -> bool: ...
 
     def _process_val(self, ctx: commands.Context, val: str) -> Any: ...
 
 class ContextLessCL(DiscordCL):
+
+    __slots__ = ()
 
     def _process_val(self, ctx: commands.Context, val: str) -> str: ...

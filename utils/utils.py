@@ -8,7 +8,7 @@ import itertools
 import logging
 import discord
 import discord.ext.commands as dcommands
-from .paginators import PaginatedEmbed
+from utils.dutils.paginators import PaginatedEmbed
 
 
 log = logging.getLogger("talos.utils")

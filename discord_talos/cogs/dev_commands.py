@@ -10,6 +10,7 @@ import logging
 import re
 import io
 import utils
+import utils.dutils as dutils
 import asyncio
 from datetime import datetime
 from PIL import Image, ImageDraw
@@ -99,7 +100,7 @@ class DevCommands(utils.TalosCog):
         """Give someone access to a title"""
         profile = self.database.get_user(user.id)
         if not profile:
-            raise utils.NotRegistered(user)
+            raise dutils.NotRegistered(user)
         profile.add_title(title)
         self.database.save_item(profile)
         await ctx.send(f"Title `{title}` granted to {user}")
@@ -109,7 +110,7 @@ class DevCommands(utils.TalosCog):
         """Removes access to a specific title from a user"""
         profile = self.database.get_user(user.id)
         if not profile:
-            raise utils.NotRegistered(user)
+            raise dutils.NotRegistered(user)
         profile.remove_title(title)
         self.database.remove_item(profile)
         await ctx.send(f"Title `{title}` revoked from {user}")
