@@ -83,16 +83,23 @@ class JokeCommands(utils.TalosCog):
             await ctx.send("**" + title + "**\n" + alt, file=img_data)
 
     @commands.command(description="SMBC: XKCD but philosophy and butt jokes")
-    async def smbc(self, ctx, comic: typing.Union[utils.DateConverter, int, str] = None):
+    async def smbc(self, ctx, comic: typing.Union[utils.DateConverter["%Y-%m-%d"], int, str] = None):
+        """Gets an SMBC from a given date, number, or id. Or, if not specified, it gets the most recent one. """\
+            """Necessarily slightly slow due to technical limitations"""
         if isinstance(comic, int) and comic <= 0:
             await ctx.send("Comic number should be greater than 0")
         if comic is None:
             comic = 0
         comic_list = await self.bot.session.get_smbc_list()
-        if isinstance(comic, dt.datetime):
-            await ctx.send("Comic selection by date is not yet supported")
-            # TODO
-            return
+        if isinstance(comic, (dt.date, dt.datetime)):
+            strf = comic.strftime("%Y-%m-%d")
+            for el in comic_list:
+                if el.get_attribute("value") == strf:
+                    comic_id = comic
+                    break
+            else:
+                await ctx.send(f"No comic for date {comic} found")
+                return
         elif isinstance(comic, int):
             comic_id = comic_list[comic - 1].get_attribute("value")
         else:

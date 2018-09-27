@@ -14,4 +14,4 @@ from .data import TalosUser, TalosAdmin, PermissionRule, GuildEvent, UserTitle, 
 from .errors import *
 from .paginators import PaginatedEmbed
 from .element import Element, Node, Document
-from .converters import DateConverter
+from .converters import DateConverter, TimeConverter
