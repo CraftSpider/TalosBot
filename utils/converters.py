@@ -6,56 +6,65 @@ import datetime as dt
 class ConverterMeta(type):
 
     def __getitem__(cls, item):
-        if isinstance(item, tuple):
-            return cls(*item)
-        elif isinstance(item, dict):
-            return cls(**item)
-        else:
-            return cls(item)
+        if not isinstance(item, tuple):
+            item = (item,)
+        return cls(*item)
 
 
-class TalosConverter(type, metaclass=ConverterMeta):
-    pass
-
-
-class DateConverter(TalosConverter):
+class _TalosConverter(type, commands.Converter, metaclass=ConverterMeta):
 
     num = 0
 
-    def __new__(mcs, datefmt=None):
+    def __new__(mcs, *args, **kwargs):
         name = mcs.__name__ + str(mcs.num)
         mcs.num += 1
-        bases = ()
+        bases = (commands.Converter,)
 
-        async def convert(self, ctx, argument):
-            argument = argument.replace("\\", "-").replace("/", "-")
-            parsed = dt.datetime.strptime(argument, self.datefmt)
-            return dt.date(year=parsed.year, month=parsed.month, day=parsed.day)
+        namespace = {
+            "__module__": "utils.converters",
+            "__qualname__": name,
+            "convert": mcs.convert,
+            **kwargs
+        }
 
-        namespace = {"convert": convert, "datefmt": datefmt}
         return super().__new__(mcs, name, bases, namespace)
 
-    def __init__(cls, datefmt=None):
-        super().__init__(datefmt)
-        if datefmt is None:
-            datefmt = "%d-%m-%Y"
+    def convert(cls, ctx, argument): ...
+
+
+class DateConverter(_TalosConverter):
+
+    def __init__(cls, datefmt="%d-%m-%Y"):
+        super().__init__(None)
+        if not isinstance(datefmt, tuple):
+            datefmt = (datefmt,)
         cls.datefmt = datefmt
 
     async def convert(self, ctx, argument):
-        print(argument)
         argument = argument.replace("\\", "-").replace("/", "-")
-        parsed = dt.datetime.strptime(argument, self.datefmt)
+        parsed = None
+        for fmt in self.datefmt:
+            try:
+                parsed = dt.datetime.strptime(argument, fmt)
+            except Exception as e:
+                print(e)
         return dt.date(year=parsed.year, month=parsed.month, day=parsed.day)
 
 
-class TimeConverter(TalosConverter):
+class TimeConverter(_TalosConverter):
 
-    def __init__(self, timefmt=None):
-        if timefmt is None:
-            timefmt = "%I:%M %p"
-        self.timefmt = timefmt
+    def __init__(cls, timefmt="%I:%M %p"):
+        super().__init__(None)
+        if not isinstance(timefmt, tuple):
+            timefmt = (timefmt,)
+        cls.timefmt = timefmt
 
     async def convert(self, ctx, argument):
         print(argument)
-        parsed = dt.datetime.strptime(argument, self.timefmt)
+        parsed = None
+        for fmt in self.timefmt:
+            try:
+                parsed = dt.datetime.strptime(argument, fmt)
+            except Exception as e:
+                print(e)
         return dt.time(hour=parsed.hour, minute=parsed.minute, second=parsed.second)

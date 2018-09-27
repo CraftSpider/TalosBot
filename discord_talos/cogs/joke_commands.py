@@ -83,7 +83,7 @@ class JokeCommands(utils.TalosCog):
             await ctx.send("**" + title + "**\n" + alt, file=img_data)
 
     @commands.command(description="SMBC: XKCD but philosophy and butt jokes")
-    async def smbc(self, ctx, comic: typing.Union[utils.DateConverter["%Y-%m-%d"], int, str] = None):
+    async def smbc(self, ctx, comic: typing.Union[utils.DateConverter["%Y-%d-%m"], int, str] = None):
         """Gets an SMBC from a given date, number, or id. Or, if not specified, it gets the most recent one. """\
             """Necessarily slightly slow due to technical limitations"""
         if isinstance(comic, int) and comic <= 0:
@@ -94,7 +94,8 @@ class JokeCommands(utils.TalosCog):
         if isinstance(comic, (dt.date, dt.datetime)):
             strf = comic.strftime("%Y-%m-%d")
             for el in comic_list:
-                if el.get_attribute("value") == strf:
+                time = dt.datetime.strptime(el.innertext.split("-")[0].strip(), "%B %d, %Y").strftime("%Y-%m-%d")
+                if time == strf:
                     comic_id = comic
                     break
             else:
