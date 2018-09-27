@@ -12,6 +12,7 @@ import typing
 import logging
 import asyncio
 import utils
+import utils.dutils as dutils
 import re
 
 log = logging.getLogger("talos.user")
@@ -118,7 +119,7 @@ class UserCommands(utils.TalosCog):
             self.database.remove_item(user)
             await ctx.send("Deregistered user")
         else:
-            raise utils.NotRegistered(ctx.author)
+            raise dutils.NotRegistered(ctx.author)
 
     @commands.command(description="Display a user profile")
     async def profile(self, ctx, user: discord.User=None):
@@ -128,11 +129,11 @@ class UserCommands(utils.TalosCog):
             user = ctx.author
         tal_user = self.database.get_user(user.id)
         if not tal_user:
-            raise utils.NotRegistered(user)
+            raise dutils.NotRegistered(user)
         fav_command = tal_user.get_favorite_command()
         description = tal_user.profile.description if tal_user.profile.description else "User has not set a description"
         if self.bot.should_embed(ctx):
-            with utils.PaginatedEmbed() as embed:
+            with dutils.PaginatedEmbed() as embed:
                 embed.title = tal_user.profile.title
                 embed.description = description
                 embed.set_author(name=user.name, icon_url=user.avatar_url)
@@ -157,7 +158,7 @@ class UserCommands(utils.TalosCog):
             """will set your user description, set will set user options, and remove will clear user options."""
         profile = self.database.get_user(ctx.author.id)
         if not profile:
-            raise utils.NotRegistered(ctx.author)
+            raise dutils.NotRegistered(ctx.author)
         elif ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'options', 'stats', 'title', 'description', 'set', and 'remove'")
             return

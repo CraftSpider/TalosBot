@@ -11,6 +11,7 @@ import random
 import string
 import re
 import utils
+import utils.dutils as dutils
 from discord.ext import commands
 from collections import defaultdict
 
@@ -623,7 +624,7 @@ class AdminCommands(utils.TalosCog):
                 return
 
         if self.bot.should_embed(ctx):
-            with utils.PaginatedEmbed() as embed:
+            with dutils.PaginatedEmbed() as embed:
                 embed.set_author(name=quote.author)
                 embed.description = quote.quote
                 embed.set_footer(text=f"#{quote.id}")

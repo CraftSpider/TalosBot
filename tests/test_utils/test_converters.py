@@ -1,12 +1,12 @@
 
-import utils
+import utils.dutils as dutils
 import datetime as dt
 
 
 async def test_dateconverter():
 
-    dconv = utils.DateConverter()
-    tconv = utils.TimeConverter()
+    dconv = dutils.DateConverter()
+    tconv = dutils.TimeConverter()
 
     assert await dconv.convert(None, "5-3-2018") == dt.date(year=2018, month=3, day=5)
     assert await dconv.convert(None, "5/3/2018") == dt.date(year=2018, month=3, day=5)

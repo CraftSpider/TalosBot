@@ -5,7 +5,7 @@ import logging
 import mysql.connector.cursor_cext as cursor_cext
 import mysql.connector.abstracts as mysql_abstracts
 
-log: logging.Logger
+levels: Dict[str, int]
 
 class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
 
@@ -45,7 +45,10 @@ talos_create_table: str = ...
 talos_add_column: str = ...
 talos_remove_column: str = ...
 talos_modify_column: str = ...
+talos_create_trigger: str = ...
+
 talos_tables: Dict[str, Dict[str, Union[List[str], List[Tuple[str, int, ...]], str]]] = ...
+talos_triggers: Dict[str, Dict[str, str]]
 
 class TalosDatabase:
 

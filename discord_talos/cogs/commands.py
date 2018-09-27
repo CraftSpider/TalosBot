@@ -11,6 +11,7 @@ import random
 import logging
 import re
 import utils
+import utils.dutils as dutils
 import html
 import datetime as dt
 from collections import defaultdict
@@ -190,7 +191,7 @@ class Commands(utils.TalosCog):
             description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
                           "`{}help` to see a list of my commands.\nPlease donate to support my development on "\
                           "[Patreon](https://www.patreon.com/TalosBot)"
-            with utils.PaginatedEmbed() as embed:
+            with dutils.PaginatedEmbed() as embed:
                 embed.title = "Talos Information"
                 embed.colour = discord.Colour(0x202020)
                 embed.description = description.format((await self.bot.get_prefix(ctx.message))[0])
@@ -279,7 +280,7 @@ class Commands(utils.TalosCog):
                 description += f"{stat}: {stats[stat]:,}\n"
             if stats.get("Words Today") and stats.get("Target Avg"):
                 description += f"Remaining Total: {stats['Target Avg'] - stats['Words Today']:,}\n"
-            with utils.PaginatedEmbed() as embed:
+            with dutils.PaginatedEmbed() as embed:
                 embed.title = "__Novel Details__"
                 embed.description = description
                 embed.set_author(name=username, icon_url=avatar)
@@ -341,7 +342,7 @@ class Commands(utils.TalosCog):
                 fact_sheet += f"{child.innertext}\n"
         if self.bot.should_embed(ctx):
             # Build Embed
-            with utils.PaginatedEmbed() as embed:
+            with dutils.PaginatedEmbed() as embed:
                 embed.title = "__Author Info__"
                 embed.description = f"*{member_age}*\n\n" + author_bio
                 embed.set_author(name=username, url="http://nanowrimo.org/participants/" + site_name, icon_url=avatar)
@@ -436,7 +437,7 @@ class Commands(utils.TalosCog):
 
             if self.bot.should_embed(ctx):
                 time = dt.datetime.now(tz=self.bot.get_timezone(ctx))
-                with utils.PaginatedEmbed() as embed:
+                with dutils.PaginatedEmbed() as embed:
                     embed.colour = winner.colour
                     embed.timestamp = time
                     embed.set_footer(text="")

@@ -10,6 +10,7 @@ import discord
 import asyncio
 import logging
 import utils
+import utils.dutils as dutils
 from discord.ext import commands
 
 log = logging.getLogger("talos.joke")
@@ -73,7 +74,7 @@ class JokeCommands(utils.TalosCog):
         img = data["img"]
         alt = data["alt"]
         if self.bot.should_embed(ctx):
-            with utils.PaginatedEmbed() as embed:
+            with dutils.PaginatedEmbed() as embed:
                 embed.title = title
                 embed.set_image(url=img)
                 embed.set_footer(text=alt)
@@ -83,7 +84,7 @@ class JokeCommands(utils.TalosCog):
             await ctx.send("**" + title + "**\n" + alt, file=img_data)
 
     @commands.command(description="SMBC: XKCD but philosophy and butt jokes")
-    async def smbc(self, ctx, comic: typing.Union[utils.DateConverter["%Y-%d-%m"], int, str] = None):
+    async def smbc(self, ctx, comic: typing.Union[dutils.DateConverter["%Y-%d-%m"], int, str] = None):
         """Gets an SMBC from a given date, number, or id. Or, if not specified, it gets the most recent one. """\
             """Necessarily slightly slow due to technical limitations"""
         if isinstance(comic, int) and comic <= 0:
@@ -115,7 +116,7 @@ class JokeCommands(utils.TalosCog):
         data = await self.bot.session.get_smbc(comic_id)
 
         if self.bot.should_embed(ctx):
-            with utils.PaginatedEmbed() as embed:
+            with dutils.PaginatedEmbed() as embed:
                 embed.title = data["title"]
                 embed.set_image(url=data["img"])
                 embed.set_footer(text=data["alt"])

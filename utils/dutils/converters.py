@@ -40,10 +40,10 @@ class DateConverter(_TalosConverter):
             datefmt = (datefmt,)
         cls.datefmt = datefmt
 
-    async def convert(self, ctx, argument):
+    async def convert(cls, ctx, argument):
         argument = argument.replace("\\", "-").replace("/", "-")
         parsed = None
-        for fmt in self.datefmt:
+        for fmt in cls.datefmt:
             try:
                 parsed = dt.datetime.strptime(argument, fmt)
             except Exception as e:
@@ -59,10 +59,10 @@ class TimeConverter(_TalosConverter):
             timefmt = (timefmt,)
         cls.timefmt = timefmt
 
-    async def convert(self, ctx, argument):
+    async def convert(cls, ctx, argument):
         print(argument)
         parsed = None
-        for fmt in self.timefmt:
+        for fmt in cls.timefmt:
             try:
                 parsed = dt.datetime.strptime(argument, fmt)
             except Exception as e:
