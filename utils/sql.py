@@ -78,9 +78,9 @@ class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
 
 talos_create_schema = "CREATE SCHEMA talos_data DEFAULT CHARACTER SET utf8"
 talos_create_table = "CREATE TABLE `{}` ({}) ENGINE=InnoDB DEFAULT CHARSET=utf8".format("{}", "{}")
-talos_add_column = "ALTER TABLE {} ADD COLUMN {} {}".format("{}", "{}", "{}")  # Makes pycharm not complain
-talos_remove_column = "ALTER TABLE {} DROP COLUMN {}".format("{}", "{}")
-talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}".format("{}", "{}")
+talos_add_column = "ALTER TABLE {} ADD COLUMN {} {}"
+talos_remove_column = "ALTER TABLE {} DROP COLUMN {}"
+talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}"
 talos_create_trigger = "CREATE TRIGGER {} {} on {} {} END;"
 
 talos_tables = {

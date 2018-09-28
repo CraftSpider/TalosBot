@@ -60,7 +60,6 @@ class TimeConverter(_TalosConverter):
         cls.timefmt = timefmt
 
     async def convert(cls, ctx, argument):
-        print(argument)
         parsed = None
         for fmt in cls.timefmt:
             try:
