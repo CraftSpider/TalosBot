@@ -527,7 +527,7 @@ class AdminCommands(utils.TalosCog):
         if self.database.get_guild_command(ctx.guild.id, name) is None:
             await ctx.send("That command doesn't exist, sorry.")
             return
-        self.database.remove_item(utils.GuildCommand((ctx.guild.id, name)), True)
+        self.database.remove_item(utils.GuildCommand((ctx.guild.id, name, None)), True)
         await ctx.send(f"Command {name} successfully removed")
 
     @command.command(name="list", description="List existing commands")

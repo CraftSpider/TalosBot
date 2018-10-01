@@ -31,8 +31,8 @@ class JokeCommands(utils.TalosCog):
     @commands.command(description="Feed your cat addiction")
     async def catpic(self, ctx):
         """Returns a random cat picture. Sourced from The Cap API."""
-        stream, filename = await self.bot.session.get_cat_pic()
-        file = discord.File(stream, filename=filename)
+        data = await self.bot.session.get_cat_pic()
+        file = discord.File(data["img_data"], filename=data["filename"])
         await ctx.send(file=file)
 
     @commands.command(description="Ask Talos for a favor, or have them ask others for one...")
@@ -70,7 +70,6 @@ class JokeCommands(utils.TalosCog):
             return
         data = await self.bot.session.get_xkcd(comic or None)
         title = data["title"]
-        img_data = discord.File(data["img_data"])
         img = data["img"]
         alt = data["alt"]
         if self.bot.should_embed(ctx):
@@ -81,6 +80,7 @@ class JokeCommands(utils.TalosCog):
                 embed.timestamp = dt.datetime(year=int(data["year"]), month=int(data["month"]), day=int(data["day"]))
             await ctx.send(embed=embed)
         else:
+            img_data = discord.File(data["img_data"], filename=data["filename"])
             await ctx.send("**" + title + "**\n" + alt, file=img_data)
 
     @commands.command(description="SMBC: XKCD but philosophy and butt jokes")
@@ -91,8 +91,9 @@ class JokeCommands(utils.TalosCog):
             await ctx.send("Comic number should be greater than 0")
         if comic is None:
             comic = 0
-        comic_list = await self.bot.session.get_smbc_list()
+
         if isinstance(comic, (dt.date, dt.datetime)):
+            comic_list = await self.bot.session.get_smbc_list()
             strf = comic.strftime("%Y-%m-%d")
             for el in comic_list:
                 time = dt.datetime.strptime(el.innertext.split("-")[0].strip(), "%B %d, %Y").strftime("%Y-%m-%d")
@@ -103,8 +104,9 @@ class JokeCommands(utils.TalosCog):
                 await ctx.send(f"No comic for date {comic} found")
                 return
         elif isinstance(comic, int):
-            comic_id = comic_list[comic - 1].get_attribute("value")
+            comic_id = comic
         else:
+            comic_list = await self.bot.session.get_smbc_list()
             for el in comic_list:
                 if el.get_attribute("value") == comic:
                     comic_id = comic
@@ -123,7 +125,7 @@ class JokeCommands(utils.TalosCog):
                 embed.timestamp = data["time"]
             await ctx.send(embed=embed)
         else:
-            await ctx.send("**" + data["title"] + "**\n" + data["alt"], file=discord.File(data["img_data"]))
+            await ctx.send("**" + data["title"] + "**\n" + data["alt"], file=discord.File(data["img_data"], filename=data["filename"]))
 
 
 def setup(bot):

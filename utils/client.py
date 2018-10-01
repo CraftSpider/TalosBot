@@ -16,7 +16,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
 
     NANO_URL = "https://nanowrimo.org/"
     BTN_URL = "https://www.behindthename.com/"
-    CAT_URL = "https://thecatapi.com/api/"
+    CAT_URL = "https://api.thecatapi.com/v1/"
     XKCD_URL = "https://xkcd.com/"
     SMBC_URL = "https://smbc-comics.com/"
 
@@ -158,17 +158,12 @@ class TalosHTTPClient(aiohttp.ClientSession):
             Get a random cat picture from The Cat API
         :return: A discord.File with a picture of a cat.
         """
-        async with self.get(self.CAT_URL + "images/get?api_key={}&type=jpg,png".format(self.cat_key)) as response:
-            filename = ""
-            if response.content_type == "image/jpeg":
-                filename = "cat.jpeg"
-            elif response.content_type == "image/png":
-                filename = "cat.png"
-            picture_data = await response.read()
-            if not picture_data:
-                return self.get_cat_pic()
-            file = io.BytesIO(picture_data), filename
-        return file
+        async with self.get(self.CAT_URL + "images/search?api_key={}&type=jpg,png".format(self.cat_key)) as response:
+            data = json.loads(await response.text())[0]
+        async with self.get(data["url"]) as response:
+            data["filename"] = data["url"].split("/")[-1]
+            data["img_data"] = io.BytesIO(await response.read())
+        return data
 
     async def get_xkcd(self, xkcd):
         """
@@ -180,7 +175,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
             data = await response.text()
             data = json.loads(data)
         async with self.get(data["img"]) as response:
-            data["img_data"] = io.BytesIO(await response.read()), data["img"].split("/")[-1]
+            data["filename"] = data["img"].split("/")[-1]
+            data["img_data"] = io.BytesIO(await response.read())
         return data
 
     async def get_smbc_list(self):
@@ -200,7 +196,11 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :return: Dict of JSON data
         """
         data = {}
-        async with self.get(self.SMBC_URL + f"comic/{smbc}", headers={"user-agent": ""}) as response:
+        if isinstance(smbc, int):
+            url = self.SMBC_URL + f"index.php?db=comics&id={smbc}"
+        else:
+            url = self.SMBC_URL + f"comic/{smbc}"
+        async with self.get(url, headers={"user-agent": ""}) as response:
             dom = parse.to_dom(await response.text())
             data["title"] = "-".join(dom.get_by_tag("title")[0].innertext.split("-")[1:]).strip()
             comic = dom.get_by_id("cc-comic")
@@ -210,5 +210,6 @@ class TalosHTTPClient(aiohttp.ClientSession):
             date = dt.datetime.strptime(time.innertext, "Posted %B %d, %Y at %I:%M %p")
             data["time"] = date
         async with self.get(data["img"]) as response:
-            data["img_data"] = io.BytesIO(await response.read()), data["img"].split("/")[-1]
+            data["filename"] = data["img"].split("/")[-1]
+            data["img_data"] = io.BytesIO(await response.read())
         return data

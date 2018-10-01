@@ -169,11 +169,13 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
             elif char == "[":
                 if raw:
                     exec_stack.append(("raw", raw))
+                    raw = ""
                 stype, statement, text = self._lex_if()
                 exec_stack.append((stype, statement, text))
             elif char == "{":
                 if raw:
                     exec_stack.append(("raw", raw))
+                    raw = ""
                 text = self._lex_exec()
                 exec_stack.append(("exec", text))
             elif char == "" and raw:
@@ -270,11 +272,12 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
             if escape:
                 raw += char
                 escape = False
-
-            if char == "\\":
+            elif char == "\\":
                 escape = True
-            if char == "}":
+            elif char == "}":
                 end = True
+            else:
+                raw += char
 
         return raw
 
@@ -305,6 +308,7 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
                 if_else = False
             else:
                 if_else = False
+
             if item[0] == "exec":
                 # Evaluate invoke block. First check if anything matches a variable, if so, return that. Otherwise run
                 # the command.
@@ -316,7 +320,8 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
                         raise CommandLangError("Attempt to access invalid attribute")
                 else:
                     item = self._process_val(context, item[1])
-                result = self._execute_command(context, item[1])
+
+                result = self._execute_command(context, item)
                 if not result:
                     out += str(item)
                 elif isinstance(result, str):
