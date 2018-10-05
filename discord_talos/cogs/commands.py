@@ -264,8 +264,11 @@ class Commands(utils.TalosCog):
                 file.write(doc)
 
             sp.check_output(["pdflatex", "-interaction=nonstopmode", tex])
-            sp.call(["magick", "convert", "-density", "300", "-units", "PixelsPerInch", f"{filename}.pdf", "-quality",
-                     "90", f"{filename}.png"])
+            if os.name == 'nt':
+                gs = "gswin64c"
+            else:
+                gs = "gs"
+            sp.call([gs, "-sDEVICE=pngalpha", "-r300", f"-sOutputFile={filename}.png", f"{filename}.pdf"])
 
             await ctx.send(file=discord.File(f"{filename}.png"))
         except Exception as e:
@@ -280,7 +283,8 @@ class Commands(utils.TalosCog):
             else:
                 await ctx.send("Unknown error while attempting to parse LaTeX")
         finally:
-            safe_remove(*(f"{filename}." + x for x in ["tex", "aux", "pdf", "png", "log"]))
+            log.debug("Cleaning up LaTeX files")
+            # safe_remove(*(f"{filename}." + x for x in ["tex", "aux", "pdf", "png", "log"]))
 
     @commands.group(aliases=["nano"], description="Fetch data from the NaNo site")
     async def nanowrimo(self, ctx):
