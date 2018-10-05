@@ -13,6 +13,8 @@ import re
 import utils
 import utils.dutils as dutils
 import html
+import os
+import subprocess as sp
 import datetime as dt
 from collections import defaultdict
 
@@ -45,6 +47,14 @@ def html_to_markdown(html_text):
     html_text = re.sub(r"<.*?>\n?", "", html_text)
     html_text = html.unescape(html_text)
     return html_text
+
+
+def safe_remove(*filenames):
+    for filename in filenames:
+        try:
+            os.remove(filename)
+        except Exception:
+            pass
 
 
 class Commands(utils.TalosCog):
@@ -222,6 +232,55 @@ class Commands(utils.TalosCog):
                     \nAny suggestions or bugs can be sent to my email, talos.ptp@gmail.com.\
                     \nMy primary website is located at http://talosbot.org"
             await ctx.send(out)
+
+    @commands.command(description="Compile LaTeX into a PNG")
+    async def latex(self, ctx, *, latex):
+        """Allows the compilation of LaTeX expressions into a PNG. The expressions are automatically wrapped and """\
+            """interpreted as math blocks., though if you include a \\] and \\[ then you can escape into and out of """\
+            """'normal' mode. If text display is bothering you, Talos will accept latex inside a code block. """\
+            """(```latex```)"""
+        # Strip code block
+        latex = latex.strip("`")
+
+        # Generate document code
+        doc = f"""
+\\documentclass[
+    12pt,
+    border=2pt
+]{{standalone}}
+
+\\input{{tex/commands.tex}}
+
+\\begin{{document}}
+    ${latex}$
+\\end{{document}}
+"""
+
+        # Compile into PNG
+        try:
+            filename = str(dt.datetime.now().timestamp()) + str(random.randint(0, 100))
+            tex = f"{filename}.tex"
+            with open(tex, "w") as file:
+                file.write(doc)
+
+            sp.check_output(["pdflatex", "-interaction=nonstopmode", tex])
+            sp.call(["magick", "convert", "-density", "300", "-units", "PixelsPerInch", f"{filename}.pdf", "-quality",
+                     "90", f"{filename}.png"])
+
+            await ctx.send(file=discord.File(f"{filename}.png"))
+        except Exception as e:
+            if isinstance(e, sp.CalledProcessError):
+                out = "Error while parsing LaTeX:\n"
+                lines = e.stdout.decode().split("\n")
+                log.debug('\n'.join(lines))
+                for line in lines:
+                    if line.startswith("! "):
+                        out += line[2:] + "\n"
+                await ctx.send(out)
+            else:
+                await ctx.send("Unknown error while attempting to parse LaTeX")
+        finally:
+            safe_remove(*(f"{filename}." + x for x in ["tex", "aux", "pdf", "png", "log"]))
 
     @commands.group(aliases=["nano"], description="Fetch data from the NaNo site")
     async def nanowrimo(self, ctx):

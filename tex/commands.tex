@@ -1,0 +1,8 @@
+
+\newcommand{\alias}[2]{\newcommand{#2}{#1}}
+\newcommand{\rlalias}[2]{\newcommand{#2}[1]{\csname l#1\endcsname ##1 \csname r#1\endcsname}}
+
+\alias{\cup}{\union}
+\alias{\cap}{\intersection}
+\rlalias{floor}{\floor}
+\rlalias{ceil}{\ceil}
