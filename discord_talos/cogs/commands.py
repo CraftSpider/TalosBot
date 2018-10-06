@@ -268,7 +268,7 @@ class Commands(utils.TalosCog):
                 gs = "gswin64c"
             else:
                 gs = "gs"
-            sp.call([gs, "-sDEVICE=pngalpha", "-r300", f"-sOutputFile={filename}.png", f"{filename}.pdf"])
+            sp.call([gs, "-sDEVICE=pngalpha", "-dNOPAUSE", "-r300", f"-sOutputFile={filename}.png", f"{filename}.pdf"])
 
             await ctx.send(file=discord.File(f"{filename}.png"))
         except Exception as e:
