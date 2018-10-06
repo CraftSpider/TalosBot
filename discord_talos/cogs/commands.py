@@ -249,7 +249,7 @@ class Commands(utils.TalosCog):
     border=2pt
 ]{{standalone}}
 
-\\input{{tex/commands.tex}}
+\\usepackage{{tex/talos}}
 
 \\begin{{document}}
     ${latex}$
