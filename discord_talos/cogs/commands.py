@@ -236,8 +236,8 @@ class Commands(utils.TalosCog):
     @commands.command(description="Compile LaTeX into a PNG")
     async def latex(self, ctx, *, latex):
         """Allows the compilation of LaTeX expressions into a PNG. The expressions are automatically wrapped and """\
-            """interpreted as math blocks., though if you include a \\] and \\[ then you can escape into and out of """\
-            """'normal' mode. If text display is bothering you, Talos will accept latex inside a code block. """\
+            """interpreted as math blocks., though if you include a $ on each end then you can escape into and out """\
+            """of 'normal' mode. If text display is bothering you, Talos will accept latex inside a code block. """\
             """(```latex```)"""
         # Strip code block
         latex = latex.strip("`")
