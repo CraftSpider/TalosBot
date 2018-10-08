@@ -174,7 +174,7 @@ class Commands(utils.TalosCog):
         await ctx.send(out)
 
     @generate.command(name="name", description="Generates a random name")
-    async def _name(self, ctx, number=1):
+    async def _name(self, ctx, number: int=1):
         """Generates a name or names. Number must be between 1 and 6. Names are sourced from Behind The Name"""
         if number < 1 or number > 6:
             await ctx.send("Number must be between 1 and 6 inclusive.")
