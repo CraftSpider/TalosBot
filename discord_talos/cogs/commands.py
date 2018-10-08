@@ -284,7 +284,7 @@ class Commands(utils.TalosCog):
                 await ctx.send("Unknown error while attempting to parse LaTeX")
         finally:
             log.debug("Cleaning up LaTeX files")
-            # safe_remove(*(f"{filename}." + x for x in ["tex", "aux", "pdf", "png", "log"]))
+            safe_remove(*(f"{filename}." + x for x in ["tex", "aux", "pdf", "png", "log"]))
 
     @commands.group(aliases=["nano"], description="Fetch data from the NaNo site")
     async def nanowrimo(self, ctx):
