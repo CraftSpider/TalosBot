@@ -108,7 +108,7 @@ class JokeCommands(utils.TalosCog):
         else:
             comic_list = await self.bot.session.get_smbc_list()
             for el in comic_list:
-                if el.get_attribute("value") == comic:
+                if el.get_attribute("value")[6:] == comic:
                     comic_id = comic
                     break
             else:
