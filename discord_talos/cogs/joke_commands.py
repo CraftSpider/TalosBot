@@ -106,6 +106,7 @@ class JokeCommands(utils.TalosCog):
         elif isinstance(comic, int):
             comic_id = comic
         else:
+            # TODO: just try loading it and if it fails too bad
             comic_list = await self.bot.session.get_smbc_list()
             for el in comic_list:
                 if el.get_attribute("value")[6:] == comic:
