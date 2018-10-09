@@ -173,7 +173,10 @@ class TalosHTTPClient(aiohttp.ClientSession):
         """
         async with self.get(self.XKCD_URL + (f"{xkcd}/" if xkcd else "") + "info.0.json") as response:
             data = await response.text()
-            data = json.loads(data)
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                return None
         async with self.get(data["img"]) as response:
             data["filename"] = data["img"].split("/")[-1]
             data["img_data"] = io.BytesIO(await response.read())
@@ -204,6 +207,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
             dom = parse.to_dom(await response.text())
             data["title"] = "-".join(dom.get_by_tag("title")[0].innertext.split("-")[1:]).strip()
             comic = dom.get_by_id("cc-comic")
+            if comic is None:
+                return None
             data["img"] = comic.get_attribute("src")
             data["alt"] = comic.get_attribute("title")
             time = dom.get_by_class("cc-publishtime")[0]

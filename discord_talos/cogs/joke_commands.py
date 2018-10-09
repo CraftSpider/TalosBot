@@ -69,6 +69,9 @@ class JokeCommands(utils.TalosCog):
             await ctx.send("Requested XKCD can't be negative")
             return
         data = await self.bot.session.get_xkcd(comic or None)
+        if data is None:
+            await ctx.send(f"No comic for ID `{comic}` found")
+            return
         title = data["title"]
         img = data["img"]
         alt = data["alt"]
@@ -86,7 +89,7 @@ class JokeCommands(utils.TalosCog):
     @commands.command(description="SMBC: XKCD but philosophy and butt jokes")
     async def smbc(self, ctx, comic: typing.Union[dutils.DateConverter["%Y-%d-%m"], int, str] = None):
         """Gets an SMBC from a given date, number, or id. Or, if not specified, it gets the most recent one. """\
-            """Necessarily slightly slow due to technical limitations"""
+            """Necessarily slightly slow to search by date due to technical limitations"""
         if isinstance(comic, int) and comic <= 0:
             await ctx.send("Comic number should be greater than 0")
         if comic is None:
@@ -101,22 +104,16 @@ class JokeCommands(utils.TalosCog):
                     comic_id = comic
                     break
             else:
-                await ctx.send(f"No comic for date {comic} found")
+                await ctx.send(f"No comic for date `{comic}` found")
                 return
-        elif isinstance(comic, int):
-            comic_id = comic
         else:
-            # TODO: just try loading it and if it fails too bad
-            comic_list = await self.bot.session.get_smbc_list()
-            for el in comic_list:
-                if el.get_attribute("value")[6:] == comic:
-                    comic_id = comic
-                    break
-            else:
-                await ctx.send(f"No comic with id {comic} found")
-                return
+            comic_id = comic
 
         data = await self.bot.session.get_smbc(comic_id)
+
+        if data is None:
+            await ctx.send(f"No comic with ID `{comic}` found")
+            return
 
         if self.bot.should_embed(ctx):
             with dutils.PaginatedEmbed() as embed:
