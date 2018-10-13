@@ -402,7 +402,10 @@ class Commands(utils.TalosCog):
             if child.tag == "dt":
                 fact_sheet += f"**{child.innertext}**\n"
             elif child.tag == "dd":
-                fact_sheet += f"{child.innertext}\n"
+                if isinstance(child.first_child, utils.Element):
+                    fact_sheet += f"{child.first_child.innertext}\n"
+                else:
+                    fact_sheet += f"{child.innertext}\n"
         if self.bot.should_embed(ctx):
             # Build Embed
             with dutils.PaginatedEmbed() as embed:

@@ -1,5 +1,6 @@
 
 from functools import lru_cache
+import abc
 
 
 class Document:
@@ -93,6 +94,18 @@ class Node:
         self.child_nodes[0] = value
         self._pos_map[value] = 0
 
+    @property
+    @abc.abstractmethod
+    def innertext(self): ...
+
+    @property
+    @abc.abstractmethod
+    def innerhtml(self): ...
+
+    @property
+    @abc.abstractmethod
+    def outerhtml(self): ...
+
     def add_child(self, el, pos=-1):
         if pos < 0:
             pos = len(self.child_nodes)
@@ -150,6 +163,18 @@ class Content(Node):
         for line in lines:
             out += spacing + line + "\n"
         return out
+
+    @property
+    def innertext(self):
+        return self.value
+
+    @property
+    def innerthtml(self):
+        return self.value
+
+    @property
+    def outerhtml(self):
+        return self.value
 
     def add_child(self, el, pos=-1):
         raise TypeError("Content cannot have children")

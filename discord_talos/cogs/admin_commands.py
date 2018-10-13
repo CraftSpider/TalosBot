@@ -252,7 +252,6 @@ class AdminCommands(utils.TalosCog):
         else:
             await ctx.send("No admins currently")
 
-    # TODO: Perms for groups
     @commands.group(description="Permissions related commands")
     async def perms(self, ctx):
         """Talos permissions are divided into 4 levels, with each level having a default priority. The levels, in """\
