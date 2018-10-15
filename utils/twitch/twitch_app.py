@@ -91,7 +91,7 @@ class TwitchApp:
                 if result.get("error") is not None:
                     with open("templog", "a") as file:
                         file.write(json.dumps(result))
-                    if result.get("status") == 401 and result.get("message") != "invalid oauth token":
+                    if result.get("status") == 401:
                         raise InsufficientPerms("channel_subscriptions")
                     elif result.get("status") == 400:
                         raise NotASubscriber
