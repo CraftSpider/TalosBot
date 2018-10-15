@@ -27,7 +27,7 @@ class OAuth:
         }
         async with self.app.session.post(const.OAUTH + "token", params=params) as response:
             refresh = json.loads(await response.text())
-            if refresh.get("error"):
+            if refresh.get("error") or refresh.get("status") >= 400:
                 return False
             else:
                 self._refresh_data(refresh)
