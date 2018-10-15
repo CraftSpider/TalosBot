@@ -97,7 +97,9 @@ class TalosPrimaryHandler:
             code = request.query["code"]
             await self.twitch_app.get_oauth(code)
             if self.t_redirect is not None:
-                return web.HTTPFound(self.t_redirect)
+                redir = self.t_redirect
+                self.t_redirect = None
+                return web.HTTPFound(redir)
             return web.Response(text="All set!")
         self.t_redirect = request.query.get("redirect", None)
         try:

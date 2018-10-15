@@ -27,6 +27,8 @@ class TwitchApp:
         self.session = None
 
     async def open(self):
+        if self.session is not None:
+            await self.session.close()
         self.session = aiohttp.ClientSession()
 
     def build_request_headers(self, name):
@@ -86,6 +88,7 @@ class TwitchApp:
                                         params=params) as response:
                 result = json.loads(await response.text())
                 if result.get("error") is not None:
+                    print(result)
                     if result.get("status") == 401:
                         raise InsufficientPerms("channel_subscriptions")
                     elif result.get("status") == 400:
