@@ -102,7 +102,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         btn_key = self.__tokens.get("btn", "")
         cat_key = self.__tokens.get("cat", "")
         self.session = utils.TalosHTTPClient(nano_login=nano_login, btn_key=btn_key, cat_key=cat_key, read_timeout=60,
-                                       loop=self.loop)
+                                             loop=self.loop)
 
         # Override things set by super init that we don't want
         self._skip_check = self.skip_check

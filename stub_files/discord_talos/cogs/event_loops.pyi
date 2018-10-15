@@ -4,21 +4,24 @@
     author: CraftSpider
 """
 
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union, Tuple, Callable, Awaitable, Optional, Any
 from discord_talos.talos import Talos
-import command_lang
+import utils.command_lang as command_lang
 import logging
 import argparse
 import asyncio
 import googleapiclient.discovery
 import oauth2client.client
 import utils
+import datetime as dt
 
 SCOPES: str = ...
 CLIENT_SECRET_FILE: str = ...
 APPLICATION_NAME: str = ...
 log: logging.Logger = ...
 cl_parser: command_lang.ContextLessCL()
+
+def align_period(period: utils.EventPeriod) -> dt.timedelta: ...
 
 class SpreadsheetService(googleapiclient.discovery.Resource):
 
@@ -37,6 +40,8 @@ class EventLoops(utils.TalosCog):
     def __init__(self, bot: Talos) -> None: ...
 
     def __unload(self) -> None: ...
+
+    def add_loop(self, period: Union[str, utils.EventPeriod], coro: Callable[[Any], Awaitable], *, persist: bool = ..., start_time: dt.datetime = ..., args: Optional[List] = ..., kwargs: Optional[Dict] = ...) -> None: ...
 
     def start_all_tasks(self) -> None: ...
 

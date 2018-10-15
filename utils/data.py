@@ -1,5 +1,6 @@
 
 import abc
+import datetime as dt
 
 
 class Row(metaclass=abc.ABCMeta):
@@ -221,26 +222,24 @@ class GuildCommand(Row):
 
 class EventPeriod(SqlConvertable):
 
-    __slots__ = ("days", "hours", "minutes")
+    __slots__ = ("_seconds",)
 
     def __init__(self, period):
         if isinstance(period, EventPeriod):
-            self.days = period.days
-            self.hours = period.hours
-            self.minutes = period.minutes
+            self._seconds = period._seconds
             return
         num = ""
-        self.days = 0
-        self.hours = 0
-        self.minutes = 0
+        self._seconds = 0
         for char in period:
-            if char == "d" or char == "h" or char == "m":
+            if char == "d" or char == "h" or char == "m" or char == "s":
                 if char == "d":
-                    self.days = int(num)
+                    self._seconds += int(num) * 86400
                 elif char == "h":
-                    self.hours = int(num)
+                    self._seconds += int(num) * 3600
                 elif char == "m":
-                    self.minutes = int(num)
+                    self._seconds += int(num) * 60
+                elif char == "s":
+                    self._seconds += int(num)
                 num = ""
             elif "0" <= char <= "9":
                 num += char
@@ -253,10 +252,31 @@ class EventPeriod(SqlConvertable):
             out += f"{self.hours}h"
         if self.minutes:
             out += f"{self.minutes}m"
+        if self.seconds:
+            out += f"{self.seconds}s"
         return out
 
     def __int__(self):
-        return self.days * 86400 + self.hours * 3600 + self.minutes * 60
+        return self._seconds
+
+    @property
+    def days(self):
+        return self._seconds // 86400
+
+    @property
+    def hours(self):
+        return (self._seconds % 86400) // 3600
+
+    @property
+    def minutes(self):
+        return (self._seconds % 3600) // 60
+
+    @property
+    def seconds(self):
+        return self._seconds % 60
+
+    def timedelta(self):
+        return dt.timedelta(seconds=int(self))
 
     def sql_safe(self):
         return str(self)

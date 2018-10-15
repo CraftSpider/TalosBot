@@ -1,6 +1,7 @@
 
 from typing import Dict, List, Any, Tuple, Union, Iterable, Optional
 import abc
+import datetime as dt
 import discord.ext.commands as commands
 
 SqlRow = Tuple[Union[str, int], ...]
@@ -181,17 +182,29 @@ class GuildCommand(Row):
 
 class EventPeriod(SqlConvertable):
 
-    __slots__ = ("days", "hours", "minutes")
+    __slots__ = ("_seconds",)
 
-    days: int
-    hours: int
-    minutes: int
+    _seconds: int
 
     def __init__(self, period: Union[EventPeriod, str]) -> None: ...
 
     def __str__(self) -> str: ...
 
     def __int__(self) -> int: ...
+
+    @property
+    def days(self) -> int: ...
+
+    @property
+    def hours(self) -> int: ...
+
+    @property
+    def minutes(self) -> int: ...
+
+    @property
+    def seconds(self) -> int: ...
+
+    def timedelta(self) -> dt.timedelta: ...
 
     def sql_safe(self) -> str: ...
 
