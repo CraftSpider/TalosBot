@@ -88,7 +88,8 @@ class TwitchApp:
                                         params=params) as response:
                 result = json.loads(await response.text())
                 if result.get("error") is not None:
-                    print(result)
+                    with open("templog", "w") as file:
+                        file.write(result)
                     if result.get("status") == 401:
                         raise InsufficientPerms("channel_subscriptions")
                     elif result.get("status") == 400:
