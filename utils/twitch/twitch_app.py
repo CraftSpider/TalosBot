@@ -6,8 +6,9 @@ from . import types, constants as const
 
 class InsufficientPerms(Exception):
 
-    def __init__(self, required, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, required, *args):
+        self.required = required
+        super().__init__(*args)
 
 
 class NotASubscriber(Exception):
@@ -88,9 +89,9 @@ class TwitchApp:
                                         params=params) as response:
                 result = json.loads(await response.text())
                 if result.get("error") is not None:
-                    with open("templog", "w") as file:
-                        file.write(result)
-                    if result.get("status") == 401:
+                    with open("templog", "a") as file:
+                        file.write(json.dumps(result))
+                    if result.get("status") == 401 and result.get("message") != "invalid oauth token":
                         raise InsufficientPerms("channel_subscriptions")
                     elif result.get("status") == 400:
                         raise NotASubscriber
