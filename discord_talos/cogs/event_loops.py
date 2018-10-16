@@ -10,6 +10,7 @@ import asyncio
 import logging
 import random
 import argparse
+import inspect
 import utils
 import utils.command_lang as command_lang
 import datetime as dt
@@ -57,6 +58,75 @@ class StopEventLoop(Exception):
         self.message = message
 
 
+class EventLoop:
+
+    __slots__ = ("_task", "_callback", "period", "persist", "start_time", "loop")
+
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError("Access internal method through self.callback")
+
+    def __init__(self, coro, period, *, persist=True, start_time=None, loop=None):
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        self._task = None
+        self._callback = coro
+        self.period = utils.EventPeriod(period)
+        self.persist = persist
+        self.start_time = start_time
+        self.loop = loop
+
+    @property
+    def callback(self):
+        return self._callback
+
+    @callback.setter
+    def callback(self, value):
+        self._callback = value
+
+    def set_start_time(self, time):
+        self.start_time = time
+
+    def start(self, *args, **kwargs):
+        log.info(f"Starting event loop {self._callback.__name__}")
+        self._task = self.loop.create_task(self.run(*args, **kwargs))
+
+    async def run(self, *args, **kwargs):
+        if self.start_time is not None:
+            now = dt.datetime.now()
+            delta = self.start_time - now
+            await asyncio.sleep(delta.total_seconds())
+        else:
+            delta = align_period(self.period)
+            await asyncio.sleep(delta.total_seconds())
+        while True:
+            try:
+                await self._callback(*args, **kwargs)
+            except StopEventLoop as e:
+                if e.message:
+                    log.warning(e.message)
+                return
+            except Exception as e:
+                if self.persist:
+                    log.warning(f"Ignoring error in event loop {self._callback.__name__}: {e}")
+                else:
+                    log.error(f"Stopping event loop {self._callback.__name__}: {e}")
+                    self._task = None
+                    return
+            delta = align_period(self.period)
+            await asyncio.sleep(delta.total_seconds())
+
+    def stop(self):
+        self._task.cancel()
+
+
+def eventloop(period, *, persist=True, start_time=None):
+
+    def decorator(coro):
+        return EventLoop(coro, period, persist=persist, start_time=start_time)
+
+    return decorator
+
+
 class EventLoops(utils.TalosCog):
     """Handles the Talos regulated events, time based loops. How did you even figure out this help page existed?"""
 
@@ -68,58 +138,23 @@ class EventLoops(utils.TalosCog):
         self.service = None
         self.flags = None
         self.last_guild_count = 0
-        self.bg_tasks = []
+        self.bg_tasks = {}
+
+        members = inspect.getmembers(self)
+        for loop in filter(lambda x: isinstance(x[1], EventLoop), members):
+            print(loop)
+            self.bg_tasks[loop[0]] = loop[1]
 
     def __unload(self):
         """Cleans up the cog on unload, cancelling all tasks."""
         for task in self.bg_tasks:
-            task.cancel()
-
-    def add_loop(self, period, coro, *, persist=True, start_time=None, args=None, kwargs=None):
-        log.info(f"Starting event loop {coro.__name__}")
-        period = utils.EventPeriod(period)
-
-        if args is None:
-            args = []
-        if kwargs is None:
-            kwargs = {}
-
-        async def repeating():
-            if start_time is not None:
-                now = dt.datetime.now()
-                delta = start_time - now
-                await asyncio.sleep(delta.total_seconds())
-            else:
-                delta = align_period(period)
-                await asyncio.sleep(delta.total_seconds())
-            while True:
-                try:
-                    await coro(*args, **kwargs)
-                except StopEventLoop as e:
-                    if e.message:
-                        log.warning(e.message)
-                    return
-                except Exception as e:
-                    if persist:
-                        log.warning(f"Ignoring error in event loop {coro}: {e}")
-                    else:
-                        log.error(f"Stopping event loop {coro}: {e}")
-                        return
-                delta = align_period(period)
-                await asyncio.sleep(delta.total_seconds())
-
-        self.bg_tasks.append(self.bot.loop.create_task(repeating()))
+            self.bg_tasks[task].stop()
 
     def start_all_tasks(self):
         """Initializes and starts all event tasks"""
-        if len(self.bg_tasks) == 0:
-            self.start_uptime()
-            self.start_prompt()
-            self.start_regulars()
-
-    def start_uptime(self):
-        """Starts uptime task"""
-        self.add_loop("1m", self.uptime_task)
+        self.start_prompt()
+        for task in self.bg_tasks:
+            self.bg_tasks[task].start()
 
     def start_prompt(self):
         """Starts prompts task"""
@@ -129,13 +164,7 @@ class EventLoops(utils.TalosCog):
         time = dt.datetime.now().replace(hour=self.bot.PROMPT_TIME, minute=0, second=0, microsecond=0)
         if time < dt.datetime.now():
             time += dt.timedelta(days=1)
-        self.add_loop("1d", self.prompt_task, start_time=time)
-
-    def start_regulars(self):
-        """Starts regular tasks"""
-        self.add_loop("1m", self.minute_task)
-        self.add_loop("1h", self.hourly_task)
-        self.add_loop("1d", self.daily_task)
+        self.prompt_task.set_start_time(time)
 
     def get_credentials(self):
         """Gets valid user credentials from storage.
@@ -198,6 +227,7 @@ class EventLoops(utils.TalosCog):
                 valueInputOption="RAW", body=body).execute()
         return result
 
+    @eventloop("1m")
     async def minute_task(self):
         """Called once at the start of every minute"""
         for guild in self.bot.guilds:
@@ -213,6 +243,7 @@ class EventLoops(utils.TalosCog):
                     event.last_active = current
                     self.database.save_item(event)
 
+    @eventloop("1h")
     async def hourly_task(self):
         """Called once at the top of every hour."""
         log.debug("Hourly task runs")
@@ -224,16 +255,19 @@ class EventLoops(utils.TalosCog):
             api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
             await self.bot.session.post(api_url, data=data, headers=headers)
 
+    @eventloop("1d")
     async def daily_task(self):
         """Called once every day at midnight, does most time-consuming tasks."""
         log.debug("Daily task runs")
         self.database.remove_uptime(int((dt.datetime.now() - dt.timedelta(days=30)).timestamp()))
 
+    @eventloop("1m")
     async def uptime_task(self):
         """Called once a minute, to verify uptime. Old uptimes cleaned once a day."""
         log.debug("Uptime task runs")
         self.database.add_uptime(int(dt.datetime.now().replace(microsecond=0).timestamp()))
 
+    @eventloop("1d")
     async def prompt_task(self):
         """Once a day, grabs a prompt from google sheets and posts it to the defined prompts chat, if enabled."""
         if self.service is None:
