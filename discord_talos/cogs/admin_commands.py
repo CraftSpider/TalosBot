@@ -49,10 +49,13 @@ def admin_check(self, ctx):
         return True
     command = str(ctx.command)
 
-    if ctx.author.id in self.bot.DEVS or\
-       len(self.database.get_admins(ctx.guild.id)) == 0 and ctx.author.guild_permissions.administrator or\
+    if ctx.author.id in self.bot.DEVS:
+        return True
+
+    admins = self.database.get_admins(ctx.guild.id)
+    if len(admins) == 0 and ctx.author.guild_permissions.administrator or\
        ctx.author == ctx.guild.owner or\
-       ctx.author.id in self.database.get_admins(ctx.guild.id):
+       next((x for x in admins if x.user_id == ctx.guild.id), None) is not None:
         return True
 
     perms = self.database.get_perm_rules(ctx.guild.id, command)
