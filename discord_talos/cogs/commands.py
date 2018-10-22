@@ -200,7 +200,7 @@ class Commands(utils.TalosCog):
         if self.bot.should_embed(ctx):
             description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
                           "`{}help` to see a list of my commands.\nPlease donate to support my development on "\
-                          "[Patreon](https://www.patreon.com/TalosBot)"
+                          "[Patreon](https://www.patreon.com/craftspider)"
             with dutils.PaginatedEmbed() as embed:
                 embed.title = "Talos Information"
                 embed.colour = discord.Colour(0x202020)

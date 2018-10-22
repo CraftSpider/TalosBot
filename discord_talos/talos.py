@@ -49,13 +49,16 @@ log = logging.getLogger("talos")
 
 
 class FakeMessage:
+
+    __slots__ = ("guild", "channel", "author")
+
     def __init__(self, guild, channel):
         self.guild = guild
         self.channel = channel
         self.author = None
 
 
-class Talos(commands.Bot):
+class Talos(dutils.ExtendedBot):
     """
         Class for the Talos bot. Handles all sorts of things for inter-cog relations and bot wide data.
     """
@@ -69,9 +72,9 @@ class Talos(commands.Bot):
     # Default Prefix, in case the options are unavailable.
     DEFAULT_PREFIX = "^"
     # Folder which extensions are stored in
-    EXTENSION_DIRECTORY = "discord_talos.cogs"
+    extension_dir = "discord_talos.cogs"
     # Extensions to load on Talos boot. Can be standard discord.py extensions, though Talos also allows some more stuff.
-    STARTUP_EXTENSIONS = ("commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops")
+    startup_extensions = ("commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops")
     # Hardcoded Developer List. Craft, Dino, Hidd, Hidd
     DEVS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
     # This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
@@ -82,7 +85,6 @@ class Talos(commands.Bot):
             Initialize Talos object. Safe to pass nothing in.
         :param sql_conn: MySQL Database connection object
         :param kwargs: Keyword Args for Talos and all its parent classes
-        :return: None
         """
         # Set default values to pass to super
         description = '''Greetings. I'm Talos, chat helper. Here are my command types. If you like me and have the \
@@ -115,54 +117,12 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         else:
             super().__setattr__(key, value)
 
-    def load_extensions(self, extensions=None):
-        """
-            Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None.
-            :param extensions: extensions to load, None if all in STARTUP_EXTENSIONS
-            :return: 0 if successful, 1 if unsuccessful
-        """
-        log.debug("Loading all extensions")
-        clean = 0
-        for extension in (self.STARTUP_EXTENSIONS if extensions is None else extensions):
-            try:
-                log.debug(f"Loading extension {extension}")
-                self.load_extension(extension)
-            except Exception as err:
-                clean = 1
-                exc = f"{type(err).__name__}: {err}"
-                log.warning(f"Failed to load extension {extension}\n{exc}")
-        return clean
-
-    def unload_extensions(self, extensions=None):
-        """
-            Unloads all extensions in input, or all extensions currently loaded if None
-            :param extensions: List of extensions to unload, or None if all
-        """
-        logging.debug("Unloading all extensions")
-        if extensions is None:
-            while len(self.extensions) > 0:
-                extension = self.extensions.popitem()
-                log.debug(f"Unloading extension {extension}")
-                self.unload_extension(extension, False)
-        else:
-            for extension in extensions:
-                log.debug(f"Unloading extension {extension}")
-                self.unload_extension(extension)
-
-    def load_extension(self, name, prefix=True):
-        name = self.EXTENSION_DIRECTORY + "." + name if prefix else name
-        super().load_extension(name)
-
-    def unload_extension(self, name, prefix=True):
-        name = self.EXTENSION_DIRECTORY + "." + name if prefix else name
-        super().unload_extension(name)
-
     def skip_check(self, author_id, self_id):
         """
             Determines whether Talos should skip trying to process a message
-            :param author_id: integer ID of the message author
-            :param self_id: integer ID of Talos client
-            :return: Whether to skip processing a given message
+        :param author_id: integer ID of the message author
+        :param self_id: integer ID of Talos client
+        :return: Whether to skip processing a given message
         """
         if author_id == 339119069066297355 or author_id == 376161594570178562:
             return False
@@ -171,8 +131,8 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
     def should_embed(self, ctx):
         """
             Determines whether Talos is allowed to use RichEmbeds in a given context.
-            :param ctx: commands.Context object
-            :return: Whether Talos should embed message
+        :param ctx: commands.Context object
+        :return: Whether Talos should embed message
         """
         if self.database.is_connected():
             try:
@@ -197,34 +157,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
                 return dt.timezone(dt.timedelta(hours=utils.tz_map[timezone.upper()]), timezone.upper())
         return dt.timezone(dt.timedelta(), "UTC")
 
-    def find_command(self, command):
-        """
-            Given a string command, attempts to find it iteratively through command groups
-        :param command: Command to find in Talos. Can have spaces if necessary
-        :return: Command object if found, None otherwise
-        """
-        if command in self.all_commands:
-            return self.all_commands[command]
-        command = command.split(" ")
-        if len(command) > 1:
-            cur = self
-            for sub in command:
-                cur = cur.all_commands.get(sub)
-                if cur is None:
-                    return None
-            return cur
-        return None
-
-    def run(self, token, *args, **kwargs):
-        """
-            Run Talos. Logs into discord and runs event loop forever.
-        :param token: Discord bot token to log in with
-        :return: None
-        """
-        if self.cogs.get("EventLoops", None) is not None:
-            self.cogs["EventLoops"].start_all_tasks()
-        super().run(token, *args, **kwargs)
-
     async def logout(self):
         """
             Saves Talos data, then logs out the bot cleanly and safely
@@ -237,7 +169,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
     async def close(self):
         """
             Closes connections that Talos has open on shutdown
-            :return None:
+        :return None:
         """
         log.debug("Closing Talos")
         await self.session.close()
@@ -511,6 +443,11 @@ def talos_prefix(bot, message):
 
 
 def configure_logging():
+    """
+        Configure the loggers for Talos. Sets up the Talos loggers
+        and discord.py loggers separately, so they can be easily configured
+        independently.
+    """
     fh = logging.FileHandler(pathlib.Path(__file__).parent / "talos.log")
     sh = logging.StreamHandler(sys.stderr)
 
@@ -520,6 +457,7 @@ def configure_logging():
     fh.setFormatter(ff)
     sh.setFormatter(sf)
 
+    logging.getLogger("talos")
     log.addHandler(fh)
     log.addHandler(sh)
     log.propagate = False
@@ -591,7 +529,6 @@ def main():
     talos = Talos(tokens=tokens)
 
     try:
-        talos.load_extensions()
         talos.run(bot_token)
     finally:
         print("Talos Exiting")

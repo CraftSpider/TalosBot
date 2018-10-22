@@ -70,7 +70,7 @@ class UserCommands(utils.TalosCog):
             await ctx.send("Sorry, that colour role doesn't exist, and arbitrary roles aren't allowed")
             return
         else:
-            if isinstance(colour, str) and options.any_color:
+            if isinstance(colour, str):
                 await ctx.send(
                     "Unrecognized colour format. Valid formats include `#123456`, `0x123456`, and some names such as "
                     "teal or orange")

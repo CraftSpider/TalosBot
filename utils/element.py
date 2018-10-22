@@ -62,7 +62,7 @@ class Document:
         return out
 
 
-class Node:
+class Node(abc.ABC):
 
     __slots__ = ("parent", "child_nodes", "_pos_map")
 
@@ -112,7 +112,7 @@ class Node:
             self._pos_map[el] = pos
 
         self.child_nodes.insert(pos, el)
-        el.set_parent(self)
+        el.parent = self
 
         if pos != len(self.child_nodes):
             for i in range(pos, len(self.child_nodes)):
@@ -132,17 +132,21 @@ class Node:
     def remove_child(self, el):
         if el.parent == self:
             self.child_nodes.remove(el)
-            el.remove_parent()
+            el.parent = None
+        else:
+            raise ValueError("Passed element not a child of self")
 
     def set_parent(self, el):
         if self.parent is not None:
             self.parent.remove_child(self)
-        self.parent = el
+        el.add_child(self)
 
     def remove_parent(self):
         if self.parent is not None:
             self.parent.remove_child(self)
-        self.parent = None
+            self.parent = None
+        else:
+            raise ValueError("Element has no parent")
 
 
 class Content(Node):
@@ -169,7 +173,7 @@ class Content(Node):
         return self.value
 
     @property
-    def innerthtml(self):
+    def innerhtml(self):
         return self.value
 
     @property
@@ -196,27 +200,10 @@ class Element(Node):
         self.parent = None
 
     def __str__(self):
-        attrs = " ".join(f"{x}=\"{self._attrs[x]}\"" for x in self._attrs)
-        if attrs:
-            attrs = " " + attrs
-        if self.tag in self.SELF_CLOSING:
-            return f"<{self.tag}{attrs} />"
-        return f"<{self.tag}{attrs}>"
+        return self.starttag
 
     def __repr__(self):
-        spacing = "  " * self.depth
-        attrs = " ".join(f"{x}=\"{self._attrs[x]}\"" for x in self._attrs)
-        if attrs:
-            attrs = " " + attrs
-
-        if self.tag in self.SELF_CLOSING or (self.tag == "script" and self.get_attribute("src")):
-            return f"{spacing}<{self.tag}{attrs} />\n"
-
-        out = f"{spacing}<{self.tag}{attrs}>\n"
-        for child in self.child_nodes:
-            out += repr(child)
-        out += f"{spacing}</{self.tag}>\n"
-        return out
+        return self.outerhtml
 
     @property
     @lru_cache()
@@ -235,6 +222,21 @@ class Element(Node):
 
     @property
     @lru_cache()
+    def starttag(self):
+        attrs = "".join(f" {x}=\"{self._attrs[x]}\"" for x in self._attrs)
+        if self.self_closing():
+            return f"<{self.tag}{attrs} />"
+        return f"<{self.tag}{attrs}>"
+
+    @property
+    @lru_cache()
+    def endtag(self):
+        if self.self_closing():
+            return ""
+        return f"</{self.tag}>"
+
+    @property
+    @lru_cache()
     def innertext(self):
         return "\n".join(map(lambda x: x.value, filter(lambda x: isinstance(x, Content), self.child_nodes)))
 
@@ -243,33 +245,21 @@ class Element(Node):
     def innerhtml(self):
         out = ""
         for child in self.child_nodes:
-            if isinstance(child, Content):
-                for line in child.value.split("\n"):
-                    out += line + "\n"
-            if isinstance(child, Element):
-                for line in child.outerhtml.split("\n"):
-                    out += line + "\n"
+            out += child.outerhtml + "\n"
         return out
 
     @property
     @lru_cache()
     def outerhtml(self):
         spacing = "  "
-        attrs = " ".join(f"{x}=\"{self._attrs[x]}\"" for x in self._attrs)
-        if attrs:
-            attrs = " " + attrs
 
-        if self.tag in self.SELF_CLOSING or (self.tag == "script" and self.get_attribute("src")):
-            return f"<{self.tag}{attrs} />"
+        if self.self_closing():
+            return self.starttag
 
-        out = f"<{self.tag}{attrs}>\n"
+        out = self.starttag + "\n"
         for child in self.child_nodes:
-            if isinstance(child, Content):
-                for line in child.value.split("\n"):
-                    out += spacing + line + "\n"
-            if isinstance(child, Element):
-                for line in child.outerhtml.split("\n"):
-                    out += spacing + line + "\n"
+            for line in child.outerhtml.split("\n"):
+                out += spacing + line + "\n"
         out += f"</{self.tag}>"
         return out
 
@@ -278,3 +268,6 @@ class Element(Node):
 
     def has_class(self, classname):
         return classname in self.classes
+
+    def self_closing(self):
+        self.tag in self.SELF_CLOSING or (self.tag == "script" and self.get_attribute("src"))
