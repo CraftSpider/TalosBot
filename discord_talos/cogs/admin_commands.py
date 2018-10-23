@@ -32,14 +32,6 @@ def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def space_replace(match):
-    print(match.group(1))
-    if match.group(1):
-        return "\\"*int(len(match.group(0)) / 2) + " "
-    else:
-        return " "
-
-
 #
 # Admin Command Checks
 #
@@ -430,7 +422,7 @@ class AdminCommands(dutils.TalosCog):
                     await ctx.send("Sorry, that option only accepts true or false values.")
                     return
             if isinstance(cur_val, str):
-                value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
+                value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", utils.space_replace, value)
                 value = re.sub(r"\\\\", r"\\", value)
             setattr(guild_options, option, value)
             self.database.save_item(guild_options)

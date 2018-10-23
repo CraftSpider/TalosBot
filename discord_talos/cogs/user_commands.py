@@ -18,14 +18,6 @@ import re
 log = logging.getLogger("talos.user")
 
 
-def space_replace(match):
-    print(match.group(1))
-    if match.group(1):
-        return "\\"*int(len(match.group(0)) / 2) + " "
-    else:
-        return " "
-
-
 class UserCommands(dutils.TalosCog):
     """These are commands that effect specific users. May change your roles in a guild, or alter your Talos-specific"""\
         """ settings and info."""
@@ -244,7 +236,7 @@ class UserCommands(dutils.TalosCog):
                     await ctx.send("Sorry, that option only accepts true or false values.")
                     return
             elif isinstance(cur_val, str):
-                value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", space_replace, value)
+                value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", utils.space_replace, value)
                 value = re.sub(r"\\\\", r"\\", value)
             setattr(user_options, option, value)
             self.database.save_item(user_options)

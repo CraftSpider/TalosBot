@@ -2,12 +2,16 @@
     Talos utils stub file
 """
 
-from typing import Dict
+from typing import Dict, Match
 import discord.ext.commands as dcommands
 
 
 fullwidth_transform: Dict[str, str] = ...
 tz_map: Dict[str, float] = ...
+
+def space_replace(match: Match) -> str: ...
+
+def safe_remove(*filenames: str) -> None: ...
 
 def to_snake_case(text: str) -> str: ...
 

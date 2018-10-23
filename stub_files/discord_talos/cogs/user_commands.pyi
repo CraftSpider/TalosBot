@@ -8,14 +8,13 @@ from typing import Match
 from discord_talos.talos import Talos
 import logging
 import utils
+import utils.dutils as dutils
 import discord
 import discord.ext.commands as commands
 
 log: logging.Logger = ...
 
-def space_replace(match: Match) -> str: ...
-
-class UserCommands(utils.TalosCog):
+class UserCommands(dutils.TalosCog):
 
     async def color(self, ctx: commands.Context, color: str) -> None: ...
 

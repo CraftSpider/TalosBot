@@ -9,6 +9,7 @@ import asyncio
 import discord.ext.commands as commands
 import datetime as dt
 import utils
+import utils.dutils as dutils
 from discord_talos.talos import Talos
 
 active_pw: Dict[int, utils.PW] = ...
@@ -20,7 +21,7 @@ def strfdelta(time_delta: dt.timedelta, fmt: str) -> str: ...
 
 def html_to_markdown(html_text: str) -> str: ...
 
-class Commands(utils.TalosCog):
+class Commands(dutils.TalosCog):
 
     noun: List[str] = ...
     adjective: List[str] = ...

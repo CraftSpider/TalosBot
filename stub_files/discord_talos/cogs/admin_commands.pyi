@@ -8,7 +8,7 @@ from typing import Match, Callable, Dict, Union
 from collections import defaultdict
 from discord_talos.talos import Talos
 import logging
-import utils
+import utils.dutils as dutils
 import discord
 import discord.ext.commands as commands
 
@@ -17,11 +17,9 @@ log: logging.Logger = ...
 
 def key_generator(size: int = ..., chars: str = ...) -> str: ...
 
-def space_replace(match: Match) -> str: ...
-
 def dev_check() -> Callable: ...
 
-class AdminCommands(utils.TalosCog):
+class AdminCommands(dutils.TalosCog):
 
     LEVELS: Dict[str, int] = ...
     __local_check: Callable[[AdminCommands, commands.Context], bool] = ...

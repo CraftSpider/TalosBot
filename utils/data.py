@@ -271,9 +271,19 @@ class EventPeriod(SqlConvertable):
     def minutes(self):
         return (self._seconds % 3600) // 60
 
+    @minutes.setter
+    def minutes(self, value):
+        dif = value - self.minutes
+        self._seconds += dif * 60
+
     @property
     def seconds(self):
         return self._seconds % 60
+
+    @seconds.setter
+    def seconds(self, value):
+        dif = value - self.seconds
+        self._seconds += dif
 
     def timedelta(self):
         return dt.timedelta(seconds=int(self))

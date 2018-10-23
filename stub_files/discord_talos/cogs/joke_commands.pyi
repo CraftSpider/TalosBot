@@ -6,12 +6,12 @@
 
 from discord_talos.talos import Talos
 import logging
-import utils
+import utils.dutils as dutils
 import discord.ext.commands as commands
 
 log: logging.Logger = ...
 
-class JokeCommands(utils.TalosCog):
+class JokeCommands(dutils.TalosCog):
 
     async def hi(self, ctx: commands.Context, *, extra: str = ...) -> None: ...
 

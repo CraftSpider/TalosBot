@@ -49,14 +49,6 @@ def html_to_markdown(html_text):
     return html_text
 
 
-def safe_remove(*filenames):
-    for filename in filenames:
-        try:
-            os.remove(filename)
-        except Exception:
-            pass
-
-
 class Commands(dutils.TalosCog):
     """General Talos commands. Get bot info, check the time, or run a wordwar from here. These commands generally """\
         """aren't very user-specific, most commands are in this category."""
@@ -257,6 +249,7 @@ class Commands(dutils.TalosCog):
 """
 
         # Compile into PNG
+        filename = ""
         try:
             filename = str(dt.datetime.now().timestamp()) + str(random.randint(0, 100))
             tex = f"{filename}.tex"
@@ -284,7 +277,7 @@ class Commands(dutils.TalosCog):
                 await ctx.send("Unknown error while attempting to parse LaTeX")
         finally:
             log.debug("Cleaning up LaTeX files")
-            safe_remove(*(f"{filename}." + x for x in ["tex", "aux", "pdf", "png", "log"]))
+            utils.safe_remove(*(f"{filename}." + x for x in ["tex", "aux", "pdf", "png", "log"]))
 
     @commands.group(aliases=["nano"], description="Fetch data from the NaNo site")
     async def nanowrimo(self, ctx):

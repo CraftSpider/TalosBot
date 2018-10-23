@@ -7,13 +7,13 @@
 from typing import Callable
 from discord_talos.talos import Talos
 import logging
-import utils
+import utils.dutils as dutils
 import discord
 import discord.ext.commands as commands
 
 log: logging.Logger = ...
 
-class DevCommands(utils.TalosCog):
+class DevCommands(dutils.TalosCog):
 
     __local_check: Callable[[DevCommands, commands.Context], bool] = ...
 

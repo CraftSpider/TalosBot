@@ -3,12 +3,8 @@
 
     author: CraftSpider
 """
-import inspect
-import itertools
+import os
 import logging
-import discord
-import discord.ext.commands as dcommands
-from utils.dutils.paginators import PaginatedEmbed
 
 
 log = logging.getLogger("talos.utils")
@@ -56,7 +52,27 @@ tz_map = {
 }
 
 
-# Fundamental Talos classes
+# Various helper method utilities
+
+
+def space_replace(match):
+    print(match.group(1))
+    if match.group(1):
+        return "\\"*int(len(match.group(0)) / 2) + " "
+    else:
+        return " "
+
+
+def safe_remove(*filenames):
+    """
+        Remove a series of filenames, ignoring any errors
+    :param filenames: Filenames to delete
+    """
+    for filename in filenames:
+        try:
+            os.remove(filename)
+        except Exception:
+            pass
 
 
 def to_snake_case(text):

@@ -11,7 +11,6 @@ import logging
 import argparse
 import googleapiclient.discovery
 import oauth2client.client
-import utils
 import utils.dutils as dutils
 import datetime as dt
 
@@ -25,7 +24,7 @@ class SpreadsheetService(googleapiclient.discovery.Resource):
 
     def spreadsheets(self) -> None: ...
 
-class EventLoops(utils.TalosCog):
+class EventLoops(dutils.TalosCog):
 
     __slots__: Tuple[str, ...] = ('service', 'flags', 'last_guild_count', "__local_check")
 
