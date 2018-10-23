@@ -1,6 +1,10 @@
 
-from typing import Optional, Any, Dict, Iterable
+from typing import Optional, Any, Dict, Iterable, List, Union
+from . import paginators
+import utils
 import utils.dutils as dutils
+from discord_talos.talos import Talos
+import discord
 import discord.ext.commands as commands
 
 
@@ -29,3 +33,47 @@ class ExtendedBot(commands.Bot):
     def unload_extensions(self, extensions: Optional[Iterable] = ...) -> None: ...
 
     def find_command(self, command: str) -> Optional[commands.Command]: ...
+
+
+def _perms_check(self: TalosCog, ctx: commands.Context) -> bool: ...
+
+
+class TalosCog:
+
+    __slots__ = ("bot", "database")
+    bot: Talos
+    database: utils.TalosDatabase
+
+    def __init__(self, bot: Talos): ...
+
+    def add_method(self, method: callable, name: str=...) -> None: ...
+
+
+class TalosFormatter(commands.HelpFormatter):
+
+    _paginator: Union[commands.Paginator, paginators.PaginatedEmbed] = ...
+
+    # noinspection PyMissingConstructor
+    def __init__(self) -> None: ...
+
+    @property
+    async def clean_prefix(self) -> str: return ...
+
+    async def get_command_signature(self) -> str: ...
+
+    async def get_ending_note(self) -> str: ...
+
+    @staticmethod
+    def capital_split(text: str) -> str: ...
+
+    def embed_shorten(self, text: str) -> str: ...
+
+    def _subcommands_field_value(self, _commands: List[commands.Command]) -> str: ...
+
+    def _add_subcommands_to_page(self, max_width: int, _commands: List[commands.Command]) -> None: ...
+
+    async def format(self) -> Union[List[str], List[discord.Embed]]: ...
+
+    async def embed_format(self) -> List[discord.Embed]: ...
+
+    async def string_format(self) -> List[str]: ...

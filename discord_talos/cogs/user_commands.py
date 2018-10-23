@@ -26,7 +26,7 @@ def space_replace(match):
         return " "
 
 
-class UserCommands(utils.TalosCog):
+class UserCommands(dutils.TalosCog):
     """These are commands that effect specific users. May change your roles in a guild, or alter your Talos-specific"""\
         """ settings and info."""
 

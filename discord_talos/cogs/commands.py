@@ -57,7 +57,7 @@ def safe_remove(*filenames):
             pass
 
 
-class Commands(utils.TalosCog):
+class Commands(dutils.TalosCog):
     """General Talos commands. Get bot info, check the time, or run a wordwar from here. These commands generally """\
         """aren't very user-specific, most commands are in this category."""
 

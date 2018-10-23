@@ -80,7 +80,7 @@ def dev_check():
 #
 # Admin Cog Class
 #
-class AdminCommands(utils.TalosCog):
+class AdminCommands(dutils.TalosCog):
     """These commands can only be used by Admins or Devs, and will work at any time.
     If no admins list is set, anyone with administrator role permission can use admin commands"""
 

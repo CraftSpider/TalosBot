@@ -16,7 +16,7 @@ from discord.ext import commands
 log = logging.getLogger("talos.joke")
 
 
-class JokeCommands(utils.TalosCog):
+class JokeCommands(dutils.TalosCog):
     """These commands are really just for fun. Some of them may not have an obvious purpose, make of them as you"""\
         """ will."""
 

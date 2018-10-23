@@ -90,7 +90,7 @@ class Talos(dutils.ExtendedBot):
         description = '''Greetings. I'm Talos, chat helper. Here are my command types. If you like me and have the \
 money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         if not kwargs.get("formatter", None):
-            kwargs["formatter"] = kwargs.get("formatter", utils.TalosFormatter())
+            kwargs["formatter"] = kwargs.get("formatter", dutils.TalosFormatter())
         super().__init__(talos_prefix, description=description, **kwargs)
 
         # Set talos specific things

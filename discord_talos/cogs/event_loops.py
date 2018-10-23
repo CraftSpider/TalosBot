@@ -26,7 +26,7 @@ log = logging.getLogger("talos.events")
 cl_parser = command_lang.ContextLessCL()
 
 
-class EventLoops(utils.TalosCog):
+class EventLoops(dutils.TalosCog):
     """Handles the Talos regulated events, time based loops. How did you even figure out this help page existed?"""
 
     __slots__ = ('service', 'flags', 'last_guild_count', "__local_check")

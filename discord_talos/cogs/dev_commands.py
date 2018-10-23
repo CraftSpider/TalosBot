@@ -31,11 +31,17 @@ def dev_check(self, ctx):
 #
 # Dev Cog Class
 #
-class DevCommands(utils.TalosCog):
+class DevCommands(dutils.TalosCog):
     """These commands can only be used by Talos Devs, and will work at any time. Several of them are very """\
         """dangerous. Also, they are all hidden from the help command, thus why there's no list here."""
 
     __local_check = dev_check
+
+    def __getattr__(self, item):
+        cog = self.bot.cogs.get(utils.to_camel_case(item))
+        if cog is None:
+            raise AttributeError
+        return cog
 
     @commands.command(hidden=True, description="Change what Talos is playing")
     async def playing(self, ctx, *, playing):
@@ -197,9 +203,4 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
 
 
 def setup(bot):
-    DevCommands.commands = bot.cogs.get("Commands")
-    DevCommands.user_commands = bot.cogs.get("UserCommands")
-    DevCommands.admin_commands = bot.cogs.get("AdminCommands")
-    DevCommands.joke_commands = bot.cogs.get("JokeCommands")
-    DevCommands.event_loops = bot.cogs.get("EventLoops")
     bot.add_cog(DevCommands(bot))
