@@ -236,8 +236,7 @@ class UserCommands(dutils.TalosCog):
                     await ctx.send("Sorry, that option only accepts true or false values.")
                     return
             elif isinstance(cur_val, str):
-                value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", utils.space_replace, value)
-                value = re.sub(r"\\\\", r"\\", value)
+                value = utils.replace_escapes(value)
             setattr(user_options, option, value)
             self.database.save_item(user_options)
             await ctx.send(f"Option {option} set to `{value}` for {ctx.author.display_name}")

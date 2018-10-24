@@ -55,12 +55,26 @@ tz_map = {
 # Various helper method utilities
 
 
-def space_replace(match):
-    print(match.group(1))
-    if match.group(1):
-        return "\\"*int(len(match.group(0)) / 2) + " "
-    else:
-        return " "
+def replace_escapes(text):
+    escape = False
+    out = ""
+    for char in text:
+        if escape is True:
+            if char == "t":
+                out += "\t"
+            elif char == "n":
+                out += "\n"
+            elif char == "s":
+                out += " "
+            else:
+                out += char
+            escape = False
+            continue
+        if char == "\\":
+            escape = True
+        else:
+            out += char
+    return out
 
 
 def safe_remove(*filenames):

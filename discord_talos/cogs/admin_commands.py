@@ -422,8 +422,7 @@ class AdminCommands(dutils.TalosCog):
                     await ctx.send("Sorry, that option only accepts true or false values.")
                     return
             if isinstance(cur_val, str):
-                value = re.sub(r"(?<!\\)\\((?:\\\\)*)s", utils.space_replace, value)
-                value = re.sub(r"\\\\", r"\\", value)
+                value = utils.replace_escapes(value)
             setattr(guild_options, option, value)
             self.database.save_item(guild_options)
             await ctx.send(f"Option {option} set to `{value}`")
