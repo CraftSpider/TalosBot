@@ -2,6 +2,8 @@
 from functools import lru_cache
 import abc
 
+from . import utils
+
 
 class Document:
 
@@ -172,13 +174,25 @@ class Content(Node):
     def innertext(self):
         return self.value
 
+    @innertext.setter
+    def innertext(self, value):
+        self.value = value
+
     @property
     def innerhtml(self):
         return self.value
 
+    @innerhtml.setter
+    def innerhtml(self, value):
+        self.value = value
+
     @property
     def outerhtml(self):
         return self.value
+
+    @outerhtml.setter
+    def outerhtml(self, value):
+        self.value = value
 
     def add_child(self, el, pos=-1):
         raise TypeError("Content cannot have children")
@@ -206,17 +220,14 @@ class Element(Node):
         return self.outerhtml
 
     @property
-    @lru_cache()
     def classes(self):
         return self._attrs.get("class", "").split()
 
     @property
-    @lru_cache()
     def id(self):
         return self._attrs.get("id", None)
 
     @property
-    @lru_cache()
     def name(self):
         return self._attrs.get("name", None)
 
@@ -240,6 +251,13 @@ class Element(Node):
     def innertext(self):
         return "\n".join(map(lambda x: x.value, filter(lambda x: isinstance(x, Content), self.child_nodes)))
 
+    @innertext.setter
+    def innertext(self, value):
+        to_del = list(filter(lambda x: isinstance(x, Content), self.child_nodes))
+        for el in to_del:
+            self.remove_child(el)
+        self.add_child(Content(value))
+
     @property
     @lru_cache()
     def innerhtml(self):
@@ -247,6 +265,15 @@ class Element(Node):
         for child in self.child_nodes:
             out += child.outerhtml + "\n"
         return out
+
+    @innerhtml.setter
+    def innerhtml(self, value):
+        els = utils.to_nodes(value)
+        children = list(self.child_nodes)
+        for child in children:
+            self.remove_child(child)
+        for el in els:
+            self.add_child(el)
 
     @property
     @lru_cache()
@@ -262,6 +289,17 @@ class Element(Node):
                 out += spacing + line + "\n"
         out += f"</{self.tag}>"
         return out
+
+    @outerhtml.setter
+    def outerhtml(self, value):
+        els = utils.to_nodes(value)
+        new_self = els[0]
+        if not isinstance(new_self, Element):
+            raise TypeError("Cannot replace outerhtml of element with non-element")
+        self.tag = new_self.tag
+        self._attrs = new_self._attrs
+        self.child_nodes = new_self.child_nodes
+        self._pos_map = new_self._pos_map
 
     def get_attribute(self, attr, default=None):
         return self._attrs.get(attr, default)

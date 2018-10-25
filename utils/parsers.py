@@ -15,32 +15,30 @@ def attrs_to_dict(attrs):
     return out
 
 
-def to_dom(html):
-    gen = TreeGen()
-    gen.feed(html)
-    return gen.close()
-
-
 class TreeGen(parser.HTMLParser):
 
     def __init__(self):
         super().__init__()
-        self.head = None
+        self.heads = []
+        self.cur = None
+
+    def reset(self):
+        super().reset()
+        self.heads = []
         self.cur = None
 
     def close(self):
         super().close()
-        return el.Document(self.head)
+        return self.heads
 
     def error(self, message):
         print("Parser Error:", message)
 
     def handle_starttag(self, tag, attrs):
         element = el.Element(tag, attrs_to_dict(attrs))
-        if self.head is None:
-            self.head = element
-
-        if self.cur is not None:
+        if self.cur is None:
+            self.heads.append(element)
+        else:
             self.cur.add_child(element)
 
         if tag not in el.Element.SELF_CLOSING:
@@ -52,6 +50,11 @@ class TreeGen(parser.HTMLParser):
 
     def handle_data(self, data):
         data = data.strip()
-        if self.cur is not None and data:
-            content = el.Content(data)
+        if not data:
+            return
+
+        content = el.Content(data)
+        if self.cur is None:
+            self.heads.append(content)
+        else:
             self.cur.add_child(content)

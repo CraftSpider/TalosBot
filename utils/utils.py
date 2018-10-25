@@ -6,6 +6,8 @@
 import os
 import logging
 
+from . import parsers, element as el
+
 
 log = logging.getLogger("talos.utils")
 
@@ -150,3 +152,18 @@ def zero_pad(text, length):
             temp = "0" * (length - len(temp)) + temp
         out += temp
     return out
+
+
+gen = parsers.TreeGen()
+
+
+def to_dom(html):
+    gen.reset()
+    gen.feed(html)
+    return el.Document(gen.close()[0])
+
+
+def to_nodes(html):
+    gen.reset()
+    gen.feed(html)
+    return gen.close()
