@@ -16,7 +16,6 @@ class OAuth:
         }
         async with self.app.session.post(const.OAUTH + "validate", headers=headers) as response:
             validate = json.loads(await response.text())
-            print(validate)
 
     async def refresh(self):
         params = {
