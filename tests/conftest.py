@@ -6,8 +6,8 @@ import logging
 import io
 import _pytest.python as py
 
-import class_factories as dfacts
-import talos as dtalos
+import tests.class_factories as dfacts
+import discord_talos.talos as dtalos
 import utils as tutils
 
 
@@ -67,7 +67,7 @@ def testlos():
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
     testlos._connection = dfacts.get_state()
-    testlos.load_extensions()
+    testlos.load_extensions(testlos.startup_extensions)
     yield testlos
     loop = asyncio.get_event_loop()
     loop.run_until_complete(testlos.close())
@@ -78,7 +78,7 @@ def testlos_m(request):
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
     testlos._connection = dfacts.get_state()
-    testlos.load_extensions()
+    testlos.load_extensions(testlos.startup_extensions)
     request.module.testlos = testlos
     yield testlos
     loop = asyncio.get_event_loop()

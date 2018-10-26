@@ -15,4 +15,4 @@ matrix:
 
 services: mysql
 
-script: PYTHONPATH=./discord_talos python3 -m pytest tests
+script: PYTHONPATH=. python3 -m pytest tests

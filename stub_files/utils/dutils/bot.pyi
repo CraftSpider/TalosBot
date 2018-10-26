@@ -53,7 +53,6 @@ class TalosFormatter(commands.HelpFormatter):
 
     _paginator: Union[commands.Paginator, paginators.PaginatedEmbed] = ...
 
-    # noinspection PyMissingConstructor
     def __init__(self) -> None: ...
 
     @property

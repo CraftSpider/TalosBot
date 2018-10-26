@@ -2,9 +2,9 @@
 import asyncio
 import logging
 import pytest
-import talos
 
-import class_factories as dfacts
+import discord_talos.talos as talos
+import tests.class_factories as dfacts
 import discord.ext.commands as commands
 
 log = logging.getLogger("talos.tests")

@@ -19,7 +19,6 @@ def get_unique_member(base_class):
 
 
 def test_method_docs(testlos):
-    testlos.load_extensions()
     for name, member in inspect.getmembers(testlos, get_unique_member(testlos)):
         assert inspect.getdoc(member) is not None, "Talos method missing docstring"
     for cog in testlos.cogs:

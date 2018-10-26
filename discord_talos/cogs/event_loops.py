@@ -29,20 +29,19 @@ cl_parser = command_lang.ContextLessCL()
 class EventLoops(dutils.TalosCog):
     """Handles the Talos regulated events, time based loops. How did you even figure out this help page existed?"""
 
-    __slots__ = ('service', 'flags', 'last_guild_count', "__local_check")
+    __slots__ = ('service', 'last_guild_count', "__local_check")
 
     def __init__(self, bot):
         """Initialize the EventLoops cog. Takes in an instance of Talos to use while running."""
         super().__init__(bot)
         self.service = None
-        self.flags = None
         self.last_guild_count = 0
         self.setup_prompts()
 
     def setup_prompts(self):
         """Sets up for the prompts event"""
         # TODO: something else here. This is not where flags should be handled
-        self.flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+        # self.flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
         self.service = self.create_service()
         time = dt.datetime.now().replace(hour=self.bot.PROMPT_TIME, minute=0, second=0, microsecond=0)
         if time < dt.datetime.now():
@@ -72,7 +71,7 @@ class EventLoops(dutils.TalosCog):
         if not credentials or credentials.invalid:
             flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
             flow.user_agent = APPLICATION_NAME
-            credentials = tools.run_flow(flow, store, self.flags)
+            credentials = tools.run_flow(flow, store)
             print('Storing credentials to ' + credential_path)
         return credentials
 

@@ -38,6 +38,11 @@ class DevCommands(dutils.TalosCog):
     __local_check = dev_check
 
     def __getattr__(self, item):
+        """
+            Cog specific getattr to attempt resolving other cog names. Basically a dynamic alias system.
+        :param item: Name of the attribute to get
+        :return: Cog instance if one exists on the bot
+        """
         cog = self.bot.cogs.get(utils.to_camel_case(item))
         if cog is None:
             raise AttributeError

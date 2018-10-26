@@ -11,7 +11,7 @@ import pytest
 import logging
 
 import datetime as dt
-import class_factories as dfacts
+import tests.class_factories as dfacts
 import utils as tutils
 import utils.dutils as dutils
 
@@ -22,19 +22,17 @@ log = logging.getLogger("talos.tests")
 
 def test_extension_load(testlos):
 
-    testlos.load_extensions()
-
-    assert len(testlos.extensions) == len(testlos.STARTUP_EXTENSIONS), "Didn't load all extensions"
-    for extension in testlos.STARTUP_EXTENSIONS:
-        assert testlos.EXTENSION_DIRECTORY + "." + extension in testlos.extensions,\
+    assert len(testlos.extensions) == len(testlos.startup_extensions), "Didn't load all extensions"
+    for extension in testlos.startup_extensions:
+        assert testlos.extension_dir + "." + extension in testlos.extensions,\
             "Didn't load {} extension".format(extension)
 
     testlos.unload_extensions(["Commands", "AdminCommands", "DubDub"])
 
     testlos.unload_extensions()
     assert len(testlos.extensions) == 0, "Didn't unload all extensions"
-    for extension in testlos.STARTUP_EXTENSIONS:
-        assert testlos.EXTENSION_DIRECTORY + "." + extension not in testlos.extensions,\
+    for extension in testlos.startup_extensions:
+        assert testlos.extension_dir + "." + extension not in testlos.extensions,\
             "Didn't unload {} extension".format(extension)
 
     loop = asyncio.get_event_loop()
