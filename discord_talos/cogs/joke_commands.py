@@ -87,7 +87,7 @@ class JokeCommands(dutils.TalosCog):
             await ctx.send("**" + title + "**\n" + alt, file=img_data)
 
     @commands.command(description="SMBC: XKCD but philosophy and butt jokes")
-    async def smbc(self, ctx, comic: typing.Union[dutils.DateConverter["%Y-%d-%m"], int, str] = None):
+    async def smbc(self, ctx, comic: typing.Union[dutils.DateConverter["%Y-%m-%d"], int, str] = None):
         """Gets an SMBC from a given date, number, or id. Or, if not specified, it gets the most recent one. """\
             """Necessarily slightly slow to search by date due to technical limitations"""
         if isinstance(comic, int) and comic <= 0:
