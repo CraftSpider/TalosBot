@@ -328,13 +328,19 @@ class Commands(dutils.TalosCog):
         for element in stat_list:
             title = element.child_nodes[0].innertext
             number = element.child_nodes[1].innertext
-            stats[title_transform.get(title, title)] = int(number.replace(",", ""))
+            try:
+                stats[title_transform.get(title, title)] = int(number.replace(",", ""))
+            except ValueError:
+                stats[title_transform.get(title, title)] = number
         if self.bot.should_embed(ctx):
             # Construct Embed
             description = f"*Title:* {novel_title} *Genre:* {novel_genre}\n**Wordcount Details**\n"
             for stat in stats:
-                description += f"{stat}: {stats[stat]:,}\n"
-            if stats.get("Words Today") and stats.get("Target Avg"):
+                if isinstance(stats[stat], int):
+                    description += f"{stat}: {stats[stat]:,}\n"
+                else:
+                    description += f"{stat}: {stats[stat]}\n"
+            if isinstance(stats.get("Words Today"), int) and stats.get("Target Avg"):
                 description += f"Remaining Total: {stats['Target Avg'] - stats['Words Today']:,}\n"
             with dutils.PaginatedEmbed() as embed:
                 embed.title = "__Novel Details__"
