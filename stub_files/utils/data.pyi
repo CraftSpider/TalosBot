@@ -45,6 +45,16 @@ class SqlConvertable(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def sql_safe(self) -> Union[str, int]: ...
 
+
+class Table(Row):
+
+    __slots__ = ("catalog", "schema", "name", "type", "engine", "version", "row_format", "num_rows", "avg_row_len",
+                 "data_len", "max_data_len", "index_len", "data_free", "auto_increment", "create_time", "update_time",
+                 "check_time", "table_collation", "checksum", "create_options", "table_commentx")
+
+    def table_name(self) -> None: ...
+
+
 class TalosAdmin(Row):
 
     __slots__ = ("guild_id", "user_id")

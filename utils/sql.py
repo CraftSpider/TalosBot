@@ -344,20 +344,18 @@ class TalosDatabase:
         return self._cursor.fetchall()
 
     # Meta methods
+    
+    def get_tables(self):
+        query = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'talos_data'"
+        self._cursor.execute(query)
+        return [data.Table(x) for x in self._cursor]
 
-    def get_column_type(self, table_name, column_name):
-        """
-            Gets the type of a specific column
-        :param table_name: Name of the table containing the column
-        :param column_name: Name of the column to check
-        :return: The type of the given column, or None
-        """
-        query = "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s"
-        self._cursor.execute(query, [table_name, column_name])
-        result = self._cursor.fetchone()
-        if result is not None and isinstance(result, (list, tuple)):
-            result = result[0]
-        return result
+    def has_table(self, table):
+        self._cursor.execute(
+            "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'talos_data' AND TABLE_NAME = %s",
+            [table]
+        )
+        return self._cursor.fetchone() is not None
 
     def get_columns(self, table_name):
         """
@@ -372,12 +370,19 @@ class TalosDatabase:
             return None
         return result
 
-    def has_table(self, table):
-        self._cursor.execute(
-            "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'talos_data' AND TABLE_NAME = %s",
-            [table]
-        )
-        return self._cursor.fetchone() is not None
+    def get_column_type(self, table_name, column_name):
+        """
+            Gets the type of a specific column
+        :param table_name: Name of the table containing the column
+        :param column_name: Name of the column to check
+        :return: The type of the given column, or None
+        """
+        query = "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s"
+        self._cursor.execute(query, [table_name, column_name])
+        result = self._cursor.fetchone()
+        if result is not None and isinstance(result, (list, tuple)):
+            result = result[0]
+        return result
 
     # Generic methods
 
