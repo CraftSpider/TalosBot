@@ -5,7 +5,7 @@ import logging
 import re
 import json
 import datetime as dt
-import utils.parsers as parse
+import utils.utils as utils
 
 log = logging.getLogger("talos.utils")
 
@@ -41,7 +41,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :return: text of the requested page
         """
         async with self.get(url, **kwargs) as response:
-            return parse.to_dom(await response.text())
+            return utils.to_dom(await response.text())
 
     async def btn_get_names(self, gender="", usage="", number=1, surname=False):
         """
@@ -59,7 +59,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
                                                                                            number, gender, usage)
         async with self.get(url) as response:
             if response.status == 200:
-                doc = parse.to_dom(await response.text())
+                doc = utils.to_dom(await response.text())
                 return [x.innertext for x in doc.get_by_tag("name")]
             else:
                 log.warning("BTN returned {}".format(response.status))
@@ -76,7 +76,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             if response.status == 200:
                 if not str(response.url).startswith(self.NANO_URL + re.sub(r"/.*", "", url)):
                     return None
-                return parse.to_dom(await response.text())
+                return utils.to_dom(await response.text())
             elif response.status == 403:
                 response = await self.nano_login_client()
                 if response == 200:
@@ -140,7 +140,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             "commit": "Sign+in"
         }
         async with self.post(self.NANO_URL + "sign_in", data=params) as response:
-            doc = parse.to_dom(await response.text())
+            doc = utils.to_dom(await response.text())
             status = response.status
             sign_in = list(filter(lambda x: x.get_attribute("href") == "/sign_in", doc.get_by_tag("a")))
             if sign_in:
@@ -188,7 +188,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :return: List of elements
         """
         async with self.get(self.SMBC_URL + "comic/archive/") as response:
-            dom = parse.to_dom(await response.text())
+            dom = utils.to_dom(await response.text())
             selector = dom.get_by_name("comic")
             return selector.child_nodes[1:]
 
@@ -204,7 +204,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         else:
             url = self.SMBC_URL + f"comic/{smbc}"
         async with self.get(url, headers={"user-agent": ""}) as response:
-            dom = parse.to_dom(await response.text())
+            dom = utils.to_dom(await response.text())
             data["title"] = "-".join(dom.get_by_tag("title")[0].innertext.split("-")[1:]).strip()
             comic = dom.get_by_id("cc-comic")
             if comic is None:
