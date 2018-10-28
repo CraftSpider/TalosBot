@@ -89,6 +89,7 @@ class Commands(dutils.TalosCog):
               "win the lottery", "hack the mainframe", "save the world", "find atlantis", "get accepted to Hogwarts",
               "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship",
               "learn math", "write a lot", "do gymnastics"]
+    place_action = ["destroyed", "built", "explored", "crushed", "sold", "bought", "mapped", "designed", "watched"]
     phrases = [
         "Hello World!", "Hephaestus and Daedalus are my favorite people", "This is a footer message",
         "I can't wait to see East again", "I'm here to help", "My devs are all crazy", "The Absolute Love Of Styx",
@@ -182,9 +183,18 @@ class Commands(dutils.TalosCog):
         """Generates a writing prompt sentence. Currently only one sentence form, more coming."""
         adj = random.choice(self.adjective)
         noun = random.choice(self.noun)
-        goal = random.choice(self.goal)
-        obstacle = random.choice(self.obstacle)
-        await ctx.send(f"A story about a {adj} {noun} who must {goal} while {obstacle}.")
+        form = random.randint(0, 1)
+        out = None
+        if form == 0:
+            goal = random.choice(self.goal)
+            obstacle = random.choice(self.obstacle)
+            out = f"A story about a {adj} {noun} who must {goal} while {obstacle}."
+        elif form == 1:
+            place = random.choice(self.place)
+            place_action = random.choice(self.place_action)
+            place_adj = random.choice(self.place_adjective)
+            out = f"A story about a {place_adj} {place} being {place_action} by {adj} {noun}"
+        await ctx.send(out)
 
     @commands.command(aliases=["info"], description="Displays a short blurb about Talos")
     async def information(self, ctx):
@@ -261,7 +271,8 @@ class Commands(dutils.TalosCog):
                 gs = "gswin64c"
             else:
                 gs = "gs"
-            sp.call([gs, "-sDEVICE=pngalpha", "-dNOPAUSE", "-dBATCH", "-r300", f"-sOutputFile={filename}.png", f"{filename}.pdf"])
+            sp.call([gs, "-sDEVICE=pngalpha", "-dNOPAUSE", "-dBATCH", "-r300", f"-sOutputFile={filename}.png",
+                     f"{filename}.pdf"])
 
             await ctx.send(file=discord.File(f"{filename}.png"))
         except Exception as e:

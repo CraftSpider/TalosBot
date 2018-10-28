@@ -502,7 +502,7 @@
 			}
 		};
 
-		// Create methods that use the appenders variable in this scope
+		// Create methods that use the appender's variable in this scope
 		this.addAppender = function(appender) {
 			if (isNull) {
 				handleError("Logger.addAppender: you may not add an appender to the null logger");
@@ -1105,7 +1105,7 @@
 	};
 
 	XmlLayout.prototype.escapeCdata = function(str) {
-		return str.replace(/\]\]>/, "]]>]]&gt;<![CDATA[");
+		return str.replace(/]]>/, "]]>]]&gt;<![CDATA[");
 	};
 
 	XmlLayout.prototype.format = function(loggingEvent) {
@@ -1216,7 +1216,7 @@
 				}
 				formattedValue += prefix + "]";
 			} else if (valType !== "number" && valType !== "boolean") {
-				formattedValue = "\"" + escapeNewLines(toStr(val).replace(/\"/g, "\\\"")) + "\"";
+				formattedValue = "\"" + escapeNewLines(toStr(val).replace(/"/g, "\\\"")) + "\"";
 			} else {
 				formattedValue = val;
 			}
@@ -1658,7 +1658,7 @@
 	PatternLayout.prototype = new Layout();
 
 	PatternLayout.prototype.format = function(loggingEvent) {
-		var regex = /%(-?[0-9]+)?(\.?[0-9]+)?([acdfmMnpr%])(\{([^\}]+)\})?|([^%]+)/;
+		var regex = /%(-?[0-9]+)?(\.?[0-9]+)?([acdfmMnpr%])({([^}]+)})?|([^%]+)/;
 		var formattedString = "";
 		var result;
 		var searchString = this.pattern;

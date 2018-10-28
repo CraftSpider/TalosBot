@@ -4,7 +4,7 @@
     author: CraftSpider
 """
 
-from typing import List, Dict, Union, Tuple, Callable, Awaitable, Optional, Any
+from typing import List, Dict, Union, Tuple
 from discord_talos.talos import Talos
 import utils.command_lang as command_lang
 import logging

@@ -4,7 +4,6 @@
     author: CraftSpider
 """
 
-from typing import Match
 from discord_talos.talos import Talos
 import logging
 import utils

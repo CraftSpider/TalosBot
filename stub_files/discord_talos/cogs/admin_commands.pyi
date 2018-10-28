@@ -4,7 +4,7 @@
     author: CraftSpider
 """
 
-from typing import Match, Callable, Dict, Union
+from typing import Callable, Dict, Union
 from collections import defaultdict
 from discord_talos.talos import Talos
 import logging

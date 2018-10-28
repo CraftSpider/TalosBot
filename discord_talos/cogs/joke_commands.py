@@ -123,7 +123,8 @@ class JokeCommands(dutils.TalosCog):
                 embed.timestamp = data["time"]
             await ctx.send(embed=embed)
         else:
-            await ctx.send("**" + data["title"] + "**\n" + data["alt"], file=discord.File(data["img_data"], filename=data["filename"]))
+            await ctx.send("**" + data["title"] + "**\n" + data["alt"],
+                           file=discord.File(data["img_data"], filename=data["filename"]))
 
 
 def setup(bot):

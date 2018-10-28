@@ -8,8 +8,6 @@ import pathlib
 import httplib2
 import logging
 import random
-import argparse
-import utils
 import utils.command_lang as command_lang
 import utils.dutils as dutils
 import datetime as dt
@@ -19,7 +17,7 @@ from oauth2client.file import Storage
 
 # Google API values
 SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
-CLIENT_SECRET_FILE = 'client_secret.dat'
+CLIENT_SECRET_FILE = pathlib.Path(__file__).parent.parent / 'client_secret.dat'
 APPLICATION_NAME = 'TalosBot Prompt Reader'
 
 log = logging.getLogger("talos.events")

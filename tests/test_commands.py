@@ -25,10 +25,12 @@ def module_test_values():
 
     test_values = dict()
     test_values["guild"] = dfacts.make_guild("Test_Guild", owner=True)
+    i = 0
     for i in range(channels):
         test_values["channel_{}".format(i + 1)] = dfacts.make_text_channel("Channel_{}".format(i), test_values["guild"])
     for i in range(members):
         test_values["member_{}".format(i + 1)] = dfacts.make_member("Test", "{:04}".format(i), test_values["guild"])
+
     test_values["me"] = dfacts.make_member("Testlos", f"{i+1:04}", test_values["guild"],
                                            id_num=dfacts.get_state().user.id)
     test_values["dev"] = dfacts.make_member("Dev", f"{i+1:04}", test_values["guild"], id_num=talos.Talos.DEVS[0])

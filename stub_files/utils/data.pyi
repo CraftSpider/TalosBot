@@ -1,10 +1,10 @@
 
-from typing import Dict, List, Any, Tuple, Union, Iterable, Optional
+from typing import Dict, List, Any, Sequence, Union, Iterable, Optional
 import abc
 import datetime as dt
 import discord.ext.commands as commands
 
-SqlRow = Tuple[Union[str, int], ...]
+SqlRow = Sequence[Union[str, int], ...]
 
 class Row(metaclass=abc.ABCMeta):
 
@@ -206,7 +206,7 @@ class EventPeriod(SqlConvertable):
     def days(self) -> int: ...
 
     @property
-    def hours(self) -> int: ...
+    def ours(self) -> int: ...
 
     @property
     def minutes(self) -> int: ...

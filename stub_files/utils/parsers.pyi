@@ -1,9 +1,9 @@
 
-from typing import Tuple, Dict, List
-from utils.element import Document, Node
+from typing import Tuple, Dict, List, Iterable, Union
+from utils.element import Node
 import html.parser as parser
 
-def attrs_to_dict(attrs: List[Tuple[str, str]]) -> Dict[str, List[str]]: ...
+def attrs_to_dict(attrs: Iterable[Tuple[str, str]]) -> Dict[str, Union[str, List[str]]]: ...
 
 class TreeGen(parser.HTMLParser):
 

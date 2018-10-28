@@ -6,7 +6,6 @@ import datetime as dt
 import asyncio
 import discord
 import discord.ext.commands as commands
-import discord.ext.commands.view as dview
 
 
 test_state = None

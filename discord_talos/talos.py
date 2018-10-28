@@ -6,7 +6,6 @@
 """
 import discord
 import discord.ext.commands as commands
-import traceback
 import sys
 import logging
 import re
@@ -384,7 +383,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             await ctx.send(f"Malformed CommandLang syntax: {exception}")
         else:
             timestamp = int(dt.datetime.now().timestamp())
-            log.warning(f"Ignoring exception `{exception}` in command {ctx.command}. Reference ID: {timestamp}")
             try:
                 if ctx.author.id in self.DEVS:
                     await ctx.send(f"```{exception} | {timestamp}```")
@@ -395,7 +393,8 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
                     )
             except Exception as e:
                 log.error(e)
-            log.warning("".join(traceback.format_exception(type(exception), exception, exception.__traceback__)))
+            message = f"Ignoring exception `{exception}` in command {ctx.command}. Reference ID: {timestamp}"
+            utils.log_error(log, logging.WARNING, exception, message)
 
 
 cl_parser = command_lang.DiscordCL()

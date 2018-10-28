@@ -3,12 +3,15 @@
 """
 
 from typing import Dict, List
+import logging
 import discord.ext.commands as dcommands
 import utils.element as el
 
 
 fullwidth_transform: Dict[str, str] = ...
 tz_map: Dict[str, float] = ...
+
+def log_error(logger: logging.Logger, level: int, error: Exception, message: str = ...) -> None: ...
 
 def replace_escapes(text: str) -> str: ...
 

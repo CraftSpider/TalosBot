@@ -5,6 +5,7 @@
 """
 import os
 import logging
+import traceback
 
 from . import parsers, element as el
 
@@ -57,6 +58,13 @@ tz_map = {
 # Various helper method utilities
 
 
+def log_error(logger, level, error, message=""):
+    if message:
+        message += "\n"
+    errmsg = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+    logger.log(level, message + errmsg)
+
+
 def replace_escapes(text):
     escape = False
     out = ""
@@ -87,8 +95,8 @@ def safe_remove(*filenames):
     for filename in filenames:
         try:
             os.remove(filename)
-        except Exception:
-            pass
+        except Exception as e:
+            log_error(log, logging.DEBUG, e)
 
 
 def to_snake_case(text):

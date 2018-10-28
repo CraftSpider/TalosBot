@@ -13,7 +13,6 @@ import logging
 import asyncio
 import utils
 import utils.dutils as dutils
-import re
 
 log = logging.getLogger("talos.user")
 

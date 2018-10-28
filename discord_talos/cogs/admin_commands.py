@@ -9,7 +9,6 @@ import discord
 import logging
 import random
 import string
-import re
 import utils
 import utils.dutils as dutils
 from discord.ext import commands

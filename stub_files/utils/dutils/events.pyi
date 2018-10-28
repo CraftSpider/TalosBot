@@ -19,7 +19,7 @@ class EventLoop:
     start_time: Optional[dt.datetime]
     loop: asyncio.AbstractEventLoop
     name: str
-    parent: Union[utils.TalosCog, dutils.ExtendedBot]
+    parent: Union[dutils.TalosCog, dutils.ExtendedBot]
 
     @property
     def callback(self) -> Callable[[Any], Awaitable]: ...
