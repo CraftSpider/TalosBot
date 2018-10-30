@@ -2,8 +2,8 @@
 import re
 import logging
 import html.parser as hparser
-import Chatzy.utils as utils
-import Chatzy.errors as errors
+import chatzy.utils as utils
+import chatzy.errors as errors
 
 log = logging.getLogger("talos.parsers")
 

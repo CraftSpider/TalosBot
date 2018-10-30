@@ -11,11 +11,11 @@ from yarl import URL
 import re
 import time
 import multidict
-import Chatzy.utils as utils
+import chatzy.utils as utils
 import random
-from Chatzy.parsers import MessageParser, FormInputParser, ScriptVarsParser
-from Chatzy.errors import ChatzyError
-import Chatzy.taloslog as logging
+from chatzy.parsers import MessageParser, FormInputParser, ScriptVarsParser
+from chatzy.errors import ChatzyError
+import chatzy.taloslog as logging
 
 mainlog = logging.mainlog
 resplog = logging.resplog
@@ -323,7 +323,7 @@ class Talos:
     async def login(self, email, password):
         self.__email = email
         self.__password = password
-        self._login()
+        await self._login()
 
     async def _login(self):
         login_data = {  # TODO: Figure out which of these can be removed?
