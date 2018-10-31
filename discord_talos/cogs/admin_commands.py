@@ -46,7 +46,7 @@ def admin_check(self, ctx):
     admins = self.database.get_admins(ctx.guild.id)
     if len(admins) == 0 and ctx.author.guild_permissions.administrator or\
        ctx.author == ctx.guild.owner or\
-       next((x for x in admins if x.user_id == ctx.guild.id), None) is not None:
+       next((x for x in admins if x.user_id == ctx.author.id), None) is not None:
         return True
 
     perms = self.database.get_perm_rules(ctx.guild.id, command)
