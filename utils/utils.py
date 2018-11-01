@@ -6,6 +6,8 @@
 import os
 import logging
 import traceback
+import string
+import random
 
 from . import parsers, element as el
 
@@ -56,6 +58,41 @@ tz_map = {
 
 
 # Various helper method utilities
+
+
+def words_written(time, wpm):
+    """
+        Takes a length of time in seconds and an average wpm and returns a possible number of words written in that
+        timeframe.
+    :param time: Time in seconds
+    :param wpm: Average words per minute
+    :return: Number of words written
+    """
+    time = time * 60
+    return wpm * time + random.randint(-2 * time, 2 * time)
+
+
+def time_to_write(words, wpm):
+    """
+        Takes a number of words and an average wpm, and returns a possible number of seconds required to write that
+        many words.
+    :param words: Number of words
+    :param wpm: Average words per minute
+    :return: Time to write words
+    """
+    time = words / wpm
+    return int(time + random.randint(-2 * time * 30, 2 * time * 30))
+
+
+def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    """
+        Generates random strings for things that need keys. Allows variable size and character lists, if desired.
+        NOT CRYPTOGRAPHICALLY SECURE
+    :param size: Size of the key to generate
+    :param chars: Characters to choose from
+    :return: Key composed of given characters with a given size, in random order
+    """
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
 def log_error(logger, level, error, message=""):

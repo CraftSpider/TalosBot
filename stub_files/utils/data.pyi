@@ -20,7 +20,6 @@ class Row(metaclass=abc.ABCMeta):
 
     def to_row(self) -> List[str, int]: ...
 
-    @abc.abstractmethod
     def table_name(self) -> str: ...
 
 class MultiRow(metaclass=abc.ABCMeta):
@@ -52,8 +51,6 @@ class Table(Row):
                  "data_len", "max_data_len", "index_len", "data_free", "auto_increment", "create_time", "update_time",
                  "check_time", "table_collation", "checksum", "create_options", "table_commentx")
 
-    def table_name(self) -> None: ...
-
 
 class TalosAdmin(Row):
 
@@ -61,8 +58,7 @@ class TalosAdmin(Row):
 
     guild_id: int
     user_id: int
-
-    def table_name(self) -> str: ...
+    TABLE_NAME: str = ...
 
 class InvokedCommand(Row):
 
@@ -71,8 +67,7 @@ class InvokedCommand(Row):
     id: int
     command_name: str
     times_invoked: int
-
-    def table_name(self) -> str: ...
+    TABLE_NAME: str = ...
 
 class UserTitle(Row):
 
@@ -80,8 +75,7 @@ class UserTitle(Row):
 
     id: int
     title: str
-
-    def table_name(self) -> str: ...
+    TABLE_NAME: str = ...
 
 class TalosUser(MultiRow):
 
@@ -120,8 +114,7 @@ class UserProfile(Row):
     description: str
     commands_invoked: int
     title: str
-
-    def table_name(self) -> str: ...
+    TABLE_NAME: str = ...
 
 class UserOptions(Row):
 
@@ -130,10 +123,9 @@ class UserOptions(Row):
     id: int
     rich_embeds: bool
     prefix: str
+    TABLE_NAME: str = ...
 
     def __init__(self, row: SqlRow) -> None: ...
-
-    def table_name(self) -> str: ...
 
 class GuildOptions(Row):
 
@@ -154,10 +146,9 @@ class GuildOptions(Row):
     log_channel: str
     prefix: str
     timezone: str
+    TABLE_NAME: str = ...
 
     def __init__(self, row: SqlRow) -> None: ...
-
-    def table_name(self) -> str: ...
 
 class PermissionRule(Row):
 
@@ -169,14 +160,13 @@ class PermissionRule(Row):
     target: str
     priority: int
     allow: bool
+    TABLE_NAME: str = ...
 
     def __init__(self, row: SqlRow) -> None: ...
 
     def __lt__(self, other: Any) -> bool: ...
 
     def __gt__(self, other: Any) -> bool: ...
-
-    def table_name(self) -> str: ...
 
     def get_allowed(self, ctx: commands.Context) -> Optional[bool]: ...
 
@@ -187,8 +177,7 @@ class GuildCommand(Row):
     id: int
     name: str
     text: str
-
-    def table_name(self) -> str: ...
+    TABLE_NAME: str = ...
 
 class EventPeriod(SqlConvertable):
 
@@ -234,10 +223,9 @@ class GuildEvent(Row):
     last_active: int
     channel: str
     text: str
+    TABLE_NAME: str = ...
 
     def __init__(self, data: SqlRow) -> None: ...
-
-    def table_name(self) -> str: ...
 
 class Quote(Row):
 
@@ -247,5 +235,4 @@ class Quote(Row):
     id: int
     author: str
     quote: str
-
-    def table_name(self) -> str: ...
+    TABLE_NAME: str = ...

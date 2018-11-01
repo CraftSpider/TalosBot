@@ -40,8 +40,11 @@ class Row(metaclass=abc.ABCMeta):
             out.append(value)
         return out
 
-    @abc.abstractmethod
-    def table_name(self): ...
+    def table_name(self):
+        if hasattr(self, "TABLE_NAME"):
+            return self.TABLE_NAME
+        else:
+            return None
 
 
 class MultiRow(metaclass=abc.ABCMeta):
@@ -83,51 +86,51 @@ class Table(Row):
                  "data_len", "max_data_len", "index_len", "data_free", "auto_increment", "create_time", "update_time",
                  "check_time", "table_collation", "checksum", "create_options", "table_commentx")
 
-    def table_name(self):
-        return None
+
+class Column(Row):
+
+    __slots__ = ("catalog", "schema", "table_name", "name", "position", "default", "nullable", "type", "char_max_len",
+                 "bytes_max_len", "numeric_precision", "numeric_scale", "datetime_precision", "char_set_name",
+                 "collation_name", "column_type", "column_key", "extra", "privileges", "comment", "generation_expr",
+                 "srs_id")
 
 
 class TalosAdmin(Row):
 
     __slots__ = ("guild_id", "user_id")
 
-    def table_name(self):
-        return "admins"
+    TABLE_NAME = "admins"
 
 
 class InvokedCommand(Row):
 
     __slots__ = ("id", "command_name", "times_invoked")
 
-    def table_name(self):
-        return "invoked_commands"
+    TABLE_NAME = "invoked_commands"
 
 
 class UserTitle(Row):
 
     __slots__ = ("id", "title")
 
-    def table_name(self):
-        return "user_titles"
+    TABLE_NAME = "user_titles"
 
 
 class UserProfile(Row):
 
     __slots__ = ("id", "description", "commands_invoked", "title")
 
-    def table_name(self):
-        return "user_profiles"
+    TABLE_NAME = "user_profiles"
 
 
 class UserOptions(Row):
 
     __slots__ = ("id", "rich_embeds", "prefix")
 
+    TABLE_NAME = "user_options"
+
     def __init__(self, row):
         super().__init__(row, True)
-
-    def table_name(self):
-        return "user_options"
 
 
 class TalosUser(MultiRow):
@@ -179,16 +182,17 @@ class GuildOptions(Row):
     __slots__ = ("id", "rich_embeds", "fail_message", "pm_help", "any_color", "commands", "user_commands",
                  "joke_commands", "writing_prompts", "prompts_channel", "mod_log", "log_channel", "prefix", "timezone")
 
+    TABLE_NAME = "guild_options"
+
     def __init__(self, row):
         super().__init__(row, True)
-
-    def table_name(self):
-        return "guild_options"
 
 
 class PermissionRule(Row):
 
     __slots__ = ("id", "command", "perm_type", "target", "priority", "allow")
+
+    TABLE_NAME = "perm_rules"
 
     def __init__(self, row):
         super().__init__(row, True)
@@ -200,9 +204,6 @@ class PermissionRule(Row):
     def __gt__(self, other):
         if isinstance(other, PermissionRule):
             return self.priority > other.priority
-
-    def table_name(self):
-        return "perm_rules"
 
     def get_allowed(self, ctx, default=None):
         if self.perm_type == "user":
@@ -226,8 +227,7 @@ class GuildCommand(Row):
 
     __slots__ = ("id", "name", "text")
 
-    def table_name(self):
-        return "guild_commands"
+    TABLE_NAME = "guild_commands"
 
 
 class EventPeriod(SqlConvertable):
@@ -306,17 +306,15 @@ class GuildEvent(Row):
 
     __slots__ = ("id", "name", "period", "last_active", "channel", "text")
 
+    TABLE_NAME = "guild_events"
+
     def __init__(self, row):
         super().__init__(row, False)
         self.period = EventPeriod(self.period)
-
-    def table_name(self):
-        return "guild_events"
 
 
 class Quote(Row):
 
     __slots__ = ("guild_id", "id", "author", "quote")
 
-    def table_name(self):
-        return "quotes"
+    TABLE_NAME = "quotes"

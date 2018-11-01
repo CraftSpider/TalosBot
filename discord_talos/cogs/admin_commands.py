@@ -7,8 +7,6 @@
 import asyncio
 import discord
 import logging
-import random
-import string
 import utils
 import utils.dutils as dutils
 from discord.ext import commands
@@ -24,11 +22,6 @@ secure_keys = defaultdict(lambda: "")
 
 # Configure Logging
 log = logging.getLogger("talos.admin")
-
-
-def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    """Generates random strings for things that need keys. Allows variable size and character lists, if desired."""
-    return ''.join(random.choice(chars) for _ in range(size))
 
 
 #
@@ -102,14 +95,14 @@ class AdminCommands(dutils.TalosCog):
         if number != "all":
             number = int(number)
             if number >= 100 and (key is None or key != secure_keys[str(ctx.guild.id)]):
-                rand_key = key_generator()
+                rand_key = utils.key_generator()
                 secure_keys[str(ctx.guild.id)] = rand_key
                 await ctx.send(f"Are you sure? If so, re-invoke with {rand_key} on the end.")
             else:
                 await ctx.channel.purge(limit=number)
         else:
             if len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]:
-                rand_key = key_generator()
+                rand_key = utils.key_generator()
                 secure_keys[str(ctx.guild.id)] = rand_key
                 await ctx.send(f"Are you sure? If so, re-invoke with {rand_key} on the end.")
             elif key[0] == secure_keys[str(ctx.guild.id)]:

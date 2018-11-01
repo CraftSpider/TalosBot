@@ -61,41 +61,41 @@ class Commands(dutils.TalosCog):
     #
     #   Generator Strings
     #
-    noun = ["dog", "cat", "robot", "astronaut", "man", "woman", "person", "child", "giant", "elephant", "zebra",
+    noun = ("dog", "cat", "robot", "astronaut", "man", "woman", "person", "child", "giant", "elephant", "zebra",
             "animal", "box", "tree", "wizard", "mage", "swordsman", "soldier", "inventor", "doctor", "Talos", "East",
             "dinosaur", "insect", "nerd", "dancer", "singer", "actor", "barista", "acrobat", "gamer", "writer",
-            "dragon"]
-    adjective = ["happy", "sad", "athletic", "giant", "tiny", "smart", "silly", "unintelligent", "funny",
+            "dragon")
+    adjective = ("happy", "sad", "athletic", "giant", "tiny", "smart", "silly", "unintelligent", "funny",
                  "coffee-loving", "lazy", "spray-tanned", "angry", "disheveled", "annoying", "loud", "quiet", "shy",
-                 "extroverted", "jumpy", "ditzy", "strong", "weak", "smiley", "annoyed", "dextrous"]
-    goal = ["fly around the world", "go on a date", "win a race", "tell their crush how they feel",
+                 "extroverted", "jumpy", "ditzy", "strong", "weak", "smiley", "annoyed", "dextrous")
+    goal = ("fly around the world", "go on a date", "win a race", "tell their crush how they feel",
             "find their soulmate", "write a chatbot", "get into university", "graduate high school",
             "plant a hundred trees", "find their biological parents", "fill their bucket list", "find atlantis",
             "learn magic", "learn to paint", "drive a car", "pilot a spaceship", "leave Earth", "go home",
-            "redo elementary school", "not spill their beer"]
-    obstacle = ["learning to read", "fighting aliens", "saving the world", "doing algebra", "losing their hearing",
+            "redo elementary school", "not spill their beer")
+    obstacle = ("learning to read", "fighting aliens", "saving the world", "doing algebra", "losing their hearing",
                 "losing their sense of sight", "learning the language", "hacking the mainframe", "coming of age",
                 "the nuclear apocalypse is happening", "incredibly drunk", "drinking coffee", "surfing",
                 "spying on the bad guys", "smelling terrible", "having a bad hair day", "exploring the new planet",
-                "on the moon", "on Mars"]
-    place = ["pub", "spaceship", "museum", "office", "jungle", "forest", "coffee shop", "store", "market", "station",
+                "on the moon", "on Mars")
+    place = ("pub", "spaceship", "museum", "office", "jungle", "forest", "coffee shop", "store", "market", "station",
              "tree", "hut", "house", "bed", "bus", "car", "dormitory", "school", "desert", "ballroom", "cattery",
-             "shelter", "street"]
-    place_adjective = ["quiet", "loud", "crowded", "deserted", "bookish", "colorful", "balloon-filled", "book", "tree",
-                       "money", "video game", "cat", "dog", "busy", "apocalypse", "writer", "magic", "light", "dark",
-                       "robotic", "futuristic", "old-timey"]
-    action = ["learn to read", "jump up and down", "cry a lot", "cry a little", "smile", "spin in a circle",
+             "shelter", "street")
+    place_adjective = ("quiet", "loud", "crowded", "deserted", "bookish", "colorful", "balloon-filled", "book", "tree",
+                       "money", "video game", "cat", "dog", "busy", "apocalyptic", "writer", "magic", "light", "dark",
+                       "robotic", "futuristic", "old-timey")
+    action = ("learn to read", "jump up and down", "cry a lot", "cry a little", "smile", "spin in a circle",
               "get arrested", "dance to the music", "listen to your favourite song", "eat all the food",
               "win the lottery", "hack the mainframe", "save the world", "find atlantis", "get accepted to Hogwarts",
               "swim around", "defy gravity", "spy on the bad guys", "drive a car", "enter the rocket ship",
-              "learn math", "write a lot", "do gymnastics"]
-    place_action = ["destroyed", "built", "explored", "crushed", "sold", "bought", "mapped", "designed", "watched"]
-    phrases = [
+              "learn math", "write a lot", "do gymnastics")
+    place_action = ("destroyed", "built", "explored", "crushed", "sold", "bought", "mapped", "designed", "watched")
+    phrases = (
         "Hello World!", "Hephaestus and Daedalus are my favorite people", "This is a footer message",
         "I can't wait to see East again", "I'm here to help", "My devs are all crazy", "The Absolute Love Of Styx",
         "I'm just a glorified Turing Machine", "If I was a ship AI I might be called Stalo",
         "Terrific Artificial Logarithmic Operation Solver", "Top Amorous Locking Oversight Submersible",
-        "Terminator After Love Or Salt", "Technically A Literary Operations Sentinel"]
+        "Terminator After Love Or Salt", "Technically A Literary Operations Sentinel")
 
     def get_uptime_days(self):
         """Gets the amount of time Talos has been online in days, hours, minutes, and seconds. Returns a string."""
@@ -679,25 +679,11 @@ class Commands(dutils.TalosCog):
     async def version(self, ctx):
         """Version is formatted in [major-minor-patch] style."""
         await ctx.send(f"Version: {self.bot.VERSION}")
-    
-    @commands.command(aliases=["ww", "WW"], description="Have Talos help run a Word War")
+
+    @commands.group(aliases=["ww", "WW"], description="Have Talos help run a Word War", invoke_without_command=True)
     async def wordwar(self, ctx, length, start="", name="", wpm: int=30):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
-            """number of words in the given time period. `^wordwar cancel [id]` to cancel a running ww."""
-        if length.lower() == "cancel":
-            try:
-                start = int(start) - 1
-            except ValueError:
-                pass
-            try:
-                self.active_wws[start].cancel()
-            except KeyError:
-                await ctx.send("That WW either doesn't exist or is already over.")
-                return
-            del self.active_wws[start]
-            await ctx.send("WW cancelled!")
-            return
-
+            """number of words in the given time period. `^wordwar cancel [id]` to cancel a pending ww."""
         try:
             length = float(length)
         except ValueError:
@@ -728,8 +714,9 @@ class Commands(dutils.TalosCog):
         dif = dt.timedelta(0)
         if start is not "":
             now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
-            dif = abs(now - now.replace(hour=(now.hour if start > now.minute else (now.hour + 1) % 24), minute=start,
-                                        second=0))
+            if start <= now.minute:
+                now += dt.timedelta(hours=1)
+            dif = now.replace(minute=start, second=0) - now
 
         async def active_wordwar():
             ww_name = (wwid + 1 if isinstance(wwid, int) else wwid.rstrip("_"))
@@ -741,7 +728,7 @@ class Commands(dutils.TalosCog):
             await asyncio.sleep(length * 60)
 
             if wpm != 0:
-                words_written = int(wpm * length + random.randint(-2 * length, 2 * length))
+                words_written = utils.words_written(int(length * 60), wpm)
                 await ctx.send(f"I wrote {words_written} words for WW {ww_name}. How many did you write?")
             else:
                 await ctx.send(f"Word War {ww_name} is over. How did you do?")
@@ -755,6 +742,21 @@ class Commands(dutils.TalosCog):
             else:
                 wwid += 1
         self.active_wws[wwid] = task
+
+    @wordwar.command(name="cancel", description="Remove a pending WW from the queue")
+    async def _cancel(self, ctx, name):
+        """Cancels a pending ww with the given ID/name. Won't stop a WW already in progress."""
+        try:
+            name = int(name) - 1
+        except ValueError:
+            pass
+        try:
+            self.active_wws[name].cancel()
+        except KeyError:
+            await ctx.send("That WW either doesn't exist or is already over.")
+            return
+        del self.active_wws[name]
+        await ctx.send("WW cancelled!")
 
 
 def setup(bot):
