@@ -193,7 +193,7 @@ class Commands(dutils.TalosCog):
             place = random.choice(self.place)
             place_action = random.choice(self.place_action)
             place_adj = random.choice(self.place_adjective)
-            out = f"A story about a {place_adj} {place} being {place_action} by {adj} {noun}"
+            out = f"A story about a {place_adj} {place} being {place_action} by a {adj} {noun}"
         await ctx.send(out)
 
     @commands.command(aliases=["info"], description="Displays a short blurb about Talos")
