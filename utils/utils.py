@@ -68,8 +68,8 @@ def words_written(time, wpm):
     :param wpm: Average words per minute
     :return: Number of words written
     """
-    time = time * 60
-    return wpm * time + random.randint(-2 * time, 2 * time)
+    time = time / 60
+    return int(wpm * time + random.randint(-2 * time, 2 * time))
 
 
 def time_to_write(words, wpm):

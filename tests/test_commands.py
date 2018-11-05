@@ -197,6 +197,8 @@ async def test_commands():
     await call("^version")
     verify_message(f"Version: {testlos.VERSION}")
 
+
+async def test_ww():
     with pytest.raises(commands.MissingRequiredArgument):
         await call("^ww")
     await empty_queue()
@@ -232,6 +234,9 @@ async def test_joke_commands():
     verify_message("Hello there Test")
 
     await call("^xkcd")
+    verify_embed()
+
+    await call("^smbc")
     verify_embed()
 
 

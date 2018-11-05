@@ -14,6 +14,7 @@ import utils
 import utils.dutils as dutils
 import html
 import os
+import typing
 import subprocess as sp
 import datetime as dt
 from collections import defaultdict
@@ -681,7 +682,7 @@ class Commands(dutils.TalosCog):
         await ctx.send(f"Version: {self.bot.VERSION}")
 
     @commands.group(aliases=["ww", "WW"], description="Have Talos help run a Word War", invoke_without_command=True)
-    async def wordwar(self, ctx, length, start="", name="", wpm: int=30):
+    async def wordwar(self, ctx, length, start=None, wpm: typing.Optional[int]=30, *, name=""):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
             """number of words in the given time period. `^wordwar cancel [id]` to cancel a pending ww."""
         try:
@@ -696,31 +697,30 @@ class Commands(dutils.TalosCog):
             await ctx.send("Please choose a non-negative WPM.")
             return
 
-        if start:
+        if start is not None:
             try:
                 if start[0] == ":":
                     start = int(start[1:])
-                elif start[0].isnumeric():
-                    start = int(start)
                 else:
-                    raise ValueError
+                    start = int(start)
             except ValueError:
                 await ctx.send("Start time format broken. Starting now.")
-                start = ""
+                start = None
             if start != "" and (start > 59 or start < 0):
                 await ctx.send("Please specify a start time in the range of 0 to 59.")
                 return
 
         dif = dt.timedelta(0)
-        if start is not "":
+        if start is not None:
             now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
+            hour = now
             if start <= now.minute:
-                now += dt.timedelta(hours=1)
-            dif = now.replace(minute=start, second=0) - now
+                hour = now + dt.timedelta(hours=1)
+            dif = hour.replace(minute=start, second=0) - now
 
         async def active_wordwar():
             ww_name = (wwid + 1 if isinstance(wwid, int) else wwid.rstrip("_"))
-            if start is not "":
+            if start is not None:
                 await ctx.send(f"Starting WW {ww_name} at :{start:02}")
                 await asyncio.sleep(dif.total_seconds())
             minute = 'minutes' if length != 1 else 'minute'
