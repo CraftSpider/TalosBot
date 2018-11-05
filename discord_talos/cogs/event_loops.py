@@ -38,8 +38,6 @@ class EventLoops(dutils.TalosCog):
 
     def setup_prompts(self):
         """Sets up for the prompts event"""
-        # TODO: something else here. This is not where flags should be handled
-        # self.flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
         self.service = self.create_service()
         time = dt.datetime.now().replace(hour=self.bot.PROMPT_TIME, minute=0, second=0, microsecond=0)
         if time < dt.datetime.now():

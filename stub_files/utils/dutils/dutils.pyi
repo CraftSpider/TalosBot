@@ -1,0 +1,16 @@
+
+from typing import Dict, Pattern
+
+
+mention_patterns: Dict[str, Pattern]
+
+
+def is_mention(text: str) -> bool: ...
+
+def is_user_mention(text: str) -> bool: ...
+
+def is_role_mention(text: str) -> bool: ...
+
+def is_channel_mention(text: str) -> bool: ...
+
+def get_id(mention: str) -> int: ...

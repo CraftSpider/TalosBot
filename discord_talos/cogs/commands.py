@@ -380,12 +380,12 @@ class Commands(dutils.TalosCog):
         # Get member info
         member_age = doc.get_by_class("member_for")[0].innertext
 
-        # TODO: support bios with multiple internal elements
         author_bio = ""
         try:
             bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
                                     doc.get_by_class("panel-heading")))
-            author_bio = bio_panel.parent.next_child(bio_panel).first_child.innertext
+            for element in bio_panel.parent.next_child(bio_panel).child_nodes:
+                author_bio += element.innertext + "\n"
             if len(member_age) + len(author_bio) > 2048:
                 author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
             author_bio = author_bio.strip()

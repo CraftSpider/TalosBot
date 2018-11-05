@@ -621,6 +621,10 @@ class AdminCommands(dutils.TalosCog):
     @quote.command(name="add", aliases=["create"], description="Add a new quote to the list")
     async def _q_add(self, ctx, author, *, quote):
         """Adds a new quote to this guild's list of quotes"""
+        if dutils.is_user_mention(author):
+            member = ctx.guild.get_member(dutils.get_id(author))
+            if member is not None:
+                author = str(member)
         quote = utils.Quote([ctx.guild.id, None, author, quote])
         self.database.save_item(quote)
         await ctx.send(f"Quote from {author} added!")
