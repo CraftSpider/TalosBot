@@ -100,7 +100,13 @@ class PaginatedEmbed(Embed):
         :return: Length of the current embed given pages
         """
         # Base size
-        size = len(self.title) + len(self.description) + len(self.author.name)
+        size = 0
+        if self.title:
+            size += len(self.title)
+        if self.description:
+            size += len(self.description)
+        if self.author.name:
+            size += len(self.author.name)
         # Add size for each field
         for field in self._fields:
             name = len(field["name"])
@@ -112,11 +118,11 @@ class PaginatedEmbed(Embed):
         # Calculate the size of things that are repeated on each page.
         pages = self.num_pages
         for i in range(pages):
-            if self.repeat_title:
+            if self.repeat_title and self.title:
                 size += len(self.title)
-            if self.repeat_desc:
+            if self.repeat_desc and self.description:
                 size += len(self.description)
-            if self.repeat_author:
+            if self.repeat_author and self.author.name:
                 size += len(self.author.name)
             size += len(self.footer.text.format(i, pages))
             if self.timestamp != discord.Embed.Empty:

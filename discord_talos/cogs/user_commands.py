@@ -21,22 +21,14 @@ class UserCommands(dutils.TalosCog):
     """These are commands that effect specific users. May change your roles in a guild, or alter your Talos-specific"""\
         """ settings and info."""
 
-    @commands.command(aliases=["color"], signature="colour <hex-code>", description="Set your role colour")
+    @commands.group(aliases=["color"], signature="colour <hex-code>", description="Set your role colour",
+                    invoke_without_command=True)
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
     async def colour(self, ctx, *, colour: typing.Union[commands.ColourConverter, str]):
         """Changes the User's colour, if Talos has role permissions. Input may be a role with a name fitting the """\
             """"pattern `<TALOS COLOR> name`, or if the guild has the `any color` option enabled, input may be a """\
-            """ hexadecimal colour value prefixed by `#` or the word 'clear' to remove all Talos colours."""
-        # If we want to remove Talos Colour
-        if colour == "clear":
-            for role in ctx.author.roles:
-                if role.name.startswith("<TALOS COLOR>") or role.name.startswith("LOPEZ COLOR:"):
-                    await ctx.author.remove_roles(role)
-                    if not len(role.members):
-                        await role.delete()
-            await ctx.send("Talos colour removed")
-            return
+            """ hexadecimal colour value prefixed by `#` or `0x`. Use the word 'clear' to remove your Talos colour."""
 
         for role in ctx.author.roles:
             if role.name.startswith("<TALOS COLOR>") or role.name.startswith("LOPEZ COLOR:"):
@@ -80,6 +72,28 @@ class UserCommands(dutils.TalosCog):
             await ctx.author.add_roles(colour_role)
 
         await ctx.send(f"{ctx.message.author.display_name}'s colour changed to {colour}!")
+
+    @colour.command(name="clear", description="Remove all colour roles")
+    async def _clear(self, ctx):
+        """Removes your Talos colour role, and if it's unnamed and you're the only one using it, deletes the role."""
+        for role in ctx.author.roles:
+            if role.name.startswith("<TALOS COLOR>") or role.name.startswith("LOPEZ COLOR:"):
+                await ctx.author.remove_roles(role)
+                if not len(role.members):
+                    await role.delete()
+        await ctx.send("Talos colour removed")
+
+    @colour.command(name="list", description="List named colour roles")
+    async def _list(self, ctx):
+        """Posts a list of all the named colour roles, if there are any."""
+        result = []
+        for role in ctx.guild.roles:
+            if role.name.startswith("<TALOS COLOR>") and not role.name.endswith("<TALOS COLOR>"):
+                result.append(role.name[14:])
+        if result:
+            await ctx.send("Named Colours:\n" + "\n".join(result))
+        else:
+            await ctx.send("No named colour roles present")
 
     @commands.command(description="Display current guild perms")
     @commands.guild_only()

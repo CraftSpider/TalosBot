@@ -618,6 +618,9 @@ class Commands(dutils.TalosCog):
         if result is "":
             await ctx.send("Minimum first value is 1")
             return
+        elif len(result) > 2000:
+            await ctx.send("Result too long. Try running command more than once with fewer rolls.")
+            return
         await ctx.send(result)
 
     @commands.command(description="It's time to get a watch")
