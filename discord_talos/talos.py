@@ -529,8 +529,10 @@ def main():
 
     try:
         talos.run(bot_token)
+    except Exception as e:
+        utils.log_error(log, logging.FATAL, e, "Talos shutting down due to unexpected error:")
     finally:
-        print("Talos Exiting")
+        log.info("Talos Exiting")
     return 0
 
 

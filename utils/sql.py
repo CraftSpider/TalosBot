@@ -386,6 +386,32 @@ class TalosDatabase:
 
     # Generic methods
 
+    def get_item(self, type, *, order=None, default=None, **kwargs):
+        conditions = " AND ".join(f"{x} = %s" for x in kwargs)
+        query = f"SELECT * FROM {self._schema}.{type.table_name()}"
+        if conditions:
+            query += " WHERE " + conditions
+        if order:
+            query += f" ORDER BY {order}"
+        query += " LIMIT 1"
+        self._cursor.execute(query, kwargs.values())
+        result = self._cursor.fetchone()
+        if result is None:
+            return default
+        return type(result)
+
+    def get_items(self, type, *, limit=0, order=None, **kwargs):
+        conditions = " AND ".join(f"{x} = %s" for x in kwargs)
+        query = f"SELECT * FROM {self._schema}.{type.table_name()}"
+        if conditions:
+            query += " WHERE " + conditions
+        if order:
+            query += f" ORDER BY {order}"
+        if limit:
+            query += f" LIMIT {limit}"
+        self._cursor.execute(query, kwargs.values())
+        return [type(x) for x in self._cursor]
+
     def save_item(self, item):
         """
             Save any TalosDatabase compatible object to the database, inserting or updating that row.
@@ -436,14 +462,6 @@ class TalosDatabase:
             for row in item:
                 self.remove_item(row, general)
 
-    def get_items(self, type, **kwargs):
-        conditions = " AND ".join(f"{x} = %s" for x in kwargs)
-        query = f"SELECT * FROM {self._schema}.{type.table_name()}"
-        if conditions:
-            query += " WHERE " + conditions
-        self._cursor.execute(query, kwargs.values())
-        return [type(x) for x in self._cursor]
-
     # Guild option methods
 
     def get_guild_defaults(self):
@@ -451,13 +469,8 @@ class TalosDatabase:
             Get all default guild option values
         :return: List of guild option default values
         """
-        query = f"SELECT * FROM {self._schema}.guild_options WHERE guild_id = -1"
-        self._cursor.execute(query)
-        result = self._cursor.fetchone()
-        if result:
-            return data.GuildOptions(result)
-        else:
-            return data.GuildOptions(talos_tables["guild_options"]["defaults"][0])
+        default = data.GuildOptions(talos_tables["guild_options"]["defaults"][0])
+        return self.get_item(data.GuildOptions, default=default, guild_id=-1)
 
     def get_guild_options(self, guild_id):
         """
@@ -488,9 +501,6 @@ class TalosDatabase:
         :return: List of all options of all guilds
         """
         return self.get_items(data.GuildOptions)
-        query = f"SELECT * FROM {self._schema}.guild_options"
-        self._cursor.execute(query)
-        return [data.GuildOptions(x) for x in self._cursor]
 
     # User option methods
 
@@ -499,13 +509,8 @@ class TalosDatabase:
             Get all default user option values
         :return: List of user option default values
         """
-        query = f"SELECT * FROM {self._schema}.user_options WHERE user_id = -1"
-        self._cursor.execute(query)
-        result = self._cursor.fetchone()
-        if result:
-            return data.UserOptions(result)
-        else:
-            return data.UserOptions(talos_tables["user_options"]["defaults"][0])
+        default = data.UserOptions(talos_tables["user_options"]["defaults"][0])
+        return self.get_item(data.UserOptions, default=default, user_id=-1)
 
     def get_user_options(self, user_id):
         """
@@ -536,9 +541,7 @@ class TalosDatabase:
             Get all options for all users.
         :return: List of all options of all users
         """
-        query = f"SELECT * FROM {self._schema}.user_options"
-        self._cursor.execute(query)
-        return [data.UserOptions(x) for x in self._cursor]
+        return self.get_items(data.UserOptions)
 
     # User profile methods
 
@@ -558,24 +561,13 @@ class TalosDatabase:
         :param user_id: id of the user to get profile of
         :return: TalosUser object containing the User Data or None
         """
-        user_data = {}
-        query = f"SELECT * FROM {self._schema}.user_profiles WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-        profile_response = self._cursor.fetchone()
-        if profile_response is None:
-            return None
-        user_data["profile"] = data.UserProfile(profile_response)
+        user_data = dict()
+        user_data["profile"] = self.get_item(data.UserProfile, user_id=user_id)
         if user_data.get("profile") is None:
             return None
 
-        query = f"SELECT * FROM {self._schema}.invoked_commands WHERE user_id = %s ORDER BY times_invoked DESC"
-        self._cursor.execute(query, [user_id])
-        user_data["invoked"] = [data.InvokedCommand(x) for x in self._cursor]
-
-        query = f"SELECT * FROM {self._schema}.user_titles WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-        user_data["titles"] = [data.UserTitle(x) for x in self._cursor]
-
+        user_data["invoked"] = self.get_items(data.InvokedCommand, order="times_invoked", user_id=user_id)
+        user_data["titles"] = self.get_items(data.UserTitle, user_id=user_id)
         user_data["options"] = self.get_user_options(user_id)
 
         return data.TalosUser(user_data)
@@ -601,9 +593,7 @@ class TalosDatabase:
             Get all admins in all servers
         :return: list of all admins and guilds they are admin for.
         """
-        query = f"SELECT * FROM {self._schema}.admins"
-        self._cursor.execute(query)
-        return [data.TalosAdmin(x) for x in self._cursor]
+        return self.get_items(data.TalosAdmin)
 
     def get_admins(self, guild_id):
         """
@@ -611,9 +601,7 @@ class TalosDatabase:
         :param guild_id: id of the guild to get the admin list for
         :return: list of admins for input guild
         """
-        query = f"SELECT * FROM {self._schema}.admins WHERE guild_id = %s"
-        self._cursor.execute(query, [guild_id])
-        return [data.TalosAdmin(x) for x in self._cursor]
+        return self.get_items(data.TalosAdmin, guild_id=guild_id)
 
     # Perms methods
 
@@ -626,11 +614,7 @@ class TalosDatabase:
         :param target: the target of the permission rule
         :return: the priority and whether to allow this rule if it exists, or None
         """
-        query = f"SELECT * FROM {self._schema}.perm_rules WHERE guild_id = %s AND command = %s AND perm_type = %s AND"\
-                " target = %s"
-        self._cursor.execute(query, [guild_id, command, perm_type, target])
-        response = self._cursor.fetchone()
-        return data.PermissionRule(response)
+        return self.get_item(data.PermissionRule, guild_id=guild_id, command=command, perm_type=perm_type, target=target)
 
     def get_perm_rules(self, guild_id=-1, command=None, perm_type=None, target=None):
         """
@@ -641,34 +625,21 @@ class TalosDatabase:
         :param target: target of permissions to get. Any target if none.
         :return: List of rules fitting the context.
         """
-        query = f"SELECT * FROM {self._schema}.perm_rules WHERE guild_id = %s"
-        args = []
-        if command or perm_type or target:
-            query += " AND "
+        args = {}
         if command:
-            query += "command = %s"
-            args.append(command)
-            if perm_type or target:
-                query += " AND "
+            args["command"] = command
         if perm_type:
-            query += "perm_type = %s"
-            args.append(perm_type)
-            if target:
-                query += " AND "
+            args["perm_type"] = perm_type
         if target:
-            query += "target = %s"
-            args.append(target)
-        self._cursor.execute(query, [guild_id] + args)
-        return [data.PermissionRule(x) for x in self._cursor]
+            args["target"] = target
+        return self.get_items(data.PermissionRule, guild_id=guild_id, **args)
 
     def get_all_perm_rules(self):
         """
             Get all permission rules in the database
         :return: List of all permission rules
         """
-        query = f"SELECT * FROM {self._schema}.perm_rules"
-        self._cursor.execute(query)
-        return [data.PermissionRule(x) for x in self._cursor]
+        return self.get_items(data.PermissionRule)
 
     # Custom guild commands
 
@@ -679,12 +650,7 @@ class TalosDatabase:
         :param name: name of the command
         :return: text of the command or None
         """
-        query = f"SELECT * FROM {self._schema}.guild_commands WHERE guild_id = %s and name = %s"
-        self._cursor.execute(query, [guild_id, name])
-        result = self._cursor.fetchone()
-        if result:
-            result = data.GuildCommand(result)
-        return result
+        return self.get_item(data.GuildCommand, guild_id=guild_id, name=name)
 
     def get_guild_commands(self, guild_id):
         """
@@ -692,9 +658,7 @@ class TalosDatabase:
         :param guild_id: id of the guild
         :return: List of commands
         """
-        query = f"SELECT * FROM {self._schema}.guild_commands WHERE guild_id = %s"
-        self._cursor.execute(query, [guild_id])
-        return [data.GuildCommand(x) for x in self._cursor]
+        return self.get_items(data.GuildCommand, guild_id=guild_id)
 
     # Custom guild events
 
@@ -705,12 +669,7 @@ class TalosDatabase:
         :param name: name of the event
         :return: custom guild event
         """
-        query = f"SELECT * FROM {self._schema}.guild_events WHERE guild_id = %s AND name = %s"
-        self._cursor.execute(query, [guild_id, name])
-        result = self._cursor.fetchone()
-        if result:
-            result = data.GuildEvent(result)
-        return result
+        return self.get_item(data.GuildEvent, guild_id=guild_id, name=name)
 
     def get_guild_events(self, guild_id):
         """
@@ -718,10 +677,7 @@ class TalosDatabase:
         :param guild_id: id of the guild
         :return: list of custom guild events
         """
-        query = f"SELECT * FROM {self._schema}.guild_events WHERE guild_id = %s"
-        self._cursor.execute(query, [guild_id])
-        results = self._cursor.fetchall()
-        return [data.GuildEvent(x) for x in results]
+        return self.get_items(data.GuildEvent, guild_id=guild_id)
 
     # Quote methods
 
@@ -732,12 +688,7 @@ class TalosDatabase:
         :param qid: ID of the quote
         :return: Quote object, assuming quote exists
         """
-        query = f"SELECT * FROM {self._schema}.quotes WHERE guild_id = %s AND id = %s"
-        self._cursor.execute(query, [guild_id, qid])
-        row = self._cursor.fetchone()
-        if row is None:
-            return row
-        return data.Quote(row)
+        return self.get_item(data.Quote, guild_id=guild_id, id=qid)
 
     def get_random_quote(self, guild_id):
         """
@@ -745,12 +696,7 @@ class TalosDatabase:
         :param guild_id: Guild the quote should be from
         :return: Quote object
         """
-        query = f"SELECT * FROM {self._schema}.quotes WHERE guild_id = %s ORDER BY RAND() LIMIT 1"
-        self._cursor.execute(query, [guild_id])
-        row = self._cursor.fetchone()
-        if row is None:
-            return row
-        return data.Quote(row)
+        return self.get_item(data.Quote, order="RAND()", guild_id=guild_id)
 
     # Uptime methods
 

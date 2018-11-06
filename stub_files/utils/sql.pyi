@@ -5,6 +5,7 @@ import mysql.connector.cursor_cext as cursor_cext
 import mysql.connector.abstracts as mysql_abstracts
 
 T = TypeVar("T", bound=Row)
+V = TypeVar("V")
 
 levels: Dict[str, int]
 
@@ -87,11 +88,13 @@ class TalosDatabase:
 
     # Generic methods
 
+    def get_item(self, type: Type[T], *, order: str = ..., default: V = ..., **kwargs: Any) -> Union[T, V]: ...
+
+    def get_items(self, type: Type[T], *, limit: int = ..., order: str = ..., **kwargs: Any) -> List[T]: ...
+
     def save_item(self, item: Union[type(Row), type(MultiRow)]) -> None: ...
 
     def remove_item(self, item: Union[type(Row), type(MultiRow)], general: bool = ...) -> None: ...
-
-    def get_items(self, type: Type[T], **kwargs: Any) -> List[T]: ...
 
     # Guild option methods
 
