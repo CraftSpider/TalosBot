@@ -622,7 +622,7 @@ class Commands(dutils.TalosCog):
         total = sum(results)
         output = ""
         if rolls > 1:
-            output += f"Total: {total}\nIndividual rolls: "
+            output += f"Total: {total}\nIndividual Rolls: "
         else:
             output += "Result: "
         output += ', '.join(map(str, results))

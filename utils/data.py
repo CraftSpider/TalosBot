@@ -43,9 +43,10 @@ class Row(metaclass=abc.ABCMeta):
             out.append(value)
         return out
 
-    def table_name(self):
-        if hasattr(self, "TABLE_NAME"):
-            return self.TABLE_NAME
+    @classmethod
+    def table_name(cls):
+        if hasattr(cls, "TABLE_NAME"):
+            return cls.TABLE_NAME
         else:
             return None
 

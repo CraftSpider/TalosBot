@@ -1,8 +1,10 @@
 
-from typing import Tuple, Dict, List, Union, Optional, Any, Iterable
+from typing import Tuple, Dict, List, Union, Optional, Any, Iterable, TypeVar, Type
 from utils.data import TalosAdmin, Row, TalosUser, GuildOptions, UserOptions, PermissionRule, GuildEvent, MultiRow, GuildCommand
 import mysql.connector.cursor_cext as cursor_cext
 import mysql.connector.abstracts as mysql_abstracts
+
+T = TypeVar("T", bound=Row)
 
 levels: Dict[str, int]
 
@@ -88,6 +90,8 @@ class TalosDatabase:
     def save_item(self, item: Union[type(Row), type(MultiRow)]) -> None: ...
 
     def remove_item(self, item: Union[type(Row), type(MultiRow)], general: bool = ...) -> None: ...
+
+    def get_items(self, type: Type[T], **kwargs: Any) -> List[T]: ...
 
     # Guild option methods
 

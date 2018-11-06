@@ -183,7 +183,9 @@ async def test_commands():
     await call("^roll 1d0")
     verify_message("Minimum second value is 1")
     await call("^roll 1d1")
-    verify_message("1")
+    verify_message("Result: 1")
+    await call("^roll 2d1")
+    verify_message("Total: 2\nIndividual Rolls: 1, 1")
 
     await call("^time")
     verify_message()
