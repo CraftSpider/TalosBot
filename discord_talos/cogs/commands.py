@@ -610,18 +610,27 @@ class Commands(dutils.TalosCog):
         except ValueError:
             await ctx.send("Format has to be in NdN!")
             return
-        try:
-            result = ', '.join(str(random.randint(1, limit)) for _ in range(rolls))
-        except ValueError:
-            await ctx.send("Minimum second value is 1")
-            return
-        if result is "":
+
+        if rolls < 1:
             await ctx.send("Minimum first value is 1")
             return
-        elif len(result) > 2000:
-            await ctx.send("Result too long. Try running command more than once with fewer rolls.")
+        elif limit < 1:
+            await ctx.send("Minimum second value is 1")
             return
-        await ctx.send(result)
+
+        results = [random.randint(1, limit) for _ in range(rolls)]
+        total = sum(results)
+        output = ""
+        if rolls > 1:
+            output += f"Total: {total}\nIndividual rolls: "
+        else:
+            output += "Result: "
+        output += ', '.join(map(str, results))
+
+        if len(output) > 2000:
+            await ctx.send("Result too long. Try running command more than once with fewer rolls.")
+        else:
+            await ctx.send(output)
 
     @commands.command(description="It's time to get a watch")
     async def time(self, ctx, timezone=None):

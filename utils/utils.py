@@ -177,6 +177,8 @@ def zero_pad(text, length):
     :param length: length to pad numbers to
     :return: padded string
     """
+    if length < 0:
+        raise ValueError("Cannot pad numbers to a negative size")
     out = ""
     temp = ""
     numeric = False

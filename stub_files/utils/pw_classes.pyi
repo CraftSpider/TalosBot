@@ -1,5 +1,5 @@
 
-from typing import List, Union, Any
+from typing import List, Union, Any, Optional
 import datetime as dt
 import discord
 
@@ -39,7 +39,7 @@ class PWMember:
 
     def __eq__(self, other: Any) -> bool: ...
 
-    def get_len(self) -> dt.timedelta: ...
+    def get_len(self) -> Optional[dt.timedelta]: ...
 
     def get_started(self) -> bool: ...
 

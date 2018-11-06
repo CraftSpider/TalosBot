@@ -213,11 +213,11 @@ async def test_ww():
 
 
 async def test_admin_commands():
-    pass  # TODO: Admin Command Testing
+    raise pytest.skip("Admin Command testing not yet implemented")  # TODO
 
 
 async def test_dev_commands():
-    pass  # TODO: Dev Command Testing
+    raise pytest.skip("Dev Command testing not yet implemented")  # TODO
 
 
 async def test_joke_commands():
@@ -241,4 +241,4 @@ async def test_joke_commands():
 
 
 async def test_user_commands():
-    pass  # TODO: User Command Testing
+    raise pytest.skip("User Command testing not yet implemented")  # TODO

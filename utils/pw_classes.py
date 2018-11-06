@@ -91,7 +91,7 @@ class PWMember:
     def get_len(self):
         """Get the length of time this member was in the PW"""
         if self.end is None or self.start is None:
-            return dt.timedelta(seconds=-1)
+            return None
         else:
             return self.end - self.start
 

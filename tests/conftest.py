@@ -69,7 +69,7 @@ def testlos():
     testlos._connection = dfacts.get_state()
     testlos.load_extensions(testlos.startup_extensions)
     yield testlos
-    loop = asyncio.get_event_loop()
+    loop = testlos.loop
     loop.run_until_complete(testlos.close())
 
 

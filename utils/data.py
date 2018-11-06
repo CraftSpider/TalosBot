@@ -8,6 +8,9 @@ class Row(metaclass=abc.ABCMeta):
     __slots__ = ()
 
     def __init__(self, row, conv_bool=False):
+        if self.__class__ == Row:
+            raise TypeError("Can't instantiate a non-subclassed row")
+
         for index in range(len(self.__slots__)):
             slot = self.__slots__[index]
             value = row[index]

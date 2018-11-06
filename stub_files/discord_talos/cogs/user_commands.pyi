@@ -30,7 +30,8 @@ class UserCommands(dutils.TalosCog):
 
     async def profile(self, ctx: commands.Context, user: discord.User=None) -> None: ...
 
-    user: commands.Group = ...
+    @commands.group()
+    async def user(self, ctx: commands.Context) -> None: ...
 
     class UserCtx(commands.Context):
         profile: utils.TalosUser
