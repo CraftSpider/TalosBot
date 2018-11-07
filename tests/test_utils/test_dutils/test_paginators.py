@@ -57,4 +57,4 @@ def test_paginated_embed():  # TODO: Need to redo due to change to PaginatedEmbe
     # assert embed.author.icon_url == "http://test.com", "Incorrect Author icon"
 
     # Test complex setters and output
-    pass  # TODO finish testing paginator
+    pass

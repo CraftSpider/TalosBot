@@ -20,7 +20,8 @@ class Row(metaclass=abc.ABCMeta):
 
     def to_row(self) -> List[str, int]: ...
 
-    def table_name(self) -> str: ...
+    @classmethod
+    def table_name(cls) -> str: ...
 
 class MultiRow(metaclass=abc.ABCMeta):
 

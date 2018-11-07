@@ -387,21 +387,21 @@ class TalosDatabase:
     # Generic methods
 
     def get_item(self, type, *, order=None, default=None, **kwargs):
-        conditions = " AND ".join(f"{x} = %s" for x in kwargs)
+        conditions = " AND ".join(f"{x} = %({x})s" for x in kwargs)
         query = f"SELECT * FROM {self._schema}.{type.table_name()}"
         if conditions:
             query += " WHERE " + conditions
         if order:
             query += f" ORDER BY {order}"
         query += " LIMIT 1"
-        self._cursor.execute(query, kwargs.values())
+        self._cursor.execute(query, kwargs)
         result = self._cursor.fetchone()
         if result is None:
             return default
         return type(result)
 
     def get_items(self, type, *, limit=0, order=None, **kwargs):
-        conditions = " AND ".join(f"{x} = %s" for x in kwargs)
+        conditions = " AND ".join(f"{x} = %({x})s" for x in kwargs)
         query = f"SELECT * FROM {self._schema}.{type.table_name()}"
         if conditions:
             query += " WHERE " + conditions
@@ -409,7 +409,7 @@ class TalosDatabase:
             query += f" ORDER BY {order}"
         if limit:
             query += f" LIMIT {limit}"
-        self._cursor.execute(query, kwargs.values())
+        self._cursor.execute(query, kwargs)
         return [type(x) for x in self._cursor]
 
     def save_item(self, item):
@@ -478,22 +478,16 @@ class TalosDatabase:
         :param guild_id: id of the guild to get options of
         :return: list of the guild's options
         """
-        query = f"SELECT * FROM {self._schema}.guild_options WHERE guild_id = %s"
-        self._cursor.execute(query, [guild_id])
-        result = self._cursor.fetchone()
+        result = self.get_item(data.GuildOptions, guild_id=guild_id)
         guild_defaults = self.get_guild_defaults()
-        guild_data = []
         if result is None:
             guild_defaults.id = guild_id
             return guild_defaults
         else:
-            rows = self.get_columns("guild_options")
-            for item in range(len(result)):
-                if result[item] is None:
-                    guild_data.append(getattr(guild_defaults, rows[item][0]))
-                else:
-                    guild_data.append(result[item])
-        return data.GuildOptions(guild_data)
+            for item in result.__slots__:
+                if getattr(result, item) is None:
+                    setattr(result, item, getattr(guild_defaults, item))
+        return result
 
     def get_all_guild_options(self):
         """
@@ -518,23 +512,16 @@ class TalosDatabase:
         :param user_id: id of the user to get options of
         :return: list of the user's options
         """
-        query = f"SELECT * FROM {self._schema}.user_options WHERE user_id = %s"
-        self._cursor.execute(query, [user_id])
-        result = self._cursor.fetchone()
+        result = self.get_item(data.UserOptions, user_id=user_id)
         user_defaults = self.get_user_defaults()
-        user_data = []
         if result is None:
             user_defaults.id = user_id
             return user_defaults
         else:
-            rows = self.get_columns("user_options")
-            for item in range(len(result)):
-                if result[item] is None:
-                    user_data.append(getattr(user_defaults, rows[item][0]))
-                else:
-                    user_data.append(result[item])
-
-        return data.UserOptions(user_data)
+            for item in result.__slots__:
+                if getattr(result, item) is None:
+                    setattr(result, item, getattr(user_defaults, item))
+        return result
 
     def get_all_user_options(self):
         """
