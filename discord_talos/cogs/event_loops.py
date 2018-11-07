@@ -104,9 +104,9 @@ class EventLoops(dutils.TalosCog):
                 valueInputOption="RAW", body=body).execute()
         return result
 
-    @dutils.eventloop("1m")
+    @dutils.eventloop("1m", description="Called once at the start of every minute")
     async def minute_task(self):
-        """Called once at the start of every minute"""
+        """Called every minute, checks for guild-specific events and runs any that need to be"""
         for guild in self.bot.guilds:
             events = self.database.get_guild_events(guild.id)
             for event in events:
@@ -120,9 +120,9 @@ class EventLoops(dutils.TalosCog):
                     event.last_active = current
                     self.database.save_item(event)
 
-    @dutils.eventloop("1h")
+    @dutils.eventloop("1h", description="Called once at the start of every hour")
     async def hourly_task(self):
-        """Called once at the top of every hour."""
+        """Called every hour, and posts current guild amount to DBL if a key is provided and the amount changed"""
         guild_count = len(self.bot.guilds)
         if self.bot.botlist != "" and guild_count != self.last_guild_count:
             self.last_guild_count = guild_count
@@ -131,17 +131,17 @@ class EventLoops(dutils.TalosCog):
             api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
             await self.bot.session.post(api_url, data=data, headers=headers)
 
-    @dutils.eventloop("1d")
+    @dutils.eventloop("1d", description="Called once at the start of every day")
     async def daily_task(self):
-        """Called once every day at midnight, does most time-consuming tasks."""
+        """Called every day, and removes old uptimes from the database"""
         self.database.remove_uptime(int((dt.datetime.now() - dt.timedelta(days=30)).timestamp()))
 
-    @dutils.eventloop("1m")
+    @dutils.eventloop("1m", description="Called to add another uptime mark to the database")
     async def uptime_task(self):
-        """Called once a minute, to verify uptime. Old uptimes cleaned once a day."""
+        """Called once a minute, to verify uptime. Adds a new row to the uptime table with the current timestamp"""
         self.database.add_uptime(int(dt.datetime.now().replace(microsecond=0).timestamp()))
 
-    @dutils.eventloop("1d")
+    @dutils.eventloop("1d", description="Runs the daily prompt task")
     async def prompt_task(self):
         """Once a day, grabs a prompt from google sheets and posts it to the defined prompts chat, if enabled."""
         if self.service is None:

@@ -15,6 +15,8 @@ log = logging.getLogger("talos.dutils.bot")
 
 class ExtendedBot(commands.Bot):
 
+    variable = ""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

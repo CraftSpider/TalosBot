@@ -52,6 +52,12 @@ class Table(Row):
                  "data_len", "max_data_len", "index_len", "data_free", "auto_increment", "create_time", "update_time",
                  "check_time", "table_collation", "checksum", "create_options", "table_commentx")
 
+class Column(Row):
+
+    __slots__ = ("catalog", "schema", "table_name", "name", "position", "default", "nullable", "type", "char_max_len",
+                 "bytes_max_len", "numeric_precision", "numeric_scale", "datetime_precision", "char_set_name",
+                 "collation_name", "column_type", "column_key", "extra", "privileges", "comment", "generation_expr",
+                 "srs_id")
 
 class TalosAdmin(Row):
 

@@ -85,62 +85,62 @@ talos_create_trigger = "CREATE TRIGGER {} {} on {} {} END;"
 
 talos_tables = {
     "guild_options": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
+        "columns": ("`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
                     "`fail_message` tinyint(1) DEFAULT NULL", "`pm_help` tinyint(1) DEFAULT NULL",
                     "`any_color` tinyint(1) DEFAULT NULL", "`commands` tinyint(1) DEFAULT NULL",
                     "`user_commands` tinyint(1) DEFAULT NULL", "`joke_commands` tinyint(1) DEFAULT NULL",
                     "`writing_prompts` tinyint(1) DEFAULT NULL", "`prompts_channel` varchar(64) DEFAULT NULL",
                     "`mod_log` tinyint(1) DEFAULT NULL", "`log_channel` varchar(64) DEFAULT NULL",
-                    "`prefix` varchar(32) DEFAULT NULL", "`timezone` varchar(5) DEFAULT NULL"],
+                    "`prefix` varchar(32) DEFAULT NULL", "`timezone` varchar(5) DEFAULT NULL"),
         "primary": "PRIMARY KEY (`guild_id`)",
-        "defaults": [(-1, True, False, False, True, True, True, True, False, "prompts", False, "mod-log", "^", "UTC")]
+        "defaults": ((-1, True, False, False, True, True, True, True, False, "prompts", False, "mod-log", "^", "UTC"),)
     },
     "admins": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"],
+        "columns": ("`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"),
         "primary": "PRIMARY KEY (`guild_id`,`opname`)"
     },
     "perm_rules": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`command` varchar(255) NOT NULL",
+        "columns": ("`guild_id` bigint(20) NOT NULL", "`command` varchar(255) NOT NULL",
                     "`perm_type` varchar(32) NOT NULL", "`target` varchar(255) NOT NULL",
-                    "`priority` int(11) NOT NULL", "`allow` tinyint(1) NOT NULL"],
+                    "`priority` int(11) NOT NULL", "`allow` tinyint(1) NOT NULL"),
         "primary": "PRIMARY KEY (`guild_id`,`command`,`perm_type`,`target`)"
     },
     "uptime": {
-      "columns": ["`time` bigint(20) NOT NULL"],
+      "columns": ("`time` bigint(20) NOT NULL",),
       "primary": "PRIMARY KEY (`time`)"
     },
     "user_options": {
-        "columns": ["`user_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
-                    "`prefix` varchar(32) DEFAULT NULL"],
+        "columns": ("`user_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
+                    "`prefix` varchar(32) DEFAULT NULL"),
         "primary": "PRIMARY KEY (`user_id`)",
-        "defaults": [(-1, 1, "^")]
+        "defaults": ((-1, 1, "^"),)
     },
     "user_profiles": {
-        "columns": ["`user_id` bigint(20) NOT NULL", "`description` text",
-                    "`commands_invoked` int(11) NOT NULL DEFAULT '0'", "`title` text"],
+        "columns": ("`user_id` bigint(20) NOT NULL", "`description` text",
+                    "`commands_invoked` int(11) NOT NULL DEFAULT '0'", "`title` text"),
         "primary": "PRIMARY KEY (`user_id`)"
     },
     "user_titles": {
-        "columns": ["`user_id` bigint(20) NOT NULL", "`title` varchar(255) NOT NULL"],
+        "columns": ("`user_id` bigint(20) NOT NULL", "`title` varchar(255) NOT NULL"),
         "primary": "PRIMARY KEY (`user_id`,`title`)"
     },
     "invoked_commands": {
-        "columns": ["`user_id` bigint(20) NOT NULL", "`command_name` varchar(32) NOT NULL",
-                    "`times_invoked` int(11) NOT NULL DEFAULT '1'"],
+        "columns": ("`user_id` bigint(20) NOT NULL", "`command_name` varchar(32) NOT NULL",
+                    "`times_invoked` int(11) NOT NULL DEFAULT '1'"),
         "primary": "PRIMARY KEY (`command_name`,`user_id`)"
     },
     "guild_commands": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`text` text NOT NULL"],
+        "columns": ("`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`text` text NOT NULL"),
         "primary": "PRIMARY KEY (`guild_id`,`name`)"
     },
     "guild_events": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`period` varchar(32) NOT NULL",
-                    "`last_active` int NOT NULL", "`channel` bigint(20) NOT NULL", "`text` text NOT NULL"],
+        "columns": ("`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`period` varchar(32) NOT NULL",
+                    "`last_active` int NOT NULL", "`channel` bigint(20) NOT NULL", "`text` text NOT NULL"),
         "primary": "PRIMARY KEY (`guild_id`,`name`)"
     },
     "quotes": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`id` bigint NOT NULL", "`author` text",
-                    "`quote` text"],
+        "columns": ("`guild_id` bigint(20) NOT NULL", "`id` bigint NOT NULL", "`author` text",
+                    "`quote` text"),
         "primary": "PRIMARY KEY (`guild_id`, `id`)"
     }
 }
@@ -352,7 +352,7 @@ class TalosDatabase:
 
     def has_table(self, table):
         self._cursor.execute(
-            "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s",
+            "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s LIMIT 1",
             [self._schema, table]
         )
         return self._cursor.fetchone() is not None
@@ -365,10 +365,7 @@ class TalosDatabase:
         """
         query = "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
         self._cursor.execute(query, [table_name])
-        result = self._cursor.fetchall()
-        if len(result) is 0:
-            return None
-        return result
+        return [data.Column(x) for x in self._cursor]
 
     def get_column_type(self, table_name, column_name):
         """
@@ -387,6 +384,15 @@ class TalosDatabase:
     # Generic methods
 
     def get_item(self, type, *, order=None, default=None, **kwargs):
+        """
+            Get the first TalosDatabase compatible object from the database, based on a type.
+            Result can be ordered and filtered.
+        :param type: TalosDatabase compatible type. Subclasses Row or duck types it
+        :param order: Parameter to pass into the ORDER BY clause
+        :param default: What to return if nothing is found. Defaults to None
+        :param kwargs: Parameters to filter by. Are all ANDed together
+        :return: An instance of type, or default
+        """
         conditions = " AND ".join(f"{x} = %({x})s" for x in kwargs)
         query = f"SELECT * FROM {self._schema}.{type.table_name()}"
         if conditions:
@@ -401,6 +407,15 @@ class TalosDatabase:
         return type(result)
 
     def get_items(self, type, *, limit=0, order=None, **kwargs):
+        """
+            Get a list of TalosDatabase compatible objects from the database, based on a type.
+            Result can be ordered, limited, and filtered.
+        :param type: TalosDatabase compatible type. Subclasses Row or duck types it
+        :param limit: Maximum number of items to get. If this would be one, consider get_item
+        :param order: Parameter to pass to the ORDER BY clause
+        :param kwargs: Parameters to filter by. Are all ANDed together
+        :return: A list of type, may be empty if nothing found
+        """
         conditions = " AND ".join(f"{x} = %({x})s" for x in kwargs)
         query = f"SELECT * FROM {self._schema}.{type.table_name()}"
         if conditions:
