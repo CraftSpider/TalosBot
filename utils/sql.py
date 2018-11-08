@@ -205,9 +205,10 @@ class TalosDatabase:
                 from collections import defaultdict
                 columndat = defaultdict(lambda: [0, ""])
                 columns = self.get_columns(table)
+                # TODO: no longer works
                 for item in columns:
-                    columndat[item[0]][0] += 1
-                    columndat[item[0]][1] = item[1]
+                    columndat[item.name][0] += 1
+                    columndat[item.name][1] = item.column_type
                 for item in talos_tables[table]["columns"]:
                     details = re.search(r"`(.*?)` (\w+)", item)
                     name, col_type = details.group(1), details.group(2)
@@ -363,7 +364,7 @@ class TalosDatabase:
         :param table_name: Name of the table to retrieve columnns from
         :return: List of column names and data types, or None if table doesn't exist
         """
-        query = "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
+        query = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
         self._cursor.execute(query, [table_name])
         return [data.Column(x) for x in self._cursor]
 

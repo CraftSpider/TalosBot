@@ -59,6 +59,9 @@ class Column(Row):
                  "collation_name", "column_type", "column_key", "extra", "privileges", "comment", "generation_expr",
                  "srs_id")
 
+    name: str
+    column_type: str
+
 class TalosAdmin(Row):
 
     __slots__ = ("guild_id", "user_id")
