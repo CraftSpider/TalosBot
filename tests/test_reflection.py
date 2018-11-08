@@ -4,7 +4,6 @@ import discord.ext.commands as commands
 import utils.dutils as dutils
 import pkgutil
 import importlib
-import types
 
 
 def isdocable(member):
@@ -35,6 +34,11 @@ def get_unique_member(base_class):
         return False
 
     return predicate
+
+
+def getdeclared(type):
+    type.mro()
+    pass  # TODO: filter getmembers
 
 
 def test_command_docs(testlos):

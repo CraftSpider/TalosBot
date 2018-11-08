@@ -17,6 +17,26 @@ import utils.dutils as dutils
 log = logging.getLogger("talos.user")
 
 
+def unused_role(ctx, role):
+    return (not len(role.members)) or (len(role.members) == 1 and role.members[0] == ctx.author)
+
+
+def talos_colour(role):
+    return role.name.startswith("<TALOS COLOR>")
+
+
+def lopez_colour(role):
+    return role.name.startswith("LOPEZ COLOR:")
+
+
+def unnamed_colour(role):
+    return role.name.endswith("<TALOS COLOR>")
+
+
+def named_colour(role):
+    return role.name.startswith("<TALOS COLOR>") and not role.name.endswith("<TALOS COLOR>")
+
+
 class UserCommands(dutils.TalosCog):
     """These are commands that effect specific users. May change your roles in a guild, or alter your Talos-specific"""\
         """ settings and info."""
@@ -31,34 +51,30 @@ class UserCommands(dutils.TalosCog):
             """ hexadecimal colour value prefixed by `#` or `0x`. Use the word 'clear' to remove your Talos colour."""
 
         for role in ctx.author.roles:
-            if role.name.startswith("<TALOS COLOR>") or role.name.startswith("LOPEZ COLOR:"):
+            if talos_colour(role) or lopez_colour(role):
                 await ctx.author.remove_roles(role)
-                if not len(role.members) and role.name.endswith("<TALOS COLOR>"):
+                if unnamed_colour(role) and unused_role(ctx, role):
                     await role.delete()
 
         options = self.bot.database.get_guild_options(ctx.guild.id)
 
-        # Find and add or create and add the role.
-        colour_role = None
-        if options.any_color:
-            colour_role = discord.utils.find(
-                lambda x: x.name.startswith("<TALOS COLOR>") and x.colour == colour, ctx.guild.roles
-            )
-        if colour_role is None:
-            colour_role = discord.utils.find(lambda x: x.name == f"<TALOS COLOR> {colour}", ctx.guild.roles)
-
-        if colour_role is not None:
-            await ctx.author.add_roles(colour_role)
-        elif options.any_color is False:
-            await ctx.send("Sorry, that colour role doesn't exist, and arbitrary roles aren't allowed")
+        # Attempt to find role. Break for cases where role won't be created
+        colour_role = discord.utils.find(lambda x: x.name == f"<TALOS COLOR> {colour}", ctx.guild.roles)
+        if colour_role is None and not options.any_color:
+            await ctx.send("Sorry, that colour role doesn't exist, and arbitrary colour roles aren't allowed")
             return
-        else:
-            if isinstance(colour, str):
+        elif colour_role is None:
+            if isinstance(colour, discord.Colour):
+                colour_role = discord.utils.find(lambda x: talos_colour(x) and x.colour == colour, ctx.guild.roles)
+            else:
                 await ctx.send(
                     "Unrecognized colour format. Valid formats include `#123456`, `0x123456`, and some names such as "
                     "teal or orange")
                 return
 
+        if colour_role is not None:
+            await ctx.author.add_roles(colour_role)
+        else:
             colour_role = await ctx.guild.create_role(name="<TALOS COLOR>", colour=colour)
             try:
                 await asyncio.sleep(.1)
@@ -73,15 +89,25 @@ class UserCommands(dutils.TalosCog):
 
         await ctx.send(f"{ctx.message.author.display_name}'s colour changed to {colour}!")
 
-    @colour.command(name="clear", description="Remove all colour roles")
+    @colour.command(name="clear", description="Remove all your colour roles")
     async def _clear(self, ctx):
         """Removes your Talos colour role, and if it's unnamed and you're the only one using it, deletes the role."""
         for role in ctx.author.roles:
-            if role.name.startswith("<TALOS COLOR>") or role.name.startswith("LOPEZ COLOR:"):
+            if talos_colour(role) or lopez_colour(role):
                 await ctx.author.remove_roles(role)
-                if not len(role.members):
+                if unnamed_colour(role) and unused_role(ctx, role):
                     await role.delete()
         await ctx.send("Talos colour removed")
+
+    @colour.command(name="clean", description="Remove all unused and unnamed colour roles")
+    async def _clean(self, ctx):
+        """Removes all unused and unnamed Talos colour roles that weren't automatically deleted when people cleared"""\
+            """ their own colour roles. Hopefully this command will at some point be removed when Talos does it 100%"""\
+            """ of the time reliably."""
+        for role in ctx.guild.roles:
+            if unnamed_colour(role) and len(role.members) == 0:
+                await role.delete()
+        await ctx.send("Talos colour role list cleaned")
 
     @colour.command(name="list", description="List named colour roles")
     async def _list(self, ctx):

@@ -59,8 +59,28 @@ class Column(Row):
                  "collation_name", "column_type", "column_key", "extra", "privileges", "comment", "generation_expr",
                  "srs_id")
 
+    catalog: str
+    schema: str
+    table_name: str
     name: str
+    position: int
+    default: Any
+    nullable: str
+    type: str
+    char_max_len: int
+    bytes_max_len: int
+    numeric_precision: str
+    numeric_scale: str
+    datetime_precision: str
+    char_set_name: str
+    collation_name: str
     column_type: str
+    column_key: str
+    extra: str
+    privileges: str
+    comment: str
+    generation_expr: str
+    srs_id: int
 
 class TalosAdmin(Row):
 
