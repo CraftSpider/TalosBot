@@ -10,7 +10,8 @@ def align_period(period: utils.EventPeriod) -> dt.timedelta: ...
 
 class EventLoop:
 
-    __slots__ = ("_task", "_callback", "period", "persist", "start_time", "loop", "name", "parent")
+    __slots__ = ("_task", "_callback", "_instance", "period", "persist", "start_time", "loop", "name", "parent",
+                 "description")
 
     _task: asyncio.Task
     _callback: Callable[[Any], Awaitable]
@@ -20,6 +21,7 @@ class EventLoop:
     loop: asyncio.AbstractEventLoop
     name: str
     parent: Union[dutils.TalosCog, dutils.ExtendedBot]
+    description: str
 
     @property
     def callback(self) -> Callable[[Any], Awaitable]: ...
@@ -35,4 +37,4 @@ class EventLoop:
 
     def stop(self) -> None: ...
 
-def eventloop(period: Union[str, utils.EventPeriod], *, persist: bool = ..., start_time: dt.datetime = ...) -> Callable[[Callable[[Any], Awaitable]], EventLoop]: ...
+def eventloop(period: Union[str, utils.EventPeriod], **kwargs: Any) -> Callable[[Callable[[Any], Awaitable]], EventLoop]: ...

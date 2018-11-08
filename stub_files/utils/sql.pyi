@@ -1,6 +1,6 @@
 
 from typing import Tuple, Dict, List, Union, Optional, Any, Iterable, TypeVar, Type
-from utils.data import TalosAdmin, Row, TalosUser, GuildOptions, UserOptions, PermissionRule, GuildEvent, MultiRow, GuildCommand
+from utils.data import *
 import mysql.connector.cursor_cext as cursor_cext
 import mysql.connector.abstracts as mysql_abstracts
 
@@ -80,9 +80,11 @@ class TalosDatabase:
 
     # Meta methods
 
+    def get_tables(self) -> List[Table]: ...
+
     def has_table(self, table: str) -> bool: ...
 
-    def get_columns(self, table_name: str) -> Optional[List[Tuple[str, str]]]: ...
+    def get_columns(self, table_name: str) -> List[Column]: ...
 
     def get_column_type(self, table_name: str, column_name: str) -> Optional[str]: ...
 

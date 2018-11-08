@@ -2,6 +2,7 @@
 import datetime as dt
 import asyncio
 import logging
+import inspect
 
 from .. import data
 
@@ -44,20 +45,22 @@ class StopEventLoop(Exception):
 
 class EventLoop:
 
-    __slots__ = ("_task", "_callback", "_instance", "period", "persist", "start_time", "loop", "name", "parent")
+    __slots__ = ("_task", "_callback", "_instance", "period", "persist", "start_time", "loop", "name", "parent",
+                 "description")
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError("Access internal method through self.callback")
 
-    def __init__(self, coro, period, *, persist=True, start_time=None, name=None, loop=None):
+    def __init__(self, coro, period, loop=None, **kwargs):
         if loop is None:
             loop = asyncio.get_event_loop()
         self._task = None
         self._callback = coro
+        self.description = inspect.cleandoc(kwargs.get("description"))
         self.period = data.EventPeriod(period)
-        self.persist = persist
-        self.start_time = start_time
-        self.name = name if name is not None else coro.__name__
+        self.persist = kwargs.get("persist")
+        self.start_time = kwargs.get("start_time")
+        self.name = kwargs.get("name", coro.__name__)
         self.loop = loop
         self.parent = None
 
@@ -110,9 +113,9 @@ class EventLoop:
         self._task.cancel()
 
 
-def eventloop(period, *, persist=True, start_time=None, name=None):
+def eventloop(period, **kwargs):
 
     def decorator(coro):
-        return EventLoop(coro, period, persist=persist, start_time=start_time, name=name)
+        return EventLoop(coro, period, **kwargs)
 
     return decorator
