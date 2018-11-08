@@ -715,12 +715,12 @@ class Commands(dutils.TalosCog):
                     start = int(start[1:])
                 else:
                     start = int(start)
+                if start > 59 or start < 0:
+                    await ctx.send("Please specify a start time in the range of 0 to 59.")
+                    return
             except ValueError:
                 await ctx.send("Start time format broken. Starting now.")
                 start = None
-            if start != "" and (start > 59 or start < 0):
-                await ctx.send("Please specify a start time in the range of 0 to 59.")
-                return
 
         dif = dt.timedelta(0)
         if start is not None:
