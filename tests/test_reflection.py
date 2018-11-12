@@ -75,7 +75,6 @@ def module_filter(member):
 
 def test_util_docs():
 
-    print()
     for finder, name, ispkg in pkgutil.walk_packages(["../utils"], "utils."):
         pkg = importlib.import_module(name)
         print("Module:", name)

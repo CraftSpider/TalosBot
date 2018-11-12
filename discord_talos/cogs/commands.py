@@ -96,7 +96,13 @@ class Commands(dutils.TalosCog):
         "I can't wait to see East again", "I'm here to help", "My devs are all crazy", "The Absolute Love Of Styx",
         "I'm just a glorified Turing Machine", "If I was a ship AI I might be called Stalo",
         "Terrific Artificial Logarithmic Operation Solver", "Top Amorous Locking Oversight Submersible",
-        "Terminator After Love Or Salt", "Technically A Literary Operations Sentinel")
+        "Terminator After Love Or Salt", "Technically A Literary Operations Sentinel"
+    )
+    nano_facts = (
+        "Talos' head dev has done NaNo 4 times, and won once", "NaNoWriMo began in 1999",
+        "In 2017, NaNo had over 402k participants", "The world needs your novel",
+        "NaNo did not always happen in November. The very first NaNo was in July."
+    )
 
     def get_uptime_days(self):
         """Gets the amount of time Talos has been online in days, hours, minutes, and seconds. Returns a string."""
@@ -296,6 +302,38 @@ class Commands(dutils.TalosCog):
         """Can fetch novels or profiles, with possibly more features coming in time."""
         if ctx.invoked_subcommand is None:
             await ctx.send("Valid options are 'novel' and 'profile'.")
+
+    @nanowrimo.command(name="information", aliases=["info"], description="Give general information about NaNoWriMo")
+    async def _information(self, ctx):
+        """This command gives some general NaNo info, for example the current day and expected wordcount, or a """\
+            """countdown if nano isn't happening. If you're wondering what NaNo is, go to https://nanowrimo.org for """\
+            """more info"""
+        nano_crest_url = "https://d1lj9l30x2igqs.cloudfront.net/nano-2013/files/2018/08/NaNo-Shield-Logo-Web.png"
+
+        if self.bot.should_embed(ctx):
+            with dutils.PaginatedEmbed() as embed:
+                embed.title = "NaNoWriMo"
+                embed.description = "National Novel Writing Month, often shortened to NaNoWriMo or just Nano, is an "\
+                    "event that takes place in the month of November, and challenges participants to write 50k words "\
+                    "in a single month."
+                embed.colour = discord.Colour(0xA3DCE6)
+                now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
+                if now.month == 11:
+                    end = now.replace(month=12, day=1, hour=0, minute=0, second=0)
+                    remaining = end - now
+                    embed.add_field(name="Time Left", value=str(remaining), inline=True)
+                    embed.add_field(name="Expected Words", value=str(1667*now.day), inline=True)
+                else:
+                    start = now.replace(month=11, day=1, hour=0, minute=0, second=0)
+                    if now.month > 11:
+                        start.replace(year=now.year + 1)
+                    remaining = start - now
+                    embed.add_field(name="Countdown", value=str(remaining), inline=True)
+                embed.set_thumbnail(url=nano_crest_url)
+                embed.set_footer(text=random.choice(self.nano_facts))
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("Non-embed nano info not yet supported")  # TODO
 
     @nanowrimo.command(name="novel", description="Fetch a user's nano novel.")
     async def _novel(self, ctx, username, novel_name=""):
@@ -604,12 +642,17 @@ class Commands(dutils.TalosCog):
 
     @commands.command(description="Allows the rolling of dice")
     async def roll(self, ctx, dice):
-        """Dice are rolled in NdN format, Number of dice first, then how many sides they have."""
+        """Dice are rolled in either max roll or NdN format. Max roll, a single number for the maximum number to """\
+            """roll. NdN, Number of dice first, then how many sides they have."""
         try:
-            rolls, limit = map(int, dice.lower().split("d"))
+            rolls = 1
+            limit = int(dice)
         except ValueError:
-            await ctx.send("Format has to be in NdN!")
-            return
+            try:
+                rolls, limit = map(int, dice.lower().split("d"))
+            except ValueError:
+                await ctx.send("Either specify a single number for max roll or input NdN format")
+                return
 
         if rolls < 1:
             await ctx.send("Minimum first value is 1")

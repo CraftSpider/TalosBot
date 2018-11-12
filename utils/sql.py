@@ -154,6 +154,10 @@ talos_triggers = {
 }
 
 
+def and_from_dict(kwargs):
+    return " AND ".join(f"{x} = %({x})s" for x in kwargs)
+
+
 class TalosDatabase:
     """
         Class for handling a Talos connection to a MySQL database that fits the schema expected by Talos.
@@ -394,7 +398,7 @@ class TalosDatabase:
         :param kwargs: Parameters to filter by. Are all ANDed together
         :return: An instance of type, or default
         """
-        conditions = " AND ".join(f"{x} = %({x})s" for x in kwargs)
+        conditions = and_from_dict(kwargs)
         query = f"SELECT * FROM {self._schema}.{type.table_name()}"
         if conditions:
             query += " WHERE " + conditions
@@ -407,7 +411,7 @@ class TalosDatabase:
             return default
         return type(result)
 
-    def get_items(self, type, *, limit=0, order=None, **kwargs):
+    def get_items(self, type, *, limit=None, order=None, **kwargs):
         """
             Get a list of TalosDatabase compatible objects from the database, based on a type.
             Result can be ordered, limited, and filtered.
@@ -417,16 +421,26 @@ class TalosDatabase:
         :param kwargs: Parameters to filter by. Are all ANDed together
         :return: A list of type, may be empty if nothing found
         """
-        conditions = " AND ".join(f"{x} = %({x})s" for x in kwargs)
+        conditions = and_from_dict(kwargs)
         query = f"SELECT * FROM {self._schema}.{type.table_name()}"
         if conditions:
             query += " WHERE " + conditions
-        if order:
+        if order is not None:
             query += f" ORDER BY {order}"
-        if limit:
+        if limit is not None:
+            if isinstance(limit, tuple):
+                limit = f"{limit[0]},{limit[1]}"
             query += f" LIMIT {limit}"
         self._cursor.execute(query, kwargs)
         return [type(x) for x in self._cursor]
+
+    def get_count(self, type, **kwargs):
+        conditions = and_from_dict(kwargs)
+        query = f"SELECT COUNT(*) FROM {self._schema}.{type.table_name()}"
+        if conditions:
+            query += " WHERE " + conditions
+        self._cursor.execute(query, kwargs)
+        return self._cursor.fetchone()[0]
 
     def save_item(self, item):
         """
@@ -477,6 +491,19 @@ class TalosDatabase:
         except AttributeError:
             for row in item:
                 self.remove_item(row, general)
+
+    def remove_items(self, type, *, limit=None, order=None, **kwargs):
+        conditions = and_from_dict(kwargs)
+        query = f"DELETE FROM {self._schema}.{type.table_name()}"
+        if conditions:
+            query += " WHERE " + conditions
+        if order is not None:
+            query += f" ORDER BY {order}"
+        if limit is not None:
+            if isinstance(limit, tuple):
+                limit = f"{limit[0]},{limit[1]}"
+            query += f" LIMIT {limit}"
+        self._cursor.execute(query, kwargs)
 
     # Guild option methods
 

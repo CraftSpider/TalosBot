@@ -4,12 +4,16 @@
 
 from typing import Dict, List
 import logging
+import pathlib
 import discord.ext.commands as dcommands
 import utils.element as el
 
 
 fullwidth_transform: Dict[str, str] = ...
 tz_map: Dict[str, float] = ...
+log_folder: pathlib.Path
+
+def configure_logger(logger: logging.Logger, *, handlers: List[logging.Handler] = ..., formatter: logging.Formatter = ..., level: int = ..., propagate: bool = ...): ...
 
 def words_written(time: int, wpm: int) -> int: ...
 

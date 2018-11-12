@@ -8,6 +8,7 @@ import logging
 import traceback
 import string
 import random
+import pathlib
 
 from . import parsers, element as el
 
@@ -56,8 +57,29 @@ tz_map = {
     "Y": -12, "YAKST": +10, "YAKT": +9, "YAPT": +10, "YEKST": +6, "YEKT": +5, "Z": 0
 }
 
+# Folder to store logs in
+log_folder = pathlib.Path(__file__).parent.parent / "logs"
+if not log_folder.exists():
+    log_folder.mkdir()
+elif not log_folder.is_dir():
+    log.error("Log folder already exists as non-directory")
+
 
 # Various helper method utilities
+
+
+def configure_logger(logger, *, handlers=[], formatter=None, level=None, propagate=None):
+
+    if level is not None:
+        logger.setLevel(level)
+
+    for handler in handlers:
+        if formatter is not None:
+            handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    if propagate is not None:
+        logger.propagate = propagate
 
 
 def words_written(time, wpm):

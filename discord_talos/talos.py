@@ -82,7 +82,7 @@ class Talos(dutils.ExtendedBot):
     def __init__(self, **kwargs):
         """
             Initialize Talos object. Safe to pass nothing in.
-        :param sql_conn: MySQL Database connection object
+        :param tokens: Dictionary of tokens for Talos to use
         :param kwargs: Keyword Args for Talos and all its parent classes
         """
         # Set default values to pass to super
@@ -447,25 +447,16 @@ def configure_logging():
         and discord.py loggers separately, so they can be easily configured
         independently.
     """
-    fh = logging.FileHandler(pathlib.Path(__file__).parent / "talos.log")
+    fh = logging.FileHandler(utils.log_folder / "dtalos.log")
+    dfh = logging.FileHandler(utils.log_folder / "dpy.log")
     sh = logging.StreamHandler(sys.stderr)
 
     ff = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
-    sf = ff
-
-    fh.setFormatter(ff)
-    sh.setFormatter(sf)
-
-    logging.getLogger("talos")
-    log.addHandler(fh)
-    log.addHandler(sh)
-    log.propagate = False
-    log.setLevel(logging.INFO)
 
     dlog = logging.getLogger("discord")
-    dlog.addHandler(fh)
-    dlog.addHandler(sh)
-    dlog.setLevel(logging.INFO)
+
+    utils.configure_logger(log, handlers=[fh, sh], formatter=ff, level=logging.INFO, propagate=False)
+    utils.configure_logger(dlog, handlers=[dfh, sh], formatter=ff, level=logging.INFO, propagate=False)
 
 
 def load_token_file(filename):

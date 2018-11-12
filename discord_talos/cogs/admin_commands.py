@@ -634,10 +634,41 @@ class AdminCommands(dutils.TalosCog):
         """Remove the quote with a specific ID"""
         quote = self.database.get_quote(ctx.guild.id, num)
         if quote is not None:
-            self.database.remove_item(utils.Quote([ctx.guild.id, num, None, None]), True)
+            self.database.remove_items(utils.Quote, guild_id=ctx.guild.id, id=num)
             await ctx.send(f"Removed quote {num}")
         else:
             await ctx.send(f"No quote for ID {num}")
+
+    @quote.command(name="list", description="List of quotes")
+    async def _q_list(self, ctx, page: int=1):
+        """Shows a list of quotes. If there are a lot of quotes, do `^list [num]` to access the next page of them."""
+
+        if page < 1:
+            await ctx.send(f"Requested page must be greater than 0")
+            return
+
+        num_quotes = self.database.get_count(utils.Quote, guild_id=ctx.guild.id)
+        pages = round(num_quotes / 10 + .5)
+        if page > pages:
+            await ctx.send(f"Requested page doesn't exist, last page is {pages}")
+            return
+
+        start = (page - 1) * 10
+        end = start + 10
+        quotes = self.database.get_items(utils.Quote, limit=(start, end), order="id", guild_id=ctx.guild.id)
+
+        if self.bot.should_embed(ctx):
+            with dutils.PaginatedEmbed() as embed:
+                for quote in quotes:
+                    embed.add_field(name=f"#{quote.id} - {quote.author}", value=quote.quote)
+                embed.set_footer(text=f"Page {page}/{pages}")
+            await ctx.send(embed=embed)
+        else:
+            out = "```"
+            for quote in quotes:
+                out += f"#{quote.id} - {quote.author}:\n{quote.quote}\n"
+            out += f"```Page: {page}/{pages}"
+            await ctx.send(out)
 
 
 def setup(bot):

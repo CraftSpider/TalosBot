@@ -64,6 +64,9 @@ class EventLoop:
         self.loop = loop
         self.parent = None
 
+    def __str__(self):
+        return f"EventLoop(period: {self.period}, name: {self.name}, description: {self.description})"
+
     @property
     def callback(self):
         return self._callback
@@ -85,7 +88,7 @@ class EventLoop:
 
     async def run(self, *args, **kwargs):
         if self.start_time is not None:
-            now = dt.datetime.now()
+            now = dt.datetime.utcnow()
             delta = self.start_time - now
             await asyncio.sleep(delta.total_seconds())
         else:
