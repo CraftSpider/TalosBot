@@ -3,6 +3,15 @@ import abc
 import datetime as dt
 
 
+class _EmptyVal:
+
+    def __eq__(self, other):
+        return isinstance(other, _EmptyVal)
+
+
+_Empty = _EmptyVal()
+
+
 class Row(metaclass=abc.ABCMeta):
 
     __slots__ = ()
@@ -26,9 +35,9 @@ class Row(metaclass=abc.ABCMeta):
 
     def __eq__(self, other):
         for slot in self.__slots__:
-            sval = getattr(self, slot, complex)
-            oval = getattr(other, slot, complex)
-            if sval == complex or oval == complex:
+            sval = getattr(self, slot, _Empty)
+            oval = getattr(other, slot, _Empty)
+            if sval == _Empty or oval == _Empty:
                 return False
             if sval != oval:
                 return False
