@@ -75,7 +75,7 @@ class NanoUser:
         age = page.get_by_class("member_for")[0]
         self._age = age.innertext
 
-    async def _load_novels(self):
+    async def _init_novels(self):
         pass
 
 
@@ -101,11 +101,17 @@ class NanoNovel:
         self.author = author
         self.title = name
 
+        self.genre = None
+        self.synopsis = None
+        self.excerpt = None
+        self.stats = None
+
     async def _initialize(self):
         page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.title}")
         if page is None:
             await self.author.info
             raise NotANovel(self.title)
+        # TODO
 
     async def get_stats(self):
         pass
@@ -113,11 +119,19 @@ class NanoNovel:
 
 class NanoNovelStats:
 
-    __slots__ = ("daily_average", "target", "target_average", "total_today", "total", "words_remaining", "current_day",
-                 "days_remaining", "finish_date", "average_to_finish")
+    __slots__ = ("client", "novel", "daily_average", "target", "target_average", "total_today", "total",
+                 "words_remaining", "current_day", "days_remaining", "finish_date", "average_to_finish")
+
+    def __init__(self, client, novel):
+        self.client = client
+        self.novel = novel
+
+    @property
+    def author(self):
+        return self.novel.author
 
     async def initialize(self):
-        page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.title}/stats")
+        page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.novel.title}/stats")
 
 
 class TalosHTTPClient(aiohttp.ClientSession):
@@ -220,7 +234,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
                 return user.current_novel
             else:
                 novel = NanoNovel(self, username, title)
-                await novel.initialize()
+                await novel._initialize()
                 return novel
         except NotAUser:
             return None
