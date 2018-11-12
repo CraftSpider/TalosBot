@@ -34,6 +34,8 @@ class Row(metaclass=abc.ABCMeta):
         return f"{type(self).__name__}([{', '.join(repr(getattr(self, x)) for x in self.__slots__)}])"
 
     def __eq__(self, other):
+        if not isinstance(other, Row):
+            return False
         for slot in self.__slots__:
             sval = getattr(self, slot, _Empty)
             oval = getattr(other, slot, _Empty)
@@ -77,6 +79,18 @@ class MultiRow(metaclass=abc.ABCMeta):
         :return: Iterable of rows or iterable containing rows
         """
         return iter(getattr(self, x) for x in self.__slots__)
+
+    def __eq__(self, other):
+        if not isinstance(other, MultiRow):
+            return False
+        for slot in self.__slots__:
+            sval = getattr(self, slot, _Empty)
+            oval = getattr(self, slot, _Empty)
+            if sval == _Empty or oval == _Empty:
+                return False
+            if sval != oval:
+                return False
+        return True
 
     @abc.abstractmethod
     def removed_items(self): ...

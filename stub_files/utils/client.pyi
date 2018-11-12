@@ -4,6 +4,61 @@ from utils.element import Document, Element
 import aiohttp
 import io
 
+class NanoUser:
+
+    __slots__ = ("client", "username", "_avatar", "_age", "_info", "_novels")
+
+    client: TalosHTTPClient
+    username: str
+    _avatar: str
+    _age: str
+    _info: NanoInfo
+    _novels: List[NanoNovel]
+
+    def __init__(self, client: TalosHTTPClient, username: str) -> None: ...
+
+    @property
+    async def avatar(self) -> str: ...
+
+    @property
+    async def age(self) -> str: ...
+
+    @property
+    async def info(self) -> NanoInfo: ...
+
+    @property
+    async def novels(self) -> List[NanoNovel]: ...
+
+    @property
+    async def current_novel(self) -> NanoNovel: ...
+
+    async def _initialize(self) -> None: ...
+
+class NanoInfo:
+
+    __slots__ = ("bio", "lifetime_stats", "fact_sheet")
+
+    bio: str
+    lifetime_stats: Dict[str, str]
+    fact_sheet: Dict[str, str]
+
+    def __init__(self, page: Document) -> None: ...
+
+class NanoNovel:
+
+    __slots__ = ("client", "title", "author", "genre", "synopsis", "excerpt", "stats")
+
+    client: TalosHTTPClient
+    title: str
+    author: NanoUser
+    genre: str
+    synopsis: str
+    excerpt: str
+    stats: NanoNovelStats
+
+class NanoNovelStats:
+    pass
+
 class TalosHTTPClient(aiohttp.ClientSession):
 
     __slots__ = ("nano_login", "btn_key", "cat_key", "nano_tries")
@@ -28,12 +83,9 @@ class TalosHTTPClient(aiohttp.ClientSession):
 
     async def nano_get_page(self, url: str) -> Optional[Document]: ...
 
-    async def nano_get_user(self, username: str) -> Optional[Document]: ...
+    async def nano_get_user(self, username: str) -> Optional[NanoUser]: ...
 
-    @overload
-    async def nano_get_novel(self, username: str, novel_name: str = ...) -> Tuple[str, str]: ...
-    @overload
-    async def nano_get_novel(self, username: str, novel_name: str = ...) -> Tuple[None, None]: ...
+    async def nano_get_novel(self, username: str, title: str = ...) -> NanoNovel: ...
 
     async def nano_login_client(self) -> int: ...
 
