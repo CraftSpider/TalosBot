@@ -51,6 +51,18 @@ def getdeclared(type, predicate=None):
     return results
 
 
+def get_undoced(type):
+    out = []
+    for attr in getdeclared(type):
+        member = attr.object
+        if isinstance(member, commands.Command) or isinstance(member, dutils.EventLoop):
+            if inspect.getdoc(member.callback) is None or member.description is "":
+                out.append(member)
+        else:
+            if inspect.getdoc(member) is None:
+                out.append(member)
+
+
 def test_command_docs(testlos):
     for attr in getdeclared(testlos, isdocable):
         assert inspect.getdoc(attr.object) is not None, "Talos method missing docstring"
@@ -81,5 +93,7 @@ def test_util_docs():
         for name, member in inspect.getmembers(pkg, module_filter):
             if name.startswith("__") and name.endswith("__"):
                 continue
+            if inspect.isclass():
+                test_docs(member)
             print(name)
             print(member)
