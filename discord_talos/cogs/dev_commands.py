@@ -127,7 +127,7 @@ class DevCommands(dutils.TalosCog):
         if not profile:
             raise dutils.NotRegistered(user)
         profile.remove_title(title)
-        self.database.remove_item(profile)
+        self.database.save_item(profile)
         await ctx.send(f"Title `{title}` revoked from {user}")
 
     @dev_command(description="Reload a Talos extension. Allows command updates without reboot.")

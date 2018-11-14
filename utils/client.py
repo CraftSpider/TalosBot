@@ -55,7 +55,7 @@ class NanoUser:
     @property
     async def novels(self):
         if self.novels is None:
-            await self._load_novels()
+            await self._init_novels()
         return self.novels
 
     @property
@@ -94,12 +94,10 @@ class NanoNovel:
 
     __slots__ = ("client", "title", "author", "genre", "synopsis", "excerpt", "stats")
 
-    def __init__(self, client, author, name):
+    def __init__(self, client, author, title):
         self.client = client
-        if isinstance(author, str):
-            author = NanoUser(client, author)
         self.author = author
-        self.title = name
+        self.title = title
 
         self.genre = None
         self.synopsis = None
@@ -226,16 +224,17 @@ class TalosHTTPClient(aiohttp.ClientSession):
             Returns the novel of a given NaNo user. This year's novel, if specific name not given.
         :param username: user to get novel of.
         :param title: novel to get for user. Most recent if not given.
-        :return: novel main page and novel stats page, or None None.
+        :return: NanoNovel object, or None.
         """
         try:
+            user = await self.nano_get_user(username)
             if title is None:
-                user = await self.nano_get_user(username)
                 return user.current_novel
             else:
-                novel = NanoNovel(self, username, title)
-                await novel._initialize()
-                return novel
+                for novel in await user.novels:
+                    if novel.title == title:
+                        return novel
+            return None
         except NotAUser:
             return None
         except NotANovel:

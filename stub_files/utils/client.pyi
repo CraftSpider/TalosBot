@@ -58,6 +58,8 @@ class NanoNovel:
     excerpt: str
     stats: NanoNovelStats
 
+    def __init__(self, client: TalosHTTPClient, author: NanoUser, nid: str):
+
     async def _initialize(self) -> None: ...
 
 class NanoNovelStats:

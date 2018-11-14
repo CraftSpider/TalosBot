@@ -141,15 +141,21 @@ class PaginatedEmbed(Embed):
         while math.floor(math.log(max_pages, 10)) != math.floor(math.log(page, 10)):
             max_pages = page
             page = 1
-            cur_size = len(self.title) + len(self.description) + len(self.author.name)
+            cur_size = 0
+            if self.title:
+                cur_size += len(self.title)
+            if self.description:
+                cur_size += len(self.description)
+            if self.author.name:
+                cur_size += len(self.author.name)
             for field in self.fields:
                 field_size = len(field.name) + len(field.value)
                 footer_size = len(self.footer.text.format(page, max_pages))
                 if cur_size + field_size + footer_size > self._max_size or field == EmptyField:
                     page += 1
-                    cur_size = (len(self.title) if self.repeat_title else 0) + \
-                               (len(self.description) if self.repeat_desc else 0) + \
-                               (len(self.author.name) if self.repeat_author else 0)
+                    cur_size = (len(self.title) if self.repeat_title and self.title else 0) + \
+                               (len(self.description) if self.repeat_desc and self.description else 0) + \
+                               (len(self.author.name) if self.repeat_author and self.author.name else 0)
                 cur_size += field_size
         if len(self.fields) > 0 and self.fields[-1] == EmptyField:
             page -= 1
