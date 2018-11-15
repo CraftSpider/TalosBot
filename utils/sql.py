@@ -103,7 +103,7 @@ talos_tables = {
         "columns": ("`guild_id` bigint(20) NOT NULL", "`command` varchar(255) NOT NULL",
                     "`perm_type` varchar(32) NOT NULL", "`target` varchar(255) NOT NULL",
                     "`priority` int(11) NOT NULL", "`allow` tinyint(1) NOT NULL"),
-        "primary": "PRIMARY KEY (`guild_id`,`command`,`perm_type`,`target`)"
+        "primary": "PRIMARY KEY (`guild_id`,`command`,`perm_type`,`target`)",
     },
     "uptime": {
       "columns": ("`time` bigint(20) NOT NULL",),

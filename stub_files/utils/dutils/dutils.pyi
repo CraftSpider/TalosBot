@@ -1,8 +1,13 @@
 
+from discord_talos.talos import Talos
 from typing import Dict, Pattern
+import discord.ext.commands as commands
 
 
 mention_patterns: Dict[str, Pattern]
+
+
+def admin_local(self: Talos, ctx: commands.Context) -> bool: ...
 
 
 def is_mention(text: str) -> bool: ...

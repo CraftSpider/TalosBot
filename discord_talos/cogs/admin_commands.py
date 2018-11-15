@@ -25,43 +25,6 @@ log = logging.getLogger("talos.admin")
 
 
 #
-# Admin Command Checks
-#
-def admin_check(self, ctx):
-    """Determine whether the person calling the command is an admin or dev."""
-    if isinstance(ctx.channel, discord.abc.PrivateChannel):
-        return True
-    command = str(ctx.command)
-
-    if ctx.author.id in self.bot.DEVS:
-        return True
-
-    admins = self.database.get_admins(ctx.guild.id)
-    if len(admins) == 0 and ctx.author.guild_permissions.administrator or\
-       ctx.author == ctx.guild.owner or\
-       next((x for x in admins if x.user_id == ctx.author.id), None) is not None:
-        return True
-
-    perms = self.database.get_perm_rules(ctx.guild.id, command)
-    if len(perms) == 0:
-        return False
-    perms.sort()
-    for perm in perms:
-        result = perm.get_allowed(ctx)
-        if result is None:
-            continue
-        return result
-    return False
-
-
-def dev_check():
-    """Determine whether the person calling the command is a dev."""
-    def predicate(ctx):
-        return ctx.author.id in ctx.bot.DEVS
-    return commands.check(predicate)
-
-
-#
 # Admin Cog Class
 #
 class AdminCommands(dutils.TalosCog):
@@ -69,7 +32,7 @@ class AdminCommands(dutils.TalosCog):
     If no admins list is set, anyone with administrator role permission can use admin commands"""
 
     LEVELS = {"guild": 0, "channel": 1, "role": 2, "user": 3}
-    __local_check = admin_check
+    __local_check = dutils.admin_local
 
     @commands.command(description="Changes Talos' nickname")
     @commands.guild_only()
@@ -220,7 +183,7 @@ class AdminCommands(dutils.TalosCog):
             await ctx.send("This guild currently has no administrators.")
 
     @admins.command(name="all", hidden=True, description="Display all admins")
-    @dev_check()
+    @dutils.dev_check()
     async def _ad_all(self, ctx):
         """Displays all admins in every guild Talos is in"""
         all_admins = self.database.get_all_admins()
@@ -356,7 +319,7 @@ class AdminCommands(dutils.TalosCog):
         await ctx.send(out)
 
     @perms.command(name="all", hidden=True, description="Display permission rules for all guilds")
-    @dev_check()
+    @dutils.dev_check()
     async def _p_all(self, ctx):
         """Displays all permissions rules, in all guilds Talos is in."""
         result = self.database.get_all_perm_rules()
@@ -458,7 +421,7 @@ class AdminCommands(dutils.TalosCog):
             await ctx.send("I don't recognize that option.")
 
     @options.command(name="all", hidden=True, description="Display all guild options")
-    @dev_check()
+    @dutils.dev_check()
     async def _opt_all(self, ctx):
         """Displays all guild options in every guild Talos is in. Condensed to save your screen."""
         all_options = self.database.get_all_guild_options()
@@ -581,94 +544,6 @@ class AdminCommands(dutils.TalosCog):
             out += f"{event.name} - {event.period}: {event.text}\n"
         out += "```"
         await ctx.send(out)
-
-    @commands.group(description="Retrieve a quote from the database", invoke_without_command=True)
-    async def quote(self, ctx, author=None, *, quote=None):
-        """Quote the best lines from chat for posterity"""
-        if author is None:
-            quote = self.database.get_random_quote(ctx.guild.id)
-            if quote is None:
-                await ctx.send("There are no quotes available for this guild")
-                return
-        else:
-            try:
-                author = int(author)
-                quote = self.database.get_quote(ctx.guild.id, author)
-                if quote is None:
-                    await ctx.send(f"No quote for ID {author}")
-                    return
-            except ValueError:
-                if quote is None:
-                    await ctx.send("Quote ID must be a whole number.")
-                    return
-                command = self.bot.find_command("quote add")
-                if await command.can_run(ctx):
-                    await ctx.invoke(command, author, quote=quote)
-                else:
-                    await ctx.send("You don't have permission to do that, sorry")
-                return
-
-        if self.bot.should_embed(ctx):
-            with dutils.PaginatedEmbed() as embed:
-                embed.set_author(name=quote.author)
-                embed.description = quote.quote
-                embed.set_footer(text=f"#{quote.id}")
-            for e in embed:
-                await ctx.send(embed=e)
-        else:
-            await ctx.send(f"{quote.author}: \"{quote.quote}\" ({quote.id})")
-
-    @quote.command(name="add", aliases=["create"], description="Add a new quote to the list")
-    async def _q_add(self, ctx, author, *, quote):
-        """Adds a new quote to this guild's list of quotes"""
-        if dutils.is_user_mention(author):
-            member = ctx.guild.get_member(dutils.get_id(author))
-            if member is not None:
-                author = str(member)
-        quote = utils.Quote([ctx.guild.id, None, author, quote])
-        self.database.save_item(quote)
-        await ctx.send(f"Quote from {author} added!")
-
-    @quote.command(name="remove", description="Remove a quote")
-    async def _q_remove(self, ctx, num: int):
-        """Remove the quote with a specific ID"""
-        quote = self.database.get_quote(ctx.guild.id, num)
-        if quote is not None:
-            self.database.remove_items(utils.Quote, guild_id=ctx.guild.id, id=num)
-            await ctx.send(f"Removed quote {num}")
-        else:
-            await ctx.send(f"No quote for ID {num}")
-
-    @quote.command(name="list", description="List of quotes")
-    async def _q_list(self, ctx, page: int=1):
-        """Shows a list of quotes. If there are a lot of quotes, do `^list [num]` to access the next page of them."""
-
-        if page < 1:
-            await ctx.send(f"Requested page must be greater than 0")
-            return
-
-        num_quotes = self.database.get_count(utils.Quote, guild_id=ctx.guild.id)
-        pages = round(num_quotes / 10 + .5)
-        if page > pages:
-            await ctx.send(f"Requested page doesn't exist, last page is {pages}")
-            return
-
-        start = (page - 1) * 10
-        end = start + 10
-        quotes = self.database.get_items(utils.Quote, limit=(start, end), order="id", guild_id=ctx.guild.id)
-
-        if self.bot.should_embed(ctx):
-            with dutils.PaginatedEmbed() as embed:
-                for quote in quotes:
-                    embed.add_field(name=f"#{quote.id} - {quote.author}", value=quote.quote)
-                embed.set_footer(text=f"Page {page}/{pages}")
-            await ctx.send(embed=embed)
-        else:
-            out = "```"
-            for quote in quotes:
-                out += f"#{quote.id} - {quote.author}:\n{quote.quote}\n"
-            out += f"```Page: {page}/{pages}"
-            await ctx.send(out)
 
 
 def setup(bot):

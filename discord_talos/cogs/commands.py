@@ -54,7 +54,7 @@ class Commands(dutils.TalosCog):
     """General Talos commands. Get bot info, check the time, or run a wordwar from here. These commands generally """\
         """aren't very user-specific, most commands are in this category."""
 
-    __slots__ = ("__local_check",)
+    __slots__ = ()
 
     # keep track of active WWs
     active_wws = {}
@@ -342,31 +342,31 @@ class Commands(dutils.TalosCog):
         username = username.lower().replace(" ", "-")
         novel_name = novel_name.lower().replace(" ", "-")
 
-        novel_page, novel_stats = await self.bot.session.nano_get_novel(username, novel_name)
-        if novel_page is None or novel_stats is None:
-            await ctx.send("Sorry, I couldn't find that user or novel.")
+        try:
+            novel = await self.bot.session.nano_get_novel(username, novel_name)
+        except utils.NotAUser:
+            await ctx.send("Sorry, I couldn't find that user")
             return
-        # Get basic novel info
-        avatar = "https:" + novel_page.get_by_class("avatar_thumb")[0].get_attribute("src")
-        novel_title = novel_page.get_by_class("media-heading")[0].innertext
-        novel_cover = novel_page.get_by_id("novel_cover_thumb")
-        if novel_cover:
-            novel_cover = "https:" + novel_cover.get_attribute("src")
-        novel_genre = novel_page.get_by_class("genre")[0].innertext
-        novel_synopsis = html_to_markdown(novel_page.get_by_id("novel_synopsis").first_child.innertext)
+        except utils.NotANovel:
+            await ctx.send("Sorry, I couldn't find that novel")
+            return
+
+        # Pull out desired novel info
+        avatar = await novel.author.avatar
+        novel_title = novel.title
+        novel_cover = await novel.cover
+        novel_genre = await novel.genre
+        novel_synopsis = html_to_markdown(await novel.synopsis)
         if novel_synopsis.strip() == "":
             novel_synopsis = None
         elif len(novel_synopsis) > 1024:
             novel_synopsis = novel_synopsis[:1021] + "..."
-        novel_excerpt = html_to_markdown(novel_page.get_by_id("novel_excerpt").first_child.innertext)
+        novel_excerpt = html_to_markdown(await novel.excerpt)
         if novel_excerpt.strip() == "":
             novel_excerpt = None
         elif len(novel_excerpt) > 1024:
             novel_excerpt = novel_excerpt[:1021] + "..."
         # Get novel statistics
-        stats_el = novel_stats.get_by_id("novel_stats")
-        stat_list = novel_stats.get_by_class("stat", stats_el)
-
         title_transform = {
             "Your Average Per Day": "Daily Avg",
             "Words Written Today": "Words Today",
@@ -382,6 +382,7 @@ class Commands(dutils.TalosCog):
                 stats[title_transform.get(title, title)] = int(number.replace(",", ""))
             except ValueError:
                 stats[title_transform.get(title, title)] = number
+
         if self.bot.should_embed(ctx):
             # Construct Embed
             description = f"*Title:* {novel_title} *Genre:* {novel_genre}\n**Wordcount Details**\n"
@@ -404,6 +405,8 @@ class Commands(dutils.TalosCog):
                     embed.add_field(name="__Excerpt__", value=novel_excerpt)
             for page in embed:
                 await ctx.send(embed=page)
+        else:
+            await ctx.send("Non-embed novel listing not yet implemented")
 
     @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
     async def _profile(self, ctx, username):
@@ -639,6 +642,96 @@ class Commands(dutils.TalosCog):
                 await ctx.send("PW has already started! Would you like to **join**?")
         else:
             await ctx.send("No PW to start. Maybe you want to **create** one?")
+
+    @commands.group(description="Retrieve a quote from the database", invoke_without_command=True)
+    async def quote(self, ctx, author=None, *, quote=None):
+        """Quote the best lines from chat for posterity"""
+        if author is None:
+            quote = self.database.get_random_quote(ctx.guild.id)
+            if quote is None:
+                await ctx.send("There are no quotes available for this guild")
+                return
+        else:
+            try:
+                author = int(author)
+                quote = self.database.get_quote(ctx.guild.id, author)
+                if quote is None:
+                    await ctx.send(f"No quote for ID {author}")
+                    return
+            except ValueError:
+                if quote is None:
+                    await ctx.send("Quote ID must be a whole number.")
+                    return
+                command = self.bot.find_command("quote add")
+                if await command.can_run(ctx):
+                    await ctx.invoke(command, author, quote=quote)
+                else:
+                    await ctx.send("You don't have permission to add quotes, sorry")
+                return
+
+        if self.bot.should_embed(ctx):
+            with dutils.PaginatedEmbed() as embed:
+                embed.set_author(name=quote.author)
+                embed.description = quote.quote
+                embed.set_footer(text=f"#{quote.id}")
+            for e in embed:
+                await ctx.send(embed=e)
+        else:
+            await ctx.send(f"{quote.author}: \"{quote.quote}\" ({quote.id})")
+
+    @quote.command(name="add", aliases=["create"], description="Add a new quote to the list")
+    @dutils.admin_check()
+    async def _q_add(self, ctx, author, *, quote):
+        """Adds a new quote to this guild's list of quotes"""
+        if dutils.is_user_mention(author):
+            member = ctx.guild.get_member(dutils.get_id(author))
+            if member is not None:
+                author = str(member)
+        quote = utils.Quote([ctx.guild.id, None, author, quote])
+        self.database.save_item(quote)
+        await ctx.send(f"Quote from {author} added!")
+
+    @quote.command(name="remove", description="Remove a quote")
+    @dutils.admin_check()
+    async def _q_remove(self, ctx, num: int):
+        """Remove the quote with a specific ID"""
+        quote = self.database.get_quote(ctx.guild.id, num)
+        if quote is not None:
+            self.database.remove_items(utils.Quote, guild_id=ctx.guild.id, id=num)
+            await ctx.send(f"Removed quote {num}")
+        else:
+            await ctx.send(f"No quote for ID {num}")
+
+    @quote.command(name="list", description="List of quotes")
+    async def _q_list(self, ctx, page: int = 1):
+        """Shows a list of quotes. If there are a lot of quotes, do `^list [num]` to access the next page of them."""
+
+        if page < 1:
+            await ctx.send(f"Requested page must be greater than 0")
+            return
+
+        num_quotes = self.database.get_count(utils.Quote, guild_id=ctx.guild.id)
+        pages = round(num_quotes / 10 + .5)
+        if page > pages:
+            await ctx.send(f"Requested page doesn't exist, last page is {pages}")
+            return
+
+        start = (page - 1) * 10
+        end = start + 10
+        quotes = self.database.get_items(utils.Quote, limit=(start, end), order="id", guild_id=ctx.guild.id)
+
+        if self.bot.should_embed(ctx):
+            with dutils.PaginatedEmbed() as embed:
+                for quote in quotes:
+                    embed.add_field(name=f"#{quote.id} - {quote.author}", value=quote.quote)
+                embed.set_footer(text=f"Page {page}/{pages}")
+            await ctx.send(embed=embed)
+        else:
+            out = "```"
+            for quote in quotes:
+                out += f"#{quote.id} - {quote.author}:\n{quote.quote}\n"
+            out += f"```Page: {page}/{pages}"
+            await ctx.send(out)
 
     @commands.command(description="Allows the rolling of dice")
     async def roll(self, ctx, dice):

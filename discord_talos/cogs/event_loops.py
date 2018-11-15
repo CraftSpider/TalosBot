@@ -68,7 +68,7 @@ def create_service():
 class EventLoops(dutils.TalosCog):
     """Handles the Talos regulated events, time based loops. How did you even figure out this help page existed?"""
 
-    __slots__ = ('service', 'last_guild_count', "__local_check")
+    __slots__ = ("service", "last_guild_count")
 
     def __init__(self, bot):
         """Initialize the EventLoops cog. Takes in an instance of Talos to use while running."""

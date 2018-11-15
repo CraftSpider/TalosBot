@@ -19,16 +19,6 @@ from discord.ext import commands
 
 # Configure Logging
 log = logging.getLogger("talos.dev")
-
-
-#
-# Dev Command Check
-#
-def dev_check(self, ctx):
-    """Determine whether the person calling the command is a dev."""
-    return ctx.author.id in self.bot.DEVS
-
-
 dev_command = functools.partial(commands.command, hidden=True)
 
 
@@ -39,7 +29,7 @@ class DevCommands(dutils.TalosCog):
     """These commands can only be used by Talos Devs, and will work at any time. Several of them are very """\
         """dangerous. Also, they are all hidden from the help command, thus why there's no list here."""
 
-    __local_check = dev_check
+    __local_check = dutils.dev_local
 
     def __getattr__(self, item):
         """

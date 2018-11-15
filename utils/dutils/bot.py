@@ -175,14 +175,18 @@ class TalosCog:
 
     __slots__ = ("bot", "database")
 
+    def __new__(cls, bot):
+        local_name = f"_{cls.__name__}__local_check"
+        if not hasattr(cls, local_name):
+            setattr(cls, local_name, _perms_check)
+        return super().__new__(cls)
+
     def __init__(self, bot):
         """Initiates the current cog. Takes an instance of Talos to use while running."""
         self.bot = bot
         self.database = None
         if hasattr(bot, "database"):
             self.database = bot.database
-        if not hasattr(self, f"_{self.__class__.__name__}__local_check"):
-            self.add_method(_perms_check, f"_{self.__class__.__name__}__local_check")
 
     def add_method(self, method, name=None):
 

@@ -48,17 +48,21 @@ class NanoInfo:
 
 class NanoNovel:
 
-    __slots__ = ("client", "title", "author", "genre", "synopsis", "excerpt", "stats")
+    __slots__ = ("client", "title", "author", "stats", "_cover", "_genre", "_synopsis", "_excerpt")
 
     client: TalosHTTPClient
     title: str
     author: NanoUser
-    genre: str
-    synopsis: str
-    excerpt: str
     stats: NanoNovelStats
+    _cover: str
+    _genre: str
+    _synopsis: str
+    _excerpt: str
 
-    def __init__(self, client: TalosHTTPClient, author: NanoUser, nid: str):
+    def __init__(self, client: TalosHTTPClient, author: NanoUser, nid: str): ...
+
+    @property
+    async def cover(self) -> str: ...
 
     async def _initialize(self) -> None: ...
 

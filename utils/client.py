@@ -92,17 +92,42 @@ class NanoInfo:
 
 class NanoNovel:
 
-    __slots__ = ("client", "title", "author", "genre", "synopsis", "excerpt", "stats")
+    __slots__ = ("client", "title", "author", "stats", "_cover", "_genre", "_synopsis", "_excerpt")
 
     def __init__(self, client, author, title):
         self.client = client
         self.author = author
         self.title = title
+        self.stats = NanoNovelStats(client, self)
 
-        self.genre = None
-        self.synopsis = None
-        self.excerpt = None
-        self.stats = None
+        self._cover = None
+        self._genre = None
+        self._synopsis = None
+        self._excerpt = None
+
+    @property
+    async def cover(self):
+        if not self._cover:
+            await self._initialize()
+        return self._cover
+
+    @property
+    async def genre(self):
+        if not self._genre:
+            await self._initialize()
+        return self._genre
+
+    @property
+    async def synopsis(self):
+        if not self._synopsis:
+            await self._initialize()
+        return self._synopsis
+
+    @property
+    async def excerpt(self):
+        if not self._excerpt:
+            await self._initialize()
+        return self._excerpt
 
     async def _initialize(self):
         page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.title}")
