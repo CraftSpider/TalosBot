@@ -54,9 +54,9 @@ class NanoUser:
 
     @property
     async def novels(self):
-        if self.novels is None:
+        if self._novels is None:
             await self._init_novels()
-        return self.novels
+        return self._novels
 
     @property
     async def current_novel(self):
@@ -76,7 +76,47 @@ class NanoUser:
         self._age = age.innertext
 
     async def _init_novels(self):
-        pass
+        page = await self.client.nano_get_page(f"participants/{self.username}/novels")
+        if page is None:
+            raise NotAUser(self.username)
+
+        novel_els = page.get_by_class("novel")
+
+        novels = []
+        for novel_el in novel_els:
+            if novel_el.has_class("missing"):
+                continue
+
+            novel_el = novel_el.first_child
+            year = int(novel_el.first_child.first_child.innertext.split(" ")[1])
+
+            data_el = page.get_by_class("media", novel_el)[0]
+            cover = None
+            if not page.get_by_class("no_cover", data_el):
+                cover = page.get_by_class("cover", data_el)[0].first_child.get_attribute("src")
+
+            winner = False
+            if len(data_el.child_nodes) == 3:
+                winner = True
+
+            data_el = page.get_by_class("info", data_el)[0].first_child
+            title_el = page.get_by_class("media-heading", data_el)[0].first_child
+            title = title_el.innertext
+            nid = title_el.get_attribute("href").rsplit("/", 1)[-1]
+            genre = page.get_by_class("genre", data_el)[0].innertext
+            synopsis = page.get_by_class("ellipsis", data_el)[0].first_child.innerhtml
+
+            novel = NanoNovel(self.client, self, nid)
+            novel.year = year
+            novel.title = title
+            novel.genre = genre
+            novel.cover = cover
+            novel.winner = winner
+            novel.synopsis = synopsis
+
+            novels.append(novel)
+
+        self._novels = novels
 
 
 class NanoInfo:
@@ -92,36 +132,21 @@ class NanoInfo:
 
 class NanoNovel:
 
-    __slots__ = ("client", "title", "author", "stats", "_cover", "_genre", "_synopsis", "_excerpt")
+    __slots__ = ("client", "id", "author", "year", "title", "genre", "cover", "winner", "synopsis", "stats", "_excerpt")
 
-    def __init__(self, client, author, title):
+    def __init__(self, client, author, nid):
         self.client = client
         self.author = author
-        self.title = title
+        self.id = nid
         self.stats = NanoNovelStats(client, self)
 
-        self._cover = None
-        self._genre = None
-        self._synopsis = None
+        self.year = None
+        self.title = None
+        self.genre = None
+        self.cover = None
+        self.winner = None
+        self.synopsis = None
         self._excerpt = None
-
-    @property
-    async def cover(self):
-        if not self._cover:
-            await self._initialize()
-        return self._cover
-
-    @property
-    async def genre(self):
-        if not self._genre:
-            await self._initialize()
-        return self._genre
-
-    @property
-    async def synopsis(self):
-        if not self._synopsis:
-            await self._initialize()
-        return self._synopsis
 
     @property
     async def excerpt(self):
@@ -132,12 +157,9 @@ class NanoNovel:
     async def _initialize(self):
         page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.title}")
         if page is None:
-            await self.author.info
             raise NotANovel(self.title)
-        # TODO
 
-    async def get_stats(self):
-        pass
+        self._excerpt = page.get_by_id("novel_excerpt").innerhtml
 
 
 class NanoNovelStats:
@@ -251,19 +273,14 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :param title: novel to get for user. Most recent if not given.
         :return: NanoNovel object, or None.
         """
-        try:
-            user = await self.nano_get_user(username)
-            if title is None:
-                return user.current_novel
-            else:
-                for novel in await user.novels:
-                    if novel.title == title:
-                        return novel
-            return None
-        except NotAUser:
-            return None
-        except NotANovel:
-            return None
+        user = NanoUser(self, username)
+        if title is None:
+            return await user.current_novel
+        else:
+            for novel in await user.novels:
+                if novel.title == title:
+                    return novel
+            raise NotANovel(title)
 
         # navs = user_page.get_by_class("nav-tabs")[0]
         # stats = user_page.get_by_tag("li", navs)[-1].first_child

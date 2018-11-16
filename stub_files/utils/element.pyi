@@ -41,6 +41,12 @@ class Node:
     def first_child(self, value: Node) -> None: ...
 
     @property
+    def last_child(self) -> Optional[Node]: return
+
+    @last_child.setter
+    def last_child(self, value) -> None: ...
+
+    @property
     @abc.abstractmethod
     def innertext(self) -> str: ...
 

@@ -97,6 +97,23 @@ class Node(abc.ABC):
         self._pos_map[value] = 0
 
     @property
+    def last_child(self):
+        if not self.child_nodes:
+            return None
+        return self.child_nodes[-1]
+
+    @last_child.setter
+    def last_child(self, value):
+        pos = len(self.child_nodes) - 1
+
+        old = self.child_nodes[pos]
+        old.parent = None
+        del self._pos_map[old]
+
+        self.child_nodes[pos] = value
+        self._pos_map[value] = pos
+
+    @property
     @abc.abstractmethod
     def innertext(self): ...
 

@@ -336,11 +336,12 @@ class Commands(dutils.TalosCog):
             await ctx.send("Non-embed nano info not yet supported")  # TODO
 
     @nanowrimo.command(name="novel", description="Fetch a user's nano novel.")
-    async def _novel(self, ctx, username, novel_name=""):
+    async def _novel(self, ctx, username, novel_name=None):
         """Fetches detailed info on a user's novel from the NaNo site. If no novel name is given, it grabs the most """\
             """recent."""
         username = username.lower().replace(" ", "-")
-        novel_name = novel_name.lower().replace(" ", "-")
+        if novel_name is not None:
+            novel_name = novel_name.lower().replace(" ", "-")
 
         try:
             novel = await self.bot.session.nano_get_novel(username, novel_name)
@@ -354,9 +355,9 @@ class Commands(dutils.TalosCog):
         # Pull out desired novel info
         avatar = await novel.author.avatar
         novel_title = novel.title
-        novel_cover = await novel.cover
-        novel_genre = await novel.genre
-        novel_synopsis = html_to_markdown(await novel.synopsis)
+        novel_cover = novel.cover
+        novel_genre = novel.genre
+        novel_synopsis = html_to_markdown(novel.synopsis)
         if novel_synopsis.strip() == "":
             novel_synopsis = None
         elif len(novel_synopsis) > 1024:
@@ -375,7 +376,7 @@ class Commands(dutils.TalosCog):
             "Words Remaining": "Remaining Total"
         }
         stats = {}
-        for element in stat_list:
+        for element in []:
             title = element.child_nodes[0].innertext
             number = element.child_nodes[1].innertext
             try:
