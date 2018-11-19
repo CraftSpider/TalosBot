@@ -1,76 +1,8 @@
 
-from typing import Tuple, Optional, Dict, List, Union, overload
+from typing import Tuple, Optional, Dict, List, Union, NamedTuple
 from utils.element import Document, Element
 import aiohttp
 import io
-
-class NanoUser:
-
-    __slots__ = ("client", "username", "_avatar", "_age", "_info", "_novels")
-
-    client: TalosHTTPClient
-    username: str
-    _avatar: str
-    _age: str
-    _info: NanoInfo
-    _novels: List[NanoNovel]
-
-    def __init__(self, client: TalosHTTPClient, username: str) -> None: ...
-
-    @property
-    async def avatar(self) -> str: ...
-
-    @property
-    async def age(self) -> str: ...
-
-    @property
-    async def info(self) -> NanoInfo: ...
-
-    @property
-    async def novels(self) -> List[NanoNovel]: ...
-
-    @property
-    async def current_novel(self) -> NanoNovel: ...
-
-    async def _initialize(self) -> None: ...
-
-    async def _init_novels(self) -> None: ...
-
-class NanoInfo:
-
-    __slots__ = ("bio", "lifetime_stats", "fact_sheet")
-
-    bio: str
-    lifetime_stats: Dict[str, str]
-    fact_sheet: Dict[str, str]
-
-    def __init__(self, page: Document) -> None: ...
-
-class NanoNovel:
-
-    __slots__ = ("client", "id", "author", "year", "title", "genre", "cover", "winner", "synopsis", "stats", "_excerpt")
-
-    client: TalosHTTPClient
-    id: str
-    author: NanoUser
-    year: int
-    title: str
-    genre: str
-    cover: str
-    winner: bool
-    synopsis: str
-    stats: NanoNovelStats
-    _excerpt: str
-
-    def __init__(self, client: TalosHTTPClient, author: NanoUser, nid: str): ...
-
-    @property
-    async def excerpt(self): ...
-
-    async def _initialize(self) -> None: ...
-
-class NanoNovelStats:
-    pass
 
 class TalosHTTPClient(aiohttp.ClientSession):
 
@@ -96,7 +28,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
 
     async def nano_get_page(self, url: str) -> Optional[Document]: ...
 
-    async def nano_get_user(self, username: str) -> Optional[NanoUser]: ...
+    async def nano_get_user(self, username: str) -> NanoUser: ...
 
     async def nano_get_novel(self, username: str, title: str = ...) -> NanoNovel: ...
 

@@ -415,50 +415,26 @@ class Commands(dutils.TalosCog):
         site_name = username.lower().replace(" ", "-")
         site_name = site_name.lower().replace(".", "-")
 
-        doc = await self.bot.session.nano_get_user(site_name)
-        if doc is None:
-            await ctx.send("Sorry, I couldn't find that user on the NaNo site.")
-            return
-        # Get member info
-        member_age = doc.get_by_class("member_for")[0].innertext
-
-        author_bio = ""
         try:
-            bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
-                                    doc.get_by_class("panel-heading")))
-            for element in bio_panel.parent.next_child(bio_panel).child_nodes:
-                author_bio += element.innertext + "\n"
-            if len(member_age) + len(author_bio) > 2048:
-                author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
-            author_bio = author_bio.strip()
-        except StopIteration:
-            pass
+            user = await self.bot.session.nano_get_user(site_name)
+        except utils.NotAUser:
+            await ctx.send("Sorry, I couldn't find that user on the NaNo site")
+            return
 
-        avatar = "https:" + doc.get_by_class("avatar_thumb")[0].get_attribute("src")
-        # Get basic novel stats
-        novel_data = doc.get_by_class("panel-default")[1].first_child.first_child
-        data_marks = doc.get_by_tag("li", novel_data)
-        novel_title = None
-        if data_marks:
-            novel_title = data_marks[0].innertext
-            novel_genre = data_marks[1].innertext
-            novel_words = data_marks[2].first_child.innertext
-        else:
-            novel_genre = None
-            novel_words = None
-        # Get fact sheet
-        fact_sheet = ""
-        fact_table = doc.get_by_class("profile-fact-sheet")[0].child_nodes[1].child_nodes[0]
-        for child in fact_table.child_nodes:
-            if not isinstance(child, utils.Element):
-                continue
-            if child.tag == "dt":
-                fact_sheet += f"**{child.innertext}**\n"
-            elif child.tag == "dd":
-                if isinstance(child.first_child, utils.Element):
-                    fact_sheet += f"{child.first_child.innertext}\n"
-                else:
-                    fact_sheet += f"{child.innertext}\n"
+        # Get member info
+        member_age = await user.age
+        info = await user.info
+        avatar = await user.avatar
+        novel = await user.simple_novel
+
+        author_bio = html_to_markdown(info.bio)
+        if len(member_age) + len(author_bio) > 2048:
+            author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
+        author_bio = author_bio.strip()
+
+        facts = info.fact_sheet
+        fact_sheet = "\n".join(f"**{fact}**:\n{facts[fact]}" for fact in facts)
+
         if self.bot.should_embed(ctx):
             # Build Embed
             with dutils.PaginatedEmbed() as embed:
@@ -466,10 +442,10 @@ class Commands(dutils.TalosCog):
                 embed.description = f"*{member_age}*\n\n" + author_bio
                 embed.set_author(name=username, url="http://nanowrimo.org/participants/" + site_name, icon_url=avatar)
                 embed.set_thumbnail(url=avatar)
-                if novel_title is not None:
+                if novel.title is not None:
                     embed.add_field(
                         name="__Novel Info__",
-                        value=f"**Title:** {novel_title}\n**Genre:** {novel_genre}\n**Words:** {novel_words}"
+                        value=f"**Title:** {novel.title}\n**Genre:** {novel.genre}\n**Words:** {novel.words}"
                     )
                 if fact_sheet:
                     embed.add_field(
@@ -487,8 +463,9 @@ class Commands(dutils.TalosCog):
                 else:
                     author_bio = author_bio[:197] + "..."
             out += f"*{member_age}*\n{author_bio}\n"
-            out += "__**Novel Info**__\n"
-            out += f"**Title:** {novel_title} **Genre:** {novel_genre} **Words:** {novel_words}\n"
+            if novel.title is not None:
+                out += "__**Novel Info**__\n"
+                out += f"**Title:** {novel.title} **Genre:** {novel.genre} **Words:** {novel.words}\n"
             if fact_sheet is not None:
                 fact_sheet = fact_sheet.replace('\n', ' ')
                 out += f"__**Fact Sheet**__\n{fact_sheet}"

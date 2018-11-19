@@ -1,5 +1,5 @@
 
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Iterator
 import abc
 
 
@@ -11,7 +11,7 @@ class Document:
 
     def __init__(self, element): ...
 
-    def _depth_iterator(self, start: Element = ...) -> iter(Node): ...
+    def _depth_iterator(self, start: Node = ...) -> Iterator[Node]: ...
 
     def get_by_tag(self, tag: str, start: Optional[Element] = ...) -> List[Element]: ...
 
@@ -19,7 +19,9 @@ class Document:
 
     def get_by_name(self, name: str) -> Optional[Element]: ...
 
-    def get_by_class(self, classname: str, start: Element = ...) -> List[Element]: ...
+    def get_by_class(self, classname: str, start: Node = ...) -> List[Element]: ...
+
+    def get_first_by_class(self, classname: str, start: Node = ...) -> Optional[Element]: ...
 
 class Node:
 

@@ -9,6 +9,7 @@ import datetime as dt
 import discord
 import asyncio
 import logging
+import urllib.parse as urllib
 import utils
 import utils.dutils as dutils
 from discord.ext import commands
@@ -118,7 +119,10 @@ class JokeCommands(dutils.TalosCog):
         if self.bot.should_embed(ctx):
             with dutils.PaginatedEmbed() as embed:
                 embed.title = data["title"]
-                embed.set_image(url=data["img"])
+                # TODO: Not general. move into embed preferrably
+                url = data["img"]
+                url = url.replace(" ", "%20")
+                embed.set_image(url=url)
                 embed.set_footer(text=data["alt"])
                 embed.timestamp = data["time"]
             await ctx.send(embed=embed)

@@ -5,178 +5,10 @@ import logging
 import re
 import json
 import datetime as dt
-import utils.utils as utils
+
+from . import utils, nano, errors
 
 log = logging.getLogger("talos.utils")
-
-
-class NanoException(Exception):
-    pass
-
-
-class NotAUser(NanoException):
-    pass
-
-
-class NotANovel(NanoException):
-    pass
-
-
-class NanoUser:
-
-    __slots__ = ("client", "username", "_avatar", "_age", "_info", "_novels")
-
-    def __init__(self, client, username):
-        self.client = client
-        self.username = username
-        self._avatar = None
-        self._age = None
-        self._info = None
-        self._novels = None
-
-    @property
-    async def avatar(self):
-        if self._avatar is None:
-            await self._initialize()
-        return self._avatar
-
-    @property
-    async def age(self):
-        if self._age is None:
-            await self._initialize()
-        return self._age
-
-    @property
-    async def info(self):
-        if self._info is None:
-            await self._initialize()
-        return self._info
-
-    @property
-    async def novels(self):
-        if self._novels is None:
-            await self._init_novels()
-        return self._novels
-
-    @property
-    async def current_novel(self):
-        novels = await self.novels
-        return novels[0]
-
-    async def _initialize(self):
-        page = await self.client.nano_get_page(f"participants/{self.username}")
-        if page is None:
-            raise NotAUser(self.username)
-        self._info = NanoInfo(page)
-
-        avatar = page.get_by_class("avatar_thumb")[0]
-        self._avatar = "https:" + avatar.get_attribute("src")
-
-        age = page.get_by_class("member_for")[0]
-        self._age = age.innertext
-
-    async def _init_novels(self):
-        page = await self.client.nano_get_page(f"participants/{self.username}/novels")
-        if page is None:
-            raise NotAUser(self.username)
-
-        novel_els = page.get_by_class("novel")
-
-        novels = []
-        for novel_el in novel_els:
-            if novel_el.has_class("missing"):
-                continue
-
-            novel_el = novel_el.first_child
-            year = int(novel_el.first_child.first_child.innertext.split(" ")[1])
-
-            data_el = page.get_by_class("media", novel_el)[0]
-            cover = None
-            if not page.get_by_class("no_cover", data_el):
-                cover = page.get_by_class("cover", data_el)[0].first_child.get_attribute("src")
-
-            winner = False
-            if len(data_el.child_nodes) == 3:
-                winner = True
-
-            data_el = page.get_by_class("info", data_el)[0].first_child
-            title_el = page.get_by_class("media-heading", data_el)[0].first_child
-            title = title_el.innertext
-            nid = title_el.get_attribute("href").rsplit("/", 1)[-1]
-            genre = page.get_by_class("genre", data_el)[0].innertext
-            synopsis = page.get_by_class("ellipsis", data_el)[0].first_child.innerhtml
-
-            novel = NanoNovel(self.client, self, nid)
-            novel.year = year
-            novel.title = title
-            novel.genre = genre
-            novel.cover = cover
-            novel.winner = winner
-            novel.synopsis = synopsis
-
-            novels.append(novel)
-
-        self._novels = novels
-
-
-class NanoInfo:
-
-    __slots__ = ("bio", "lifetime_stats", "fact_sheet")
-
-    def __init__(self, page):
-        # TODO
-        self.bio = ...
-        self.lifetime_stats = ...
-        self.fact_sheet = ...
-
-
-class NanoNovel:
-
-    __slots__ = ("client", "id", "author", "year", "title", "genre", "cover", "winner", "synopsis", "stats", "_excerpt")
-
-    def __init__(self, client, author, nid):
-        self.client = client
-        self.author = author
-        self.id = nid
-        self.stats = NanoNovelStats(client, self)
-
-        self.year = None
-        self.title = None
-        self.genre = None
-        self.cover = None
-        self.winner = None
-        self.synopsis = None
-        self._excerpt = None
-
-    @property
-    async def excerpt(self):
-        if not self._excerpt:
-            await self._initialize()
-        return self._excerpt
-
-    async def _initialize(self):
-        page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.title}")
-        if page is None:
-            raise NotANovel(self.title)
-
-        self._excerpt = page.get_by_id("novel_excerpt").innerhtml
-
-
-class NanoNovelStats:
-
-    __slots__ = ("client", "novel", "daily_average", "target", "target_average", "total_today", "total",
-                 "words_remaining", "current_day", "days_remaining", "finish_date", "average_to_finish")
-
-    def __init__(self, client, novel):
-        self.client = client
-        self.novel = novel
-
-    @property
-    def author(self):
-        return self.novel.author
-
-    async def initialize(self):
-        page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.novel.title}/stats")
 
 
 class TalosHTTPClient(aiohttp.ClientSession):
@@ -262,7 +94,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :param username: username of nano user to get profile of
         :return: text of the profile page for that user or None
         """
-        user = NanoUser(self, username)
+        user = nano.NanoUser(self, username)
         await user._initialize()
         return user
 
@@ -273,20 +105,14 @@ class TalosHTTPClient(aiohttp.ClientSession):
         :param title: novel to get for user. Most recent if not given.
         :return: NanoNovel object, or None.
         """
-        user = NanoUser(self, username)
+        user = nano.NanoUser(self, username)
         if title is None:
             return await user.current_novel
         else:
             for novel in await user.novels:
                 if novel.title == title:
                     return novel
-            raise NotANovel(title)
-
-        # navs = user_page.get_by_class("nav-tabs")[0]
-        # stats = user_page.get_by_tag("li", navs)[-1].first_child
-        #
-        # novel_name = re.search(f"/participants/{username}/novels/(.*?)/stats",
-        #                        stats.get_attribute("href")).group(1)
+            raise errors.NotANovel(title)
 
     async def nano_login_client(self):
         """

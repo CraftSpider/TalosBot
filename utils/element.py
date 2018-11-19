@@ -63,6 +63,12 @@ class Document:
                 out.append(node)
         return out
 
+    def get_first_by_class(self, classname, start=None):
+        for node in self._depth_iterator(start):
+            if isinstance(node, Element) and node.has_class(classname):
+                return node
+        return None
+
 
 class Node(abc.ABC):
 
@@ -177,7 +183,7 @@ class Content(Node):
         self.value = data
 
     def __str__(self):
-        return f"{self.value}"
+        return self.value
 
     def __repr__(self):
         spacing = "  " * self.depth

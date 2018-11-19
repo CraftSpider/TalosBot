@@ -46,6 +46,8 @@ class DateConverter(_TalosConverter):
         for fmt in cls.datefmt:
             try:
                 parsed = dt.datetime.strptime(argument, fmt)
+            except ValueError:
+                pass
             except Exception as e:
                 print(e)
         return dt.date(year=parsed.year, month=parsed.month, day=parsed.day)
