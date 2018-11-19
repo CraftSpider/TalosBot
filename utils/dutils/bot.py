@@ -6,8 +6,8 @@ import discord
 import discord.ext.commands as commands
 
 from .. import utils
-from .events import EventLoop
-from .paginators import PaginatedEmbed
+from . import events
+from . import paginators
 
 
 log = logging.getLogger("talos.dutils.bot")
@@ -29,7 +29,7 @@ class ExtendedBot(commands.Bot):
 
         members = inspect.getmembers(cog)
         for name, member in members:
-            if isinstance(member, EventLoop):
+            if isinstance(member, events.EventLoop):
                 member.parent = cog
                 self.add_event(member)
 
@@ -41,7 +41,7 @@ class ExtendedBot(commands.Bot):
         members = inspect.getmembers(cog)
         for name, member in members:
             # remove events the cog has
-            if isinstance(member, EventLoop):
+            if isinstance(member, events.EventLoop):
                 self.remove_event(member.name)
 
         super().remove_cog(name)
@@ -69,7 +69,7 @@ class ExtendedBot(commands.Bot):
     # Event loop functions
 
     def add_event(self, event):
-        if not isinstance(event, EventLoop):
+        if not isinstance(event, events.EventLoop):
             raise TypeError('The event passed must be a subclass of EventLoop')
 
         if event.name in self.all_events:
@@ -273,7 +273,7 @@ class TalosFormatter(commands.HelpFormatter):
             return await self.string_format()
 
     async def embed_format(self):
-        self._paginator = PaginatedEmbed()
+        self._paginator = paginators.PaginatedEmbed()
 
         description = self.command.description if not self.is_cog() else inspect.getdoc(self.command)
 

@@ -4,6 +4,7 @@
 
     Author: CraftSpider
 """
+
 import discord
 import discord.ext.commands as commands
 import sys
@@ -12,9 +13,9 @@ import re
 import pathlib
 import mysql.connector
 import datetime as dt
-import utils.command_lang as command_lang
 import utils
 import utils.dutils as dutils
+import utils.command_lang as command_lang
 
 #
 #   Constants
@@ -159,7 +160,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
     async def logout(self):
         """
             Saves Talos data, then logs out the bot cleanly and safely
-            :return None:
+        :return None:
         """
         log.debug("Logging out Talos")
         self.database.commit()

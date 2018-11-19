@@ -1,6 +1,7 @@
 
 import html.parser as parser
-import utils.element as el
+
+from . import element as el
 
 
 def attrs_to_dict(attrs):

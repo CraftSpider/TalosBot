@@ -2,9 +2,10 @@
 import math
 import re
 import discord
-from discord.embeds import Embed, EmbedProxy, EmptyEmbed, _EmptyEmbed
+from discord.embeds import Embed, EmbedProxy, EmptyEmbed
 
 
+_EmptyEmbed = EmptyEmbed.__class__
 _EmptyEmbed.__len__ = lambda self: 0
 EmptyField = {"value": "", "name": "", "inline": False}
 

@@ -7,7 +7,6 @@
 """
 import discord
 import discord.ext.commands as commands
-import discord.errors as errors
 import typing
 import logging
 import asyncio
@@ -80,7 +79,7 @@ class UserCommands(dutils.TalosCog):
                 await asyncio.sleep(.1)
                 try:
                     await colour_role.edit(position=(ctx.guild.me.top_role.position - 1))
-                except errors.HTTPException:
+                except discord.errors.HTTPException:
                     pass
             except discord.errors.InvalidArgument as e:
                 log.error(e.__cause__)

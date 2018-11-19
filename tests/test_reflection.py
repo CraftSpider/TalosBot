@@ -6,7 +6,7 @@ import pkgutil
 import importlib
 
 
-def isdocable(attr):
+def is_docable(attr):
     member = attr.object
     if isinstance(member, commands.Command) or isinstance(member, dutils.EventLoop):
         return True
@@ -14,75 +14,50 @@ def isdocable(attr):
         inspect.isasyncgenfunction(member) or inspect.isgeneratorfunction(member) or inspect.isclass(member)
 
 
-def isdeclared(member, class_name):
-    if isinstance(member, commands.Command) or isinstance(member, dutils.EventLoop):
-        member = member.callback
-    if not hasattr(member, "__qualname__"):
-        return None  # TODO: If possible, resolve whether a variable was declared on this type
-    else:
-        return member.__qualname__.startswith(class_name + ".") and not inspect.isbuiltin(member)
-
-
-def get_unique_member(base_class):
-    if inspect.isclass(base_class):
-        class_name = base_class.__name__
-    else:
-        class_name = base_class.__class__.__name__
-
-    def predicate(member):
-        if isdocable(member) and isdeclared(member, class_name):
-            return True
-        return False
-
-    return predicate
-
-
-def getdeclared(type, predicate=None):
+def get_declared(type, predicate=None):
     if not inspect.isclass(type):
         type = type.__class__
     attrs = inspect.classify_class_attrs(type)
-    results = []
     for item in attrs:
         if item.defining_class != type:
             continue
         elif not predicate or predicate(item):
-            results.append(item)
-    print(results)
-    return results
+            yield item
 
 
 def get_undoced(type):
     out = []
-    for attr in getdeclared(type):
+    for attr in get_declared(type, is_docable):
+        name = attr.name
         member = attr.object
         if isinstance(member, commands.Command) or isinstance(member, dutils.EventLoop):
             if inspect.getdoc(member.callback) is None or member.description is "":
-                out.append(member)
+                out.append((name, member))
         else:
             if inspect.getdoc(member) is None:
-                out.append(member)
+                out.append((name, member))
+    return out
 
 
 def test_command_docs(testlos):
-    for attr in getdeclared(testlos, isdocable):
+    result = get_undoced(testlos)
+    for attr in get_declared(testlos, is_docable):
         assert inspect.getdoc(attr.object) is not None, "Talos method missing docstring"
     for cog in testlos.cogs:
         cog = testlos.cogs[cog]
-        for attr in getdeclared(cog, isdocable):
-            name = attr.name
-            member = attr.object
-            if isinstance(member, commands.Command):
-                assert inspect.getdoc(member.callback) is not None, f"Cog command {name} missing docstring"
-                assert member.description is not "", f"Cog command {name} missing description"
-            elif isinstance(member, dutils.EventLoop):
-                assert inspect.getdoc(member.callback) is not None, f"Cog event loop {name} missing docstring"
-                assert member.description is not "", f"Cog event loop {name} missing description"
-            else:
-                assert inspect.getdoc(member) is not None, f"Cog method {name} missing docstring"
-
-
-def module_filter(member):
-    return isdocable(member)
+        result.extend(get_undoced(cog))
+        # for attr in get_declared(cog, is_docable):
+        #     name = attr.name
+        #     member = attr.object
+        #     if isinstance(member, commands.Command):
+        #         assert inspect.getdoc(member.callback) is not None, f"Cog command {name} missing docstring"
+        #         assert member.description is not "", f"Cog command {name} missing description"
+        #     elif isinstance(member, dutils.EventLoop):
+        #         assert inspect.getdoc(member.callback) is not None, f"Cog event loop {name} missing docstring"
+        #         assert member.description is not "", f"Cog event loop {name} missing description"
+        #     else:
+        #         assert inspect.getdoc(member) is not None, f"Cog method {name} missing docstring"
+    assert len(result) is 0, f"Missing documentation on: {', '.join(map(lambda x: x[0], result))}"
 
 
 def test_util_docs():
@@ -90,10 +65,10 @@ def test_util_docs():
     for finder, name, ispkg in pkgutil.walk_packages(["../utils"], "utils."):
         pkg = importlib.import_module(name)
         print("Module:", name)
-        for name, member in inspect.getmembers(pkg, module_filter):
+        for name, member in inspect.getmembers(pkg, is_docable):
             if name.startswith("__") and name.endswith("__"):
                 continue
-            if inspect.isclass():
-                test_docs(member)
+            if inspect.isclass(member):
+                get_undoced(member)
             print(name)
             print(member)

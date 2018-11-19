@@ -6,6 +6,7 @@
 """
 
 import discord
+import discord.ext.commands as commands
 import logging
 import re
 import io
@@ -13,9 +14,9 @@ import functools
 import utils
 import utils.dutils as dutils
 import asyncio
+
 from datetime import datetime
 from PIL import Image, ImageDraw
-from discord.ext import commands
 
 # Configure Logging
 log = logging.getLogger("talos.dev")

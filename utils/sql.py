@@ -1,10 +1,10 @@
 
-import utils.data as data
-
 import logging
 import re
 import mysql.connector
 import mysql.connector.abstracts as mysql_abstracts
+
+from . import data
 
 log = logging.getLogger("talos.utils.sql")
 

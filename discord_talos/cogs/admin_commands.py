@@ -4,12 +4,14 @@
 
     Author: CraftSpider
 """
-import asyncio
+
 import discord
+import discord.ext.commands as commands
+import asyncio
 import logging
 import utils
 import utils.dutils as dutils
-from discord.ext import commands
+
 from collections import defaultdict
 
 

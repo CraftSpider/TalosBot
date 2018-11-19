@@ -7,12 +7,11 @@
 import typing
 import datetime as dt
 import discord
+import discord.ext.commands as commands
 import asyncio
 import logging
-import urllib.parse as urllib
 import utils
 import utils.dutils as dutils
-from discord.ext import commands
 
 log = logging.getLogger("talos.joke")
 

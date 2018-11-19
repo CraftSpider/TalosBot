@@ -6,12 +6,23 @@
 
 
 class NanoException(Exception):
-    pass
+
+    def __init__(self):
+        super().__init__()
+
+    def _set_message(self, *args):
+        super().__init__(args)
 
 
 class NotAUser(NanoException):
-    pass
+
+    def __init__(self, username):
+        self._set_message(username)
+        self.username = username
 
 
 class NotANovel(NanoException):
-    pass
+
+    def __init__(self, title):
+        self._set_message(title)
+        self.title = title
