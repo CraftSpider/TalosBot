@@ -150,7 +150,8 @@ class NanoInfo:
                     list = child.first_child.child_nodes
                     data = []
                     for year in list:
-                        data.append(int(year.first_child.first_child.innertext) + 2000)
+                        year = page.get_first_by_class("done_won", year)
+                        data.append(int(year.innertext) + 2000)
                     data = tuple(data)
                 elif name == "Current NaNo Streak":
                     start = int(child.first_child.first_child.innertext)

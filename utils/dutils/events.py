@@ -4,7 +4,8 @@ import asyncio
 import logging
 import inspect
 
-from .. import data
+from .. import data, utils
+from . import errors
 
 
 log = logging.getLogger("talos.dutils.events")
@@ -32,15 +33,6 @@ def align_period(period):
     seconds += period.seconds - 1 if period.seconds else 0
 
     return dt.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
-
-
-class StopEventLoop(Exception):
-
-    __slots__ = ("message",)
-
-    def __init__(self, message=None):
-        super().__init__(message)
-        self.message = message
 
 
 class EventLoop:
@@ -98,22 +90,23 @@ class EventLoop:
             try:
                 log.debug(f"Running event loop {self.name}")
                 await self._callback(*args, **kwargs)
-            except StopEventLoop as e:
+            except errors.StopEventLoop as e:
                 if e.message:
                     log.warning(e.message)
                 return
             except Exception as e:
                 if self.persist:
-                    log.warning(f"Ignoring error in event loop {self.name}: {e}")
+                    utils.log_error(log, logging.WARNING, e, f"Ignoring error in event loop {self.name}:")
                 else:
-                    log.error(f"Stopping event loop {self.name}: {e}")
+                    utils.log_error(log, logging.ERROR, e, f"Stopping event loop {self.name}:")
                     self._task = None
                     return
             delta = align_period(self.period)
             await asyncio.sleep(delta.total_seconds())
 
     def stop(self):
-        self._task.cancel()
+        if self._task is not None:
+            self._task.cancel()
 
 
 def eventloop(period, **kwargs):
