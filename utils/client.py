@@ -12,6 +12,10 @@ log = logging.getLogger("talos.utils")
 
 
 class TalosHTTPClient(aiohttp.ClientSession):
+    """
+        Extension of the aiohttp ClientSession to provide utility methods for getting certain sites and such,
+        and automatically handling various tokens for those sites.
+    """
 
     __slots__ = ("nano_login", "btn_key", "cat_key", "nano_tries")
 

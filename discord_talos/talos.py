@@ -49,10 +49,16 @@ log = logging.getLogger("talos")
 
 
 class FakeMessage:
+    """Fake Message object used internally with Talos Mod Log"""
 
     __slots__ = ("guild", "channel", "author")
 
     def __init__(self, guild, channel):
+        """
+            Initialize fake message for given guild and channel
+        :param guild: Guild the message relates to
+        :param channel: Channel the event happened in
+        """
         self.guild = guild
         self.channel = channel
         self.author = None
@@ -112,6 +118,11 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         self.command(name="help", aliases=["man"], description="Shows this message")(self._talos_help_command)
 
     def __setattr__(self, key, value):
+        """
+            Talos overloaded setattr. Prevents the changing of constants
+        :param key: Name of attribute to set
+        :param value: Value to set attribute to
+        """
         if key == key.upper():
             log.warning(f"Attempt to set Talos attribute: {key} {value}")
         else:

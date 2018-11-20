@@ -17,22 +17,27 @@ log = logging.getLogger("talos.user")
 
 
 def unused_role(ctx, role):
+    """Check if a colour role is unused, or only used by the person asking it to be removed"""
     return (not len(role.members)) or (len(role.members) == 1 and role.members[0] == ctx.author)
 
 
 def talos_colour(role):
+    """Check if a role is a Talos Colour"""
     return role.name.startswith("<TALOS COLOR>")
 
 
 def lopez_colour(role):
+    """Check if a role is a Lopez Colour"""
     return role.name.startswith("LOPEZ COLOR:")
 
 
 def unnamed_colour(role):
+    """Check if a role is an unnamed Talos Colour"""
     return role.name.endswith("<TALOS COLOR>")
 
 
 def named_colour(role):
+    """Check if a role is a named Talos Colour"""
     return role.name.startswith("<TALOS COLOR>") and not role.name.endswith("<TALOS COLOR>")
 
 
@@ -294,4 +299,8 @@ class UserCommands(dutils.TalosCog):
 
     
 def setup(bot):
+    """
+        Sets up the UserCommands extension. Adds the UserCommands cog to the bot
+    :param bot: Bot this extension is being setup for
+    """
     bot.add_cog(UserCommands(bot))

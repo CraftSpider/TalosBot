@@ -2,6 +2,8 @@
 import discord.ext.commands as commands
 import utils.dutils as dutils
 import inspect
+import importlib
+import pkgutil
 
 
 def get_doc(object):
@@ -36,7 +38,7 @@ def get_declared(type, predicate=None):
             yield item
 
 
-def get_undoced(type):
+def _get_undoc_type(type):
     out = []
 
     if get_doc(type) is None:
@@ -54,3 +56,28 @@ def get_undoced(type):
             if get_doc(member) is None:
                 out.append((name, member))
     return out
+
+
+def _get_undoc_pkg(pkg):
+    found = False
+    result = []
+    for finder, name, ispkg in pkgutil.walk_packages([f"./{pkg}"], f"{pkg}."):
+        found = True
+        pkg = importlib.import_module(name)
+        for name, member in inspect.getmembers(pkg, is_docable):
+            if inspect.isclass(member):
+                result.extend(get_undoced(member))
+            elif is_docable(member) and get_doc(member) is None:
+                result.append((name, member))
+    if not found:
+        raise FileNotFoundError("Unable to find any packages for the specified name")
+    return result
+
+
+def get_undoced(obj):
+    if inspect.isclass(obj):
+        return _get_undoc_type(obj)
+    elif isinstance(obj, str):
+        return _get_undoc_pkg(obj)
+    else:
+        raise TypeError("get_undoced invalid for non-class or package name type")

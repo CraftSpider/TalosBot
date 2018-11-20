@@ -59,6 +59,8 @@ def pytest_pycollect_makeitem(collector, name, obj):
 def database():
     database = tutils.TalosDatabase("localhost", 3306, "root", "", "")
     database.verify_schema()
+    if not database.is_connected():
+        raise pytest.skip("Test database not found")
     return database
 
 
@@ -81,7 +83,7 @@ def testlos_m(request):
     testlos.load_extensions(testlos.startup_extensions)
     request.module.testlos = testlos
     yield testlos
-    loop = asyncio.get_event_loop()
+    loop = testlos.loop
     loop.run_until_complete(testlos.close())
 
 

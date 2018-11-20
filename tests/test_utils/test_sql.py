@@ -47,10 +47,7 @@ def test_empty_database():
 
 
 def test_talos_database(database):
-    if database.is_connected() is False:
-        pytest.skip("Test database not found")
-
-    assert database.is_connected() is True, "Connected database considered empty"
-    assert database.commit() is True, "Database committed despite not existing?"
+    assert database.is_connected() is True, "Connected database considered not connected"
+    assert database.commit() is True, "Database not committed despite existing"
 
     pass  # TODO test all the database functions

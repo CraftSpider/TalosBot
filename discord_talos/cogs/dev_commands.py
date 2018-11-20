@@ -203,4 +203,8 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
 
 
 def setup(bot):
+    """
+        Sets up the DevCommands extension. Adds the DevCommands cog to the bot
+    :param bot: Bot this extension is being setup for
+    """
     bot.add_cog(DevCommands(bot))

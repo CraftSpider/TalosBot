@@ -134,6 +134,8 @@ async def test_commands():
 
     await call("^generate")
     verify_message("Valid options are 'prompt', 'crawl', and 'name'.")
+    await call("^generate prompt")
+    verify_message("Valid options are 'prompt', 'crawl', and 'name'.", False)
     await call("^generate crawl")
     verify_message("Valid options are 'prompt', 'crawl', and 'name'.", False)
     await call("^generate name")
@@ -142,8 +144,6 @@ async def test_commands():
     verify_message("Number must be between 1 and 6 inclusive.")
     await call("^generate name 7")
     verify_message("Number must be between 1 and 6 inclusive.")
-    await call("^generate prompt")
-    verify_message("Valid options are 'prompt', 'crawl', and 'name'.", False)
 
     await call("^info")
     verify_embed()
@@ -156,7 +156,7 @@ async def test_commands():
     await call("^nano novel craftspider")
     if not sent_queue.empty():
         message = await sent_queue.get()
-        if message.message != "Sorry, I couldn't find that user or novel.":
+        if message.message != "Sorry, I couldn't find that user":
             await sent_queue.put(message)
             verify_embed()
     with pytest.raises(commands.MissingRequiredArgument):
@@ -165,7 +165,7 @@ async def test_commands():
     await call("^nano profile craftspider")
     if not sent_queue.empty():
         message = await sent_queue.get()
-        if message.message != "Sorry, I couldn't find that user on the NaNo site.":
+        if message.message != "Sorry, I couldn't find that user on the NaNo site":
             await sent_queue.put(message)
             verify_embed()
 

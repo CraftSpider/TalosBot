@@ -549,4 +549,8 @@ class AdminCommands(dutils.TalosCog):
 
 
 def setup(bot):
+    """
+        Sets up the AdminCommands extension. Adds the AdminCommands cog to the bot
+    :param bot: Bot this extension is being setup for
+    """
     bot.add_cog(AdminCommands(bot))

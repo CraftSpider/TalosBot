@@ -34,7 +34,12 @@ def sort_mem(member):
 
 
 def strfdelta(time_delta, fmt):
-    """A way to convert time deltas to string formats easily."""
+    """
+        A way to convert time deltas to string formats easily.
+    :param time_delta: timedelta object to convert
+    :param fmt: string format to output
+    :return: String form of timedelta
+    """
     d = {"d": time_delta.days}
     d["h"], rem = divmod(time_delta.seconds, 3600)
     d["m"], d["s"] = divmod(rem, 60)
@@ -42,6 +47,11 @@ def strfdelta(time_delta, fmt):
 
 
 def html_to_markdown(html_text):
+    """
+        Converts html text into markdown equivalent form
+    :param html_text: HTML to convert
+    :return: Markdown with same styling as HTML, or closest possible
+    """
     html_text = re.sub(r"</p>|<br>", "\n", html_text)
     html_text = re.sub(r"<strong>|</strong>", "**", html_text)
     html_text = re.sub(r"<em>|</em>", "*", html_text)
@@ -888,4 +898,8 @@ class Commands(dutils.TalosCog):
 
 
 def setup(bot):
+    """
+        Sets up the Commands extension. Adds the commands cog to the bot
+    :param bot: Bot this extension is being setup for
+    """
     bot.add_cog(Commands(bot))

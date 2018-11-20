@@ -131,4 +131,8 @@ class JokeCommands(dutils.TalosCog):
 
 
 def setup(bot):
+    """
+        Sets up the JokeCommands extension. Adds the JokeCommands cog to the bot
+    :param bot: Bot this extension is being setup for
+    """
     bot.add_cog(JokeCommands(bot))

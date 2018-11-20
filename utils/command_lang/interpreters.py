@@ -5,9 +5,10 @@
     author: CraftSpider
 """
 
-import io
 import re
 import abc
+
+from . import errors, lexers
 
 allowed_attributes = [
     "name", "colour", "id", "discriminator", "nick", "display_name"
@@ -22,7 +23,7 @@ def get_sub(obj, attribute):
     :return: Retrieved attribute
     """
     if attribute not in allowed_attributes:
-        raise CommandLangError("Attempt to access invalid attribute")
+        raise errors.InvalidAttribute(f"Attempt to access invalid attribute {attribute}")
     if attribute == "colour":
         return str(obj.colour)
     return getattr(obj, attribute)
@@ -58,25 +59,28 @@ _op_functions = {
 }
 
 
-class CommandLangError(Exception):
-    pass
+class CLInterpreter(metaclass=abc.ABCMeta):
+
+    __slots__ = ()
+
+    @abc.abstractmethod
+    def interpret(self, context, tokens):
+        pass
 
 
-class CommandLangInterpreter(metaclass=abc.ABCMeta):
+class BaseInterpreter(CLInterpreter):
+    """
+        Base CommandLangInterpreter Class. This is an abstract class for all concrete CommandLang interpreters, that
+        provides the primary parsing mechanism and delegates to subclasses for resolution of variables.
 
-    __slots__ = ("_buffer",)
+        CommandLang is a simple markdown styled language, allowing imperative statements and simple conditionals. The
+        language is not Turing Complete, as there is no facility for looping or advanced control flow.
+    """
+
+    __slots__ = ()
 
     DEFAULT_PRIORITY = _op_priority
     DEFAULT_FUNCS = _op_functions
-
-    @staticmethod
-    def _operators_exist(command_str):
-        """
-            Checks that a string contains at least one CommandLang operator.
-        :param command_str: String to check
-        :return: boolean result of search
-        """
-        return bool(re.search(r"\[(?:if|elif|else) .+?\]\(.+?\)|{[\w :]+?}", command_str))
 
     @staticmethod
     def _get_exec_list(expression):
@@ -100,6 +104,11 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
         return exec_list
 
     def _exec_op(self, ops, values):
+        """
+            Execute a boolean operator, alter the values list appropriately
+        :param ops: Operator list
+        :param values: Values list
+        """
         try:
             val1 = values.pop()
             op = ops.pop()
@@ -109,12 +118,22 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
             else:
                 values.append(self._get_function(op)(val1))
         except IndexError:
-            raise CommandLangError("One value supplied to two value operator")
+            raise errors.OperatorError("One value supplied to two value operator")
 
     def _get_priority(self, operator):
+        """
+            Get the priority of a given operator
+        :param operator: Operator to get priority of
+        :return: Priority of the operator, an int between MIN_INT and MAX_INT
+        """
         return self.DEFAULT_PRIORITY[operator]
 
     def _get_function(self, operator):
+        """
+            Get the function for a given operator
+        :param operator: Operator to get function of
+        :return: Internal function of operator, which will be called with supplied values
+        """
         return self.DEFAULT_FUNCS.get(operator, lambda: None)
 
     def _evaluate(self, ctx, exec_list):
@@ -146,165 +165,33 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
             self._exec_op(op_stack, val_stack)
         # If we have dangling operators or variables, something went wrong.
         if len(val_stack) != 1 or len(op_stack) != 0:
-            raise CommandLangError("Invalid Boolean Expression")
+            raise errors.SyntaxError("Invalid Boolean Expression")
         return bool(val_stack[0])
 
-    def _lex_str(self, command_str):
-
-        self._buffer = io.StringIO(command_str)
-        escape = False
-        raw = ""
-        exec_stack = []
-
-        char = None
-        while char != "":
-            char = self._buffer.read(1)
-
-            if escape:
-                raw += char
-                escape = False
-
-            if char == "\\":
-                escape = True
-            elif char == "[":
-                if raw:
-                    exec_stack.append(("raw", raw))
-                    raw = ""
-                stype, statement, text = self._lex_if()
-                exec_stack.append((stype, statement, text))
-            elif char == "{":
-                if raw:
-                    exec_stack.append(("raw", raw))
-                    raw = ""
-                text = self._lex_exec()
-                exec_stack.append(("exec", text))
-            elif char == "" and raw:
-                exec_stack.append(("raw", raw))
-            else:
-                raw += char
-
-        return exec_stack
-
-    def _lex_if(self):
-
-        end = False
-        maybe_escape = False
-        escape = False
-        type_known = False
-        maybe_text = False
-        in_text = False
-        depth = 0
-        raw = ""
-        stype = ""
-        statement = ""
-        text = ""
-
-        char = None
-        while char != "" and not end:
-            char = self._buffer.read(1)
-
-            if escape:
-                raw += char
-                escape = False
-
-            if char == "\\" and not in_text:
-                escape = True
-            elif char == "\\":
-                maybe_escape = True
-            elif char == " " and not type_known:
-                stype = raw
-                if stype not in ("if", "elif", "else"):
-                    raise CommandLangError("Invalid if statement type")
-                type_known = True
-                raw = ""
-            elif char == "]" and not in_text:
-                maybe_text = True
-            elif char == "(" and maybe_text:
-                if not type_known:
-                    stype = raw
-                    if stype not in ("if", "elif", "else"):
-                        raise CommandLangError("Invalid if statement type")
-                    type_known = True
-                    raw = ""
-                statement = raw
-                raw = ""
-                maybe_text = False
-                in_text = True
-            elif char == "(" and in_text:
-                depth += 1
-            elif char == ")" and in_text:
-                if not maybe_escape:
-                    text = raw
-                    end = True
-                else:
-                    raw += ")"
-                    maybe_escape = False
-            else:
-                if maybe_escape:
-                    raw += "\\"
-                    maybe_escape = False
-                if maybe_text:
-                    raw += "]"
-                    maybe_text = False
-                raw += char
-
-        if stype != "else" and statement == "":
-            raise CommandLangError("If statement missing boolean expression")
-        elif stype == "else" and statement != "":
-            raise CommandLangError("Else statement contains unexpected boolean expression")
-        if not in_text:
-            raise CommandLangError("If statement missing result")
-        if char == "":
-            raise CommandLangError("Unexpected end of expression")
-
-        return stype, statement, text
-
-    def _lex_exec(self):
-
-        end = False
-        escape = False
-        raw = ""
-
-        char = None
-        while char != "" and not end:
-            char = self._buffer.read(1)
-
-            if escape:
-                raw += char
-                escape = False
-            elif char == "\\":
-                escape = True
-            elif char == "}":
-                end = True
-            else:
-                raw += char
-
-        return raw
-
-    def parse_lang(self, context, command_str):
-        if not self._operators_exist(command_str):
-            # if it's obviously not in the language, we're already done processing.
-            return command_str
-        # split input into list of execution items
-        exec_stack = self._lex_str(command_str)
-        # evaluate new list of items
+    def interpret(self, context, tokens):
+        """
+            Parse and execute a CommandLang statement
+        :param context: Context object to use for the parsing of variables
+        :param tokens: List of lexed tokens to interpret
+        :return: Result of interpreting
+        """
         out = ""
         if_else = False
-        for item in exec_stack:
+        for item in tokens:
             if item[0] == "if":
                 exec_list = self._get_exec_list(item[1])
                 if self._evaluate(context, exec_list):
-                    out += self.parse_lang(context, item[2])
+                    out += self.interpret(context, item[2])
                     if_else = False
                 else:
                     if_else = True
             elif item[0] == "elif" and if_else:
                 exec_list = self._get_exec_list(item[1])
                 if self._evaluate(context, exec_list):
-                    out += self.parse_lang(context, item[2])
+                    out += self.interpret(context, item[2])
                     if_else = False
             elif item[0] == "else" and if_else:
-                out += self.parse_lang(context, item[2])
+                out += self.interpret(context, item[2])
                 if_else = False
             else:
                 if_else = False
@@ -312,16 +199,20 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
             if item[0] == "exec":
                 # Evaluate invoke block. First check if anything matches a variable, if so, return that. Otherwise run
                 # the command.
-                if ":" in item:
+                if ":" in item[1]:
                     item = item[1].split(":")
+                    obj = self._process_val(context, item[0])
+                    attr = self._process_val(context, item[1])
                     try:
-                        item = get_sub(self._process_val(context, item[0]), self._process_val(context, item[1]))
+                        item = self._get_function(":")(obj, attr)
                     except AttributeError:
-                        raise CommandLangError("Attempt to access invalid attribute")
+                        raise errors.InvalidAttribute(f"Attempt to access invalid attribute {attr}")
                 else:
                     item = self._process_val(context, item[1])
 
-                result = self._execute_command(context, item)
+                result = False
+                if isinstance(item, str):
+                    result = self._execute_command(context, item)
                 if not result:
                     out += str(item)
                 elif isinstance(result, str):
@@ -332,18 +223,41 @@ class CommandLangInterpreter(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def _process_val(self, context, val):
+        """
+            Process a statement value for a given context
+        :param context: Context to use
+        :param val: Value to process
+        :return: Processed value
+        """
         return NotImplemented
 
     @abc.abstractmethod
     def _execute_command(self, context, val):
+        """
+            Execute a command in a given context
+        :param context: Context to execute in
+        :param val: Command to execute
+        :return: Whether command execution succeeded
+        """
         return NotImplemented
 
 
-class DiscordCL(CommandLangInterpreter):
+class DiscordCL(BaseInterpreter):
+    """
+        CommandLang parser for discord that uses d.py contexts. Allows variable access to most attributes of the
+        context related to the user posting
+    """
 
     __slots__ = ()
 
     def _execute_command(self, ctx, item):
+        """
+            Execute a command with the Discord ctx. Tries to find commands from the bot and add them to the asyncio
+            loop of tasks to run
+        :param ctx: d.py context object
+        :param item: command to run
+        :return: Whether command executed successfully
+        """
         args = []
         if isinstance(item, str) and " " in item:
             item = item.split()
@@ -364,6 +278,12 @@ class DiscordCL(CommandLangInterpreter):
         return False
 
     def _process_val(self, ctx, val):
+        """
+            Process a variable into
+        :param ctx:
+        :param val:
+        :return:
+        """
         try:
             return float(val)
         except ValueError:
@@ -389,6 +309,9 @@ class DiscordCL(CommandLangInterpreter):
 
 
 class ContextLessCL(DiscordCL):
+    """
+        CommandLang interpreter that ignores all context
+    """
 
     __slots__ = ()
 

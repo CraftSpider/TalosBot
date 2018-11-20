@@ -14,8 +14,7 @@ import utils.dutils as dutils
 import datetime as dt
 
 from apiclient import discovery
-from oauth2client import client, tools
-from oauth2client.file import Storage
+from oauth2client import client, tools, file
 
 # Google API values
 SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
@@ -43,7 +42,7 @@ def get_credentials():
         os.makedirs(credential_dir)
     credential_path = os.path.join(credential_dir, 'sheets.googleapis.com-python-quickstart.json')
 
-    store = Storage(credential_path)
+    store = file.Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
         flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
@@ -179,4 +178,8 @@ class EventLoops(dutils.TalosCog):
 
 
 def setup(bot):
+    """
+        Sets up the EventLoops extension. Adds the EventLoops cog to the bot
+    :param bot: Bot this extension is being setup for
+    """
     bot.add_cog(EventLoops(bot))
