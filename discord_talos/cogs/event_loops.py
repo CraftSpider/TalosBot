@@ -22,7 +22,7 @@ CLIENT_SECRET_FILE = pathlib.Path(__file__).parent.parent / 'client_secret.dat'
 APPLICATION_NAME = 'TalosBot Prompt Reader'
 
 log = logging.getLogger("talos.events")
-cl_parser = command_lang.ContextLessCL()
+runner = command_lang.CommandLang(interpreter=command_lang.ContextLessCL())
 
 
 def get_credentials():
@@ -120,7 +120,7 @@ class EventLoops(dutils.TalosCog):
                 if current > event.last_active:
                     channel = list(filter(lambda x: x.id == event.channel, guild.channels))[0]
                     log.info("Kicking off event " + event.name)
-                    await channel.send(cl_parser.parse_lang(channel, event.text))
+                    await channel.send(runner.exec(channel, event.text))
                     event.last_active = current
                     self.database.save_item(event)
 

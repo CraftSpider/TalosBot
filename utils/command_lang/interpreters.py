@@ -8,21 +8,22 @@
 import re
 import abc
 
-from . import errors, lexers
+from . import errors
+from .enums import Instruction
 
-allowed_attributes = [
+_allowed_attributes = [
     "name", "colour", "id", "discriminator", "nick", "display_name"
 ]
 
 
-def get_sub(obj, attribute):
+def _get_sub(obj, attribute):
     """
         Function for the : operator, getting a sub-attribute of something.
     :param obj: Primary object
     :param attribute: Attribute to get
     :return: Retrieved attribute
     """
-    if attribute not in allowed_attributes:
+    if attribute not in _allowed_attributes:
         raise errors.InvalidAttribute(f"Attempt to access invalid attribute {attribute}")
     if attribute == "colour":
         return str(obj.colour)
@@ -55,7 +56,7 @@ _op_functions = {
     "and": lambda x, y: int(x and y),
     "or": lambda x, y: int(x or y),
     "not": lambda x: int(not x),
-    ":": get_sub
+    ":": _get_sub
 }
 
 
@@ -178,46 +179,45 @@ class BaseInterpreter(CLInterpreter):
         out = ""
         if_else = False
         for item in tokens:
-            if item[0] == "if":
+            if item[0] == Instruction.IF:
                 exec_list = self._get_exec_list(item[1])
                 if self._evaluate(context, exec_list):
                     out += self.interpret(context, item[2])
                     if_else = False
                 else:
                     if_else = True
-            elif item[0] == "elif" and if_else:
+            elif item[0] == Instruction.ELIF and if_else:
                 exec_list = self._get_exec_list(item[1])
                 if self._evaluate(context, exec_list):
                     out += self.interpret(context, item[2])
                     if_else = False
-            elif item[0] == "else" and if_else:
+            elif item[0] == Instruction.ELSE and if_else:
                 out += self.interpret(context, item[2])
                 if_else = False
             else:
                 if_else = False
 
-            if item[0] == "exec":
+            if item[0] == Instruction.EXEC:
                 # Evaluate invoke block. First check if anything matches a variable, if so, return that. Otherwise run
                 # the command.
-                if ":" in item[1]:
-                    item = item[1].split(":")
-                    obj = self._process_val(context, item[0])
-                    attr = self._process_val(context, item[1])
+                val = item[1]
+                if ":" in val:
+                    val = val.split(":")
+                    obj = self._process_val(context, val[0])
+                    attr = self._process_val(context, val[1])
                     try:
-                        item = self._get_function(":")(obj, attr)
+                        val = self._get_function(":")(obj, attr)
                     except AttributeError:
                         raise errors.InvalidAttribute(f"Attempt to access invalid attribute {attr}")
                 else:
-                    item = self._process_val(context, item[1])
+                    val = self._process_val(context, val)
 
                 result = False
-                if isinstance(item, str):
-                    result = self._execute_command(context, item)
+                if val is None:
+                    result = self._execute_command(context, item[1])
                 if not result:
-                    out += str(item)
-                elif isinstance(result, str):
-                    out += result
-            elif item[0] == "raw":
+                    out += str(val)
+            elif item[0] == Instruction.RAW:
                 out += item[1]
         return out
 
@@ -242,6 +242,36 @@ class BaseInterpreter(CLInterpreter):
         return NotImplemented
 
 
+class DefaultCL(BaseInterpreter):
+
+    __slots__ = ()
+
+    def _process_val(self, context, val):
+        """
+            No value processing. Do nothing and return val unchanged
+        :param context: Unused
+        :param val: Value to process
+        :return: val unchanged
+        """
+        return val
+
+    def _execute_command(self, context, val):
+        """
+            Attempt to execute a command. Do nothing and return successful
+        :param context: Unused
+        :param val: Unused
+        :return: True, indiciating successful execution
+        """
+        return True
+
+
+async def run_check(ctx, command, *args):
+    if await command.can_run(ctx):
+        await ctx.invoke(command, *args)
+    else:
+        await ctx.send("Cannot Execute Command: Insufficient Permissions")
+
+
 class DiscordCL(BaseInterpreter):
     """
         CommandLang parser for discord that uses d.py contexts. Allows variable access to most attributes of the
@@ -249,33 +279,6 @@ class DiscordCL(BaseInterpreter):
     """
 
     __slots__ = ()
-
-    def _execute_command(self, ctx, item):
-        """
-            Execute a command with the Discord ctx. Tries to find commands from the bot and add them to the asyncio
-            loop of tasks to run
-        :param ctx: d.py context object
-        :param item: command to run
-        :return: Whether command executed successfully
-        """
-        args = []
-        if isinstance(item, str) and " " in item:
-            item = item.split()
-            command = item[0]
-            args = item[1:]
-        else:
-            command = item
-        command = ctx.bot.all_commands.get(command)
-        if command:
-            try:
-                if command.can_run(ctx):
-                    ctx.bot.loop.create_task(ctx.invoke(command, *args))
-                else:
-                    ctx.bot.loop.create_task(ctx.send("Cannot Execute Command: Insufficient Permissions"))
-            except Exception as e:
-                print(e)
-            return True
-        return False
 
     def _process_val(self, ctx, val):
         """
@@ -305,7 +308,33 @@ class DiscordCL(BaseInterpreter):
                 val = "display_name"
             elif (val.startswith("\"") and val.endswith("\"")) or (val.startswith("'") and val.endswith("'")):
                 val = val[1:-1]
+            else:
+                val = None
             return val
+
+    def _execute_command(self, ctx, item):
+        """
+            Execute a command with the Discord ctx. Tries to find commands from the bot and add them to the asyncio
+            loop of tasks to run
+        :param ctx: d.py context object
+        :param item: command to run
+        :return: Whether command executed successfully
+        """
+        args = []
+        if isinstance(item, str) and " " in item:
+            item = item.split()
+            command = item[0]
+            args = item[1:]
+        else:
+            command = item
+        command = ctx.bot.all_commands.get(command)
+        if command:
+            try:
+                ctx.bot.loop.create_task(run_check(ctx, command, *args))
+            except Exception as e:
+                print(e)
+            return True
+        return False
 
 
 class ContextLessCL(DiscordCL):

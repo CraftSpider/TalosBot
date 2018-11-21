@@ -1,7 +1,9 @@
 
 import abc
+import io
 
 from . import errors
+from .enums import Instruction
 
 
 class CLLexer(metaclass=abc.ABCMeta):
@@ -19,6 +21,12 @@ class DefaultCLLexer(CLLexer):
 
     def __init__(self):
         self._buffer = None
+
+    def _recurse(self, text):
+        buffer = self._buffer
+        result = self.lex_lang(text)
+        self._buffer = buffer
+        return result
 
     def _lex_if(self):
         """
@@ -96,7 +104,7 @@ class DefaultCLLexer(CLLexer):
         if char == "":
             raise errors.SyntaxError("Unexpected end of expression")
 
-        return stype, statement, text
+        return Instruction[stype.upper()], statement, self._recurse(text)
 
     def _lex_exec(self):
         """
@@ -148,18 +156,18 @@ class DefaultCLLexer(CLLexer):
                 escape = True
             elif char == "[":
                 if raw:
-                    exec_stack.append(("raw", raw))
+                    exec_stack.append((Instruction.RAW, raw))
                     raw = ""
                 stype, statement, text = self._lex_if()
                 exec_stack.append((stype, statement, text))
             elif char == "{":
                 if raw:
-                    exec_stack.append(("raw", raw))
+                    exec_stack.append((Instruction.RAW, raw))
                     raw = ""
                 text = self._lex_exec()
-                exec_stack.append(("exec", text))
+                exec_stack.append((Instruction.EXEC, text))
             elif char == "" and raw:
-                exec_stack.append(("raw", raw))
+                exec_stack.append((Instruction.RAW, raw))
             else:
                 raw += char
 

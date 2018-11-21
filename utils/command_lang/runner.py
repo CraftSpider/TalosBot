@@ -6,15 +6,15 @@ from . import lexers, interpreters
 
 class CommandLang:
 
-    __slots__ = ("lexer", "interpreter")
+    __slots__ = ("_lexer", "_interpreter")
 
     def __init__(self, lexer=None, interpreter=None):
         if lexer is None:
             lexer = lexers.DefaultCLLexer()
         if interpreter is None:
-            interpreter = interpreters.DefaultCLInterpreter()
-        self.lexer = lexer
-        self.interpreter = interpreter
+            interpreter = interpreters.DefaultCL()
+        self._lexer = lexer
+        self._interpreter = interpreter
 
     @staticmethod
     def _operators_exist(command_str):
@@ -26,10 +26,10 @@ class CommandLang:
         return bool(re.search(r"\[(?:if|elif|else) .+?\]\(.+?\)|{[\w :]+?}", command_str))
 
     def exec(self, context, code):
-        if not self._operators_exist(command_str):
+        if not self._operators_exist(code):
             # if it's obviously not in the language, we're already done processing.
-            return command_str
+            return code
 
-        tokens = self.lexer.lex_lang(code)
-        result = self.interpreter.interpret(context, tokens)
+        tokens = self._lexer.lex_lang(code)
+        result = self._interpreter.interpret(context, tokens)
         return result

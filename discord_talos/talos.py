@@ -409,7 +409,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             utils.log_error(log, logging.WARNING, exception, message)
 
 
-cl_parser = command_lang.DiscordCL()
+runner = command_lang.CommandLang(interpreter=command_lang.DiscordCL())
 
 
 def custom_creator(name, text):
@@ -422,7 +422,7 @@ def custom_creator(name, text):
 
     async def custom_callback(ctx):
         try:
-            out = cl_parser.parse_lang(ctx, text)
+            out = runner.exec(ctx, text)
         except command_lang.CommandLangError as e:
             raise dutils.CustomCommandError(*e.args)
         if out.strip() != "":
