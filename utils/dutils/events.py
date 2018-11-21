@@ -12,6 +12,11 @@ log = logging.getLogger("talos.dutils.events")
 
 
 def align_period(period):
+    """
+        Align a period for its next execution. From now, push forward the period, then down to the nearest 0.
+    :param period: Period to return alignment for
+    :return: delta till when period should next run
+    """
     now = dt.datetime.now()
     days = 0
     hours = 0
@@ -36,19 +41,35 @@ def align_period(period):
 
 
 class EventLoop:
+    """
+        Conceptually, an event that should be run every X length of time. Takes an asynchronous function,
+        and runs it once for every passing of period length of time.
+    """
 
     __slots__ = ("_task", "_callback", "_instance", "period", "persist", "start_time", "loop", "name", "parent",
-                 "description")
+                 "description", "long_desc")
 
     def __call__(self, *args, **kwargs):
+        """
+            An attempt to directly call an EventLoop should fail
+        """
         raise NotImplementedError("Access internal method through self.callback")
 
     def __init__(self, coro, period, loop=None, **kwargs):
+        """
+            Initialize an eventloop object with a coroutine and period at least
+        :param coro: Internal coroutine object
+        :param period: Interval between calls
+        :param loop: asyncio event loop, if None uses default
+        :param kwargs: Other parameters. Description, persist (whether to ignore errors), start_time, and name.
+                       If name is not provided, then coro.__name__ is used instead
+        """
         if loop is None:
             loop = asyncio.get_event_loop()
         self._task = None
         self._callback = coro
         self.description = inspect.cleandoc(kwargs.get("description"))
+        self.long_desc = inspect.cleandoc(kwargs.get("long_desc", inspect.getdoc(coro)))
         self.period = data.EventPeriod(period)
         self.persist = kwargs.get("persist")
         self.start_time = kwargs.get("start_time")
@@ -57,6 +78,10 @@ class EventLoop:
         self.parent = None
 
     def __str__(self):
+        """
+            Convert this eventloop to a string representation, containing the period, name, and short description
+        :return: String form of loop
+        """
         return f"EventLoop(period: {self.period}, name: {self.name}, description: {self.description})"
 
     @property

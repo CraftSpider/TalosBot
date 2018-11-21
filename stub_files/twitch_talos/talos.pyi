@@ -2,6 +2,7 @@
     Twitch Talos stub file
 """
 
+from typing import Callable
 import logging
 import airc
 
@@ -19,7 +20,7 @@ class Talos(airc.TwitchBot):
 
 def dev_only() -> callable: ...
 
-def channel_specific(channel: str) -> callable: ...
+def channel_specific(channel: str) -> Callable: ...
 
 async def join(ctx: airc.Context, channel: str) -> None: ...
 

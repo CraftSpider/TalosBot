@@ -22,7 +22,12 @@ mention_patterns = {
 
 
 def admin_local(self, ctx):
-    """Determine whether the person calling the command is an admin or dev."""
+    """
+        Determine whether the person calling the command is an admin or dev.
+    :param self: The cog this check is attached to
+    :param ctx: The context being checked
+    :return: Boolean, whether the user has admin or dev perms
+    """
     if isinstance(ctx.channel, discord.abc.PrivateChannel):
         return True
     command = str(ctx.command)
@@ -49,15 +54,28 @@ def admin_local(self, ctx):
 
 
 def dev_local(self, ctx):
-    """Determine whether the person calling the command is a dev."""
+    """
+        Determine whether the person calling the command is a dev.
+    :param self: The cog this check is attached to
+    :param ctx: The context being checked
+    :return: Boolean, whether the user has dev permissions
+    """
     return ctx.author.id in ctx.bot.DEVS
 
 
 def admin_check():
+    """
+        Decorator for adding admin check to a single command
+    :return: Command check
+    """
     return commands.check(functools.partial(admin_local, None))
 
 
 def dev_check():
+    """
+        Decorator for adding dev check to a single command
+    :return: Command check
+    """
     return commands.check(functools.partial(dev_check, None))
 
 
@@ -65,6 +83,11 @@ def dev_check():
 
 
 def is_mention(text):
+    """
+        Check whether a piece of text is any kind of discord mention
+    :param text: Text to check
+    :return: Whether text is a mention
+    """
     for pattern in mention_patterns:
         if mention_patterns[pattern].match(text):
             return True
@@ -72,16 +95,36 @@ def is_mention(text):
 
 
 def is_user_mention(text):
+    """
+        Check if a piece of text is a discord user mention
+    :param text: Text to check
+    :return: Whether text is a user mention
+    """
     return mention_patterns["user"].match(text) is not None
 
 
 def is_role_mention(text):
+    """
+        Check if a piece of text is a discord role mention
+    :param text: Text to check
+    :return: Whether text is a role mention
+    """
     return mention_patterns["role"].match(text) is not None
 
 
 def is_channel_mention(text):
+    """
+        Check if a piece of text is a discord channel mention
+    :param text: Text to check
+    :return: Whether text is a channel mention
+    """
     return mention_patterns["channel"].match(text) is not None
 
 
 def get_id(mention):
+    """
+        Get the ID out of a mention as a string
+    :param mention: String of just the mention
+    :return: Snowflake ID as an int
+    """
     return int(mention.strip("<@#&!>"))

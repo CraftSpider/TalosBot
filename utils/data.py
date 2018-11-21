@@ -144,18 +144,40 @@ class MultiRow(metaclass=abc.ABCMeta):
         return True
 
     @abc.abstractmethod
-    def removed_items(self): ...
+    def removed_items(self):
+        """
+            Return a list of any items removed from this row during its time in memory. Ensures they will be removed
+            from the database when this object is saved.
+        :return: List of Row objects
+        """
 
 
 class SqlConvertable(metaclass=abc.ABCMeta):
+    """
+        Class representing a type that is not a SQL safe type, but can be converted to one
+        Generally used inside a Row
+    """
 
     __slots__ = ()
 
     def __eq__(self, other):
-        return self.sql_safe() == other.sql_safe()
+        """
+            Equality between SqlConvertable instances is based on whether their safe forms
+            are qual to each other
+        :param other: Other convertable to check with
+        :return: Whether sql_safe forms are equal
+        """
+        if isinstance(other, SqlConvertable):
+            return self.sql_safe() == other.sql_safe()
+        return NotImplemented
 
     @abc.abstractmethod
-    def sql_safe(self): ...
+    def sql_safe(self):
+        """
+            Convert this object to a form that can be stored in a SQL database. Can be any SQL safe type. This object,
+            if fed into the constructor, should recreate the current SqlConvertable.
+        :return: Object in a raw storable form
+        """
 
 
 class Table(Row):
@@ -409,10 +431,19 @@ class GuildCommand(Row):
 
 
 class EventPeriod(SqlConvertable):
+    """
+        Represents the period of time used between runs in an EventLoop. Similar to a timedelta, but
+        functions slightly differently
+    """
 
     __slots__ = ("_seconds",)
 
     def __init__(self, period):
+        """
+            Initialize an EventPeriod. If input is an EventPeriod, we create a copy.
+            Otherwise we read out a string into our memory.
+        :param period: Either EventPeriod to copy, or a string to read
+        """
         if isinstance(period, EventPeriod):
             self._seconds = period._seconds
             return
@@ -433,6 +464,10 @@ class EventPeriod(SqlConvertable):
                 num += char
 
     def __str__(self):
+        """
+            Convert an EventPeriod into its string representation
+        :return: String form of EventPeriod
+        """
         out = ""
         if self.days:
             out += f"{self.days}d"
@@ -445,38 +480,75 @@ class EventPeriod(SqlConvertable):
         return out
 
     def __int__(self):
+        """
+            Convert to integer representation, the number of seconds in this period in total
+        :return: Seconds in EventPeriod
+        """
         return self._seconds
 
     @property
     def days(self):
+        """
+            Get the number of days in this period
+        :return: Number of days in the period
+        """
         return self._seconds // 86400
 
     @property
     def hours(self):
+        """
+            Get the number of whole hours in this period, minus days
+        :return: Number of hours in the period
+        """
         return (self._seconds % 86400) // 3600
 
     @property
     def minutes(self):
+        """
+            Get the number of whole minutes in this period, minus hours and days
+        :return: Number of minutes in this period
+        """
         return (self._seconds % 3600) // 60
 
     @minutes.setter
     def minutes(self, value):
+        """
+            Set the number of minutes in this period. Should be a number between 0-59
+        :param value: Number of minutes to set to
+        """
         dif = value - self.minutes
         self._seconds += dif * 60
 
     @property
     def seconds(self):
+        """
+            Get the number of whole seconds in this period, minus greater values
+        :return: Number of seconds in this period
+        """
         return self._seconds % 60
 
     @seconds.setter
     def seconds(self, value):
+        """
+            Set the number of seconds in this period. Should be a number between 0-59
+        :param value:
+        :return:
+        """
         dif = value - self.seconds
         self._seconds += dif
 
     def timedelta(self):
+        """
+            Get the timedelta representation of this period
+        :return: timedelta object matching this period
+        """
         return dt.timedelta(seconds=int(self))
 
     def sql_safe(self):
+        """
+            Convert this period to a string to store in a SQL database
+        :return: String for storage in database
+        """
         return str(self)
 
 

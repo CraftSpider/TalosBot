@@ -8,11 +8,15 @@ import discord.ext.commands as commands
 
 class NotRegistered(commands.CommandError):
 
-    def __init__(self, message: Union[discord.Member, discord.User, str], *args) -> None: ...
+    user: Union[discord.User, discord.Member]
+
+    def __init__(self, message: Union[discord.Member, discord.User], *args) -> None: ...
 
 class CustomCommandError(commands.CommandError):
     pass
 
 class StopEventLoop(Exception):
+
+    message: str
 
     def __init__(self, message: str = ...) -> None: ...

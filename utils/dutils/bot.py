@@ -14,10 +14,19 @@ log = logging.getLogger("talos.dutils.bot")
 
 
 class ExtendedBot(commands.Bot):
+    """
+        Extends the functionality of d.py's Bot class. Adds in various helper methods, overrides some things to provide
+        more functionality, and adds in support for EventLoops defined similarly to normal commands
+    """
 
     variable = ""
 
     def __init__(self, *args, **kwargs):
+        """
+            Initialize the bot. Sets up event loops and such stuff, will process any necessary args and kwargs
+        :param args: List of arguments
+        :param kwargs: List of keyword arguments
+        """
         super().__init__(*args, **kwargs)
 
         self.all_events = {}
@@ -25,21 +34,27 @@ class ExtendedBot(commands.Bot):
     # Extensions to super functionality
 
     def add_cog(self, cog):
+        """
+            Adds a cog to the bot. Calls through to super implementation, then adds on EventLoop handling.
+        :param cog: instance of cog to add to the bot
+        """
         super().add_cog(cog)
 
-        members = inspect.getmembers(cog)
-        for name, member in members:
+        for name, member in inspect.getmembers(cog):
             if isinstance(member, events.EventLoop):
                 member.parent = cog
                 self.add_event(member)
 
     def remove_cog(self, name):
-        cog = self.cogs.pop(name, None)
+        """
+            Remove a cog from the bot. Calls through to super implementation after removing any EventLoops in the cog
+        :param name: name of the cog to remove from the bot
+        """
+        cog = self.cogs.get(name, None)
         if cog is None:
             return
 
-        members = inspect.getmembers(cog)
-        for name, member in members:
+        for name, member in inspect.getmembers(cog):
             # remove events the cog has
             if isinstance(member, events.EventLoop):
                 self.remove_event(member.name)
@@ -47,18 +62,36 @@ class ExtendedBot(commands.Bot):
         super().remove_cog(name)
 
     def load_extension(self, name, prefix=True):
-        extdir = getattr(self, "extension_dir")
-        if extdir is not None and prefix:
-            name = extdir + "." + name
+        """
+            Load extension for the bot, adds in default prefix if the bot defines the `extension_dir` member
+        :param name: Name of the extension to load
+        :param prefix: Whether to add on a prefix if available
+        """
+        if prefix:
+            extdir = getattr(self, "extension_dir")
+            if extdir is not None:
+                name = extdir + "." + name
         super().load_extension(name)
 
     def unload_extension(self, name, prefix=True):
-        extdir = getattr(self, "extension_dir")
-        if extdir is not None and prefix:
-            name = extdir + "." + name
+        """
+            Unload extension for the bot, adds in default prefix if the bot defines the `extension_dir` member
+        :param name: Name of the extension to unload
+        :param prefix: Whether to add on a prefix if available
+        """
+        if prefix:
+            extdir = getattr(self, "extension_dir")
+            if extdir is not None:
+                name = extdir + "." + name
         super().unload_extension(name)
 
     def run(self, token, *args, **kwargs):
+        """
+            Run the bot. Loads `startup_extensions` if the member is defined, and starts all events
+        :param token: Bot token to log in with
+        :param args: Other arguments to supply to `start`
+        :param kwargs: Other keyword arguments to supply to `start`
+        """
         def_exts = getattr(self, "startup_extensions")
         if def_exts is not None:
             self.load_extensions(def_exts)
@@ -69,6 +102,10 @@ class ExtendedBot(commands.Bot):
     # Event loop functions
 
     def add_event(self, event):
+        """
+            Add an event loop to the bot
+        :param event: EventLoop object to add
+        """
         if not isinstance(event, events.EventLoop):
             raise TypeError('The event passed must be a subclass of EventLoop')
 
@@ -78,6 +115,11 @@ class ExtendedBot(commands.Bot):
         self.all_events[event.name] = event
 
     def remove_event(self, name):
+        """
+            Remove an event loop from the bot
+        :param name: name of the EventLoop to remove
+        :return: EventLoop object removed, or None if nothing matches the name
+        """
         event = self.all_events.pop(name)
         if event is None:
             return None
@@ -91,9 +133,9 @@ class ExtendedBot(commands.Bot):
 
     def load_extensions(self, extensions):
         """
-            Loads all extensions in input, or all Talos extensions defined in STARTUP_EXTENSIONS if array is None.
-            :param extensions: extensions to load, None if all in STARTUP_EXTENSIONS
-            :return: 0 if successful, 1 if unsuccessful
+            Loads all extensions in input, or all Talos extensions defined in `startup_extensions` if array is None.
+        :param extensions: extensions to load, None if all in `startup_extensions`
+        :return: 0 if successful, otherwise number of extensions that failed to load
         """
         log.info("Loading multiple extensions")
         clean = 0
@@ -110,7 +152,7 @@ class ExtendedBot(commands.Bot):
     def unload_extensions(self, extensions=None):
         """
             Unloads all extensions in input, or all extensions currently loaded if None
-            :param extensions: List of extensions to unload, or None if all
+        :param extensions: List of extensions to unload, or None if all
         """
         log.info("Unloading multiple extensions")
         if extensions is None:
@@ -176,6 +218,7 @@ class TalosCog:
     __slots__ = ("bot", "database")
 
     def __new__(cls, bot):
+        """Creates the instance of the current cog. Takes an instance of Talos to use while running."""
         local_name = f"_{cls.__name__}__local_check"
         if not hasattr(cls, local_name):
             setattr(cls, local_name, _perms_check)
@@ -188,25 +231,19 @@ class TalosCog:
         if hasattr(bot, "database"):
             self.database = bot.database
 
-    def add_method(self, method, name=None):
 
-        def wrapper(*args, **kwargs):
-            return method(self, *args, **kwargs)
-
-        setattr(self, name or method.__name__, wrapper)
-
-
+# TODO: rework this to be more consistent
 class TalosFormatter(commands.HelpFormatter):
     """
         Talos help formatter. Fairly self explanatory.
     """
 
-    def __init__(self):
+    def __init__(self, width=75):
         """
             Instantiate a new TalosFormatter object
         """
         self._paginator = None
-        super().__init__(width=75)
+        super().__init__(width)
 
     @property
     async def clean_prefix(self):
@@ -217,12 +254,19 @@ class TalosFormatter(commands.HelpFormatter):
         return (await self.context.bot.get_prefix(self.context))[0]
 
     async def get_command_signature(self):
-        """Retrieves the signature portion of the help page."""
+        """
+            Retrieves the signature portion of the help page.
+        :return: Command signature string
+        """
         prefix = await self.clean_prefix
         cmd = self.command
         return prefix + cmd.signature
 
     async def get_ending_note(self):
+        """
+            Get the note to add on to the end of the help message
+        :return: Note to end the help with
+        """
         command_name = self.context.invoked_with
         return "Type `{0}{1} category` for a list of commands in a category.".format(
                    await self.clean_prefix, command_name
@@ -230,6 +274,11 @@ class TalosFormatter(commands.HelpFormatter):
 
     @staticmethod
     def capital_split(text):
+        """
+            Convert from CamelCase to a string split by spaces
+        :param text: string to convert
+        :return: string with spaces inserted
+        """
         out = ""
         for char in text:
             if char.isupper():
@@ -239,11 +288,21 @@ class TalosFormatter(commands.HelpFormatter):
         return out.strip(" ")
 
     def embed_shorten(self, text):
+        """
+            Shorten a string to end with ellipsis if it is longer than the allowed width
+        :param text: Text to bound
+        :return: Text originally, or shortened with ellipsis if longer than width
+        """
         if len(text) > self.width:
             return text[:self.width - 3] + '...\n'
         return text
 
     def _subcommands_field_value(self, _commands):
+        """
+            Get the value of the subcommands field for an embed from a given group command
+        :param _commands: List of subcommands
+        :return: String value of subcommands field in help
+        """
         out = ""
         for name, command in _commands:
             if name in command.aliases:
@@ -256,6 +315,11 @@ class TalosFormatter(commands.HelpFormatter):
         return out
 
     def _add_subcommands_to_page(self, max_width, _commands):
+        """
+            Add the subcommands field to a text page
+        :param max_width: Maximum width of the help message
+        :param _commands: List of subcommands
+        """
         for name, command in _commands:
             if name in command.aliases:
                 # skip aliases
@@ -267,12 +331,20 @@ class TalosFormatter(commands.HelpFormatter):
             self._paginator.add_line(shortened)
 
     async def format(self):
+        """
+            Run formatting on the current context and command
+        :return: Result of formatting
+        """
         if self.context.bot.should_embed(self.context):
             return await self.embed_format()
         else:
             return await self.string_format()
 
     async def embed_format(self):
+        """
+            Format an embed help message
+        :return: Embed to post as result of formatting
+        """
         self._paginator = paginators.PaginatedEmbed()
 
         description = self.command.description if not self.is_cog() else inspect.getdoc(self.command)
@@ -316,6 +388,10 @@ class TalosFormatter(commands.HelpFormatter):
         return self._paginator.pages
 
     async def string_format(self):
+        """
+            Format a string help message
+        :return: String to post as result of formatting
+        """
         self._paginator = commands.Paginator()
 
         # we need a padding of ~80 or so
