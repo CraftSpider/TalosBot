@@ -61,13 +61,15 @@ def _get_undoc_type(type):
 def _get_undoc_pkg(pkg):
     found = False
     result = []
-    for finder, name, ispkg in pkgutil.walk_packages([f"./{pkg}"], f"{pkg}."):
+    for finder, pname, ispkg in pkgutil.walk_packages([f"./{pkg}"], f"{pkg}."):
         found = True
-        pkg = importlib.import_module(name)
+        if ispkg:
+            continue
+        pkg = importlib.import_module(pname)
         for name, member in inspect.getmembers(pkg, is_docable):
             if inspect.isclass(member):
                 result.extend(get_undoced(member))
-            elif is_docable(member) and get_doc(member) is None:
+            elif get_doc(member) is None:
                 result.append((name, member))
     if not found:
         raise FileNotFoundError("Unable to find any packages for the specified name")

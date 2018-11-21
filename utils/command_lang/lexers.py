@@ -7,22 +7,40 @@ from .enums import Instruction
 
 
 class CLLexer(metaclass=abc.ABCMeta):
+    """
+        Abstract base for CommandLang lexers. Defines the interface they are expected to provide
+    """
 
     __slots__ = ()
 
     @abc.abstractmethod
     def lex_lang(self, data):
-        pass
+        """
+            Run the CL lexer. Should return a list of tokens to pass to an interpreter
+        :param data: Text input to run the lexer on
+        :return: List of tokens
+        """
 
 
 class DefaultCLLexer(CLLexer):
+    """
+        Default/Base lexer for CommandLang. Converts string into List[Tuple[Instruction, ...]]
+    """
 
     __slots__ = ("_buffer",)
 
     def __init__(self):
+        """
+            Initializes the default lexer, setting the _buffer to None as a placeholder
+        """
         self._buffer = None
 
     def _recurse(self, text):
+        """
+            Recursively lex, saving the buffer so it can be overwritten then restoring it
+        :param text: Text to lex
+        :return: Result of lexing text
+        """
         buffer = self._buffer
         result = self.lex_lang(text)
         self._buffer = buffer
@@ -33,7 +51,6 @@ class DefaultCLLexer(CLLexer):
             Lex an if if statement in the current string
         :return: Tuple result of lexing, (type, statement, text)
         """
-
         end = False
         maybe_escape = False
         escape = False
@@ -111,7 +128,6 @@ class DefaultCLLexer(CLLexer):
             Lex an exec statement in the current string
         :return: Result of lexing, raw string inside statement
         """
-
         end = False
         escape = False
         raw = ""
@@ -138,7 +154,6 @@ class DefaultCLLexer(CLLexer):
         :param data: String input to the lexer
         :return: List of execution instructions
         """
-
         self._buffer = io.StringIO(data)
         escape = False
         raw = ""

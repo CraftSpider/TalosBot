@@ -3,12 +3,23 @@ import aiohttp.web as web
 
 
 class HTTPSRedirecter:
+    """
+        Class that spins up a webserver that simply redirects all requests to the https version of the site
+    """
 
-    async def all(self, request):
-        return web.HTTPFound("https://talosbot.org/" + request.path[1:])
+    async def all(self, request: web.Request):
+        """
+            Handler for all requests
+        :param request: Request to handle
+        :return: HTTPFound
+        """
+        return web.HTTPFound(request.url.with_scheme("https"))
 
 
 def main():
+    """
+        Main method for server redirector
+    """
     app = web.Application()
     handler = HTTPSRedirecter()
     app.add_routes([

@@ -61,12 +61,21 @@ _op_functions = {
 
 
 class CLInterpreter(metaclass=abc.ABCMeta):
+    """
+        Abstract base for CommandLang interpreters. Defines the interface they are expected to provide
+    """
 
     __slots__ = ()
 
     @abc.abstractmethod
     def interpret(self, context, tokens):
-        pass
+        """
+            Run the CL Interpreter. Should return the result of interpreting the provided
+            list of tokens
+        :param context: Context to evalute tokens in
+        :param tokens: List of CL tokens provided by lexer
+        :return: Result of evaluation
+        """
 
 
 class BaseInterpreter(CLInterpreter):
@@ -243,6 +252,9 @@ class BaseInterpreter(CLInterpreter):
 
 
 class DefaultCL(BaseInterpreter):
+    """
+        Default CL Interpreter. Cannot run commands, any execs return their internal values literally
+    """
 
     __slots__ = ()
 
@@ -266,6 +278,12 @@ class DefaultCL(BaseInterpreter):
 
 
 async def run_check(ctx, command, *args):
+    """
+        Run a command with checks. If checks fail, sends a failure message to context
+    :param ctx: d.py context to use
+    :param command: Command object to execute with checks
+    :param args: arguments to be passed to the command
+    """
     if await command.can_run(ctx):
         await ctx.invoke(command, *args)
     else:
@@ -345,4 +363,10 @@ class ContextLessCL(DiscordCL):
     __slots__ = ()
 
     def _process_val(self, ctx, val):
+        """
+            Does no processing aside from assuring value is converted to a string and returned
+        :param ctx: Unused context
+        :param val: Value to process
+        :return: string conversion of value
+        """
         return str(val)

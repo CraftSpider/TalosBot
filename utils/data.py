@@ -4,8 +4,16 @@ import datetime as dt
 
 
 class _EmptyVal:
+    """
+        An entirely missing value, not just present but null
+    """
 
     def __eq__(self, other):
+        """
+            Any _EmptyVal is equal to any other
+        :param other: Other value to check equality of
+        :return: Whether other is also an _EmptyVal
+        """
         return isinstance(other, _EmptyVal)
 
 
@@ -13,10 +21,19 @@ _Empty = _EmptyVal()
 
 
 class Row(metaclass=abc.ABCMeta):
+    """
+        Conceptually, a Row in a SQL database. Subclass to define a table, __slots__ is used to define
+        the columns in order. Can be saved and loaded from a database
+    """
 
     __slots__ = ()
 
     def __init__(self, row, conv_bool=False):
+        """
+            Initializer for a row. Handles magical __slots__ initialization
+        :param row: Sequence of items pulled from a table
+        :param conv_bool: Whether to convert 0's and 1's to boolean values or not
+        """
         if self.__class__ == Row:
             raise TypeError("Can't instantiate a non-subclassed row")
 
@@ -28,12 +45,25 @@ class Row(metaclass=abc.ABCMeta):
             setattr(self, slot, value)
 
     def __str__(self):
+        """
+            Convert a Row to a string. Takes the form of `Name(value1, value2, ...)`
+        :return: String form of Row
+        """
         return f"{type(self).__name__}({', '.join(str(getattr(self, x)) for x in self.__slots__)})"
 
     def __repr__(self):
+        """
+            Convert a Row to its repr. Takes the form of `Name(repr(value1), repr(value2), ...)`
+        :return: Repr form of Row
+        """
         return f"{type(self).__name__}([{', '.join(repr(getattr(self, x)) for x in self.__slots__)}])"
 
     def __eq__(self, other):
+        """
+            Check equality of one Row to another
+        :param other: Other object to check equality of
+        :return: Whether other object has same column names and same values in them
+        """
         if not isinstance(other, Row):
             return False
         for slot in self.__slots__:
@@ -46,6 +76,10 @@ class Row(metaclass=abc.ABCMeta):
         return True
 
     def to_row(self):
+        """
+            Convert Row to a Sequence of correct length with correct data values
+        :return: Sequence of SQL Storable values
+        """
         out = []
         for slot in self.__slots__:
             value = getattr(self, slot)
@@ -56,6 +90,10 @@ class Row(metaclass=abc.ABCMeta):
 
     @classmethod
     def table_name(cls):
+        """
+            Get the name of the table this Row object is associated with
+        :return: Name of a SQL table
+        """
         if hasattr(cls, "TABLE_NAME"):
             return cls.TABLE_NAME
         else:
@@ -63,10 +101,18 @@ class Row(metaclass=abc.ABCMeta):
 
 
 class MultiRow(metaclass=abc.ABCMeta):
+    """
+        An object containing multiple different rows, possibly from multiple tables.
+        Can be saved and loaded from a Database like a Row
+    """
 
     __slots__ = ("_removed",)
 
     def __init__(self, data):
+        """
+            Initialize this MultiRow with given data. Uses slot names to pull from dict into self attributes
+        :param data: Dict of data to pull Rows or lists of Rows from
+        """
         self._removed = []
         for slot in self.__slots__:
             value = data.get(slot)
@@ -81,6 +127,11 @@ class MultiRow(metaclass=abc.ABCMeta):
         return iter(getattr(self, x) for x in self.__slots__)
 
     def __eq__(self, other):
+        """
+            Check equality between this and another MultiRow. Works similarly to Row
+        :param other: Other object to check against
+        :return: Whether this object is equal to Other
+        """
         if not isinstance(other, MultiRow):
             return False
         for slot in self.__slots__:
@@ -108,6 +159,9 @@ class SqlConvertable(metaclass=abc.ABCMeta):
 
 
 class Table(Row):
+    """
+        Information Schema TABLES Table
+    """
 
     __slots__ = ("catalog", "schema", "name", "type", "engine", "version", "row_format", "num_rows", "avg_row_len",
                  "data_len", "max_data_len", "index_len", "data_free", "auto_increment", "create_time", "update_time",
@@ -115,14 +169,19 @@ class Table(Row):
 
 
 class Column(Row):
+    """
+        Information Schema COLUMNS Table
+    """
 
     __slots__ = ("catalog", "schema", "table_name", "name", "position", "default", "nullable", "type", "char_max_len",
                  "bytes_max_len", "numeric_precision", "numeric_scale", "datetime_precision", "char_set_name",
-                 "collation_name", "column_type", "column_key", "extra", "privileges", "comment", "generation_expr",
-                 "srs_id")
+                 "collation_name", "column_type", "column_key", "extra", "privileges", "comment", "generation_expr")
 
 
 class TalosAdmin(Row):
+    """
+        Talos Admins Table
+    """
 
     __slots__ = ("guild_id", "user_id")
 
@@ -130,6 +189,9 @@ class TalosAdmin(Row):
 
 
 class InvokedCommand(Row):
+    """
+        User Invoked Commands Table
+    """
 
     __slots__ = ("id", "command_name", "times_invoked")
 
@@ -137,6 +199,9 @@ class InvokedCommand(Row):
 
 
 class UserTitle(Row):
+    """
+        User Titles Table
+    """
 
     __slots__ = ("id", "title")
 
@@ -144,6 +209,9 @@ class UserTitle(Row):
 
 
 class UserProfile(Row):
+    """
+        User Profiles Table
+    """
 
     __slots__ = ("id", "description", "commands_invoked", "title")
 
@@ -151,53 +219,101 @@ class UserProfile(Row):
 
 
 class UserOptions(Row):
+    """
+        User Options Table
+    """
 
     __slots__ = ("id", "rich_embeds", "prefix")
 
     TABLE_NAME = "user_options"
 
     def __init__(self, row):
+        """
+            Override init to set conv_bool to True
+        :param row: Row to initialize with
+        """
         super().__init__(row, True)
 
 
 class TalosUser(MultiRow):
+    """
+        Talos User object. Includes a UserProfile, their titles, their invoked commands, and their options.
+        Provides methods for manipulating these things
+    """
 
     __slots__ = ("profile", "invoked", "titles", "options")
 
     @property
     def id(self):
+        """
+            Get ID of the current Talos user
+        :return: user ID
+        """
         return self.profile.id
 
     @property
     def title(self):
+        """
+            Get the current title of the Talos user
+        :return: user title
+        """
         return self.profile.title
 
     def removed_items(self):
+        """
+            Get the list of items to delete when saving this item
+        :return: List of Rows to delete
+        """
         return self._removed
 
     def get_favorite_command(self):
+        """
+            Get the user's most invoked command
+        :return:
+        """
         return self.invoked[0]
 
     def add_title(self, title):
+        """
+            Add a new title that the user is allowed to use
+        :param title: String title to add
+        """
         if not self.check_title(title):
             self.titles.append(UserTitle([self.id, title]))
 
     def check_title(self, title):
+        """
+            Check whether a user has access to a certain title
+        :param title: String title to check access of
+        :return: Boolean of whether the user has the title
+        """
         for user_title in self.titles:
             if user_title.title == title:
                 return True
         return False
 
     def set_title(self, title):
+        """
+            Set the active title of the user, with check to ensure they have the title
+        :param title: String title to set
+        :return: Whether title was successfully set
+        """
         if self.check_title(title):
             self.profile.title = title
             return True
         return False
 
     def clear_title(self):
+        """
+            Clear the active title of the user
+        """
         self.profile.title = None
 
     def remove_title(self, title):
+        """
+            Remove a title from the user's access
+        :param title: String title to remove
+        """
         removed = filter(lambda x: x.title == title, self.titles)
         for item in removed:
             self.titles.remove(item)
@@ -205,6 +321,9 @@ class TalosUser(MultiRow):
 
 
 class GuildOptions(Row):
+    """
+        Guild Options Table
+    """
 
     __slots__ = ("id", "rich_embeds", "fail_message", "pm_help", "any_color", "commands", "user_commands",
                  "joke_commands", "writing_prompts", "prompts_channel", "mod_log", "log_channel", "prefix", "timezone")
@@ -212,27 +331,56 @@ class GuildOptions(Row):
     TABLE_NAME = "guild_options"
 
     def __init__(self, row):
+        """
+            Override initialization to set conv_bool to True
+        :param row: Row to initialize with
+        """
         super().__init__(row, True)
 
 
 class PermissionRule(Row):
+    """
+        Permission Rule Table
+    """
 
     __slots__ = ("id", "command", "perm_type", "target", "priority", "allow")
 
     TABLE_NAME = "perm_rules"
 
     def __init__(self, row):
+        """
+            Override initialization to set conv_bool to True
+        :param row: Row to initialize with
+        """
         super().__init__(row, True)
 
     def __lt__(self, other):
+        """
+            Check if this rule's priority is less than another rule's
+        :param other: Other rule to check
+        :return: Whether this rule is less than
+        """
         if isinstance(other, PermissionRule):
             return self.priority < other.priority
+        return NotImplemented
 
     def __gt__(self, other):
+        """
+            Check if this rule's priority is greater than another rule's
+        :param other: Other rule to check
+        :return: Whether this rule is greater than
+        """
         if isinstance(other, PermissionRule):
             return self.priority > other.priority
+        return NotImplemented
 
     def get_allowed(self, ctx, default=None):
+        """
+            Check whether this permission is satisfied in the given context
+        :param ctx: d.py Context to check against
+        :param default: Value to return if rule is irrelevant in given context
+        :return: Boolean whether rule is satisfied or default
+        """
         if self.perm_type == "user":
             if self.target == str(ctx.author):
                 return self.allow
@@ -251,6 +399,9 @@ class PermissionRule(Row):
 
 
 class GuildCommand(Row):
+    """
+        Guild Command Table
+    """
 
     __slots__ = ("id", "name", "text")
 
@@ -330,17 +481,27 @@ class EventPeriod(SqlConvertable):
 
 
 class GuildEvent(Row):
+    """
+        Guild Event Table
+    """
 
     __slots__ = ("id", "name", "period", "last_active", "channel", "text")
 
     TABLE_NAME = "guild_events"
 
     def __init__(self, row):
-        super().__init__(row, False)
+        """
+            Override initialization to convert string period to an EventPeriod
+        :param row: Row to use in initialization
+        """
+        super().__init__(row)
         self.period = EventPeriod(self.period)
 
 
 class Quote(Row):
+    """
+        Quote Table
+    """
 
     __slots__ = ("guild_id", "id", "author", "quote")
 

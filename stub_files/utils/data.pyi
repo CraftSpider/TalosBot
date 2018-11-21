@@ -56,8 +56,7 @@ class Column(Row):
 
     __slots__ = ("catalog", "schema", "table_name", "name", "position", "default", "nullable", "type", "char_max_len",
                  "bytes_max_len", "numeric_precision", "numeric_scale", "datetime_precision", "char_set_name",
-                 "collation_name", "column_type", "column_key", "extra", "privileges", "comment", "generation_expr",
-                 "srs_id")
+                 "collation_name", "column_type", "column_key", "extra", "privileges", "comment", "generation_expr")
 
     catalog: str
     schema: str
@@ -67,20 +66,19 @@ class Column(Row):
     default: Any
     nullable: str
     type: str
-    char_max_len: int
-    bytes_max_len: int
-    numeric_precision: str
-    numeric_scale: str
-    datetime_precision: str
-    char_set_name: str
-    collation_name: str
+    char_max_len: Optional[int]
+    bytes_max_len: Optional[int]
+    numeric_precision: int
+    numeric_scale: int
+    datetime_precision: Optional[str]
+    char_set_name: Optional[str]
+    collation_name: Optional[str]
     column_type: str
     column_key: str
     extra: str
     privileges: str
     comment: str
     generation_expr: str
-    srs_id: int
 
 class TalosAdmin(Row):
 

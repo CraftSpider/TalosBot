@@ -42,20 +42,32 @@ counter = 0
 
 
 class ServerError(Exception):
+    """
+        Base error class for the Talos server
+    """
     pass
 
 
 class ServerWarning(Warning):
+    """
+        Base warning class for the Talos server
+    """
     pass
 
 
 class TalosPrimaryHandler:
+    """
+        Handler class for Talos server. Contains handlers for GETs, POSTs, and such
+    """
 
     _instance = None
 
-    # Dunder methods
-
     def __new__(cls, settings=None):
+        """
+            Create new instance, Handler is a singleton so only every creates one instance
+        :param settings: Settings dict for the server
+        :return: Instance of Handler
+        """
 
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -63,6 +75,10 @@ class TalosPrimaryHandler:
         return cls._instance
 
     def __init__(self, settings=None):
+        """
+            Initializer for the Handler. Will only be run once due to singleton nature
+        :param settings: Settings dict for the server
+        """
         if getattr(self, "_settings", None) is None:
             if settings is None:
                 raise ServerError("Missing settings on server handler creation")
@@ -80,6 +96,11 @@ class TalosPrimaryHandler:
     # Request handlers
 
     async def site_get(self, request):
+        """
+            GET a page on the site normally
+        :param request: aiohttp Request
+        :return: Response object
+        """
         log.info("Site GET")
         path = await self.get_path(request.path)
         if isinstance(path, int):
@@ -89,10 +110,20 @@ class TalosPrimaryHandler:
         return response
 
     async def api_get(self, request):
+        """
+            GET a page from the API
+        :param request: aiohttp Request
+        :return: Response object
+        """
         log.info("API GET")
         return web.Response(text="Talos API Coming soon")
 
     async def auth_get(self, request):
+        """
+            GET the Twitch auth page
+        :param request: aiohttp Request
+        :return: Response object
+        """
         if request.query.get("code") is not None:
             code = request.query["code"]
             await self.twitch_app.get_oauth(code)
@@ -114,12 +145,22 @@ class TalosPrimaryHandler:
         return web.HTTPFound("https://id.twitch.tv/oauth2/authorize?" + '&'.join(x + "=" + params[x] for x in params))
 
     async def do_head(self, request):
+        """
+            Respond to a HEAD request properly
+        :param request: aiohttp Request
+        :return: Response object
+        """
         log.info("Site HEAD")
         response = await self.site_get(request)
         response = web.Response(headers=response.headers, status=response.status)
         return response
 
     async def api_post(self, request):
+        """
+            POST to the Talos API
+        :param request: aiohttp Request
+        :return: Response object
+        """
         log.info("API POST")
         path = request.path.lstrip("/").replace("/", "_")
         print(request.headers)
@@ -144,6 +185,12 @@ class TalosPrimaryHandler:
     # API Methods
 
     async def api_commands(self, data):
+        """
+            Handle a POST to the Talos Commands endpoint
+        :param data: Commands data being passed in
+        :return: Response, success or failure
+        """
+        # TODO
         return web.Response(text="Talos Command posting is WIP")
 
     # Website Methods
@@ -267,19 +314,31 @@ class TalosPrimaryHandler:
         )
 
     async def guess_mime(self, path):
+        """
+            Guess the MIME type of a given path. If it isn't known, default to octet-stream
+        :param path: Relative path to the desired file
+        :return: MIME type best guess
+        """
         if KNOWN_MIMES.get(path.suffix):
             return KNOWN_MIMES[path.suffix]
         return "application/octet-stream"
 
 
 def load_settings():
+    """
+        Load the settings file and parse it with JSON
+    :return: Dict result of parsing
+    """
     with open(SETTINGS_FILE, "r+") as file:
-        import json
         data = json.load(file)
     return data
 
 
 def main():
+    """
+        Main method for the Talos webserver. Sets up and runs the webserver
+    :return: Exit code
+    """
     settings = load_settings()
 
     if settings["tokens"].get("ssl_cert"):

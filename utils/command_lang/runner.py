@@ -5,10 +5,19 @@ from . import lexers, interpreters
 
 
 class CommandLang:
+    """
+        Runner for CommandLang. This should generally stand on its own. Does any necessary setup and teardown for
+        the running of the language
+    """
 
     __slots__ = ("_lexer", "_interpreter")
 
     def __init__(self, lexer=None, interpreter=None):
+        """
+            Initialize a new CommandLang runner. Can provide a lexer and interpreter, or it uses the default builtins
+        :param lexer: CLLexer to use in this runner
+        :param interpreter: CLInterpreter to use in this runner
+        """
         if lexer is None:
             lexer = lexers.DefaultCLLexer()
         if interpreter is None:
@@ -26,6 +35,12 @@ class CommandLang:
         return bool(re.search(r"\[(?:if|elif|else) .+?\]\(.+?\)|{[\w :]+?}", command_str))
 
     def exec(self, context, code):
+        """
+            Execute some CommandLang code in a given context
+        :param context: Context to use in execution
+        :param code: Code to execute
+        :return: result of execution
+        """
         if not self._operators_exist(code):
             # if it's obviously not in the language, we're already done processing.
             return code
