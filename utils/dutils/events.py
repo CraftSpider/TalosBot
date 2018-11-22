@@ -86,16 +86,34 @@ class EventLoop:
 
     @property
     def callback(self):
+        """
+            Retrieve the internal callback object
+        :return: Internal coro
+        """
         return self._callback
 
     @callback.setter
     def callback(self, value):
+        """
+            Set the internal callback object
+        :param value: Callback to set
+        """
         self._callback = value
 
     def set_start_time(self, time):
+        """
+            Set the EventLoop start time. While event loop is running, this won't change anything
+        :param time: datetime to start the loop at
+        :return:
+        """
         self.start_time = time
 
     def start(self, *args, **kwargs):
+        """
+            Start the EventLoop, creating a task and adding it to the loop
+        :param args: Arguments to run the loop with
+        :param kwargs: Keyword arguments to run the loop with
+        """
         log.info(f"Starting event loop {self.name}")
         if self.parent is not None:
             newargs = [self.parent]
@@ -104,6 +122,12 @@ class EventLoop:
         self._task = self.loop.create_task(self.run(*args, **kwargs))
 
     async def run(self, *args, **kwargs):
+        """
+            Actual runner of the EventLoop. Aligns the periods, and does error handling. Should propagate no Exceptions,
+            though warnings or errors will be logged on persist or killing error.
+        :param args: Arguments to run the loop with
+        :param kwargs: Keyword arguments to run the loop with
+        """
         if self.start_time is not None:
             now = dt.datetime.utcnow()
             delta = self.start_time - now
@@ -130,11 +154,20 @@ class EventLoop:
             await asyncio.sleep(delta.total_seconds())
 
     def stop(self):
+        """
+            Stop the EventLoop. Cancels the task, does any cleanup
+        """
         if self._task is not None:
             self._task.cancel()
 
 
 def eventloop(period, **kwargs):
+    """
+        Decorator to turn a coroutine into an EventLoop
+    :param period: Length of time between loop repititions, generally a string like 1m3s
+    :param kwargs: Arguments to pass to the EventLoop constructor
+    :return: Internal callback
+    """
 
     def decorator(coro):
         return EventLoop(coro, period, **kwargs)

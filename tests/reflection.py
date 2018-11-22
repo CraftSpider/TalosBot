@@ -16,7 +16,7 @@ def get_doc(object):
     return doc
 
 
-def is_docable(attr):
+def is_docable(attr):  # TODO: properties should be docable
     if isinstance(attr, inspect.Attribute):
         member = attr.object
     else:
@@ -24,7 +24,8 @@ def is_docable(attr):
     if isinstance(member, commands.Command) or isinstance(member, dutils.EventLoop):
         return True
     return inspect.iscoroutinefunction(member) or inspect.isfunction(member) or inspect.ismethod(member) or \
-        inspect.isasyncgenfunction(member) or inspect.isgeneratorfunction(member) or inspect.isclass(member)
+        inspect.isasyncgenfunction(member) or inspect.isgeneratorfunction(member) or inspect.isclass(member) or \
+        isinstance(member, property)
 
 
 def get_declared(type, predicate=None):

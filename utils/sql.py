@@ -18,6 +18,10 @@ levels = {
 
 
 class EmptyCursor(mysql_abstracts.MySQLCursorAbstract):
+    """
+        A cursor for a non-existent database that should pretend to be connected. Returns None or empty list values
+        for all results
+    """
 
     __slots__ = ()
 
@@ -155,6 +159,11 @@ talos_triggers = {
 
 
 def and_from_dict(kwargs):
+    """
+        Generate a SQL And statement from a dict of keyword args
+    :param kwargs: Keyword arguments dict
+    :return: String AND statement
+    """
     return " AND ".join(f"{x} = %({x})s" for x in kwargs)
 
 
@@ -351,16 +360,25 @@ class TalosDatabase:
     # Meta methods
     
     def get_tables(self):
+        """
+            Get a list of Table objects from the information_schema for the current database schema
+        :return: list of Table objects
+        """
         query = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s"
         self._cursor.execute(query, [self._schema])
         return [data.Table(x) for x in self._cursor]
 
     def has_table(self, table):
+        """
+            Check if the current schema has a table matching the given table name
+        :param table: Name to check
+        :return: Whether table exists in schema
+        """
         self._cursor.execute(
-            "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s LIMIT 1",
+            "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s LIMIT 1",
             [self._schema, table]
         )
-        return self._cursor.fetchone() is not None
+        return self._cursor.fetchone()[0] > 0
 
     def get_columns(self, table_name):
         """
@@ -435,6 +453,12 @@ class TalosDatabase:
         return [type(x) for x in self._cursor]
 
     def get_count(self, type, **kwargs):
+        """
+            Get the number of given TalosDatabase objects that are in the database, matching the kwargs filter
+        :param type: TalosDatabase compatible type. Subclasses Row or duck types it
+        :param kwargs: Parameters to filter by. Are all ANDed together
+        :return: Number of type in the database
+        """
         conditions = and_from_dict(kwargs)
         query = f"SELECT COUNT(*) FROM {self._schema}.{type.table_name()}"
         if conditions:
@@ -493,6 +517,14 @@ class TalosDatabase:
                 self.remove_item(row, general)
 
     def remove_items(self, type, *, limit=None, order=None, **kwargs):
+        """
+            Remove any TalosDatabase objects from the database of a specific type, that match the given parameters
+            Objects to delete can be limited and ordered
+        :param type: TalosDatabase compatible type. Subclasses Row or duck types it
+        :param limit: Maximum number of items to delete. If this would be one, consider remove_item
+        :param order: Parameter to pass into the ORDER BY clause
+        :param kwargs: Parameters to filter by. Are all ANDed together
+        """
         conditions = and_from_dict(kwargs)
         query = f"DELETE FROM {self._schema}.{type.table_name()}"
         if conditions:

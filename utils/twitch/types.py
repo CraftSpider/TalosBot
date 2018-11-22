@@ -6,12 +6,23 @@ from . import constants as const
 
 
 class OAuth:
+    """
+        Represent a Twitch OAuth user authentication
+    """
 
     def __init__(self, data, app):
+        """
+            Initialize this OAuth object
+        :param data: Initial OAuth data
+        :param app: Associated Twitch application
+        """
         self.app = app
         self._refresh_data(data)
 
     async def validate(self):
+        """
+            Check the validity of this OAuth object
+        """
         headers = {
             "Authorization": f"OAuth {self.token}"
         }
@@ -20,6 +31,10 @@ class OAuth:
             print(validate)
 
     async def refresh(self):
+        """
+            Refresh this OAuth object, and update to new refreshed token
+        :return: Whether refresh was successful
+        """
         params = {
             "grant_type": "refresh_token",
             "refresh_token": self._refresh,
@@ -35,6 +50,10 @@ class OAuth:
                 return True
 
     def _refresh_data(self, data):
+        """
+            Update the internal state with new refreshed data
+        :param data: Dict of new data
+        """
         self.token = data["access_token"]
         self._refresh = data["refresh_token"]
         self.expiration_time = data.get("expires_in", 3600)
@@ -44,13 +63,24 @@ class OAuth:
 
 
 class User:
+    """
+        Represents a Twitch user, with name and associated data
+    """
 
     __slots__ = ("id", "name", "display_name", "bio", "logo", "created_at", "updated_at", "type")
 
     def __init__(self, data):
+        """
+            Initialize twitch user object
+        :param data: Initial data from Twitch API
+        """
         self._refresh_data(data)
 
     def _refresh_data(self, data):
+        """
+            Update the internal state with new refreshed data
+        :param data: Dict of new data
+        """
         self.id = data["_id"]
         self.name = data["name"]
         self.display_name = data["display_name"]
@@ -62,13 +92,24 @@ class User:
 
 
 class Subscription:
+    """
+        Represents a Twitch subscription with an associated User
+    """
 
     __slots__ = ("id", "created_at", "sub_plan", "sub_plan_name", "is_gift", "sender", "user")
 
     def __init__(self, data):
+        """
+            Initialize twitch subscription object
+        :param data:
+        """
         self._refresh_data(data)
 
     def _refresh_data(self, data):
+        """
+            Update the internal state with new refreshed data
+        :param data: Dict of new data
+        """
         self.id = data["_id"]
         self.created_at = data["created_at"]
         self.sub_plan = data["sub_plan"]

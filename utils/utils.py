@@ -70,6 +70,14 @@ elif not log_folder.is_dir():
 
 
 def configure_logger(logger, *, handlers=[], formatter=None, level=None, propagate=None):
+    """
+        Configure a python logger easily
+    :param logger: Logger to configure
+    :param handlers: handlers to add to the logger
+    :param formatter: formatter to set for all the handlers, if None leave their current formatter alone
+    :param level: Level to set the logger to
+    :param propagate: Whether to have the logger propagate to higher levels
+    """
 
     if level is not None:
         logger.setLevel(level)
@@ -119,6 +127,13 @@ def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 
 def log_error(logger, level, error, message=""):
+    """
+        Formats and logs an error traceback message
+    :param logger: Logger to use
+    :param level: Level to log at
+    :param error: Error to format into a traceback
+    :param message: Message to print before traceback
+    """
     if message:
         message += "\n"
     errmsg = "".join(traceback.format_exception(type(error), error, error.__traceback__))
@@ -126,6 +141,11 @@ def log_error(logger, level, error, message=""):
 
 
 def replace_escapes(text):
+    """
+        Replace escape sequences with the characters they represent
+    :param text: string to replace escapes in
+    :return: New string with escapes replaced by the represented characters
+    """
     escape = False
     out = ""
     for char in text:
@@ -228,12 +248,22 @@ gen = parsers.TreeGen()
 
 
 def to_dom(html):
+    """
+        Convert an HTML string into a new Document object
+    :param html: HTML to parse
+    :return: new Document object from HTML
+    """
     gen.reset()
     gen.feed(html)
     return el.Document(gen.close()[0])
 
 
 def to_nodes(html):
+    """
+        Convert an HTML string into a list of head nodes
+    :param html: HTML to parse
+    :return: list of head nodes in HTML
+    """
     gen.reset()
     gen.feed(html)
     return gen.close()

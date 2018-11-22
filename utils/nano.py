@@ -8,10 +8,18 @@ SimpleNovel = collections.namedtuple("SimpleNovel", "title genre words")
 
 
 class NanoUser:
+    """
+        User on the NaNoWrimo site
+    """
 
     __slots__ = ("client", "username", "_avatar", "_age", "_info", "_novels", "_simple_novel")
 
     def __init__(self, client, username):
+        """
+            Initialize NaNo user
+        :param client: TalosClient this is associated with
+        :param username: Username of the current user
+        """
         username = username.lower().replace(" ", "-")
 
         self.client = client
@@ -23,30 +31,50 @@ class NanoUser:
 
     @property
     async def avatar(self):
+        """
+            Get the avatar of this user
+        :return: URL of user avatar
+        """
         if self._avatar is None:
             await self._initialize()
         return self._avatar
 
     @property
     async def age(self):
+        """
+            Get how long the current user has been part of the NaNo site
+        :return: Rough age of the user
+        """
         if self._age is None:
             await self._initialize()
         return self._age
 
     @property
     async def info(self):
+        """
+            Get the NanoInfo for this user
+        :return: NanoInfo object of this user
+        """
         if self._info is None:
             await self._initialize()
         return self._info
 
     @property
     async def novels(self):
+        """
+            Get the list of novels this user has written
+        :return: list of NanoNovel objects
+        """
         if self._novels is None:
             await self._init_novels()
         return self._novels
 
     @property
     async def current_novel(self):
+        """
+            Get the most recent novel this user has written, or None if they haven't written any
+        :return: NanoNovel object
+        """
         novels = await self.novels
         if not novels:
             return None
@@ -54,11 +82,20 @@ class NanoUser:
 
     @property
     async def simple_novel(self):
+        """
+            Get the simple novel representation displayed on the user info page
+        :return: SimpleNovel instance
+        """
         if self._simple_novel is None:
             await self._initialize()
         return self._simple_novel
 
     async def _initialize(self):
+        """
+            Initialize this user, loading their page and parsing the data on it into memory
+            Called when an attribute is accessed that is available on this page, and everything is parsed at once
+            to prevent loading the page multiple times
+        """
         page = await self.client.nano_get_page(f"participants/{self.username}")
         if page is None:
             raise errors.NotAUser(self.username)
@@ -83,6 +120,9 @@ class NanoUser:
         self._simple_novel = novel
 
     async def _init_novels(self):
+        """
+            Initialize this user's novels, loading the user novels page and parse all the novels into memory
+        """
         page = await self.client.nano_get_page(f"participants/{self.username}/novels")
         if page is None:
             raise errors.NotAUser(self.username)
@@ -127,10 +167,17 @@ class NanoUser:
 
 
 class NanoInfo:
+    """
+        User info on the Nano site. Bio, lifetime stats, and their fact sheet
+    """
 
     __slots__ = ("bio", "lifetime_stats", "fact_sheet")
 
     def __init__(self, page):
+        """
+            Initialize this NanoInfo object
+        :param page: HTML page to parse
+        """
 
         bio_panel = next(filter(lambda x: x.child_nodes[0].innertext == "Author Bio",
                                 page.get_by_class("panel-heading")))
@@ -182,10 +229,19 @@ class NanoInfo:
 
 
 class NanoNovel:
+    """
+        Novel on the NaNoWriMo site
+    """
 
     __slots__ = ("client", "id", "author", "year", "title", "genre", "cover", "winner", "synopsis", "stats", "_excerpt")
 
     def __init__(self, client, author, nid):
+        """
+            Initialize this NanoNovel
+        :param client: TalosClient this is associated with
+        :param author: NanoUser, the author of this novel
+        :param nid: Novel ID, the string for the novel URL
+        """
         self.client = client
         self.author = author
         self.id = nid
@@ -201,11 +257,18 @@ class NanoNovel:
 
     @property
     async def excerpt(self):
+        """
+            Get the novel's excerpt, author chosen short text from the novel
+        :return: Novel excerpt
+        """
         if not self._excerpt:
             await self._initialize()
         return self._excerpt
 
     async def _initialize(self):
+        """
+            Initialize this novel object, loading the novel page and parsing it
+        """
         page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.title}")
         if page is None:
             raise errors.NotANovel(self.title)
@@ -214,18 +277,33 @@ class NanoNovel:
 
 
 class NanoNovelStats:
+    """
+        Detailed stats associated with a NanoNovel
+    """
 
     __slots__ = ("client", "novel", "daily_average", "target", "target_average", "total_today", "total",
                  "words_remaining", "current_day", "days_remaining", "finish_date", "average_to_finish")
 
     def __init__(self, client, novel):
+        """
+            Initialize this Novel stats object
+        :param client: TalosClient associated with this object
+        :param novel: Novel these stats are for
+        """
         self.client = client
         self.novel = novel
 
     @property
     def author(self):
+        """
+            Shorthand to get the author of the associated novel
+        :return:
+        """
         return self.novel.author
 
     async def _initialize(self):
+        """
+            Initialize this object, loading the detailed stats page and parsing it into memory
+        """
         page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.novel.title}/stats")
         # TODO

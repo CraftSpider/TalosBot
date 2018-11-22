@@ -6,21 +6,40 @@ from . import types, constants as const
 
 
 class InsufficientPerms(Exception):
+    """
+        Raised when an operation is performed and the application is missing the required permissions
+    """
 
     def __init__(self, required, *args):
+        """
+            Initialize new exception object
+        :param required: Permission that is missing
+        :param args: Associated message
+        """
         self.required = required
         super().__init__(*args)
 
 
 class NotASubscriber(Exception):
-    pass
+    """
+        Raised when a User is not a subscriber to the current Streamer
+    """
 
 
 class TwitchApp:
+    """
+        Represents a twitch application
+    """
 
     __slots__ = ("_cid", "_secret", "_redirect", "_oauths", "session", "_users")
 
     def __init__(self, cid, secret, redirect="http://localhost"):
+        """
+            Initialize Twitch application
+        :param cid: Application ID
+        :param secret: Application Secret
+        :param redirect: Redirect URL for use in authentication
+        """
         self._cid = cid
         self._secret = secret
         self._redirect = redirect
@@ -29,11 +48,19 @@ class TwitchApp:
         self.session = None
 
     async def open(self):
+        """
+            Open a new application ClientSession
+        """
         if self.session is not None:
             await self.session.close()
         self.session = aiohttp.ClientSession()
 
     def build_request_headers(self, name):
+        """
+            Build the request headers for a Twitch API request
+        :param name: Name of the user to oauth with
+        :return: Dict of request headers
+        """
         return {
             "Accept": "application/vnd.twitchtv.v5+json",
             "Client-ID": self._cid,
@@ -41,6 +68,10 @@ class TwitchApp:
         }
 
     async def get_oauth(self, code):
+        """
+            Get the OAuth data with the code given to us by twitch
+        :param code: OAuth flow code returned by twitch
+        """
         if self.session is None:
             self.session = aiohttp.ClientSession()
         params = {
@@ -56,6 +87,11 @@ class TwitchApp:
             await self._get_user_oauth(oauth)
 
     async def _get_user_oauth(self, oauth):
+        """
+            Get the user associated with a new OAuth and save the OAuth in the internal state
+        :param oauth: OAuth to get associated user
+        :return:
+        """
         headers = self.build_request_headers(oauth.token)
         # TODO: requires channel read, figure out how to handle this
         async with self.session.get(const.KRAKEN + "channel/", headers=headers) as response:
@@ -63,6 +99,11 @@ class TwitchApp:
             self._oauths[result["name"]] = oauth
 
     async def get_user(self, name):
+        """
+            Get the Twitch User associated with a given name
+        :param name: Name of the twitch User to get
+        :return: Twitch User
+        """
         if self.session is None:
             self.session = aiohttp.ClientSession()
         user = self._users.get(name)
@@ -76,6 +117,11 @@ class TwitchApp:
             return user
 
     async def get_all_subs(self, name):
+        """
+            Get all the subscribers for a given username
+        :param name: Name of the user to get subs of
+        :return: List of Subscribers to the given user
+        """
         user = await self.get_user(name)
         total = None
         offset = 0
@@ -103,4 +149,7 @@ class TwitchApp:
         return out
 
     async def close(self):
+        """
+            Close the current ClientSession and shutdown the application
+        """
         await self.session.close()

@@ -2,11 +2,9 @@
 import math
 import re
 import discord
-from discord.embeds import Embed, EmbedProxy, EmptyEmbed
+import discord.embeds as embeds
 
-
-_EmptyEmbed = EmptyEmbed.__class__
-_EmptyEmbed.__len__ = lambda self: 0
+embeds._EmptyEmbed.__len__ = lambda self: 0
 EmptyField = {"value": "", "name": "", "inline": False}
 
 
@@ -29,7 +27,7 @@ def _custom_strftime(strf, t):
     return t.strftime(strf).replace('{D}', str(t.day) + _suffix(t.day))
 
 
-class PaginatedEmbed(Embed):
+class PaginatedEmbed(embeds.Embed):
     """
         Does fancy embed paginating. Will make a single embed with all given fields, except if it becomes too long.
         A single field being too long becomes Field, Field continued. A whole embed too long, Embed continued.
@@ -176,7 +174,7 @@ class PaginatedEmbed(Embed):
             Gets the colour list for this paginated embed.
         :return: list of colours or EmptyEmbed
         """
-        return getattr(self, "_colour", [EmptyEmbed])
+        return getattr(self, "_colour", [embeds.EmptyEmbed])
 
     # noinspection PyMethodOverriding,PyPropertyDefinition
     @colour.setter
@@ -187,7 +185,7 @@ class PaginatedEmbed(Embed):
         """
         if isinstance(value, (list, tuple)):
             self._colour = value
-        elif isinstance(value, (discord.Colour, _EmptyEmbed)):
+        elif isinstance(value, (discord.Colour, embeds._EmptyEmbed)):
             self._colour = [value]
         elif isinstance(value, int):
             self._colour = [discord.Colour(value=value)]
@@ -203,7 +201,7 @@ class PaginatedEmbed(Embed):
             Returns the set footer for this embed, or default.
         :return: EmbedProxy for footer
         """
-        return EmbedProxy(getattr(self, "_footer", {"text": "Page {}/{}"}))
+        return embeds.EmbedProxy(getattr(self, "_footer", {"text": "Page {}/{}"}))
 
     @property
     def fields(self):
@@ -220,15 +218,15 @@ class PaginatedEmbed(Embed):
                 for i in range(int(math.ceil(len(value) / self.MAX_FIELD_VALUE))):
                     match = re.search(r"[\n.][^\n.]*?(?!\.)$", value[:self.MAX_FIELD_VALUE + 1])
                     if match is not None:
-                        out.append(EmbedProxy({"name": name, "value": value, "inline": inline}))
+                        out.append(embeds.EmbedProxy({"name": name, "value": value, "inline": inline}))
                         value = value[match.start():]
                     else:
-                        out.append(EmbedProxy({"name": name, "value": value, "inline": inline}))
+                        out.append(embeds.EmbedProxy({"name": name, "value": value, "inline": inline}))
                         value = value[self.MAX_FIELD_VALUE + 1:]
                     if i == 0:
                         name = name + " cont."
             else:
-                out.append(EmbedProxy(field))
+                out.append(embeds.EmbedProxy(field))
         return out
 
     def add_field(self, *, name, value, inline=False):
