@@ -297,7 +297,7 @@ class NanoNovelStats:
     def author(self):
         """
             Shorthand to get the author of the associated novel
-        :return:
+        :return: Novel author
         """
         return self.novel.author
 

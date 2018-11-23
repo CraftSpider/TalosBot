@@ -7,7 +7,7 @@ class HTTPSRedirecter:
         Class that spins up a webserver that simply redirects all requests to the https version of the site
     """
 
-    async def all(self, request: web.Request):
+    async def all(self, request):
         """
             Handler for all requests
         :param request: Request to handle
