@@ -272,21 +272,6 @@ class TalosFormatter(commands.HelpFormatter):
                    await self.clean_prefix, command_name
                )
 
-    @staticmethod
-    def capital_split(text):
-        """
-            Convert from CamelCase to a string split by spaces
-        :param text: string to convert
-        :return: string with spaces inserted
-        """
-        out = ""
-        for char in text:
-            if char.isupper():
-                out += " {}".format(char)
-            else:
-                out += char
-        return out.strip(" ")
-
     def embed_shorten(self, text):
         """
             Shorten a string to end with ellipsis if it is longer than the allowed width
@@ -376,7 +361,7 @@ class TalosFormatter(commands.HelpFormatter):
                 if cog == "EventLoops" or cog == "DevCommands":
                     continue
                 value = inspect.getdoc(self.command.cogs[cog])
-                self._paginator.add_field(name=self.capital_split(cog), value=value)
+                self._paginator.add_field(name=utils.add_spaces(cog), value=value)
         else:
             filtered = sorted(filtered)
             if filtered:
@@ -422,7 +407,7 @@ class TalosFormatter(commands.HelpFormatter):
             cog = tup[1].cog_name
             # we insert the zero width space there to give it approximate
             # last place sorting position.
-            return self.capital_split(cog) + ':' if cog is not None else '\u200bBase Commands:'
+            return utils.add_spaces(cog) + ':' if cog is not None else '\u200bBase Commands:'
 
         filtered = await self.filter_command_list()
         if self.is_bot():

@@ -18,6 +18,16 @@ _mentions_transforms: Dict[str, str] = ...
 _mention_pattern: Pattern = ...
 log: logging.Logger = ...
 
+class FakeMessage:
+
+    __slots__ = ("guild", "channel", "author")
+
+    guild: discord.Guild
+    channel: discord.TextChannel
+    author: discord.Member
+
+    def __init__(self, guild: discord.Guild, channel: discord.TextChannel) -> None: ...
+
 class Talos(dutils.ExtendedBot):
 
     VERSION: str = ...

@@ -1,5 +1,7 @@
 
-from typing import NamedTuple, List, Dict
+from typing import NamedTuple, List, Dict, AsyncGenerator, Union
+import datetime as dt
+
 from utils import TalosHTTPClient, Document
 
 
@@ -78,4 +80,60 @@ class NanoNovel:
     async def _initialize(self) -> None: ...
 
 class NanoNovelStats:
-    pass
+
+    __slots__ = ("client", "novel", "_daily_average", "_target", "_target_average", "_total_today", "_total",
+                 "_words_remaining", "_current_day", "_days_remaining", "_finish_date", "_average_to_finish")
+
+    client: TalosHTTPClient
+    novel: NanoNovel
+    _daily_average: int
+    _target: int
+    _target_average: int
+    _total_today: int
+    _total: int
+    _words_remaining: int
+    _current_day: int
+    _days_remaining: int
+    _finish_date: dt.date
+    _average_to_finish: int
+
+    def __init__(self, client: TalosHTTPClient, novel: NanoNovel) -> None: ...
+
+    def __aiter__(self) -> AsyncGenerator[Union[int, dt.date]]: ...
+
+    @property
+    def author(self) -> NanoUser: ...
+
+    @property
+    async def daily_average(self) -> int: ...
+
+    @property
+    async def target(self) -> int: ...
+
+    @property
+    async def target_average(self) -> int: ...
+
+    @property
+    async def total_today(self) -> int: ...
+
+    @property
+    async def total(self) -> int: ...
+
+    @property
+    async def words_remaining(self) -> int: ...
+
+    @property
+    async def current_day(self) -> int: ...
+
+    @property
+    async def days_remaining(self) -> int: ...
+
+    @property
+    async def finish_date(self) -> dt.date: ...
+
+    @property
+    async def average_to_finish(self) -> int: ...
+
+    async def _aiter(self) -> AsyncGenerator[Union[int, dt.date]]: ...
+
+    async def _initialize(self) -> None: ...

@@ -1,5 +1,4 @@
 
-import pytest
 import pathlib
 import tests.reflection as reflection
 import os
@@ -20,8 +19,8 @@ def test_website_docs():
     assert len(result) is 0, f"Missing documentation on: {', '.join(map(lambda x: x[0], result))}"
 
 
-SKIP_DIRS = ["stub_files", "__pycache__", "tests"]
-SKIP_FILES = ["__init__.py"]
+SKIP_DIRS = ("stub_files", "__pycache__", "tests")
+SKIP_FILES = ("__init__.py",)
 
 
 def test_stubs():

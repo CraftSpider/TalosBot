@@ -1,7 +1,22 @@
 
 import collections
+import datetime as dt
 
 from . import element, errors
+
+
+_title_transform = {
+    "Your Average Per Day": "daily_average",
+    "Words Written Today": "total_today",
+    "Target Word Count": "target",
+    "Target Average Words Per Day": "target_average",
+    "Total Words Written": "total",
+    "Words Remaining": "words_remaining",
+    "Current Day": "current_day",
+    "Days Remaining": "days_remaining",
+    "At This Rate You Will Finish On": "finish_date",
+    "Words Per Day To Finish On Time": "average_to_finish"
+}
 
 
 SimpleNovel = collections.namedtuple("SimpleNovel", "title genre words")
@@ -269,7 +284,7 @@ class NanoNovel:
         """
             Initialize this novel object, loading the novel page and parsing it
         """
-        page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.title}")
+        page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.id}")
         if page is None:
             raise errors.NotANovel(self.title)
 
@@ -281,8 +296,8 @@ class NanoNovelStats:
         Detailed stats associated with a NanoNovel
     """
 
-    __slots__ = ("client", "novel", "daily_average", "target", "target_average", "total_today", "total",
-                 "words_remaining", "current_day", "days_remaining", "finish_date", "average_to_finish")
+    __slots__ = ("client", "novel", "_daily_average", "_target", "_target_average", "_total_today", "_total",
+                 "_words_remaining", "_current_day", "_days_remaining", "_finish_date", "_average_to_finish")
 
     def __init__(self, client, novel):
         """
@@ -293,6 +308,12 @@ class NanoNovelStats:
         self.client = client
         self.novel = novel
 
+        for item in self.__slots__[2:]:
+            setattr(self, item, None)
+
+    def __aiter__(self):
+        return self._aiter()
+
     @property
     def author(self):
         """
@@ -301,9 +322,90 @@ class NanoNovelStats:
         """
         return self.novel.author
 
+    @property
+    async def daily_average(self):
+        if self._daily_average is None:
+            await self._initialize()
+        return self._daily_average
+
+    @property
+    async def target(self):
+        if self._target is None:
+            await self._initialize()
+        return self._target
+
+    @property
+    async def target_average(self):
+        if self._target_average is None:
+            await self._initialize()
+        return self._target_average
+
+    @property
+    async def total_today(self):
+        if self._total_today is None:
+            await self._initialize()
+        return self._total_today
+
+    @property
+    async def total(self):
+        if self._total is None:
+            await self._initialize()
+        return self._total
+
+    @property
+    async def words_remaining(self):
+        if self._words_remaining is None:
+            await self._initialize()
+        return self._words_remaining
+
+    @property
+    async def current_day(self):
+        if self._current_day is None:
+            await self._initialize()
+        return self._current_day
+
+    @property
+    async def days_remaining(self):
+        if self._days_remaining is None:
+            await self._initialize()
+        return self._days_remaining
+
+    @property
+    async def finish_date(self):
+        if self._finish_date is None:
+            await self._initialize()
+        return self._finish_date
+
+    @property
+    async def average_to_finish(self):
+        if self._average_to_finish is None:
+            await self._initialize()
+        return self._average_to_finish
+
+    async def _aiter(self):
+        if self._daily_average is None:
+            await self._initialize()
+
+        for slot in self.__slots__[2:]:
+            yield slot, getattr(self, slot)
+
     async def _initialize(self):
         """
             Initialize this object, loading the detailed stats page and parsing it into memory
         """
-        page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.novel.title}/stats")
-        # TODO
+        page = await self.client.nano_get_page(f"participants/{self.author.username}/novels/{self.novel.id}/stats")
+
+        stats = page.get_by_id("novel_stats")
+
+        for stat in stats.child_nodes:
+            title = stat.first_child.innertext
+            value = stat.last_child.innertext
+
+            member = "_" + _title_transform[title]
+
+            if member == "_finish_date":
+                value = dt.datetime.strptime(value, "%B %d, %Y").date()
+            else:
+                value = int(value.replace(",", ""))
+
+            setattr(self, member, value)

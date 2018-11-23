@@ -213,6 +213,18 @@ def to_camel_case(text, upper=True):
     return out
 
 
+def add_spaces(text):
+    out = ""
+    for char in text:
+        if char.isupper():
+            out += f" {char}"
+        elif char == "_":
+            out += " "
+        else:
+            out += char
+    return out.lstrip()
+
+
 def zero_pad(text, length):
     """
         Zero pad numbers in a string

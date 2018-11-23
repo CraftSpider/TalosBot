@@ -1,6 +1,7 @@
 
-from typing import Tuple, Optional, Dict, List, Union, NamedTuple
+from typing import Tuple, Optional, Dict, List, Union,
 from utils.element import Document, Element
+from utils.nano import NanoUser, NanoNovel
 import aiohttp
 import io
 

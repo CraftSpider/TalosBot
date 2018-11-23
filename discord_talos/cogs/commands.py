@@ -379,37 +379,25 @@ class Commands(dutils.TalosCog):
             novel_excerpt = None
         elif len(novel_excerpt) > 1024:
             novel_excerpt = novel_excerpt[:1021] + "..."
-        # Get novel statistics
-        title_transform = {
-            "Your Average Per Day": "Daily Avg",
-            "Words Written Today": "Words Today",
-            "Total Words Written": "Words Total",
-            "Target Average Words Per Day": "Target Avg",
-            "Words Remaining": "Remaining Total"
-        }
         stats = {}
-        for element in []:
-            title = element.child_nodes[0].innertext
-            number = element.child_nodes[1].innertext
-            try:
-                stats[title_transform.get(title, title)] = int(number.replace(",", ""))
-            except ValueError:
-                stats[title_transform.get(title, title)] = number
+        async for name, stat in novel.stats:
+            stats[utils.add_spaces(name).title()] = stat
 
         if self.bot.should_embed(ctx):
             # Construct Embed
-            description = f"*Title:* {novel_title} *Genre:* {novel_genre}\n**Wordcount Details**\n"
+            stats_page = ""
             for stat in stats:
                 if isinstance(stats[stat], int):
-                    description += f"{stat}: {stats[stat]:,}\n"
+                    stats_page += f"{stat}: {stats[stat]:,}\n"
                 else:
-                    description += f"{stat}: {stats[stat]}\n"
-            if isinstance(stats.get("Words Today"), int) and stats.get("Target Avg"):
-                description += f"Remaining Total: {stats['Target Avg'] - stats['Words Today']:,}\n"
+                    date = stats[stat].strftime("%B %d, %Y")
+                    stats_page += f"{stat}: {date}\n"
             with dutils.PaginatedEmbed() as embed:
-                embed.title = "__Novel Details__"
-                embed.description = description
-                embed.set_author(name=username, icon_url=avatar)
+                embed.set_author(name=f"{novel.author.username}'s Novel", icon_url=avatar,
+                                 url=f"https://nanowrimo.org/participants/{novel.author.username}")
+                embed.add_field(name="Title", value=novel_title, inline=True)
+                embed.add_field(name="Genre", value=novel_genre, inline=True)
+                embed.add_field(name="__Stats__", value=stats_page)
                 if novel_cover is not None:
                     embed.set_thumbnail(url=novel_cover)
                 if novel_synopsis is not None:
@@ -419,7 +407,7 @@ class Commands(dutils.TalosCog):
             for page in embed:
                 await ctx.send(embed=page)
         else:
-            await ctx.send("Non-embed novel listing not yet implemented")
+            await ctx.send("Non-embed novel listing not yet implemented")  # TODO: support non-embed novel details
 
     @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
     async def _profile(self, ctx, username):
