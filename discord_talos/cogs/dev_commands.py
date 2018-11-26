@@ -201,6 +201,11 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
         await asyncio.sleep(.1)
         await ctx.send(end - start)
 
+    @dev_command()
+    async def test(self, ctx):
+        print(self.bot.commands_dict())
+        await ctx.send(len(str(self.bot.commands_dict())))
+
 
 def setup(bot):
     """

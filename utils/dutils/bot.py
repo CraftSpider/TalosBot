@@ -183,6 +183,51 @@ class ExtendedBot(commands.Bot):
             return cur
         return None
 
+    def commands_dict(self):
+        """
+            Looks through all commands currently loaded into the bot, and converts them into a dictionary by group
+            with their names, signatures, definitions, and any other desired metadata
+        :return: dictionary of command definitions
+        """
+        out = {
+            "name": "Talos",
+            "prefix": "^",
+            "cogs": {
+                "Base": {"name": "Base Commands", "description": "", "commands": []}
+            }
+        }
+        for cog in self.cogs:
+            cls = self.cogs[cog].__class__
+            out["cogs"][cls.__name__] = {
+                "name": utils.add_spaces(cls.__name__),
+                "description": inspect.cleandoc(inspect.getdoc(cls)),
+                "commands": []
+            }
+        for command in self.commands:
+            cog = command.cog_name
+            if cog is None:
+                cog = "Base"
+            _add_command(out["cogs"][cog], command)
+        return out
+
+
+def _add_command(data, command):
+    new = {
+        "name": command.name,
+        "description": command.description,
+        "help": command.help,
+        "signature": command.signature,
+        "aliases": command.aliases,
+        "hidden": command.hidden,
+        "commands": []
+    }
+
+    data["commands"].append(new)
+
+    if isinstance(command, commands.Group):
+        for com in command.commands:
+            _add_command(new, com)
+
 
 def _perms_check(self, ctx):
     """
