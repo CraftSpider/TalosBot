@@ -1,5 +1,5 @@
 
-from typing import Tuple, Optional, Dict, List, Union,
+from typing import Optional, Dict, List, Union, Sequence
 from utils.element import Document, Element
 from utils.nano import NanoUser, NanoNovel
 import aiohttp
@@ -7,23 +7,25 @@ import io
 
 class TalosHTTPClient(aiohttp.ClientSession):
 
-    __slots__ = ("nano_login", "btn_key", "cat_key", "nano_tries")
+    __slots__ = ("nano_tries", "__tokens")
 
+    TALOS_URL: str = ...
+    BOTLIST_URL: str = ...
     NANO_URL: str = ...
     BTN_URL: str = ...
     CAT_URL: str = ...
     XKCD_URL: str = ...
     SMBC_URL: str = ...
 
-    nano_login: Tuple[str, str]
-    btn_key: str
-    cat_key: str
     nano_tries: int
+    __tokens: Dict[str, Union[str, Sequence[str]]]
 
     # noinspection PyMissingConstructor
     def __init__(self, *args, **kwargs) -> None: ...
 
     async def get_site(self, url: str, **kwargs) -> Document: ...
+
+    async def botlist_post_guilds(self, num: int) -> None: ...
 
     async def btn_get_names(self, gender: str = ..., usage: str = ..., number: int = ..., surname: bool = ...) -> List[str]: ...
 

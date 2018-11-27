@@ -17,24 +17,25 @@ class TalosHTTPClient(aiohttp.ClientSession):
         and automatically handling various tokens for those sites.
     """
 
-    __slots__ = ("nano_login", "btn_key", "cat_key", "nano_tries")
+    __slots__ = ("nano_tries", "last_guild_count", "__tokens")
 
+    TALOS_URL = "https://talosbot.org/"
+    BOTLIST_URL = "https://discordbots.org/"
     NANO_URL = "https://nanowrimo.org/"
     BTN_URL = "https://www.behindthename.com/"
     CAT_URL = "https://api.thecatapi.com/v1/"
     XKCD_URL = "https://xkcd.com/"
     SMBC_URL = "https://smbc-comics.com/"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, tokens=None, **kwargs):
         """
             Create a Talos HTTP Client object
         :param args: arguments to pass on
         :param kwargs: keyword args to use and pass on
         """
-        self.nano_login = kwargs.pop("nano_login", "")
-        self.btn_key = kwargs.pop("btn_key", "")
-        self.cat_key = kwargs.pop("cat_key", "")
+        self.__tokens = tokens if tokens else {}
         self.nano_tries = 0
+        self.last_guild_count = 0
 
         super().__init__(*args, **kwargs)
 
@@ -48,6 +49,31 @@ class TalosHTTPClient(aiohttp.ClientSession):
         async with self.get(url, **kwargs) as response:
             return utils.to_dom(await response.text())
 
+    async def server_post_commands(self, commands):
+        headers = {
+            "Token": self.__tokens["webserver"],
+            "User": "Talos"
+        }
+        await self.post(self.TALOS_URL + "api/commands", json=commands, headers=headers)
+        pass
+
+    async def botlist_post_guilds(self, num):
+        """
+            Post a number of guilds to the discord bot list. Will only post if there's a botlist token available
+            and the passed number is different from the last passed number
+        :param num: Number of guilds to post
+        """
+        if num == self.last_guild_count or self.__tokens.get("botlist", "") == "":
+            return
+        log.info("Posting guilds to Discordbots")
+        self.last_guild_count = num
+        headers = {
+            'Authorization': self.__tokens["botlist"]
+        }
+        data = {'server_count': num}
+        api_url = self.BOTLIST_URL + 'api/bots/199965612691292160/stats'
+        await self.post(api_url, json=data, headers=headers)
+
     async def btn_get_names(self, gender="", usage="", number=1, surname=False):
         """
             Get names from Behind The Name
@@ -60,15 +86,15 @@ class TalosHTTPClient(aiohttp.ClientSession):
         surname = "yes" if surname else "no"
         gender = "&gender="+gender if gender else gender
         usage = "&usage="+usage if usage else usage
-        url = self.BTN_URL + "api/random.php?key={}&randomsurname={}&number={}{}{}".format(self.btn_key, surname,
-                                                                                           number, gender, usage)
+        url = self.BTN_URL + f"api/random.php?key={self.__tokens['btn']}&randomsurname={surname}&number={number}"\
+                             f"{gender}{usage}"
         async with self.get(url) as response:
             if response.status == 200:
                 doc = utils.to_dom(await response.text())
                 return [x.innertext for x in doc.get_by_tag("name")]
             else:
-                log.warning("BTN returned {}".format(response.status))
-                return None
+                log.warning(f"BTN returned {response.status}")
+                return []
 
     async def nano_get_page(self, url):
         """
@@ -132,8 +158,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
         params = {
             "utf8": "✓",
             "authenticity_token": auth_key,
-            "user_session[name]": self.nano_login[0],
-            "user_session[password]": self.nano_login[1],
+            "user_session[name]": self.__tokens["nano"][0],
+            "user_session[password]": self.__tokens["nano"][1],
             "user_session[remember_me]": "0",
             "commit": "Sign+in"
         }
@@ -156,7 +182,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             Get a random cat picture from The Cat API
         :return: A discord.File with a picture of a cat.
         """
-        async with self.get(self.CAT_URL + "images/search?api_key={}&type=jpg,png".format(self.cat_key)) as response:
+        async with self.get(self.CAT_URL + f"images/search?api_key={self.__tokens['cat']}&type=jpg,png") as response:
             data = json.loads(await response.text())[0]
         async with self.get(data["url"]) as response:
             data["filename"] = data["url"].split("/")[-1]

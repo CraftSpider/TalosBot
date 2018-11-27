@@ -128,12 +128,7 @@ class EventLoops(dutils.TalosCog):
     async def hourly_task(self):
         """Called every hour, and posts current guild amount to DBL if a key is provided and the amount changed"""
         guild_count = len(self.bot.guilds)
-        if self.bot.botlist != "" and guild_count != self.last_guild_count:
-            self.last_guild_count = guild_count
-            headers = {'Authorization': self.bot.botlist}
-            data = {'server_count': guild_count}
-            api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
-            await self.bot.session.post(api_url, data=data, headers=headers)
+        await self.bot.session.botlist_post_guilds(guild_count)
 
     @dutils.eventloop("1d", description="Called once at the start of every day")
     async def daily_task(self):

@@ -21,7 +21,7 @@ class CLInterpreter(metaclass=abc.ABCMeta):
     __slots__ = ()
 
     @abc.abstractmethod
-    def interpret(self, context: Any, tokens: List[Tuple[...]]): ...
+    def interpret(self, context: Any, tokens: List[Tuple[Any, ...]]): ...
 
 class BaseInterpreter(CLInterpreter):
 

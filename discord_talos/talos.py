@@ -24,7 +24,8 @@ import utils.command_lang as command_lang
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = pathlib.Path(__file__).parent / "token.json"
 FILE_BASE = {
-    "token": "", "botlist": "", "nano": ["user", "pass"], "btn": "", "cats": "", "sql": ["user", "pass", "schema"]
+    "token": "", "botlist": "", "nano": ["user", "pass"], "btn": "", "cats": "", "sql": ["user", "pass", "schema"],
+    "webserver": ""
 }
 
 #
@@ -81,10 +82,10 @@ class Talos(dutils.ExtendedBot):
     extension_dir = "discord_talos.cogs"
     # Extensions to load on Talos boot. Can be standard discord.py extensions, though Talos also allows some more stuff.
     startup_extensions = ("commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops")
-    # Hardcoded Developer List. Craft, Dino, Hidd, Hidd
-    DEVS = (101091070904897536, 312902614981410829, 321787962935214082, 199856712860041216)
+    # Hardcoded Developer List. Craft, Dino, Hidd
+    DEVS = (101091070904897536, 312902614981410829, 199856712860041216)
     # This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
-    SQL_ADDRESS = "127.0.0.1:3306"
+    SQL_ADDRESS = ("127.0.0.1", 3306)
 
     def __init__(self, **kwargs):
         """
@@ -100,17 +101,10 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         super().__init__(talos_prefix, description=description, **kwargs)
 
         # Set talos specific things
-        self.__tokens = kwargs.get("tokens", {})
-        self.botlist = self.__tokens.get("botlist", "")  # TODO: make this more elegant for event loops
+        __tokens = kwargs.get("tokens", {})
 
-        sql = self.SQL_ADDRESS.split(":")
-        address, port = sql[0], int(sql[1])
-        self.database = utils.TalosDatabase(address, port, *self.__tokens.get("sql"))
-        nano_login = self.__tokens.get("nano", ["", ""])
-        btn_key = self.__tokens.get("btn", "")
-        cat_key = self.__tokens.get("cat", "")
-        self.session = utils.TalosHTTPClient(nano_login=nano_login, btn_key=btn_key, cat_key=cat_key, read_timeout=60,
-                                             loop=self.loop)
+        self.database = utils.TalosDatabase(*self.SQL_ADDRESS, *__tokens.get("sql"))
+        self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
 
         # Override things set by super init that we don't want
         self._skip_check = self.skip_check
@@ -171,7 +165,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
     async def logout(self):
         """
             Saves Talos data, then logs out the bot cleanly and safely
-        :return None:
         """
         log.debug("Logging out Talos")
         self.database.commit()
@@ -180,7 +173,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
     async def close(self):
         """
             Closes connections that Talos has open on shutdown
-        :return None:
         """
         log.debug("Closing Talos")
         await self.session.close()
@@ -301,28 +293,19 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
     async def on_ready(self):
         """
             Called on bot ready, any time discord finishes connecting
-        :return: None
         """
         log.debug("OnReady Event")
         log.info("| Now logged in as")
         log.info(f"| {self.user.name}")
         log.info(f"| {self.user.id}")
         await self.change_presence(activity=discord.Game(name="Taking over the World", type=0))
-        if self.__tokens.get("botlist") != "":
-            log.info("Posting guilds to Discordbots")
-            guild_count = len(self.guilds)
-            self.cogs["EventLoops"].last_guild_count = guild_count
-            headers = {
-                'Authorization': self.__tokens["botlist"]}
-            data = {'server_count': guild_count}
-            api_url = 'https://discordbots.org/api/bots/199965612691292160/stats'
-            await self.session.post(api_url, data=data, headers=headers)
+        guild_count = len(self.guilds)
+        await self.session.botlist_post_guilds(guild_count)
 
     async def on_guild_join(self, guild):
         """
             Called upon Talos joining a guild.
         :param guild: discord.Guild object
-        :return: None
         """
         log.debug("OnGuildJoin Event")
         log.info(f"Joined Guild {guild.name}, {dt.datetime.now() - self.BOOT_TIME} after boot")
@@ -331,7 +314,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         """
             Called upon Talos leaving a guild.
         :param guild: discord.Guild object
-        :return: None
         """
         log.debug("OnGuildRemove Event")
         log.info(f"Left Guild {guild.name}, {dt.datetime.now() - self.BOOT_TIME} after boot")
@@ -357,7 +339,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         """
             Called when any command is executed. Handles command tracking for users.
         :param ctx: commands.Context object
-        :return: None
         """
         user = self.database.get_user(ctx.author.id)
         if user:
@@ -369,7 +350,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             any un-handled errors it simply logs
         :param ctx: commands.Context object
         :param exception: commands.CommandError child object
-        :return: None
         """
         log.debug("OnCommandError Event")
         if isinstance(exception, commands.CommandNotFound):
@@ -503,7 +483,7 @@ def make_token_file(filename):
 def main():
     """
         Run Talos as main process. Say hello to our new robot overlord.
-    :return: None
+    :return: Exit status code
     """
     configure_logging()
 

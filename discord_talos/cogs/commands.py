@@ -192,6 +192,9 @@ class Commands(dutils.TalosCog):
             await ctx.send("Number must be between 1 and 6 inclusive.")
             return
         names = await self.bot.session.btn_get_names(number=number)
+        if len(names) == 0:
+            await ctx.send("Something went wrong, no names generated")
+            return
         out = ""
         for name in names:
             out += f"{name}\n"

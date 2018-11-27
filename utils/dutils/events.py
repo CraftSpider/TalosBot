@@ -158,7 +158,9 @@ class EventLoop:
             Stop the EventLoop. Cancels the task, does any cleanup
         """
         if self._task is not None:
+            log.info(f"Stopping event loop {self.name}")
             self._task.cancel()
+            self._task = None
 
 
 def eventloop(period, **kwargs):

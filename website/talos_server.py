@@ -165,9 +165,10 @@ class TalosPrimaryHandler:
         path = request.path.lstrip("/").replace("/", "_")
         print(request.headers)
         try:
+            headers = request.headers
             data = await request.json()
-            user_token = data.get("token")
-            username = data.get("username")
+            user_token = headers.get("token")
+            username = headers.get("username")
             server_token = self._settings["tokens"].get(username)
             if user_token is None or server_token is None:
                 return web.Response(text="Invalid Token/Unknown User", status=403)
