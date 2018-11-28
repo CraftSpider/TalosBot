@@ -118,7 +118,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         :param value: Value to set attribute to
         """
         if key == key.upper():
-            log.warning(f"Attempt to set Talos attribute: {key} {value}")
+            log.warning(f"Attempt to set Talos attribute: {key} to {value}")
         else:
             super().__setattr__(key, value)
 
