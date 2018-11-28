@@ -181,6 +181,10 @@ class NanoUser:
         self._novels = novels
 
 
+class NanoAccount(NanoUser):
+    pass
+
+
 class NanoInfo:
     """
         User info on the Nano site. Bio, lifetime stats, and their fact sheet
@@ -289,6 +293,10 @@ class NanoNovel:
             raise errors.NotANovel(self.title)
 
         self._excerpt = page.get_by_id("novel_excerpt").innerhtml
+
+
+class NanoAuthoredNovel(NanoNovel):
+    pass
 
 
 class NanoNovelStats:

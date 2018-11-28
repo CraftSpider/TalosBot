@@ -34,6 +34,8 @@ class ExtendedBot(commands.Bot):
 
     def find_command(self, command: str) -> Optional[commands.Command]: ...
 
+    def commands_dict(self) :
+
 def _perms_check(self: TalosCog, ctx: commands.Context) -> bool: ...
 
 class TalosCog:

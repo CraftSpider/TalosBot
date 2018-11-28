@@ -205,7 +205,7 @@ class TalosDatabase:
         # Verify schema is extant
         self._cursor.execute("SELECT * FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = %s", [self._schema])
         if self._cursor.fetchone():
-            log.info(f"found schema {self._schema}")
+            log.info(f"Found schema {self._schema}")
         else:
             log.warning(f"Schema {self._schema} doesn't exist, creating schema")
             self._cursor.execute(talos_create_schema.format(self._schema))
@@ -218,10 +218,9 @@ class TalosDatabase:
                 from collections import defaultdict
                 columndat = defaultdict(lambda: [0, ""])
                 columns = self.get_columns(table)
-                # TODO: no longer works
                 for item in columns:
                     columndat[item.name][0] += 1
-                    columndat[item.name][1] = item.column_type
+                    columndat[item.name][1] = item.type
                 for item in talos_tables[table]["columns"]:
                     details = re.search(r"`(.*?)` (\w+)", item)
                     name, col_type = details.group(1), details.group(2)
@@ -380,29 +379,23 @@ class TalosDatabase:
         )
         return self._cursor.fetchone()[0] > 0
 
-    def get_columns(self, table_name):
+    def get_columns(self, table):
         """
             Gets the column names and types of a specified table
-        :param table_name: Name of the table to retrieve columnns from
+        :param table: Name of the table to retrieve columnns from
         :return: List of column names and data types, or None if table doesn't exist
         """
         query = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
-        self._cursor.execute(query, [table_name])
+        self._cursor.execute(query, [table])
         return [data.Column(x) for x in self._cursor]
 
-    def get_column_type(self, table_name, column_name):
-        """
-            Gets the type of a specific column
-        :param table_name: Name of the table containing the column
-        :param column_name: Name of the column to check
-        :return: The type of the given column, or None
-        """
-        query = "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND COLUMN_NAME = %s"
-        self._cursor.execute(query, [table_name, column_name])
-        result = self._cursor.fetchone()
-        if result is not None and isinstance(result, (list, tuple)):
-            result = result[0]
-        return result
+    def has_column(self, table, column):
+        self._cursor.execute(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s "
+            "AND COLUMN_NAME = %s",
+            [self._schema, table, column]
+        )
+        return self._cursor.fetchone()[0] > 0
 
     # Generic methods
 

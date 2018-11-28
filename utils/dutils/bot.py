@@ -190,7 +190,7 @@ class ExtendedBot(commands.Bot):
         :return: dictionary of command definitions
         """
         out = {
-            "name": "Talos",
+            "name": self.__class__.__name__,
             "prefix": "^",
             "cogs": {
                 "Base": {"name": "Base Commands", "description": "", "commands": []}

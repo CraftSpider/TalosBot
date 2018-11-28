@@ -16,7 +16,7 @@ def get_doc(object):
     return doc
 
 
-def is_docable(attr):  # TODO: properties should be docable
+def is_docable(attr):
     if isinstance(attr, inspect.Attribute):
         member = attr.object
     else:

@@ -8,7 +8,8 @@ import datetime as dt
 
 from . import utils, nano, errors
 
-log = logging.getLogger("talos.utils")
+
+log = logging.getLogger("talos.utils.client")
 
 
 class TalosHTTPClient(aiohttp.ClientSession):
