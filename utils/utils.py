@@ -140,6 +140,18 @@ def log_error(logger, level, error, message=""):
     logger.log(level, message + errmsg)
 
 
+def safe_remove(*filenames):
+    """
+        Remove a series of filenames, ignoring any errors
+    :param filenames: Filenames to delete
+    """
+    for filename in filenames:
+        try:
+            os.remove(filename)
+        except Exception as e:
+            log_error(log, logging.DEBUG, e)
+
+
 def replace_escapes(text):
     """
         Replace escape sequences with the characters they represent
@@ -167,22 +179,145 @@ def replace_escapes(text):
     return out
 
 
-def safe_remove(*filenames):
-    """
-        Remove a series of filenames, ignoring any errors
-    :param filenames: Filenames to delete
-    """
-    for filename in filenames:
-        try:
-            os.remove(filename)
-        except Exception as e:
-            log_error(log, logging.DEBUG, e)
+# Case/format checking and manipulation function
+#
+# Some checker functions form exclusive sets. In an exclusive set, if one function is true, it guarantees that all
+# other functions in the set will be false.
+#
+# Some checker functions imply other functions. If the precondition check returns true, the implied function would
+# also return true.
+#
+# Exclusive sets:
+# is_lower_snake, is_upper_snake, is_lower_camel, is_upper_camel, and is_other
+# is_snake, is_camel, and is_other
+#
+# Implications:
+# is_lower_snake or is_upper_snake -> is_snake
+# is_lower_camel or is_upper_camel -> is_camel
 
 
-def to_snake_case(text):
+def is_lower_snake(text):
+    """
+        Check if a string is in a lower_snake_case format
+    :param text: String to check
+    :return: Whether string is in lower snake format
+    """
+    if " " in text:
+        return False
+    return "_" in text and not text.isupper()
+
+
+def is_upper_snake(text):
+    """
+        Check if a string is in an UPPER_SNAKE_CASE format
+    :param text: String to check
+    :return: Whether string is in upper snake format
+    """
+    if " " in text:
+        return False
+    return "_" in text and text.isupper()
+
+
+def is_snake(text):
+    """
+        Check if a string is in either upper or lower snake case format
+    :param text: String to check
+    :return: Whether string is in any snake case format
+    """
+    if " " in text:
+        return False
+    return "_" in text
+
+
+def is_lower_camel(text):
+    """
+        Check if a string is in lowerCamelCase format
+    :param text: String to check
+    :return: Whether string is in lower camel format
+    """
+    if " " in text:
+        return False
+    return text[0].islower() and "_" not in text and not text.islower()
+
+
+def is_upper_camel(text):
+    """
+        Check if a string is in UpperCamelCase format
+    :param text: String to check
+    :return: Whether string is in upper camel format
+    """
+    if " " in text:
+        return False
+    return text[0].isupper() and "_" not in text and not text.isupper()
+
+
+def is_camel(text):
+    """
+        Check if a string is in either upper or lower camel case format
+    :param text: String to check
+    :return: Whether string is in any camel case format
+    """
+    if " " in text:
+        return False
+    return "_" not in text and not text.isupper() and not text.islower()
+
+
+def is_other(text):
+    """
+        Check if string is in neither any camel or snake casing format.
+    :param text:
+    :return:
+    """
+    return " " in text or ("_" not in text and text.islower())
+
+
+def get_type(text):
+    """
+        Check whether a string matches a given casing structure. Returns a string naming the case, or 'other'
+    :param text:
+    :return:
+    """
+    if is_snake(text):
+        return ("upper" if is_upper_snake(text) else "lower") + " snake"
+    elif is_camel(text):
+        return ("upper" if is_upper_camel(text) else "lower") + " camel"
+    elif is_other(text):
+        return "other"
+    return "unknown"
+
+
+def split_snake(text):
+    return tuple(text.split("_"))
+
+
+def split_camel(text):
+    out = []
+    temp = ""
+    upper = False
+    for char in text:
+        if char.isupper() and not upper:
+            upper = True
+            if temp:
+                out.append(temp)
+                temp = ""
+        elif upper and char.islower():
+            upper = False
+            last = temp[-1]
+            temp = temp[:-1]
+            if temp:
+                out.append(temp)
+            temp = last
+        temp += char
+    if temp:
+        out.append(temp)
+    return tuple(out)
+
+
+def to_snake_case(text, upper=False):
     """
         Convert a string into snake case
     :param text: string to convert
+    :param upper: whether to use upper snake case
     :return: string in snake case form
     """
     out = ""
@@ -191,6 +326,8 @@ def to_snake_case(text):
             out += "_{}".format(char.lower())
         else:
             out += char
+    if upper:
+        out = out.upper()
     return out.strip("_")
 
 
@@ -214,6 +351,12 @@ def to_camel_case(text, upper=True):
 
 
 def add_spaces(text):
+    """
+        Convert a camelCase or snake_case string to a space separated string, like `camel Case` or `snake case`.
+        Capitalization is preserved.
+    :param text: Text to convert to space form
+    :return: Text with spaces inserted
+    """
     out = ""
     for char in text:
         if char.isupper():

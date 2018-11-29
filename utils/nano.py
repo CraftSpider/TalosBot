@@ -182,7 +182,10 @@ class NanoUser:
 
 
 class NanoAccount(NanoUser):
-    pass
+    """
+        Represents the currently active account. Inherits all the info of a NanoUser, but includes a bit more and
+        provides methods to allow manipulation of the values
+    """
 
 
 class NanoInfo:
@@ -296,7 +299,10 @@ class NanoNovel:
 
 
 class NanoAuthoredNovel(NanoNovel):
-    pass
+    """
+        Represents a novel authored by the currently active account. Inherits all the info of a NanoNovel, but includes
+        a bit more and provides methods to allow manipulation of the values
+    """
 
 
 class NanoNovelStats:
@@ -320,6 +326,10 @@ class NanoNovelStats:
             setattr(self, item, None)
 
     def __aiter__(self):
+        """
+            Get an asynchronous iterator from this object. Allows `async for` iteration over this object.
+        :return: Asynchronous iterator that yields each stat in form (name, value)
+        """
         return self._aiter()
 
     @property
@@ -332,65 +342,110 @@ class NanoNovelStats:
 
     @property
     async def daily_average(self):
+        """
+            The average number of words written per day
+        :return: int, words per day
+        """
         if self._daily_average is None:
             await self._initialize()
         return self._daily_average
 
     @property
     async def target(self):
+        """
+            The target number of words to write this NaNo
+        :return: int, target wordcount
+        """
         if self._target is None:
             await self._initialize()
         return self._target
 
     @property
     async def target_average(self):
+        """
+            The target average number of words per day
+        :return: int, target daily average
+        """
         if self._target_average is None:
             await self._initialize()
         return self._target_average
 
     @property
     async def total_today(self):
+        """
+            The total number of words written today
+        :return: int, words written today
+        """
         if self._total_today is None:
             await self._initialize()
         return self._total_today
 
     @property
     async def total(self):
+        """
+            The total number of words written in this novel
+        :return: int, words written total
+        """
         if self._total is None:
             await self._initialize()
         return self._total
 
     @property
     async def words_remaining(self):
+        """
+            Number of words left to hit the target
+        :return: int, words to hit target
+        """
         if self._words_remaining is None:
             await self._initialize()
         return self._words_remaining
 
     @property
     async def current_day(self):
+        """
+            The current day of the month, if it's currently this novel's NaNo, or None
+        :return: int, NaNo day
+        """
         if self._current_day is None:
             await self._initialize()
         return self._current_day
 
     @property
     async def days_remaining(self):
+        """
+            Days left in this NaNo, if it's currently this book's NaNo, or None
+        :return: int, days remaining
+        """
         if self._days_remaining is None:
             await self._initialize()
         return self._days_remaining
 
     @property
     async def finish_date(self):
+        """
+            The projected day this book will be finished if writing continues at the same pace
+        :return: date, projected finish date
+        """
         if self._finish_date is None:
             await self._initialize()
         return self._finish_date
 
     @property
     async def average_to_finish(self):
+        """
+            The number of words that would need to be written per day to finish on time
+        :return: int, average per day to finish
+        """
         if self._average_to_finish is None:
             await self._initialize()
         return self._average_to_finish
 
     async def _aiter(self):
+        """
+            An asynchronous iterator over all the variable in this Stats object,
+            taking the form of (name, stat)
+        :return: Asynchronous generator over this object
+        """
         if self._daily_average is None:
             await self._initialize()
 

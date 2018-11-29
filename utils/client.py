@@ -51,12 +51,15 @@ class TalosHTTPClient(aiohttp.ClientSession):
             return utils.to_dom(await response.text())
 
     async def server_post_commands(self, commands):
+        """
+            Post a commands JSON object to the Talos Server. Relies on the 'webserver' token existing.
+        :param commands: Dict representing a Command JSON object
+        """
         headers = {
             "Token": self.__tokens["webserver"],
             "User": "Talos"
         }
         await self.post(self.TALOS_URL + "api/commands", json=commands, headers=headers)
-        pass
 
     async def botlist_post_guilds(self, num):
         """
@@ -183,7 +186,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             Get a random cat picture from The Cat API
         :return: A discord.File with a picture of a cat.
         """
-        async with self.get(self.CAT_URL + f"images/search?api_key={self.__tokens['cat']}&type=jpg,png") as response:
+        async with self.get(self.CAT_URL + f"images/search?api_key={self.__tokens['cats']}&type=jpg,png") as response:
             data = json.loads(await response.text())[0]
         async with self.get(data["url"]) as response:
             data["filename"] = data["url"].split("/")[-1]

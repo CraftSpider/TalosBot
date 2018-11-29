@@ -53,6 +53,43 @@ def test_safe_remove():
     assert not Path("temp.xml").exists(), "File somehow appeared???"
 
 
+def test_case_checkers():
+
+    test = "lower_snake_case"
+    assert utils.get_type(test) == "lower snake"
+    test = "UPPER_SNAKE_CASE"
+    assert utils.get_type(test) == "upper snake"
+    test = "lowerCamelCase"
+    assert utils.get_type(test) == "lower camel"
+    test = "UpperCamelCase"
+    assert utils.get_type(test) == "upper camel"
+    test = "any other"
+    assert utils.get_type(test) == "other"
+
+
+def test_case_splitters():
+
+    test = "lower_snake_case"
+    result = utils.split_snake(test)
+    assert result == ("lower", "snake", "case")
+
+    test = "UPPER_SNAKE_CASE"
+    result = utils.split_snake(test)
+    assert result == ("UPPER", "SNAKE", "CASE")
+
+    test = "lowerCamelCase"
+    result = utils.split_camel(test)
+    assert result == ("lower", "Camel", "Case")
+
+    test = "UpperCamelCase"
+    result = utils.split_camel(test)
+    assert result == ("Upper", "Camel", "Case")
+
+    test = "URLIsAnEdgeCaseIReallyDislike"
+    result = utils.split_camel(test)
+    assert result == ("URL", "Is", "An", "Edge", "Case", "I", "Really", "Dislike")
+
+
 def test_case_converters():
 
     test_str = "lower_snake_case"
@@ -67,7 +104,11 @@ def test_case_converters():
     test_str = "UpperCamelCase"
     expected = "upper_camel_case"
     result = utils.to_snake_case(test_str)
-    assert result == expected, "Camel case not converted to snake case"
+    assert result == expected, "Camel case not converted to lower snake case"
+
+    expected = "UPPER_CAMEL_CASE"
+    result = utils.to_snake_case(test_str, True)
+    assert result == expected, "Camel case not converted to upper snake case"
 
 
 def test_zero_pad():

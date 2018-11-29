@@ -19,8 +19,6 @@ class ExtendedBot(commands.Bot):
         more functionality, and adds in support for EventLoops defined similarly to normal commands
     """
 
-    variable = ""
-
     def __init__(self, *args, **kwargs):
         """
             Initialize the bot. Sets up event loops and such stuff, will process any necessary args and kwargs
@@ -212,6 +210,12 @@ class ExtendedBot(commands.Bot):
 
 
 def _add_command(data, command):
+    """
+        Adds a command to a dict in place, as passed in with `data`. Will run recursively if the command is a group
+        with subcommands
+    :param data: Dict to add the new command description dict to under the "commands" list
+    :param command: Command to add to the data
+    """
     new = {
         "name": command.name,
         "description": command.description,
@@ -224,7 +228,7 @@ def _add_command(data, command):
 
     data["commands"].append(new)
 
-    if isinstance(command, commands.Group):
+    if isinstance(command, commands.GroupMixin):
         for com in command.commands:
             _add_command(new, com)
 

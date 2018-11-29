@@ -27,6 +27,8 @@ def test_stubs():
 
     missing = []
 
+    # TODO: change to use filecmp
+
     for path, dirs, files in os.walk("."):
         root_path = pathlib.Path(path)
         stub_path = pathlib.Path("./stub_files/" + path[2:])

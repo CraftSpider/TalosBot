@@ -201,8 +201,11 @@ self.bot.loop.create_task(gyfiuqo(self, ctx))
         await asyncio.sleep(.1)
         await ctx.send(end - start)
 
-    @dev_command()
-    async def test(self, ctx):
+    @dev_command(description="General test command. Does whatever it needs to")
+    async def devtest(self, ctx):
+        """Runs a dev test of some kind. Changes as needed to do whatever is needed, based on what internal thing I """\
+            """want to test. Currently, it runs the commands_dict and prints the result. This doc may not always be """\
+            """up-to-date."""
         print(self.bot.commands_dict())
         await ctx.send(len(str(self.bot.commands_dict())))
 

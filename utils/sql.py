@@ -390,6 +390,12 @@ class TalosDatabase:
         return [data.Column(x) for x in self._cursor]
 
     def has_column(self, table, column):
+        """
+            Check if a given table has a column matching the given column name. Assumes that table exists
+        :param table: Table to check
+        :param column: Column name to check
+        :return: Whether column exists in table
+        """
         self._cursor.execute(
             "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s "
             "AND COLUMN_NAME = %s",
