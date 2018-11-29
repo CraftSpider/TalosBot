@@ -107,7 +107,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
 
         # Override things set by super init that we don't want
-        self._skip_check = self.skip_check
         self.remove_command("help")
         self.command(name="help", aliases=["man"], description="Shows this message")(self._talos_help_command)
 
@@ -121,17 +120,6 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             log.warning(f"Attempt to set Talos attribute: {key} to {value}")
         else:
             super().__setattr__(key, value)
-
-    def skip_check(self, author_id, self_id):
-        """
-            Determines whether Talos should skip trying to process a message
-        :param author_id: integer ID of the message author
-        :param self_id: integer ID of Talos client
-        :return: Whether to skip processing a given message
-        """
-        if author_id == 339119069066297355 or author_id == 376161594570178562:
-            return False
-        return author_id == self_id or (self.get_user(author_id) is not None and self.get_user(author_id).bot)
 
     def should_embed(self, ctx):
         """
@@ -250,17 +238,19 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             Processes incoming messages from Discord, generates a ctx and invokes it.
         :param message: Message to process
         """
+        if message.author.bot and not (message.author.id in (339119069066297355, 376161594570178562)):
+            return
+
         ctx = await self.get_context(message)
 
         # Check for custom command
         if ctx.command is None and message.guild is not None:
             try:
-                text = self.database.get_guild_command(message.guild.id, ctx.invoked_with).text
+                command = self.database.get_item(utils.GuildCommand, guild_id=message.guild.id, name=ctx.invoked_with)
+                if command is not None:
+                    ctx.command = custom_creator(ctx.invoked_with, command.text)
             except mysql.connector.Error:
-                text = None
-            except AttributeError:
-                text = None
-            ctx.command = custom_creator(ctx.invoked_with, text) if text is not None else text
+                pass
 
         await self.invoke(ctx)
 
@@ -272,8 +262,14 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         :param user: User who is the target of the event
         :param message: The reason or details associated with the action
         """
-        if not self.database.get_guild_options(ctx.guild.id).mod_log:
+        options = self.database.get_guild_options(ctx.guild.id)
+        if not options.mod_log:
             return False
+        try:
+            logchan = next(filter(lambda x: x.name == options.log_channel, ctx.guild.channels))
+        except StopIteration:
+            await ctx.send("Invalid log channel, please set the `log_channel` option to a valid channel name")
+            return
         if self.should_embed(ctx):
             with dutils.PaginatedEmbed() as embed:
                 embed.title = event.capitalize()
@@ -282,13 +278,13 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
                 embed.add_field(name="Madmin", value=str(ctx.author), inline=True)
                 embed.add_field(name="Reason", value=message)
             for page in embed.pages:
-                await ctx.send(embed=page)
+                await logchan.send(embed=page)
         else:
             out = f"{event.capitalize()}"
             out += f"User: {str(user)}"
             out += f"Madmin: {str(ctx.author)}"
             out += f"Reason: {message}"
-            await ctx.send(out)
+            await logchan.send(out)
 
     async def on_ready(self):
         """
@@ -331,8 +327,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         channel = list(filter(lambda x: x.name == options.log_channel, guild.channels))
         if channel:
             channel = channel[0]
-            ctx = commands.Context()
-            ctx.message = FakeMessage(guild, channel)
+            ctx = commands.Context(message=FakeMessage(guild, channel))
             await self.mod_log(ctx, "ban", user, "User banned for unknown reason")
 
     async def on_command(self, ctx):
@@ -405,7 +400,8 @@ def custom_creator(name, text):
             out = runner.exec(ctx, text)
         except command_lang.CommandLangError as e:
             raise dutils.CustomCommandError(*e.args)
-        if out.strip() != "":
+        out = out.strip()
+        if out != "":
             await ctx.send(out)
 
     return commands.Command(name, custom_callback)
