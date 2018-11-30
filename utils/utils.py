@@ -286,11 +286,28 @@ def get_type(text):
     return "unknown"
 
 
-def split_snake(text):
-    return tuple(text.split("_"))
+def split_snake(text, fix=True):
+    """
+        Split a string in snake case format into a tuple of its component words
+        By default the result is guaranteed to be all lowercase
+    :param text: Text to split
+    :param fix: Whether to lowercase the result, or leave capitalization as-is
+    :return: Tuple of strings
+    """
+    out = text.split("_")
+    if fix:
+        out = map(str.lower, out)
+    return tuple(out)
 
 
-def split_camel(text):
+def split_camel(text, fix=True):
+    """
+        Split a string in camel case format into a tuple of its component words
+        By default the result is guaranteed to be all lowercase
+    :param text: Text to split
+    :param fix: Whether to lowercase the result, or leave capitalization as-is
+    :return: Tuple of strings
+    """
     out = []
     temp = ""
     upper = False
@@ -310,6 +327,8 @@ def split_camel(text):
         temp += char
     if temp:
         out.append(temp)
+    if fix:
+        out = map(str.lower, out)
     return tuple(out)
 
 
@@ -320,12 +339,15 @@ def to_snake_case(text, upper=False):
     :param upper: whether to use upper snake case
     :return: string in snake case form
     """
-    out = ""
-    for char in text:
-        if char.isupper():
-            out += "_{}".format(char.lower())
-        else:
-            out += char
+    if is_snake(text):
+        out = text.lower()
+    elif is_camel(text):
+        out = "_".join(split_camel(text))
+    elif is_other(text):
+        out = text.lower().replace(" ", "_")
+    else:
+        raise ValueError("Bad text input, no formatting done")
+
     if upper:
         out = out.upper()
     return out.strip("_")
@@ -338,15 +360,17 @@ def to_camel_case(text, upper=True):
     :param upper: whether to use upper camel case
     :return: string in camel case form
     """
-    out = ""
-    for char in text:
-        if char == "_" or char == " ":
-            upper = True
-        else:
-            if upper is True:
-                char = char.upper()
-                upper = False
-            out += char
+    if is_snake(text):
+        out = "".join(map(str.capitalize, split_snake(text)))
+    elif is_camel(text):
+        out = text.capitalize()
+    elif is_other(text):
+        out = text.capitalize().replace(" ", "")
+    else:
+        raise ValueError("Bad text input, no formatting done")
+
+    if not upper:
+        out = out[0].lower() + out[1:]
     return out
 
 
@@ -357,15 +381,13 @@ def add_spaces(text):
     :param text: Text to convert to space form
     :return: Text with spaces inserted
     """
-    out = ""
-    for char in text:
-        if char.isupper():
-            out += f" {char}"
-        elif char == "_":
-            out += " "
-        else:
-            out += char
-    return out.lstrip()
+    if is_snake(text):
+        out = " ".join(split_snake(text, False))
+    elif is_camel(text):
+        out = " ".join(split_camel(text, False))
+    else:
+        out = text
+    return out
 
 
 def zero_pad(text, length):

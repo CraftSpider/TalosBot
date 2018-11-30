@@ -72,21 +72,29 @@ def test_case_splitters():
     test = "lower_snake_case"
     result = utils.split_snake(test)
     assert result == ("lower", "snake", "case")
+    result = utils.split_snake(test, False)
+    assert result == ("lower", "snake", "case")
 
     test = "UPPER_SNAKE_CASE"
     result = utils.split_snake(test)
+    assert result == ("upper", "snake", "case")
+    result = utils.split_snake(test, False)
     assert result == ("UPPER", "SNAKE", "CASE")
 
     test = "lowerCamelCase"
     result = utils.split_camel(test)
+    assert result == ("lower", "camel", "case")
+    result = utils.split_camel(test, False)
     assert result == ("lower", "Camel", "Case")
 
     test = "UpperCamelCase"
     result = utils.split_camel(test)
+    assert result == ("upper", "camel", "case")
+    result = utils.split_camel(test, False)
     assert result == ("Upper", "Camel", "Case")
 
     test = "URLIsAnEdgeCaseIReallyDislike"
-    result = utils.split_camel(test)
+    result = utils.split_camel(test, False)
     assert result == ("URL", "Is", "An", "Edge", "Case", "I", "Really", "Dislike")
 
 

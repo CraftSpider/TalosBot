@@ -220,7 +220,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
             pages = await self.formatter.format_help_for(ctx, command)
 
         if self.pm_help is None:
-            characters = sum(map(lambda l: len(l), pages))
+            characters = sum(map(len, pages))
             # modify destination based on length of pages.
             if characters > 1000:
                 destination = ctx.message.author
