@@ -1,6 +1,2 @@
 
-import website.talos_server
-
-
-def main():
-    return talos_server.main()
+from .talos_server import main

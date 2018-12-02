@@ -24,7 +24,14 @@ import utils.command_lang as command_lang
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = pathlib.Path(__file__).parent / "token.json"
 FILE_BASE = {
-    "token": "", "botlist": "", "nano": ["user", "pass"], "btn": "", "cats": "", "sql": ["user", "pass", "schema"],
+    "token": "", "botlist": "", "nano": ["user", "pass"], "btn": "", "cats": "",
+    "sql": {
+        "address": "",
+        "port": "",
+        "username": "",
+        "password": "",
+        "schema": ""
+    },
     "webserver": ""
 }
 
@@ -84,8 +91,6 @@ class Talos(dutils.ExtendedBot):
     startup_extensions = ("commands", "user_commands", "joke_commands", "admin_commands", "dev_commands", "event_loops")
     # Hardcoded Developer List. Craft, Dino, Hidd
     DEVS = (101091070904897536, 312902614981410829, 199856712860041216)
-    # This is the address for a MySQL server for Talos. Without a server found here, Talos data storage won't work.
-    SQL_ADDRESS = ("127.0.0.1", 3306)
 
     def __init__(self, **kwargs):
         """
@@ -103,7 +108,7 @@ money, please support me on [Patreon](https://www.patreon.com/TalosBot)'''
         # Set talos specific things
         __tokens = kwargs.get("tokens", {})
 
-        self.database = utils.TalosDatabase(*self.SQL_ADDRESS, *__tokens.get("sql"))
+        self.database = utils.TalosDatabase(**__tokens.get("sql"))
         self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
 
         # Override things set by super init that we don't want
@@ -516,4 +521,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

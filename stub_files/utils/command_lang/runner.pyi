@@ -1,4 +1,5 @@
 
+from typing import Any
 import utils.command_lang as cl
 
 
@@ -13,3 +14,5 @@ class CommandLang:
 
     @staticmethod
     def _operators_exist(command_str: str) -> bool: ...
+
+    def exec(self, ctx: Any, code: str) -> str: ...

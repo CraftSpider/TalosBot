@@ -341,7 +341,7 @@ class Commands(dutils.TalosCog):
                 else:
                     start = now.replace(month=11, day=1, hour=0, minute=0, second=0)
                     if now.month > 11:
-                        start.replace(year=now.year + 1)
+                        start = start.replace(year=now.year + 1)
                     remaining = start - now
                     embed.add_field(name="Countdown", value=str(remaining), inline=True)
                 embed.set_thumbnail(url=nano_crest_url)

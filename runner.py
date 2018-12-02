@@ -20,8 +20,7 @@ def main():
     sys.argv = sys.argv[0:1] + sys.argv[2:]
     if item in name_folder.keys():
         talos = importlib.import_module(name_folder[item])
-        result = talos.main()
-        exit(result)
+        sys.exit(talos.main())
     else:
         print("Unrecognized program. Valid programs are:")
         print(", ".join(name_folder.keys()))

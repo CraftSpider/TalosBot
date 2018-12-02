@@ -1,6 +1,2 @@
 
-from . import talos
-
-
-def main():
-    return talos.main()
+from .talos import main
