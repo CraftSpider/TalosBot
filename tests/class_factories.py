@@ -4,6 +4,7 @@
 
 import datetime as dt
 import asyncio
+import sys
 import discord
 import discord.ext.commands as commands
 
@@ -223,7 +224,10 @@ def make_message(content, author, channel, pinned=False, id_num=-1):
 
 
 async def run_all_events():
-    pending = filter(lambda x: x._coro.__name__ == "_run_event", asyncio.Task.all_tasks())
+    if sys.version_info[1] >= 7:
+        pending = filter(lambda x: x._coro.__name__ == "_run_event", asyncio.all_tasks())
+    else:
+        pending = filter(lambda x: x._coro.__name__ == "_run_event", asyncio.Task.all_tasks())
     for task in pending:
         if not (task.done() or task.cancelled()):
             await task

@@ -150,6 +150,7 @@ async def test_commands():
 
     await call("^nanowrimo")
     verify_message("Valid options are 'novel', 'profile', and 'info'.")
+
     with pytest.raises(commands.MissingRequiredArgument):
         await call("^nano novel")
     await empty_queue()
@@ -159,6 +160,7 @@ async def test_commands():
         if message.message != "Sorry, I couldn't find that user":
             await sent_queue.put(message)
             verify_embed()
+
     with pytest.raises(commands.MissingRequiredArgument):
         await call("^nano profile")
     await empty_queue()
@@ -168,6 +170,9 @@ async def test_commands():
         if message.message != "Sorry, I couldn't find that user on the NaNo site":
             await sent_queue.put(message)
             verify_embed()
+
+    await call("^nano info")
+    verify_embed()
 
     # We don't test ping, as that's beyond our current connection spoofing, and a trivial command.
 
