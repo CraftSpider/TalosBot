@@ -149,7 +149,7 @@ async def test_commands():
     verify_embed()
 
     await call("^nanowrimo")
-    verify_message("Valid options are 'novel' and 'profile'.")
+    verify_message("Valid options are 'novel', 'profile', and 'info'.")
     with pytest.raises(commands.MissingRequiredArgument):
         await call("^nano novel")
     await empty_queue()

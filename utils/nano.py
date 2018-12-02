@@ -23,7 +23,12 @@ SimpleNovel = collections.namedtuple("SimpleNovel", "title genre words")
 
 
 class _Empty:
-    pass
+    """
+        Placeholder singleton class for use when "None" is a valid result
+    """
+
+    def __init_subclass__(cls, **kwargs):
+        raise TypeError("type '_Empty' is not an acceptable base type")
 
 
 Empty = _Empty()

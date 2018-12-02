@@ -1,5 +1,5 @@
 
-from typing import NamedTuple, List, Dict, AsyncGenerator, Union
+from typing import NamedTuple, List, Dict, AsyncGenerator, Union, NoReturn
 import datetime as dt
 
 from utils import TalosHTTPClient, Document
@@ -9,6 +9,10 @@ class SimpleNovel(NamedTuple):
     title: str
     genre: str
     words: int
+
+class _Empty:
+
+    def __init_subclass__(cls, **kwargs) -> NoReturn: ...
 
 class NanoUser:
 
