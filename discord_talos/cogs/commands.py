@@ -316,7 +316,7 @@ class Commands(dutils.TalosCog):
     async def nanowrimo(self, ctx):
         """Can fetch novels or profiles, with possibly more features coming in time."""
         if ctx.invoked_subcommand is None:
-            await ctx.send("Valid options are 'novel' and 'profile'.")
+            await ctx.send("Valid options are 'novel', 'profile', and 'info'.")
 
     @nanowrimo.command(name="information", aliases=["info"], description="Give general information about NaNoWriMo")
     async def _information(self, ctx):
@@ -390,13 +390,15 @@ class Commands(dutils.TalosCog):
             # Construct Embed
             stats_page = ""
             for stat in stats:
+                if stats[stat] is None:
+                    continue
                 if isinstance(stats[stat], int):
                     stats_page += f"{stat}: {stats[stat]:,}\n"
                 else:
                     date = stats[stat].strftime("%B %d, %Y")
                     stats_page += f"{stat}: {date}\n"
             with dutils.PaginatedEmbed() as embed:
-                embed.set_author(name=f"{novel.author.username}'s Novel", icon_url=avatar,
+                embed.set_author(name=f"{novel.author.username}'s Novel ({novel.year})", icon_url=avatar,
                                  url=f"https://nanowrimo.org/participants/{novel.author.username}")
                 embed.add_field(name="Title", value=novel_title, inline=True)
                 embed.add_field(name="Genre", value=novel_genre, inline=True)
@@ -407,6 +409,7 @@ class Commands(dutils.TalosCog):
                     embed.add_field(name="__Synopsis__", value=novel_synopsis)
                 if novel_excerpt is not None:
                     embed.add_field(name="__Excerpt__", value=novel_excerpt)
+                embed.set_footer(text="")
             for page in embed:
                 await ctx.send(embed=page)
         else:

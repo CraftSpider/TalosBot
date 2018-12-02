@@ -22,6 +22,13 @@ _title_transform = {
 SimpleNovel = collections.namedtuple("SimpleNovel", "title genre words")
 
 
+class _Empty:
+    pass
+
+
+Empty = _Empty()
+
+
 class NanoUser:
     """
         User on the NaNoWrimo site
@@ -35,14 +42,16 @@ class NanoUser:
         :param client: TalosClient this is associated with
         :param username: Username of the current user
         """
+        super().__init__()
+
         username = username.lower().replace(" ", "-")
 
         self.client = client
         self.username = username
-        self._avatar = None
-        self._age = None
-        self._info = None
-        self._novels = None
+        self._avatar = Empty
+        self._age = Empty
+        self._info = Empty
+        self._novels = Empty
 
     @property
     async def avatar(self):
@@ -50,7 +59,7 @@ class NanoUser:
             Get the avatar of this user
         :return: URL of user avatar
         """
-        if self._avatar is None:
+        if self._avatar is Empty:
             await self._initialize()
         return self._avatar
 
@@ -60,7 +69,7 @@ class NanoUser:
             Get how long the current user has been part of the NaNo site
         :return: Rough age of the user
         """
-        if self._age is None:
+        if self._age is Empty:
             await self._initialize()
         return self._age
 
@@ -70,7 +79,7 @@ class NanoUser:
             Get the NanoInfo for this user
         :return: NanoInfo object of this user
         """
-        if self._info is None:
+        if self._info is Empty:
             await self._initialize()
         return self._info
 
@@ -80,7 +89,7 @@ class NanoUser:
             Get the list of novels this user has written
         :return: list of NanoNovel objects
         """
-        if self._novels is None:
+        if self._novels is Empty:
             await self._init_novels()
         return self._novels
 
@@ -101,7 +110,7 @@ class NanoUser:
             Get the simple novel representation displayed on the user info page
         :return: SimpleNovel instance
         """
-        if self._simple_novel is None:
+        if self._simple_novel is Empty:
             await self._initialize()
         return self._simple_novel
 
@@ -275,7 +284,7 @@ class NanoNovel:
         self.cover = None
         self.winner = None
         self.synopsis = None
-        self._excerpt = None
+        self._excerpt = Empty
 
     @property
     async def excerpt(self):
@@ -283,7 +292,7 @@ class NanoNovel:
             Get the novel's excerpt, author chosen short text from the novel
         :return: Novel excerpt
         """
-        if not self._excerpt:
+        if self._excerpt is Empty:
             await self._initialize()
         return self._excerpt
 
@@ -323,7 +332,7 @@ class NanoNovelStats:
         self.novel = novel
 
         for item in self.__slots__[2:]:
-            setattr(self, item, None)
+            setattr(self, item, Empty)
 
     def __aiter__(self):
         """
@@ -346,7 +355,7 @@ class NanoNovelStats:
             The average number of words written per day
         :return: int, words per day
         """
-        if self._daily_average is None:
+        if self._daily_average is Empty:
             await self._initialize()
         return self._daily_average
 
@@ -356,7 +365,7 @@ class NanoNovelStats:
             The target number of words to write this NaNo
         :return: int, target wordcount
         """
-        if self._target is None:
+        if self._target is Empty:
             await self._initialize()
         return self._target
 
@@ -366,7 +375,7 @@ class NanoNovelStats:
             The target average number of words per day
         :return: int, target daily average
         """
-        if self._target_average is None:
+        if self._target_average is Empty:
             await self._initialize()
         return self._target_average
 
@@ -376,7 +385,7 @@ class NanoNovelStats:
             The total number of words written today
         :return: int, words written today
         """
-        if self._total_today is None:
+        if self._total_today is Empty:
             await self._initialize()
         return self._total_today
 
@@ -386,7 +395,7 @@ class NanoNovelStats:
             The total number of words written in this novel
         :return: int, words written total
         """
-        if self._total is None:
+        if self._total is Empty:
             await self._initialize()
         return self._total
 
@@ -396,7 +405,7 @@ class NanoNovelStats:
             Number of words left to hit the target
         :return: int, words to hit target
         """
-        if self._words_remaining is None:
+        if self._words_remaining is Empty:
             await self._initialize()
         return self._words_remaining
 
@@ -406,7 +415,7 @@ class NanoNovelStats:
             The current day of the month, if it's currently this novel's NaNo, or None
         :return: int, NaNo day
         """
-        if self._current_day is None:
+        if self._current_day is Empty:
             await self._initialize()
         return self._current_day
 
@@ -416,7 +425,7 @@ class NanoNovelStats:
             Days left in this NaNo, if it's currently this book's NaNo, or None
         :return: int, days remaining
         """
-        if self._days_remaining is None:
+        if self._days_remaining is Empty:
             await self._initialize()
         return self._days_remaining
 
@@ -426,7 +435,7 @@ class NanoNovelStats:
             The projected day this book will be finished if writing continues at the same pace
         :return: date, projected finish date
         """
-        if self._finish_date is None:
+        if self._finish_date is Empty:
             await self._initialize()
         return self._finish_date
 
@@ -436,7 +445,7 @@ class NanoNovelStats:
             The number of words that would need to be written per day to finish on time
         :return: int, average per day to finish
         """
-        if self._average_to_finish is None:
+        if self._average_to_finish is Empty:
             await self._initialize()
         return self._average_to_finish
 
@@ -446,7 +455,7 @@ class NanoNovelStats:
             taking the form of (name, stat)
         :return: Asynchronous generator over this object
         """
-        if self._daily_average is None:
+        if self._daily_average is Empty:
             await self._initialize()
 
         for slot in self.__slots__[2:]:
@@ -469,6 +478,9 @@ class NanoNovelStats:
             if member == "_finish_date":
                 value = dt.datetime.strptime(value, "%B %d, %Y").date()
             else:
-                value = int(value.replace(",", ""))
+                try:
+                    value = int(value.replace(",", ""))
+                except ValueError:
+                    value = None
 
             setattr(self, member, value)
