@@ -1,15 +1,14 @@
 
+import sys
 import asyncio
 import pathlib
 import logging
 import secrets
 import json
-import types
 import ssl
-import importlib
 import inspect
 import warnings
-import importlib.machinery
+import importlib.util
 import aiohttp.web as web
 import utils.twitch as twitch
 
@@ -249,13 +248,14 @@ class TalosPrimaryHandler:
         :param request: web.Request object
         :return: web.Response to send to the user
         """
-        loader = importlib.machinery.SourceFileLoader("psp", path.__fspath__())
-        psp = types.ModuleType(loader.name)
-        loader.exec_module(psp)
+        spec = importlib.util.spec_from_file_location("psp", path)
+        psp = importlib.util.module_from_spec(spec)
+        # loader = importlib.machinery.SourceFileLoader("psp", path.__fspath__())
+        # psp = types.ModuleType(loader.name)
         headers = dict()
         headers["Content-Type"] = "text/html"
         try:
-
+            # Do argument resolution
             possible_args = {
                 "handler": self, "path": path, "dir": path.parent, "status": status, "request": request
             }
@@ -268,11 +268,13 @@ class TalosPrimaryHandler:
                     warnings.warn("Invalid PSP argument", ServerWarning)
                 args.append(val)
 
+            # Get result of page call
             if asyncio.iscoroutinefunction(psp.page):
                 resp = await psp.page(*args, **kwargs)
             else:
                 resp = psp.page(*args, **kwargs)
 
+            # Depending on result type, generate a response
             if isinstance(resp, int):
                 return await self.error_code(resp)
             elif isinstance(resp, str):
@@ -288,6 +290,8 @@ class TalosPrimaryHandler:
         except Exception as e:
             log.error(f"Encountered {e} while attempting to load page {path}")
             return await self.error_code(500, e)
+        finally:
+            del psp
 
     async def error_code(self, status, error=None):
         """
@@ -364,4 +368,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

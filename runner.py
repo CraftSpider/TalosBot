@@ -1,7 +1,10 @@
 #! /usr/bin/env python3
 
 import sys
+import os
+import pathlib
 import importlib
+import builtins
 
 
 name_folder = {
@@ -12,20 +15,29 @@ name_folder = {
 
 
 def main():
+    loc = pathlib.Path(sys.argv[0]).parent
     args = sys.argv[1:]
+
     if len(args) == 0:
-        print("Usage: runner.py <talos program>")
-        sys.exit(0)
+        print("Usage: runner.py <talos program> [program flags...]")
+        return 0
     item = args[0]
-    sys.argv = sys.argv[0:1] + sys.argv[2:]
-    if item in name_folder.keys():
-        talos = importlib.import_module(name_folder[item])
-        sys.exit(talos.main())
-    else:
+    if item not in name_folder:
         print("Unrecognized program. Valid programs are:")
         print(", ".join(name_folder.keys()))
-        sys.exit(1)
+        return 1
+
+    # Do environment setup
+    del sys.argv[1]
+    for i in ("quit", "exit", "help", "copyright", "license", "credits"):
+        delattr(builtins, i)
+    os.chdir(loc)
+
+    # Load and execute desired program
+    module = name_folder[item]
+    talos = importlib.import_module(module)
+    return talos.main()
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
