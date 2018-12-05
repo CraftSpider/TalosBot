@@ -11,6 +11,7 @@ log = logging.getLogger("talos.tests")
 testlos: talos.Talos = None
 test_values = {}
 sent_queue = asyncio.queues.Queue()
+error_queue = asyncio.queues.Queue()
 
 pytestmark = pytest.mark.usefixtures("testlos_m")
 
@@ -19,6 +20,9 @@ pytestmark = pytest.mark.usefixtures("testlos_m")
 def module_test_values():
     global test_values
     log.debug("Setting up test values")
+
+    dfacts.set_callback(command_callback)
+    dfacts.setup()
 
     channels = 1
     members = 1
@@ -29,7 +33,7 @@ def module_test_values():
     for i in range(channels):
         test_values["channel_{}".format(i + 1)] = dfacts.make_text_channel("Channel_{}".format(i), test_values["guild"])
     for i in range(members):
-        test_values["member_{}".format(i + 1)] = dfacts.make_member("Test", "{:04}".format(i), test_values["guild"])
+        test_values["member_{}".format(i + 1)] = dfacts.make_member("Test", "{:04}".format(i+1), test_values["guild"])
 
     test_values["me"] = dfacts.make_member("Testlos", f"{i+1:04}", test_values["guild"],
                                            id_num=dfacts.get_state().user.id)
@@ -39,6 +43,7 @@ def module_test_values():
 
     log.debug("Tearing down test values")
     test_values = dict()
+    dfacts.teardown()
 
 
 #
@@ -98,7 +103,11 @@ async def command_callback(content, **kwargs):
     await sent_queue.put(response)
 
 
-async def call(content, bot=None, callback=command_callback, channel=1, member="member_1"):
+async def error_callback(ctx, error):
+    await error_queue.put((ctx, error))
+
+
+async def call(content, bot=None, channel=1, member="member_1"):
     if bot is None:
         bot = testlos
     if len(test_values) == 0:
@@ -107,9 +116,11 @@ async def call(content, bot=None, callback=command_callback, channel=1, member="
     message = dfacts.make_message(content,
                                   test_values[member],
                                   test_values[f"channel_{channel}"])
-    ctx = await dfacts.make_context(bot, message, callback)
-    await bot.invoke(ctx)
+    bot.dispatch("message", message)
     await dfacts.run_all_events()
+    if not error_queue.empty():
+        err = await error_queue.get()
+        raise err[1]
 
 
 #
@@ -120,6 +131,7 @@ async def call(content, bot=None, callback=command_callback, channel=1, member="
 async def test_commands():
     # Ensure database is setup correctly. This function relies on things tested in test_utils
     testlos.database.verify_schema()
+    testlos.add_listener(error_callback, "on_command_error")
 
     with pytest.raises(commands.MissingRequiredArgument):
         await call("^choose")

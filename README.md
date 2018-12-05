@@ -3,7 +3,7 @@
 
 A writing utility chatbot with releases for both Discord and Chatzy (an online chat room service). Its primary mission is to provide useful utility-type commands to assist writers.
 
-The Chatzy release is JavaScript-based, and runs in a browser tab. The discord release is python, running on python version of at least 3.5.
+The Chatzy release is JavaScript-based, and runs in a browser tab. The discord release is python, running on python version of at least 3.6.
 
 ## How to invite
 Talos for Discord is hosted and run through google cloud, with a consistent 99.9% uptime.
@@ -33,7 +33,7 @@ If prompted, allow popups- the window is the log4js console.
 ### Discord
 1. You will need to clone this repository onto your computer. You can do this through the command line with `git clone http://github.com/CraftSpider/TalosBot/`
 
-2. Navigate into the `TalosBot\` file
+2. Navigate into the `TalosBot\` directory
 
 3. Install the discord.py library, the google API library, the mysql connector, and the pillow library using the command `python3 -m pip install -r requirements.txt`
 

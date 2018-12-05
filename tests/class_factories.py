@@ -5,77 +5,43 @@
 import datetime as dt
 import asyncio
 import sys
+import pytest
 import discord
-import discord.ext.commands as commands
+import discord.state as state
 
 
 test_state = None
+callback = None
 generated_ids = 0
 
 
-class FakeState:
+class FakeState(state.ConnectionState):
 
-    def __init__(self, user=None):
-        if user is None:
-            user = make_user_dict("State", "0000", None, make_id())
-        self._users = {}
-        self._guilds = {}
-        self._voice_clients = {}
+    def __init__(self, user_data=None):
+
+        loop = asyncio.get_event_loop()
+        super().__init__(dispatch=None, chunker=None, handlers=None, syncer=None, http=None, loop=loop)
+
+        if user_data is None:
+            user_data = {
+                "username": "FakeState",
+                "discriminator": "0001",
+                "avatar": None,
+                "id_num": make_id()
+            }
+        user = make_user_dict(**user_data)
         self.user = discord.ClientUser(state=self, data=user)
-        self._private_channels_by_user = {}
-        self.shard_count = None
-
-    @property
-    def self_id(self):
-        u = self.user
-        return u.id if u else None
-
-    @property
-    def guilds(self):
-        return list(self._guilds.values())
-
-    @property
-    def voice_clients(self):
-        return list(self._voice_clients.values())
-
-    def store_user(self, data):
-        # this way is 300% faster than `dict.setdefault`.
-        user_id = int(data['id'])
-        try:
-            return self._users[user_id]
-        except KeyError:
-            self._users[user_id] = user = discord.User(state=self, data=data)
-            return user
-
-    def get_user(self, uid):
-        return self._users.get(uid)
-
-    def _get_private_channel_by_user(self, user_id):
-        return self._private_channels_by_user.get(user_id)
-
-    def _add_guild(self, guild):
-        self._guilds[guild.id] = guild
-
-    def parse_user_update(self, data):
-        self.user = discord.ClientUser(state=self, data=data)
 
 
-class FakeContext(commands.Context):
-
-    def __init__(self, **attrs):
-        self.callback = attrs.get('callback', None)
-        super().__init__(**attrs)
-
-    def set_callback(self, callback):
-        self.callback = callback
-
-    async def send(self, content=None, *, tts=False, embed=None, file=None, files=None, delete_after=None, nonce=None):
-        value = self.callback(content, tts=tts, embed=embed, file=file, files=files, delete_after=delete_after,
-                              nonce=nonce)
-        if asyncio.iscoroutine(value) or asyncio.isfuture(value):
-            return await value
-        else:
-            return value
+@staticmethod
+async def callback_send(content=None, *, tts=False, embed=None, file=None, files=None, delete_after=None,
+                        nonce=None):
+    callback = get_callback()
+    value = callback(content, tts=tts, embed=embed, file=file, files=files, delete_after=delete_after, nonce=nonce)
+    if asyncio.iscoroutine(value) or asyncio.isfuture(value):
+        return await value
+    else:
+        return value
 
 
 class MessageResponse:
@@ -92,6 +58,18 @@ def get_state():
     if test_state is None:
         test_state = FakeState()
     return test_state
+
+
+def set_callback(cb):
+    global callback
+    callback = cb
+
+
+def get_callback():
+    global callback
+    if callback is None:
+        raise ValueError("Test callback not set")
+    return callback
 
 
 def make_id():
@@ -194,6 +172,8 @@ def make_user(username, discriminator, avatar=None, id_num=-1):
 def make_member(username, discriminator, guild, nick=None, roles=None, avatar=None, id_num=-1):
     if id_num == -1:
         id_num = make_id()
+    if int(discriminator) < 1 or int(discriminator) > 9999:
+        raise ValueError("Discriminator must be between 0001 and 9999")
     if roles is None:
         roles = []
     if nick is None:
@@ -210,7 +190,7 @@ def make_member(username, discriminator, guild, nick=None, roles=None, avatar=No
 def make_message(content, author, channel, pinned=False, id_num=-1):
     if id_num == -1:
         id_num = make_id()
-    author = make_member_dict(author.name, author.discriminator, author.nick, author.roles, author.avatar, author.id)
+    author = make_user_dict(author.name, author.discriminator, author.avatar, author.id)
     return discord.Message(
         state=get_state(),
         channel=channel,
@@ -233,35 +213,18 @@ async def run_all_events():
             await task
 
 
-async def make_context(bot, message, callback):
-    # Get the context as the bot wants
-    ctx = await bot.get_context(message, cls=FakeContext)
+old_send = None
 
-    # Make sure that the command calls back
-    ctx.callback = callback
-    if ctx.command is not None:
 
-        def make_handler(old_error):
-            async def new_error(n_ctx, error):
-                try:
-                    await old_error(n_ctx, error)
-                    await run_all_events()
-                except Exception as e:
-                    print(e)
-                raise error
-            new_error.new = True
-            return new_error
+def setup():
+    global old_send
+    old_send = discord.abc.Messageable.send
+    discord.abc.Messageable.send = callback_send
 
-        old_handler = ctx.command.dispatch_error
-        if getattr(old_handler, "new", None) is None:
-            ctx.command.dispatch_error = make_handler(old_handler)
 
-        if isinstance(ctx.command, commands.Group):
-            for command in ctx.command.commands:
-                old_handler = command.dispatch_error
-                if getattr(old_handler, "new", None) is None:
-                    command.dispatch_error = make_handler(old_handler)
-    return ctx
+def teardown():
+    global old_send
+    discord.abc.Messageable.send = old_send
 
 
 def main():
