@@ -5,13 +5,14 @@ import pytest
 
 import discord_talos.talos as talos
 import tests.class_factories as dfacts
+import tests.dpy_runner as runner
 import discord.ext.commands as commands
+
+from tests.dpy_runner import call, verify_message, empty_queue, verify_embed, verify_file, sent_queue
 
 log = logging.getLogger("talos.tests")
 testlos: talos.Talos = None
 test_values = {}
-sent_queue = asyncio.queues.Queue()
-error_queue = asyncio.queues.Queue()
 
 pytestmark = pytest.mark.usefixtures("testlos_m")
 
@@ -21,8 +22,7 @@ def module_test_values():
     global test_values
     log.debug("Setting up test values")
 
-    dfacts.set_callback(command_callback)
-    dfacts.setup()
+    runner.configure(testlos, 1, 1, 1)
 
     channels = 1
     members = 1
@@ -43,84 +43,6 @@ def module_test_values():
 
     log.debug("Tearing down test values")
     test_values = dict()
-    dfacts.teardown()
-
-
-#
-# Non-test functions
-#
-
-def verify_message(text=None, equals=True):
-    if text is None:
-        equals = not equals
-    try:
-        response = sent_queue.get_nowait()
-        if equals:
-            assert response.message == text, "Didn't find expected text"
-        else:
-            assert response.message != text, "Found unexpected text"
-    except asyncio.QueueEmpty:
-        raise AssertionError("No message returned by command")
-
-
-def verify_embed(embed=None, allow_text=False, equals=True):
-    if embed is None:
-        equals = not equals
-    try:
-        response = sent_queue.get_nowait()
-        if not allow_text:
-            assert response.message is None
-        elif equals:
-            assert response.kwargs["embed"] == embed, "Didn't find expected embed"
-        else:
-            assert response.kwargs["embed"] != embed, "Found unexpected embed"
-    except asyncio.QueueEmpty:
-        raise AssertionError("No message returned by command")
-
-
-def verify_file(file=None, allow_text=False, equals=True):
-    if file is None:
-        equals = not equals
-    try:
-        response = sent_queue.get_nowait()
-        if not allow_text:
-            assert response.message is None
-        elif equals:
-            assert response.kwargs["file"] == file, "Didn't find expected file"
-        else:
-            assert response.kwargs["file"] != file, "Found unexpected file"
-    except asyncio.QueueEmpty:
-        raise AssertionError("No message returned by command")
-
-
-async def empty_queue():
-    while not sent_queue.empty():
-        await sent_queue.get()
-
-
-async def command_callback(content, **kwargs):
-    response = dfacts.MessageResponse(content, kwargs)
-    await sent_queue.put(response)
-
-
-async def error_callback(ctx, error):
-    await error_queue.put((ctx, error))
-
-
-async def call(content, bot=None, channel=1, member="member_1"):
-    if bot is None:
-        bot = testlos
-    if len(test_values) == 0:
-        log.error("Attempted to make call before test values prepared")
-        return
-    message = dfacts.make_message(content,
-                                  test_values[member],
-                                  test_values[f"channel_{channel}"])
-    bot.dispatch("message", message)
-    await dfacts.run_all_events()
-    if not error_queue.empty():
-        err = await error_queue.get()
-        raise err[1]
 
 
 #
@@ -131,7 +53,6 @@ async def call(content, bot=None, channel=1, member="member_1"):
 async def test_commands():
     # Ensure database is setup correctly. This function relies on things tested in test_utils
     testlos.database.verify_schema()
-    testlos.add_listener(error_callback, "on_command_error")
 
     with pytest.raises(commands.MissingRequiredArgument):
         await call("^choose")

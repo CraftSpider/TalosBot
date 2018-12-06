@@ -5,22 +5,46 @@
 import datetime as dt
 import asyncio
 import sys
-import pytest
+import typing
 import discord
 import discord.state as state
+import discord.http as dhttp
 
 
 test_state = None
-callback = None
+callbacks = {}
 generated_ids = 0
+
+
+class FakeHttp(dhttp.HTTPClient):
+
+    def __init__(self, loop=None):
+
+        if loop is None:
+            loop = asyncio.get_event_loop()
+
+        super().__init__(connector=None, loop=loop)
+
+    def request(self, *args, **kwargs):
+        raise NotImplementedError("Operation occured that isn't captured by the tests framework")
+
+    def send_files(self, channel_id, *, files, content=None, tts=False, embed=None, nonce=None):
+        print(channel_id, files, content, tts, embed, nonce)
+
+    def send_message(self, channel_id, content, *, tts=False, embed=None, nonce=None):
+        print(channel_id, content, tts, embed, nonce)
 
 
 class FakeState(state.ConnectionState):
 
-    def __init__(self, user_data=None):
+    def __init__(self, client, user_data=None, loop=None):
 
-        loop = asyncio.get_event_loop()
-        super().__init__(dispatch=None, chunker=None, handlers=None, syncer=None, http=None, loop=loop)
+        if loop is None:
+            loop = asyncio.get_event_loop()
+
+        http = FakeHttp(loop=loop)
+
+        super().__init__(dispatch=client.dispatch, chunker=None, handlers=None, syncer=None, http=http, loop=loop)
 
         if user_data is None:
             user_data = {
@@ -33,43 +57,25 @@ class FakeState(state.ConnectionState):
         self.user = discord.ClientUser(state=self, data=user)
 
 
-@staticmethod
-async def callback_send(content=None, *, tts=False, embed=None, file=None, files=None, delete_after=None,
-                        nonce=None):
-    callback = get_callback()
-    value = callback(content, tts=tts, embed=embed, file=file, files=files, delete_after=delete_after, nonce=nonce)
-    if asyncio.iscoroutine(value) or asyncio.isfuture(value):
-        return await value
-    else:
-        return value
-
-
-class MessageResponse:
-
-    __slots__ = ("message", "kwargs")
-
-    def __init__(self, message, kwargs):
-        self.message = message
-        self.kwargs = kwargs
+class MessageResponse(typing.NamedTuple):
+    message: discord.Message
+    kwargs: typing.Dict[str, typing.Any]
 
 
 def get_state():
-    global test_state
     if test_state is None:
-        test_state = FakeState()
+        raise ValueError("Discord class factories not configured")
     return test_state
 
 
-def set_callback(cb):
-    global callback
-    callback = cb
+def set_callback(cb, event):
+    callbacks[event] = cb
 
 
-def get_callback():
-    global callback
-    if callback is None:
+def get_callback(event):
+    if callbacks.get(event) is None:
         raise ValueError("Test callback not set")
-    return callback
+    return callbacks[event]
 
 
 def make_id():
@@ -213,29 +219,21 @@ async def run_all_events():
             await task
 
 
-old_send = None
+def configure(client):
+    global test_state
 
+    if not isinstance(client, discord.Client):
+        raise TypeError("Runner client must be an instance of discord.Client")
 
-def setup():
-    global old_send
-    old_send = discord.abc.Messageable.send
-    discord.abc.Messageable.send = callback_send
-
-
-def teardown():
-    global old_send
-    discord.abc.Messageable.send = old_send
+    test_state = FakeState(client)
 
 
 def main():
     print(make_id())
 
     d_user = make_user("Test", "0001")
-
     d_guild = make_guild("Test_Guild")
-
     d_channel = make_text_channel("Channel 1", d_guild)
-
     d_member = make_member("Test", "0001", d_guild)
 
     print(d_user, d_member, d_channel)
