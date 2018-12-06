@@ -12,37 +12,15 @@ from tests.dpy_runner import call, verify_message, empty_queue, verify_embed, ve
 
 log = logging.getLogger("talos.tests")
 testlos: talos.Talos = None
-test_values = {}
 
 pytestmark = pytest.mark.usefixtures("testlos_m")
 
 
 @pytest.fixture(scope="module", autouse=True)
-def module_test_values():
-    global test_values
+def config_runner(testlos_m):
     log.debug("Setting up test values")
-
     runner.configure(testlos, 1, 1, 1)
-
-    channels = 1
-    members = 1
-
-    test_values = dict()
-    test_values["guild"] = dfacts.make_guild("Test_Guild", owner=True)
-    i = 0
-    for i in range(channels):
-        test_values["channel_{}".format(i + 1)] = dfacts.make_text_channel("Channel_{}".format(i), test_values["guild"])
-    for i in range(members):
-        test_values["member_{}".format(i + 1)] = dfacts.make_member("Test", "{:04}".format(i+1), test_values["guild"])
-
-    test_values["me"] = dfacts.make_member("Testlos", f"{i+1:04}", test_values["guild"],
-                                           id_num=dfacts.get_state().user.id)
-    test_values["dev"] = dfacts.make_member("Dev", f"{i+1:04}", test_values["guild"], id_num=talos.Talos.DEVS[0])
-
-    yield
-
-    log.debug("Tearing down test values")
-    test_values = dict()
+    return
 
 
 #

@@ -68,9 +68,11 @@ def database():
 def testlos():
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
-    testlos._connection = dfacts.get_state()
     testlos.load_extensions(testlos.startup_extensions)
+    dfacts.configure(testlos)
+
     yield testlos
+
     loop = testlos.loop
     loop.run_until_complete(testlos.close())
 
@@ -79,10 +81,12 @@ def testlos():
 def testlos_m(request):
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
-    testlos._connection = dfacts.get_state()
     testlos.load_extensions(testlos.startup_extensions)
+    dfacts.configure(testlos)
     request.module.testlos = testlos
+
     yield testlos
+
     loop = testlos.loop
     loop.run_until_complete(testlos.close())
 

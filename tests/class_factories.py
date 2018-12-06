@@ -19,30 +19,35 @@ generated_ids = 0
 class FakeHttp(dhttp.HTTPClient):
 
     def __init__(self, loop=None):
-
         if loop is None:
             loop = asyncio.get_event_loop()
 
         super().__init__(connector=None, loop=loop)
 
-    def request(self, *args, **kwargs):
+    def generate_response(self):
+        pass
+
+    async def request(self, *args, **kwargs):
         raise NotImplementedError("Operation occured that isn't captured by the tests framework")
 
-    def send_files(self, channel_id, *, files, content=None, tts=False, embed=None, nonce=None):
+    async def send_files(self, channel_id, *, files, content=None, tts=False, embed=None, nonce=None):
         print(channel_id, files, content, tts, embed, nonce)
+        # TODO: Return data for message
 
-    def send_message(self, channel_id, content, *, tts=False, embed=None, nonce=None):
+    async def send_message(self, channel_id, content, *, tts=False, embed=None, nonce=None):
         print(channel_id, content, tts, embed, nonce)
+        # TODO: Return data for message
+        frame = sys._getframe(1)
+        locs = frame.f_locals
+        del frame
+        return make_message_dict(locs['self'].user.id, make_id(), content=content, tts=tts, embed=embed, nonce=nonce)
 
 
 class FakeState(state.ConnectionState):
 
-    def __init__(self, client, user_data=None, loop=None):
-
+    def __init__(self, client, http, user_data=None, loop=None):
         if loop is None:
             loop = asyncio.get_event_loop()
-
-        http = FakeHttp(loop=loop)
 
         super().__init__(dispatch=client.dispatch, chunker=None, handlers=None, syncer=None, http=http, loop=loop)
 
@@ -118,6 +123,21 @@ def make_member_dict(username, discriminator, nick, roles, avatar, id_num):
         'roles': roles,
         'id': id_num
     }
+
+
+def make_message_dict(author, id_num, **kwargs):
+    out = {
+        'author': author,
+        'id': id_num
+    }
+    items = ('content', 'pinned', 'application', 'activity', 'mention_everyone', 'tts', 'type', 'attachments', 'embeds',
+             'nonce')
+    for item in items:
+        if kwargs.get(item, None) is not None:
+            out[item] = kwargs.pop(item)
+    if len(kwargs) != 0:
+        raise ValueError("Invalid items passed to make_message_dict")
+    return out
 
 
 def make_guild(name, members=None, channels=None, roles=None, owner=False, id_num=-1):
@@ -200,12 +220,7 @@ def make_message(content, author, channel, pinned=False, id_num=-1):
     return discord.Message(
         state=get_state(),
         channel=channel,
-        data={
-            'content': content,
-            'author': author,
-            'pinned': pinned,
-            'id': id_num
-        }
+        data=make_message_dict(author, id_num, content=content, pinned=pinned)
     )
 
 
@@ -225,7 +240,14 @@ def configure(client):
     if not isinstance(client, discord.Client):
         raise TypeError("Runner client must be an instance of discord.Client")
 
-    test_state = FakeState(client)
+    loop = asyncio.get_event_loop()
+
+    http = FakeHttp(loop=loop)
+
+    client.http = http
+    test_state = FakeState(client, http=http, loop=loop)
+
+    client._connection = test_state
 
 
 def main():

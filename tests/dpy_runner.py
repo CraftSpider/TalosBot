@@ -8,9 +8,9 @@ import tests.class_factories as dfacts
 
 class RunnerConfig(typing.NamedTuple):
     client: discord.Client
-    guilds: typing.Dict[str, discord.Guild]
-    channels: typing.Dict[str, discord.abc.GuildChannel]
-    members: typing.Dict[str, discord.Member]
+    guilds: typing.List[discord.Guild]
+    channels: typing.List[discord.abc.GuildChannel]
+    members: typing.List[discord.Member]
 
 
 log = logging.getLogger("discord.ext.tests")
@@ -76,7 +76,7 @@ async def error_callback(ctx, error):
     await error_queue.put((ctx, error))
 
 
-async def call(content, client=None, channel=1, member="member_1"):
+async def call(content, client=None, channel=0, member=0):
     if cur_config is None:
         log.error("Attempted to make call before runner configured")
         return
@@ -86,7 +86,7 @@ async def call(content, client=None, channel=1, member="member_1"):
 
     message = dfacts.make_message(content,
                                   cur_config.members[member],
-                                  cur_config.channels[f"channel_{channel}"])
+                                  cur_config.channels[channel])
 
     client.dispatch("message", message)
     await dfacts.run_all_events()
@@ -96,23 +96,41 @@ async def call(content, client=None, channel=1, member="member_1"):
         raise err[1]
 
 
-def configure(client, guilds, channels, members):
+def configure(client, num_guilds=1, num_channels=1, num_members=1):
     global cur_config
 
     if not isinstance(client, discord.Client):
         raise TypeError("Runner client must be an instance of discord.Client")
 
     # Wrap on_error so errors will be reported
-    @staticmethod
+    old_error = None
+    if hasattr(client, "on_command_error"):
+        old_error = client.on_command_error
+
     async def on_command_error(ctx, error):
-        if hasattr(client, "on_command_error"):
-            await client.on_command_error(ctx, error)
+        if old_error:
+            await old_error(ctx, error)
         await error_queue.put((ctx, error))
+
     on_command_error.__old__ = client.on_command_error
     client.on_command_error = on_command_error
 
+    # Configure the factories module
     dfacts.set_callback(command_callback, "message")
 
-    # TODO: generate desired guilds, channels, and members
+    guilds = []
+    for num in range(num_guilds):
+        guild = dfacts.make_guild(f"Test Guild {num}")
+        guilds.append(guild)
+
+    channels = []
+    members = []
+    for guild in guilds:
+        for num in range(num_channels):
+            channel = dfacts.make_text_channel(f"Channel_{num}", guild)
+            channels.append(channel)
+        for num in range(num_members):
+            member = dfacts.make_member("TestUser", f"{num+1:04}", guild)
+            members.append(member)
 
     cur_config = RunnerConfig(client, guilds, channels, members)
