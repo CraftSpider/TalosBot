@@ -79,8 +79,12 @@ def set_callback(cb, event):
 
 def get_callback(event):
     if callbacks.get(event) is None:
-        raise ValueError("Test callback not set")
+        raise ValueError(f"Callback for event {event} not set")
     return callbacks[event]
+
+
+def remove_callback(event):
+    return callbacks.pop(event, None)
 
 
 def make_id():

@@ -76,7 +76,7 @@ async def error_callback(ctx, error):
     await error_queue.put((ctx, error))
 
 
-async def call(content, client=None, channel=0, member=0):
+async def message(content, client=None, channel=0, member=0):
     if cur_config is None:
         log.error("Attempted to make call before runner configured")
         return
@@ -101,6 +101,8 @@ def configure(client, num_guilds=1, num_channels=1, num_members=1):
 
     if not isinstance(client, discord.Client):
         raise TypeError("Runner client must be an instance of discord.Client")
+
+    dfacts.configure(client)
 
     # Wrap on_error so errors will be reported
     old_error = None
