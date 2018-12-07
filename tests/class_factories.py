@@ -22,6 +22,8 @@ class FakeHttp(dhttp.HTTPClient):
         if loop is None:
             loop = asyncio.get_event_loop()
 
+        self.state = None
+
         super().__init__(connector=None, loop=loop)
 
     def generate_response(self):
@@ -35,31 +37,40 @@ class FakeHttp(dhttp.HTTPClient):
         # TODO: Return data for message
 
     async def send_message(self, channel_id, content, *, tts=False, embed=None, nonce=None):
-        print(channel_id, content, tts, embed, nonce)
-        # TODO: Return data for message
         frame = sys._getframe(1)
         locs = frame.f_locals
+        channel = locs.get("channel", None)
         del frame
-        return make_message_dict(locs['self'].user.id, make_id(), content=content, tts=tts, embed=embed, nonce=nonce)
+
+        embeds = []
+        if embed:
+            embeds.append(embed)
+        author = self.state.user
+        data = make_message_dict(
+            dict_from_user(author), make_id(), content=content, tts=tts, embeds=embeds, nonce=nonce
+        )
+
+        if callbacks.get("message"):
+            message = self.state.create_message(channel=channel, data=data)
+            await callbacks["message"](message)
+
+        return data
 
 
 class FakeState(state.ConnectionState):
 
-    def __init__(self, client, http, user_data=None, loop=None):
+    def __init__(self, client, http, user=None, loop=None):
         if loop is None:
             loop = asyncio.get_event_loop()
 
         super().__init__(dispatch=client.dispatch, chunker=None, handlers=None, syncer=None, http=http, loop=loop)
 
-        if user_data is None:
-            user_data = {
-                "username": "FakeState",
-                "discriminator": "0001",
-                "avatar": None,
-                "id_num": make_id()
-            }
-        user = make_user_dict(**user_data)
-        self.user = discord.ClientUser(state=self, data=user)
+        http.state = self
+
+        if user is None:
+            user = discord.ClientUser(state=self, data=make_user_dict("FakeState", "0001", None, make_id()))
+
+        self.user = user
 
 
 class MessageResponse(typing.NamedTuple):
@@ -104,28 +115,114 @@ def make_id():
     return int(discord_epoch + worker + process + generated, 2)
 
 
-def make_user_dict(username, discriminator, avatar, id_num):
-    return {
+def _fill_optional(data, obj, items):
+    if isinstance(obj, dict):
+        for item in items:
+            result = obj.pop
+            if result is None:
+                continue
+            data[item] = result
+    else:
+        for item in items:
+            if hasattr(obj, item):
+                data[item] = getattr(obj, item)
+
+
+def make_user_dict(username, discrim, avatar, id_num, flags=0, **kwargs):
+    if isinstance(discrim, int):
+        assert 0 < discrim < 10000
+        discrim = f"{discrim:04}"
+    elif isinstance(discrim, str):
+        assert len(discrim) == 4 and discrim.isdigit() and 0 < int(discrim) < 10000
+    out = {
+        'id': id_num,
         'username': username,
-        'discriminator': discriminator,
+        'discriminator': discrim,
         'avatar': avatar,
-        'id': id_num
+        'flags': flags
     }
+    items = ("bot", "mfa_enabled", "locale", "verified", "email", "premium_type")
+    _fill_optional(out, kwargs, items)
+    return out
 
 
-def make_role_dict(name, id_num):
+def dict_from_user(user):
+    out = {
+        'id': user.id,
+        'username': user.name,
+        'discriminator': user.discriminator,
+        'avatar': user.avatar
+    }
+    items = ("bot", "mfa_enabled", "locale", "verified", "email", "premium_type")
+    _fill_optional(out, user, items)
+    return out
+
+
+def make_member_dict(user, roles, joined=0, deaf=False, mute=False, **kwargs):
+    out = {
+        'user': user,
+        'roles': roles,
+        'joined_at': joined,
+        'deaf': deaf,
+        'mute': mute
+    }
+    items = ("nick",)
+    _fill_optional(out, kwargs, items)
+    return out
+
+
+def dict_from_member(member):
+    out = {
+        'user': dict_from_user(member._user),
+        'roles': member.roles,
+        'joined_at': member.joined_at,
+        'deaf': member.deaf,
+        'mute': member.mute
+    }
+    items = ("nick",)
+    _fill_optional(out, member, items)
+    return out
+
+
+def make_role_dict(name, id_num, colour=0, hoist=False, position=-1, perms=0, managed=False, mentionable=False):
     return {
         'id': id_num,
-        'name': name
+        'name': name,
+        'color': colour,
+        'hoist': hoist,
+        'position': position,
+        'permissions': perms,
+        'managed': managed,
+        'mentionable': mentionable
     }
 
 
-def make_member_dict(username, discriminator, nick, roles, avatar, id_num):
+def dict_from_role(role):
     return {
-        'user': make_user_dict(username, discriminator, avatar, id_num),
-        'nick': nick,
-        'roles': roles,
-        'id': id_num
+        'id': role.id,
+        'name': role.name,
+        'color': role.colour,
+        'hoist': role.hoist,
+        'position': role.position,
+        'permissions': role.permissions.value,
+        'managed': role.managed,
+        'mentionable': role.mentionable
+    }
+
+
+def make_text_channel_dict(name, position, id_num):
+    return {
+        'id': id_num,
+        'name': name,
+        'position': position
+    }
+
+
+def dict_from_channel(channel):
+    return {
+        'name': channel.name,
+        'position': channel.position,
+        'id': channel.id
     }
 
 
@@ -136,11 +233,18 @@ def make_message_dict(author, id_num, **kwargs):
     }
     items = ('content', 'pinned', 'application', 'activity', 'mention_everyone', 'tts', 'type', 'attachments', 'embeds',
              'nonce')
-    for item in items:
-        if kwargs.get(item, None) is not None:
-            out[item] = kwargs.pop(item)
-    if len(kwargs) != 0:
-        raise ValueError("Invalid items passed to make_message_dict")
+    _fill_optional(out, kwargs, items)
+    return out
+
+
+def message_to_dict(message):
+    out = {
+        'id': message.id,
+        'author': dict_from_user(message.author),
+    }
+    items = ('content', 'pinned', 'application', 'activity', 'mention_everyone', 'tts', 'type', 'attachments', 'embeds',
+             'nonce')
+    _fill_optional(out, message, items)
     return out
 
 
@@ -151,10 +255,12 @@ def make_guild(name, members=None, channels=None, roles=None, owner=False, id_nu
         roles = [make_role_dict("@everyone", id_num)]
     if channels is None:
         channels = []
+    else:
+        channels = map(lambda x: dict_from_channel(x), channels)
     if members is None:
         members = []
     else:
-        map(lambda x: make_member_dict(x.name, x.discriminator, x.nick, x.roles, x.avatar, x.id), members)
+        members = map(lambda x: dict_from_member(x), members)
     member_count = len(members) if len(members) != 0 else 1
     guild = discord.Guild(
         state=get_state(),
@@ -180,11 +286,7 @@ def make_text_channel(name, guild, position=-1, id_num=-1):
     channel = discord.TextChannel(
         state=get_state(),
         guild=guild,
-        data={
-            'id': id_num,
-            'name': name,
-            'position': position
-        }
+        data=make_text_channel_dict(name, position, id_num)
     )
     guild._add_channel(channel)
     return channel
@@ -200,18 +302,19 @@ def make_user(username, discriminator, avatar=None, id_num=-1):
 
 
 def make_member(username, discriminator, guild, nick=None, roles=None, avatar=None, id_num=-1):
-    if id_num == -1:
-        id_num = make_id()
     if int(discriminator) < 1 or int(discriminator) > 9999:
         raise ValueError("Discriminator must be between 0001 and 9999")
     if roles is None:
         roles = []
     if nick is None:
         nick = username
+
+    user = make_user(username, discriminator, avatar, id_num)
+
     member = discord.Member(
         state=get_state(),
         guild=guild,
-        data=make_member_dict(username, discriminator, nick, roles, avatar, id_num)
+        data=make_member_dict(user, roles, nick=nick)
     )
     guild._add_member(member)
     return member

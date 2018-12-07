@@ -23,11 +23,11 @@ def verify_message(text=None, equals=True):
     if text is None:
         equals = not equals
     try:
-        response = sent_queue.get_nowait()
+        message = sent_queue.get_nowait()
         if equals:
-            assert response.message == text, "Didn't find expected text"
+            assert message.content == text, "Didn't find expected text"
         else:
-            assert response.message != text, "Found unexpected text"
+            assert message.content != text, "Found unexpected text"
     except asyncio.QueueEmpty:
         raise AssertionError("No message returned by command")
 
@@ -36,13 +36,13 @@ def verify_embed(embed=None, allow_text=False, equals=True):
     if embed is None:
         equals = not equals
     try:
-        response = sent_queue.get_nowait()
+        message = sent_queue.get_nowait()
         if not allow_text:
-            assert response.message is None
+            assert message.content is None
         elif equals:
-            assert response.kwargs["embed"] == embed, "Didn't find expected embed"
+            assert message.embeds.get(0) == embed, "Didn't find expected embed"
         else:
-            assert response.kwargs["embed"] != embed, "Found unexpected embed"
+            assert message.embeds.get(0) != embed, "Found unexpected embed"
     except asyncio.QueueEmpty:
         raise AssertionError("No message returned by command")
 
@@ -51,13 +51,13 @@ def verify_file(file=None, allow_text=False, equals=True):
     if file is None:
         equals = not equals
     try:
-        response = sent_queue.get_nowait()
+        message = sent_queue.get_nowait()
         if not allow_text:
-            assert response.message is None
+            assert message.content is None
         elif equals:
-            assert response.kwargs["file"] == file, "Didn't find expected file"
+            assert message.attachments.get(0) == file, "Didn't find expected file"
         else:
-            assert response.kwargs["file"] != file, "Found unexpected file"
+            assert message.attachments.get(0) != file, "Found unexpected file"
     except asyncio.QueueEmpty:
         raise AssertionError("No message returned by command")
 
@@ -67,9 +67,8 @@ async def empty_queue():
         await sent_queue.get()
 
 
-async def command_callback(content, **kwargs):
-    response = dfacts.MessageResponse(content, kwargs)
-    await sent_queue.put(response)
+async def command_callback(message):
+    await sent_queue.put(message)
 
 
 async def error_callback(ctx, error):
