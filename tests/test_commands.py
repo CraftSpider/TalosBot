@@ -67,7 +67,7 @@ async def test_commands():
     await message("^nano novel craftspider")
     if not sent_queue.empty():
         mes = await sent_queue.get()
-        if mes.message != "Sorry, I couldn't find that user":
+        if mes.content != "Sorry, I couldn't find that user":
             await sent_queue.put(mes)
             verify_embed()
 
@@ -77,7 +77,7 @@ async def test_commands():
     await message("^nano profile craftspider")
     if not sent_queue.empty():
         mes = await sent_queue.get()
-        if mes.message != "Sorry, I couldn't find that user on the NaNo site":
+        if mes.content != "Sorry, I couldn't find that user on the NaNo site":
             await sent_queue.put(mes)
             verify_embed()
 

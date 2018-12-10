@@ -1,4 +1,5 @@
 
+import sys
 import asyncio
 import logging
 import discord
@@ -17,6 +18,16 @@ log = logging.getLogger("discord.ext.tests")
 cur_config = None
 sent_queue = asyncio.queues.Queue()
 error_queue = asyncio.queues.Queue()
+
+
+async def run_all_events():
+    if sys.version_info[1] >= 7:
+        pending = filter(lambda x: x._coro.__name__ == "_run_event", asyncio.all_tasks())
+    else:
+        pending = filter(lambda x: x._coro.__name__ == "_run_event", asyncio.Task.all_tasks())
+    for task in pending:
+        if not (task.done() or task.cancelled()):
+            await task
 
 
 def verify_message(text=None, equals=True):
@@ -63,6 +74,7 @@ def verify_file(file=None, allow_text=False, equals=True):
 
 
 async def empty_queue():
+    await run_all_events()
     while not sent_queue.empty():
         await sent_queue.get()
 
@@ -88,7 +100,7 @@ async def message(content, client=None, channel=0, member=0):
                                   cur_config.channels[channel])
 
     client.dispatch("message", message)
-    await dfacts.run_all_events()
+    await run_all_events()
 
     if not error_queue.empty():
         err = await error_queue.get()
@@ -127,11 +139,14 @@ def configure(client, num_guilds=1, num_channels=1, num_members=1):
     channels = []
     members = []
     for guild in guilds:
+
         for num in range(num_channels):
             channel = dfacts.make_text_channel(f"Channel_{num}", guild)
             channels.append(channel)
         for num in range(num_members):
-            member = dfacts.make_member("TestUser", f"{num+1:04}", guild)
+            user = dfacts.make_user("TestUser", f"{num+1:04}")
+            member = dfacts.make_member(user, guild)
             members.append(member)
+        dfacts.make_member(dfacts.get_state().user, guild)
 
     cur_config = RunnerConfig(client, guilds, channels, members)
