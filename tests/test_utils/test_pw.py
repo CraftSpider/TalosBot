@@ -2,14 +2,14 @@
 import pytest
 
 import datetime as dt
-import tests.class_factories as dfacts
+import tests.dpytest.backend as back
 import utils as tutils
 
 
 def test_pw_member():
-    d_guild = dfacts.make_guild("test")
-    pw_member1 = tutils.PWMember(dfacts.make_member(dfacts.make_user("Test", "0001"), d_guild))
-    d_member2 = dfacts.make_member(dfacts.make_user("Test", "0002"), d_guild)
+    d_guild = back.make_guild("test")
+    pw_member1 = tutils.PWMember(back.make_member(back.make_user("Test", "0001"), d_guild))
+    d_member2 = back.make_member(back.make_user("Test", "0002"), d_guild)
     pw_member2 = tutils.PWMember(d_member2)
     pw_member3 = tutils.PWMember(d_member2)
 
@@ -48,10 +48,10 @@ def test_pw():  # TODO: Add testing for timezones, for now it's just going with 
     assert pw.get_finished() is False, "Claims finished before finish"
 
     tz = dt.timezone(dt.timedelta(), "UTC")
-    d_guild = dfacts.make_guild("test_guild")
-    d_member1 = dfacts.make_member(dfacts.make_user("Test", "0001"), d_guild)
-    d_member2 = dfacts.make_member(dfacts.make_user("Test", "0002"), d_guild)
-    d_member3 = dfacts.make_member(dfacts.make_user("Test", "0003"), d_guild)
+    d_guild = back.make_guild("test_guild")
+    d_member1 = back.make_member(back.make_user("Test", "0001"), d_guild)
+    d_member2 = back.make_member(back.make_user("Test", "0002"), d_guild)
+    d_member3 = back.make_member(back.make_user("Test", "0003"), d_guild)
     assert pw.join(d_member1, tz) is True, "New member not successfully added"
     assert pw.join(d_member1, tz) is False, "Member already in PW still added"
     assert pw.leave(d_member1, tz) is 0, "Existing member couldn't leave"

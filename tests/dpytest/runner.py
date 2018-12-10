@@ -4,7 +4,8 @@ import asyncio
 import logging
 import discord
 import typing
-import tests.class_factories as dfacts
+
+from . import backend as back
 
 
 class RunnerConfig(typing.NamedTuple):
@@ -36,9 +37,9 @@ def verify_message(text=None, equals=True):
     try:
         message = sent_queue.get_nowait()
         if equals:
-            assert message.content == text, "Didn't find expected text"
+            assert message.content == text, f"Didn't find expected text. Expected {text}, found {message.content}"
         else:
-            assert message.content != text, "Found unexpected text"
+            assert message.content != text, f"Found unexpected text. Expected something not matching {text}"
     except asyncio.QueueEmpty:
         raise AssertionError("No message returned by command")
 
@@ -50,10 +51,14 @@ def verify_embed(embed=None, allow_text=False, equals=True):
         message = sent_queue.get_nowait()
         if not allow_text:
             assert message.content is None
-        elif equals:
-            assert message.embeds.get(0) == embed, "Didn't find expected embed"
+
+        emb = None
+        if len(message.embeds) > 0:
+            emb = message.embeds[0]
+        if equals:
+            assert emb == embed, "Didn't find expected embed"
         else:
-            assert message.embeds.get(0) != embed, "Found unexpected embed"
+            assert emb != embed, "Found unexpected embed"
     except asyncio.QueueEmpty:
         raise AssertionError("No message returned by command")
 
@@ -65,10 +70,14 @@ def verify_file(file=None, allow_text=False, equals=True):
         message = sent_queue.get_nowait()
         if not allow_text:
             assert message.content is None
-        elif equals:
-            assert message.attachments.get(0) == file, "Didn't find expected file"
+
+        attach = None
+        if len(message.attachments) > 0:
+            attach = message.attachments[0]
+        if equals:
+            assert attach == file, "Didn't find expected file"
         else:
-            assert message.attachments.get(0) != file, "Found unexpected file"
+            assert attach != file, "Found unexpected file"
     except asyncio.QueueEmpty:
         raise AssertionError("No message returned by command")
 
@@ -95,9 +104,12 @@ async def message(content, client=None, channel=0, member=0):
     if client is None:
         client = cur_config.client
 
-    message = dfacts.make_message(content,
-                                  cur_config.members[member],
-                                  cur_config.channels[channel])
+    if isinstance(channel, int):
+        channel = cur_config.channels[channel]
+    if isinstance(member, int):
+        member = cur_config.members[member]
+
+    message = back.make_message(content, member, channel)
 
     client.dispatch("message", message)
     await run_all_events()
@@ -113,7 +125,7 @@ def configure(client, num_guilds=1, num_channels=1, num_members=1):
     if not isinstance(client, discord.Client):
         raise TypeError("Runner client must be an instance of discord.Client")
 
-    dfacts.configure(client)
+    back.configure(client)
 
     # Wrap on_error so errors will be reported
     old_error = None
@@ -129,24 +141,23 @@ def configure(client, num_guilds=1, num_channels=1, num_members=1):
     client.on_command_error = on_command_error
 
     # Configure the factories module
-    dfacts.set_callback(command_callback, "message")
+    back.set_callback(command_callback, "message")
 
     guilds = []
     for num in range(num_guilds):
-        guild = dfacts.make_guild(f"Test Guild {num}")
+        guild = back.make_guild(f"Test Guild {num}")
         guilds.append(guild)
 
     channels = []
     members = []
     for guild in guilds:
-
         for num in range(num_channels):
-            channel = dfacts.make_text_channel(f"Channel_{num}", guild)
+            channel = back.make_text_channel(f"Channel_{num}", guild)
             channels.append(channel)
         for num in range(num_members):
-            user = dfacts.make_user("TestUser", f"{num+1:04}")
-            member = dfacts.make_member(user, guild)
+            user = back.make_user("TestUser", f"{num+1:04}")
+            member = back.make_member(user, guild)
             members.append(member)
-        dfacts.make_member(dfacts.get_state().user, guild)
+        back.make_member(back.get_state().user, guild)
 
     cur_config = RunnerConfig(client, guilds, channels, members)

@@ -6,9 +6,12 @@ import logging
 import io
 import _pytest.python as py
 
-import tests.class_factories as dfacts
+import tests.dpytest as dpytest
 import discord_talos.talos as dtalos
 import utils as tutils
+
+
+log = logging.getLogger("talos.tests.conftest")
 
 
 class AsyncFunction(pytest.Function):
@@ -57,6 +60,7 @@ def pytest_pycollect_makeitem(collector, name, obj):
 
 @pytest.fixture()
 def database():
+    log.debug("Creating database connection")
     database = tutils.TalosDatabase("localhost", 3306, "root", "", "")
     database.verify_schema()
     if not database.is_connected():
@@ -66,27 +70,31 @@ def database():
 
 @pytest.fixture()
 def testlos():
+    log.debug("Setting up Talos")
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
     testlos.load_extensions(testlos.startup_extensions)
-    dfacts.configure(testlos)
+    dpytest.configure(testlos)
 
     yield testlos
 
+    log.debug("Tearing down Talos")
     loop = testlos.loop
     loop.run_until_complete(testlos.close())
 
 
 @pytest.fixture(scope="module")
 def testlos_m(request):
+    log.debug("Setting up Module Talos")
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
     testlos.load_extensions(testlos.startup_extensions)
-    dfacts.configure(testlos)
+    dpytest.configure(testlos)
     request.module.testlos = testlos
 
     yield testlos
 
+    log.debug("Tearing down Module Talos")
     loop = testlos.loop
     loop.run_until_complete(testlos.close())
 
@@ -103,6 +111,7 @@ def logcatch():
 
 @pytest.fixture(scope="session", autouse=True)
 def session_setup(logcatch):
+    log.debug("Setting up test session")
     ensure_tokens()
     setup_logging(logcatch)
 
@@ -113,6 +122,7 @@ def setup_logging(logcatch):
     sh = logging.StreamHandler(logcatch)
     talos_log.addHandler(sh)
     talos_log.propagate = False
+    talos_log.setLevel(logging.DEBUG)
 
 
 def ensure_tokens():

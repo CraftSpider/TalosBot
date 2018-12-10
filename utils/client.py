@@ -186,7 +186,7 @@ class TalosHTTPClient(aiohttp.ClientSession):
             Get a random cat picture from The Cat API
         :return: A discord.File with a picture of a cat.
         """
-        async with self.get(self.CAT_URL + f"images/search?api_key={self.__tokens['cat']}&type=jpg,png") as response:
+        async with self.get(self.CAT_URL + f"images/search?api_key={self.__tokens['cats']}&type=jpg,png") as response:
             data = json.loads(await response.text())[0]
         async with self.get(data["url"]) as response:
             data["filename"] = data["url"].split("/")[-1]

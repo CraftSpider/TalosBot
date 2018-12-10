@@ -5,21 +5,13 @@ import pytest
 import discord.ext.commands as commands
 
 import discord_talos.talos as talos
-import tests.dpy_runner as runner
-
-from tests.dpy_runner import message, verify_message, empty_queue, verify_embed, verify_file, sent_queue
+import tests.dpytest as dpytest
+from tests.dpytest import message, verify_message, empty_queue, verify_embed, verify_file, sent_queue
 
 log = logging.getLogger("talos.tests")
 testlos: talos.Talos = None
 
 pytestmark = pytest.mark.usefixtures("testlos_m")
-
-
-@pytest.fixture(scope="module", autouse=True)
-def config_runner(testlos_m):
-    log.debug("Setting up test values")
-    runner.configure(testlos, 1, 1, 1)
-    return
 
 
 #
@@ -84,7 +76,8 @@ async def test_commands():
     await message("^nano info")
     verify_embed()
 
-    # We don't test ping, as that's beyond our current connection spoofing, and a trivial command.
+    await message("^ping")
+    verify_message()
 
     # TODO: Productivity war messages
 
@@ -136,6 +129,19 @@ async def test_admin_commands():
 
 
 async def test_dev_commands():
+
+    dev = dpytest.backend.make_member(
+        dpytest.backend.make_user("DevUser", "0001", id_num=testlos.DEVS[0]),
+        dpytest.runner.cur_config.guilds[0]
+    )
+
+    with pytest.raises(commands.CheckFailure):
+        await message("^eval print()")
+    await empty_queue()
+
+    await message("^eval 1 + 1", member=dev)
+    verify_message("```py\n2\n```")
+
     raise pytest.skip("Dev Command testing not yet implemented")  # TODO
 
 
@@ -147,10 +153,10 @@ async def test_joke_commands():
     verify_file()
 
     await message("^favor")
-    verify_message("I'm afraid I can't do that, Test.")
+    verify_message("I'm afraid I can't do that, TestUser.")
 
     await message("^hi")
-    verify_message("Hello there Test")
+    verify_message("Hello there TestUser")
 
     await message("^xkcd")
     verify_embed()
