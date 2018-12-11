@@ -16,7 +16,7 @@ class RunnerConfig(typing.NamedTuple):
 
 
 log = logging.getLogger("discord.ext.tests")
-cur_config = None
+_cur_config = None
 sent_queue = asyncio.queues.Queue()
 error_queue = asyncio.queues.Queue()
 
@@ -82,13 +82,32 @@ def verify_file(file=None, allow_text=False, equals=True):
         raise AssertionError("No message returned by command")
 
 
+def verify_activity(activity=None, equals=True):
+    if activity is None:
+        equals = not equals
+    me = _cur_config.guilds[0].me
+
+    me_act = me.activity
+    if isinstance(activity, discord.Activity):
+        activity = (activity.name, activity.url, activity.type)
+    if isinstance(me_act, discord.Activity):
+        me_act = (me_act.name, me_act.url, me_act.type)
+
+    if equals:
+        assert me_act == activity, "Didn't find expected activity"
+    else:
+        assert me_act != activity, "Found unexpected activity"
+
+
 async def empty_queue():
     await run_all_events()
     while not sent_queue.empty():
         await sent_queue.get()
+    while not error_queue.empty():
+        await error_queue.get()
 
 
-async def command_callback(message):
+async def message_callback(message):
     await sent_queue.put(message)
 
 
@@ -97,17 +116,17 @@ async def error_callback(ctx, error):
 
 
 async def message(content, client=None, channel=0, member=0):
-    if cur_config is None:
+    if _cur_config is None:
         log.error("Attempted to make call before runner configured")
         return
 
     if client is None:
-        client = cur_config.client
+        client = _cur_config.client
 
     if isinstance(channel, int):
-        channel = cur_config.channels[channel]
+        channel = _cur_config.channels[channel]
     if isinstance(member, int):
-        member = cur_config.members[member]
+        member = _cur_config.members[member]
 
     message = back.make_message(content, member, channel)
 
@@ -119,11 +138,17 @@ async def message(content, client=None, channel=0, member=0):
         raise err[1]
 
 
+def get_config():
+    return _cur_config
+
+
 def configure(client, num_guilds=1, num_channels=1, num_members=1):
-    global cur_config
+    global _cur_config
 
     if not isinstance(client, discord.Client):
         raise TypeError("Runner client must be an instance of discord.Client")
+    if isinstance(client, discord.AutoShardedClient):
+        raise TypeError("Sharded clients not yet supported")
 
     back.configure(client)
 
@@ -141,7 +166,7 @@ def configure(client, num_guilds=1, num_channels=1, num_members=1):
     client.on_command_error = on_command_error
 
     # Configure the factories module
-    back.set_callback(command_callback, "message")
+    back.set_callback(message_callback, "message")
 
     guilds = []
     for num in range(num_guilds):
@@ -160,4 +185,4 @@ def configure(client, num_guilds=1, num_channels=1, num_members=1):
             members.append(member)
         back.make_member(back.get_state().user, guild)
 
-    cur_config = RunnerConfig(client, guilds, channels, members)
+    _cur_config = RunnerConfig(client, guilds, channels, members)

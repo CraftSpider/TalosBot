@@ -2,11 +2,12 @@
 import asyncio
 import logging
 import pytest
+import discord
 import discord.ext.commands as commands
 
 import discord_talos.talos as talos
 import tests.dpytest as dpytest
-from tests.dpytest import message, verify_message, empty_queue, verify_embed, verify_file, sent_queue
+from tests.dpytest import message, verify_message, empty_queue, verify_embed, verify_file, sent_queue, verify_activity
 
 log = logging.getLogger("talos.tests")
 testlos: talos.Talos = None
@@ -129,20 +130,48 @@ async def test_admin_commands():
 
 
 async def test_dev_commands():
+    import functools
 
     dev = dpytest.backend.make_member(
         dpytest.backend.make_user("DevUser", "0001", id_num=testlos.DEVS[0]),
-        dpytest.runner.cur_config.guilds[0]
+        dpytest.get_config().guilds[0]
     )
 
+    devmess = functools.partial(message, member=dev)
+
+    # Ensure normal users check failure
     with pytest.raises(commands.CheckFailure):
         await message("^eval print()")
     await empty_queue()
 
-    await message("^eval 1 + 1", member=dev)
-    verify_message("```py\n2\n```")
+    await devmess("^playing Test Game")
+    verify_message()
+    verify_activity(discord.Game(name="Test Game"))
 
-    raise pytest.skip("Dev Command testing not yet implemented")  # TODO
+    await devmess("^streaming Test Stream")
+    verify_message()
+    verify_activity(discord.Streaming(name="Test Stream", url="http://www.twitch.tv/talos_bot_"))
+
+    await devmess("^listening Test Sound")
+    verify_message()
+    verify_activity(discord.Activity(name="Test Sound", type=discord.ActivityType.listening))
+
+    await devmess("^watching Test Video")
+    verify_message()
+    verify_activity(discord.Activity(name="Test Video", type=discord.ActivityType.watching))
+
+    # TODO: test stop?
+
+    await devmess("^master_nick Newnick")
+    verify_message()
+    for guild in dpytest.get_config().guilds:
+        assert guild.me.nick == "Newnick"
+
+    await devmess("^idlist")
+    verify_message()
+
+    await devmess("^eval 1 + 1")
+    verify_message("```py\n2\n```")
 
 
 async def test_joke_commands():

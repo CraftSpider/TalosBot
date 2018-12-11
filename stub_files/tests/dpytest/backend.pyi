@@ -11,8 +11,12 @@ JsonDict = Dict[str, JsonVals]
 Callback = Callable[[Any, ...], Coroutine]
 AnyChannel = Union[discord.abc.GuildChannel, discord.abc.PrivateChannel]
 
-test_state: FakeState
-callbacks: Dict[str, Callback]
+
+class BackendConfig:
+    callbacks: Dict[str, Callable[[...], Coroutine]]
+    state: "FakeState"
+
+cur_config: BackendConfig
 
 class FakeHttp(dhttp.HTTPClient):
 
@@ -21,6 +25,8 @@ class FakeHttp(dhttp.HTTPClient):
 
     def __init__(self, loop: asyncio.AbstractEventLoop = ...) -> None: ...
 
+    def _get_higher_locs(self, num: int) -> Dict[str, Any]: ...
+
     async def request(self, *args, **kwargs) -> NoReturn: ...
 
     async def send_files(self, channel_id: int, *, files: Tuple[BinaryIO, ...], content: str = ..., tts: bool = ..., embed: JsonDict = ..., nonce: int = ...) -> JsonDict: ...
@@ -28,6 +34,8 @@ class FakeHttp(dhttp.HTTPClient):
     async def send_message(self, channel_id: int, content: str, *, tts: bool = ..., embed: JsonDict = ..., nonce: int = ...) -> JsonDict: ...
 
     async def application_info(self) -> JsonDict: ...
+
+    async def change_my_nickname(self, guild_id: int, nickname: str, *, reason: str = ...) -> JsonDict: ...
 
 class FakeState(state.ConnectionState):
 

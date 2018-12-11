@@ -4,16 +4,24 @@
 
 import asyncio
 import sys
+import logging
+import typing
 import pathlib
 import discord
 import discord.state as state
 import discord.http as dhttp
+import discord.gateway as gate
 
 from . import factories as facts
 
 
-test_state = None
-callbacks = {}
+class BackendConfig(typing.NamedTuple):
+    callbacks: typing.Dict[str, typing.Callable[[typing.Any], typing.Coroutine]]
+    state: "FakeState"
+
+
+log = logging.getLogger("discord.ext.tests")
+cur_config = None
 
 
 class FakeHttp(dhttp.HTTPClient):
@@ -28,17 +36,19 @@ class FakeHttp(dhttp.HTTPClient):
 
         super().__init__(connector=None, loop=loop)
 
+    def _get_higher_locs(self, num):
+        frame = sys._getframe(num + 1)
+        locs = frame.f_locals
+        del frame
+        return locs
+
     async def request(self, *args, **kwargs):
         raise NotImplementedError("Operation occured that isn't captured by the tests framework")
 
     async def send_files(self, channel_id, *, files, content=None, tts=False, embed=None, nonce=None):
-        frame = sys._getframe(1)
-        locs = frame.f_locals
+        locs = self._get_higher_locs(1)
         channel = locs.get("channel", None)
-        del frame
 
-        # TODO: file to attachment
-        #       Highest urgency, causes tests to fail
         attachments = []
         for file, name in files:
             path = pathlib.Path(f"./temp_{self.fileno}.dat")
@@ -62,10 +72,8 @@ class FakeHttp(dhttp.HTTPClient):
         return data
 
     async def send_message(self, channel_id, content, *, tts=False, embed=None, nonce=None):
-        frame = sys._getframe(1)
-        locs = frame.f_locals
+        locs = self._get_higher_locs(1)
         channel = locs.get("channel", None)
-        del frame
 
         embeds = []
         if embed:
@@ -98,6 +106,45 @@ class FakeHttp(dhttp.HTTPClient):
 
         return data
 
+    async def change_my_nickname(self, guild_id, nickname, *, reason=None):
+        locs = self._get_higher_locs(1)
+        me = locs.get("self", None)
+
+        await _dispatch_event("nickname", nickname, me, reason=reason)
+
+        return {"nick": nickname}
+
+    async def edit_member(self, guild_id, user_id, *, reason=None, **fields):
+        locs = self._get_higher_locs(1)
+        member = locs.get("self", None)
+
+        await _dispatch_event("edit", fields, member, reason=reason)
+
+        print(fields)
+
+
+class FakeWebSocket(gate.DiscordWebSocket):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cur_event = ""
+        self.event_args = ()
+        self.event_kwargs = {}
+
+    async def send(self, data):
+        self._dispatch('socket_raw_send', data)
+        if self.cur_event is None:
+            raise ValueError("Unhandled Websocket send event")
+        await _dispatch_event(self.cur_event, *self.event_args, **self.event_kwargs)
+        self.cur_event = None
+        self.event_args = ()
+        self.event_kwargs = {}
+
+    async def change_presence(self, *, activity=None, status=None, afk=False, since=0.0):
+        self.cur_event = "presence"
+        self.event_args = (activity, status, afk, since)
+        await super().change_presence(activity=activity, status=status, afk=afk, since=since)
+
 
 class FakeState(state.ConnectionState):
 
@@ -114,29 +161,32 @@ class FakeState(state.ConnectionState):
 
 
 def get_state():
-    if test_state is None:
+    if cur_config is None:
         raise ValueError("Discord class factories not configured")
-    return test_state
+    return cur_config.state
 
 
 def set_callback(cb, event):
-    callbacks[event] = cb
+    cur_config.callbacks[event] = cb
 
 
 def get_callback(event):
-    if callbacks.get(event) is None:
+    if cur_config.callbacks.get(event) is None:
         raise ValueError(f"Callback for event {event} not set")
-    return callbacks[event]
+    return cur_config.callbacks[event]
 
 
 def remove_callback(event):
-    return callbacks.pop(event, None)
+    return cur_config.callbacks.pop(event, None)
 
 
 async def _dispatch_event(event, *args, **kwargs):
-    cb = callbacks.get(event)
+    cb = cur_config.callbacks.get(event)
     if cb is not None:
-        await cb(*args, **kwargs)
+        try:
+            await cb(*args, **kwargs)
+        except Exception as e:
+            log.error(f"Error in handler for event {event}: {e}")
 
 
 def make_guild(name, members=None, channels=None, roles=None, owner=False, id_num=-1):
@@ -231,7 +281,7 @@ def make_attachment(filename, name=None, id_num=-1):
 
 
 def configure(client):
-    global test_state
+    global cur_config
 
     if not isinstance(client, discord.Client):
         raise TypeError("Runner client must be an instance of discord.Client")
@@ -244,10 +294,15 @@ def configure(client):
     http = FakeHttp(loop=loop)
     client.http = http
 
+    ws = FakeWebSocket()
+    client.ws = ws
+
     test_state = FakeState(client, http=http, loop=loop)
     http.state = test_state
 
     client._connection = test_state
+
+    cur_config = BackendConfig({}, test_state)
 
 
 def main():
