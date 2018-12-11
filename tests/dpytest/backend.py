@@ -156,7 +156,8 @@ def make_guild(name, members=None, channels=None, roles=None, owner=False, id_nu
 
     guild = discord.Guild(
         state=state,
-        data=facts.make_guild_dict(name, owner_id, roles, member_count=member_count, members=members, channels=channels)
+        data=facts.make_guild_dict(name, owner_id, roles, id_num=id_num, member_count=member_count, members=members,
+                                   channels=channels)
     )
     state._add_guild(guild)
     return guild
