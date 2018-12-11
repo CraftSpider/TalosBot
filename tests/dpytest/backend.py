@@ -144,32 +144,34 @@ def make_guild(name, members=None, channels=None, roles=None, owner=False, id_nu
         id_num = facts.make_id()
     if roles is None:
         roles = [facts.make_role_dict("@everyone", id_num)]
-    else:
-        roles = list(map(facts.dict_from_role, roles))
     if channels is None:
         channels = []
-    channels = list(map(facts.dict_from_channel, channels))
     if members is None:
         members = []
-    members = list(map(facts.dict_from_member, members))
     member_count = len(members) if len(members) != 0 else 1
 
     state = get_state()
 
+    owner_id = state.user.id if owner else 0
+
     guild = discord.Guild(
         state=state,
-        data={
-            'name': name,
-            'roles': roles,
-            'channels': channels,
-            'members': members,
-            'member_count': member_count,
-            'id': id_num,
-            'owner_id': state.user.id if owner else 0
-        }
+        data=facts.make_guild_dict(name, owner_id, roles, member_count=member_count, members=members, channels=channels)
     )
     state._add_guild(guild)
     return guild
+
+
+def make_role(name, guild, id_num=-1, colour=0, permissions=104324161, hoist=False, mentionable=False):
+    role = discord.Role(
+        state=get_state(),
+        guild=guild,
+        data=facts.make_role_dict(
+            name, id_num=id_num, colour=colour, permissions=permissions, hoist=hoist, mentionable=mentionable
+        )
+    )
+    guild._add_role(role)
+    return role
 
 
 def make_text_channel(name, guild, position=-1, id_num=-1):
@@ -196,7 +198,7 @@ def make_user(username, discrim, avatar=None, id_num=-1):
 def make_member(user, guild, nick=None, roles=None):
     if roles is None:
         roles = []
-
+    roles = list(map(lambda x: x.id, roles))
     member = discord.Member(
         state=get_state(),
         guild=guild,
