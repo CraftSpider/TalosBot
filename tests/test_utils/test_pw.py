@@ -2,7 +2,7 @@
 import pytest
 
 import datetime as dt
-import tests.dpytest.backend as back
+import dpytest.backend as back
 import utils as tutils
 
 

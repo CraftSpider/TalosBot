@@ -6,8 +6,8 @@ import discord
 import discord.ext.commands as commands
 
 import discord_talos.talos as talos
-import tests.dpytest as dpytest
-from tests.dpytest import message, verify_message, empty_queue, verify_embed, verify_file, sent_queue, verify_activity
+import dpytest
+from dpytest import message, verify_message, empty_queue, verify_embed, verify_file, sent_queue, verify_activity
 
 log = logging.getLogger("talos.tests")
 testlos: talos.Talos = None
