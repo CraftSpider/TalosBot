@@ -238,6 +238,12 @@ class PaginatedEmbed(embeds.Embed):
         """
         super().add_field(name=name, value=value, inline=inline)
 
+    def set_image(self, *, url):
+        import urllib.parse as urllib
+        if isinstance(url, str):
+            url = urllib.quote(url, safe=":/")
+        super().set_image(url=url)
+
     def to_dict(self):
         """
             Converts this paginated embed to a dict for sending. Will only get the first page, no matter how many there
