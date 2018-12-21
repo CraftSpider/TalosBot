@@ -118,10 +118,7 @@ class JokeCommands(dutils.TalosCog):
         if self.bot.should_embed(ctx):
             with dutils.PaginatedEmbed() as embed:
                 embed.title = data["title"]
-                # TODO: Not general. move into embed preferably
-                url = data["img"]
-                url = url.replace(" ", "%20")
-                embed.set_image(url=url)
+                embed.set_image(url=data["img"])
                 embed.set_footer(text=data["alt"])
                 embed.timestamp = data["time"]
             await ctx.send(embed=embed)
