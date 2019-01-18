@@ -6,7 +6,7 @@ import logging
 import io
 import _pytest.python as py
 
-import dpytest as dpytest
+import discord.ext.test as dpytest
 import discord_talos.talos as dtalos
 import utils as tutils
 

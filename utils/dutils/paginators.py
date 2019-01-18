@@ -235,14 +235,20 @@ class PaginatedEmbed(embeds.Embed):
         :param name: Name of the field
         :param value: Value of the field
         :param inline: Whether the field is inline
+        :return: self to allow chaining
         """
-        super().add_field(name=name, value=value, inline=inline)
+        return super().add_field(name=name, value=value, inline=inline)
 
     def set_image(self, *, url):
+        """
+            Sets the embed image url safely, quoting it with urllib to remove any unsafe characters
+        :param url: URL to set image to
+        :return: self to allow chaining
+        """
         import urllib.parse as urllib
         if isinstance(url, str):
             url = urllib.quote(url, safe=":/")
-        super().set_image(url=url)
+        return super().set_image(url=url)
 
     def to_dict(self):
         """

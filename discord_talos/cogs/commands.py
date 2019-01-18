@@ -394,7 +394,7 @@ class Commands(dutils.TalosCog):
                     continue
                 if isinstance(stats[stat], int):
                     stats_page += f"{stat}: {stats[stat]:,}\n"
-                else:
+                elif isinstance(stats[stat], dt.date):
                     date = stats[stat].strftime("%B %d, %Y")
                     stats_page += f"{stat}: {date}\n"
             with dutils.PaginatedEmbed() as embed:

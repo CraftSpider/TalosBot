@@ -2,11 +2,13 @@
 import pytest
 
 import datetime as dt
-import dpytest.backend as back
+import discord.ext.test.backend as back
 import utils as tutils
 
 
 def test_pw_member():
+    back.configure(None, use_dummy=True)
+
     d_guild = back.make_guild("test")
     pw_member1 = tutils.PWMember(back.make_member(back.make_user("Test", "0001"), d_guild))
     d_member2 = back.make_member(back.make_user("Test", "0002"), d_guild)
@@ -42,6 +44,8 @@ def test_pw_member():
 
 
 def test_pw():  # TODO: Add testing for timezones, for now it's just going with UTC always
+    back.configure(None, use_dummy=True)
+
     pw = tutils.PW()
 
     assert pw.get_started() is False, "Claims started before start"

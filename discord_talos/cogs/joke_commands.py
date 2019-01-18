@@ -10,6 +10,7 @@ import discord
 import discord.ext.commands as commands
 import asyncio
 import logging
+import random
 import utils
 import utils.dutils as dutils
 
@@ -125,6 +126,12 @@ class JokeCommands(dutils.TalosCog):
         else:
             await ctx.send("**" + data["title"] + "**\n" + data["alt"],
                            file=discord.File(data["img_data"], filename=data["filename"]))
+
+    @commands.command(description="Display a random message", hidden=False)
+    async def roulette(self, ctx):
+        """Picks between a couple random message options and posts it. Here because wundr bugged me till I added it"""
+        choices = ["This is the end of the world", "And I don't know what to put here"]
+        await ctx.send(random.choice(choices))
 
 
 def setup(bot):

@@ -3,10 +3,14 @@
 \usepackage{amssymb}
 \usepackage{amsmath}
 
-\newcommand{\alias}[2]{\newcommand{#2}{#1}}
-\newcommand{\rlalias}[2]{\newcommand{#2}[1]{\csname l#1\endcsname ##1 \csname r#1\endcsname}}
+\newcommand{\alias}[2]{\newcommand{#1}{#2}}
+\newcommand{\rlalias}[2]{\newcommand{#1}[1]{\csname l#2\endcsname ##1 \csname r#2\endcsname}}
 
-\alias{\cup}{\union}
-\alias{\cap}{\intersection}
-\rlalias{floor}{\floor}
-\rlalias{ceil}{\ceil}
+\newcommand{\abs}[1]{|#1|}
+
+\alias{\union}{\cup}
+\alias{\intersection}{\cap}
+\alias{\real}{\rm I\!R}
+
+\rlalias{\floor}{floor}
+\rlalias{\ceil}{ceil}
