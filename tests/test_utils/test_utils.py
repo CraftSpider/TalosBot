@@ -134,5 +134,6 @@ def test_zero_pad():
     result = utils.zero_pad(test_str, 3)
     assert result == expected, "Length of three pads all numbers to three digits"
 
-    with pytest.raises(ValueError, message="Negative length failed to raise error"):
+    with pytest.raises(ValueError):
         utils.zero_pad("", -1)
+        pytest.fail("Negative length failed to raise error")

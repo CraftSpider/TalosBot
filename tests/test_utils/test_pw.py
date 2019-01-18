@@ -24,8 +24,9 @@ def test_pw_member():
     assert pw_member1.get_finished() is False, "Claims finished before finish"
     assert pw_member1.get_len() is None, "Length should be None before finish"
 
-    with pytest.raises(ValueError, message="Allowed non-time beginning"):
+    with pytest.raises(ValueError):
         pw_member1.begin("Hello World!")
+        pytest.fail("Allowed non-time beginning")
     d_time = dt.datetime(year=2017, month=12, day=31)
     pw_member1.begin(d_time)
 
@@ -33,8 +34,9 @@ def test_pw_member():
     assert pw_member1.get_finished() is False, "Claims finished before finish"
     assert pw_member1.get_len() is None, "Length should be None before finish"
 
-    with pytest.raises(ValueError, message="Allowed non-time ending"):
+    with pytest.raises(ValueError):
         pw_member1.finish(2017.3123)
+        pytest.fail("Allowed non-time ending")
     d_time = d_time.replace(minute=30)
     pw_member1.finish(d_time)
 
