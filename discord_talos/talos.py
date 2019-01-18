@@ -24,7 +24,7 @@ import utils.command_lang as command_lang
 # Place your token in a file with this name, or change this to the name of a file with the token in it.
 TOKEN_FILE = pathlib.Path(__file__).parent / "token.json"
 FILE_BASE = {
-    "token": "", "botlist": "", "nano": ["user", "pass"], "btn": "", "cats": "",
+    "token": "", "botlist": "", "nano": ["user", "pass"], "btn": "", "cat": "",
     "sql": {
         "address": "",
         "port": "",
