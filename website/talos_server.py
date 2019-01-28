@@ -251,11 +251,10 @@ class TalosPrimaryHandler:
         :param request: web.Request object
         :return: web.Response to send to the user
         """
-
         spec = importlib.util.spec_from_file_location("psp", path)
         psp = importlib.util.module_from_spec(spec)
-        # loader = importlib.machinery.SourceFileLoader("psp", path.__fspath__())
-        # psp = types.ModuleType(loader.name)
+        spec.loader.exec_module(psp)
+
         headers = dict()
         headers["Content-Type"] = "text/html"
         try:

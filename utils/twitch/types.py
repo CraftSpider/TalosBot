@@ -1,8 +1,12 @@
 
 import datetime as dt
 import json
+import logging
 
 from . import constants as const
+
+
+log = logging.getLogger("talos.utils.twitch")
 
 
 class OAuth:
@@ -28,7 +32,7 @@ class OAuth:
         }
         async with self.app.session.post(const.OAUTH + "validate", headers=headers) as response:
             validate = json.loads(await response.text())
-            print(validate)
+            log.debug(validate)
 
     async def refresh(self):
         """
