@@ -9,11 +9,13 @@ import ssl
 import inspect
 import warnings
 import importlib.util
+import importlib.machinery
 import aiohttp.web as web
 import utils.twitch as twitch
 
-log = logging.getLogger("talosserver")
+log = logging.getLogger("talos.server")
 log.setLevel(logging.INFO)
+importlib.machinery.SOURCE_SUFFIXES.append(".psp")
 
 
 SETTINGS_FILE = pathlib.Path(__file__).parent / "settings.json"
@@ -123,6 +125,7 @@ class TalosPrimaryHandler:
         :param request: aiohttp Request
         :return: Response object
         """
+        log.info("Auth GET")
         if request.query.get("code") is not None:
             code = request.query["code"]
             await self.twitch_app.get_oauth(code)
@@ -248,6 +251,7 @@ class TalosPrimaryHandler:
         :param request: web.Request object
         :return: web.Response to send to the user
         """
+
         spec = importlib.util.spec_from_file_location("psp", path)
         psp = importlib.util.module_from_spec(spec)
         # loader = importlib.machinery.SourceFileLoader("psp", path.__fspath__())
