@@ -127,7 +127,7 @@ class JokeCommands(dutils.TalosCog):
             await ctx.send("**" + data["title"] + "**\n" + data["alt"],
                            file=discord.File(data["img_data"], filename=data["filename"]))
 
-    @commands.command(description="Display a random message", hidden=False)
+    @commands.command(description="Display a random message", hidden=True)
     async def roulette(self, ctx):
         """Picks between a couple random message options and posts it. Here because wundr bugged me till I added it"""
         choices = ["This is the end of the world", "And I don't know what to put here"]
