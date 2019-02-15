@@ -701,8 +701,8 @@ class Commands(dutils.TalosCog):
             return
 
         start = (page - 1) * 10
-        end = start + 10
-        quotes = self.database.get_items(utils.Quote, limit=(start, end), order="id", guild_id=ctx.guild.id)
+        count = 10
+        quotes = self.database.get_items(utils.Quote, limit=(start, count), order="id", guild_id=ctx.guild.id)
 
         if self.bot.should_embed(ctx):
             with dutils.PaginatedEmbed() as embed:
