@@ -21,6 +21,18 @@ class JokeCommands(dutils.TalosCog):
     """These commands are really just for fun. Some of them may not have an obvious purpose, make of them as you"""\
         """ will."""
 
+    SUB_REPLACE = {
+        "sugar": "SugarWiki",
+        "darth": "DarthWiki",
+        "self": "SelfDemonstrating",
+        "demonstrating": "SelfDemonstrating",
+        "playing": "PlayingWith",
+        "nightmare": "NightmareFuel",
+        "fuel": "NightmareFuel",
+        "tear": "TearJerker",
+        "jerker": "TearJerker"
+    }
+
     @commands.command(description="Sometimes you just need it louder looking")
     async def aesthetic(self, ctx, *, text):
         """When you just need it in large, this is the command for you."""
@@ -126,6 +138,22 @@ class JokeCommands(dutils.TalosCog):
         else:
             await ctx.send("**" + data["title"] + "**\n" + data["alt"],
                            file=discord.File(data["img_data"], filename=data["filename"]))
+
+    @commands.command(description="There's a trope for everything", aliases=["trope"])
+    async def tvtropes(self, ctx, trope):
+        if "/" not in trope:
+            subwiki = "Main"
+        else:
+            subwiki, trope = trope.split("/")
+            if subwiki.lower() in self.SUB_REPLACE:
+                subwiki = self.SUB_REPLACE[subwiki.lower()]
+        link = f"https://tvtropes.org/pmwiki/pmwiki.php/{subwiki}/{trope}"
+        data = await self.bot.session.get_site(link)
+        article_id = data.get_by_id("article_id").get_attribute("value")
+        if not article_id:
+            await ctx.send("That trope or media page appears to not exist")
+        else:
+            await ctx.send(link)
 
     @commands.command(description="Display a random message", hidden=True)
     async def roulette(self, ctx):
