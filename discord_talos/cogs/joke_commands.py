@@ -141,6 +141,9 @@ class JokeCommands(dutils.TalosCog):
 
     @commands.command(description="There's a trope for everything", aliases=["trope"])
     async def tvtropes(self, ctx, trope):
+        """Get a trope or article from the TVTropes database. To access a subwiki, just use a `/` between the name """\
+            """of the subwiki and your trope. EG, SugarWiki/SweetExists will give the the "Sweet Exists" page on """\
+            """the Sugar Wiki."""
         if "/" not in trope:
             subwiki = "Main"
         else:
