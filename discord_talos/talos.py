@@ -443,12 +443,20 @@ def configure_logging():
     fh = logging.FileHandler(utils.log_folder / "dtalos.log")
     dfh = logging.FileHandler(utils.log_folder / "dpy.log")
     sh = logging.StreamHandler(sys.stderr)
+    gh = None
+    try:
+        import google.cloud.logging as glog
+        client = glog.Client()
+        gh = client.get_default_handler()
+        gh.setLever(logging.WARNING)
+    except ImportError:
+        pass
 
     ff = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
 
     dlog = logging.getLogger("discord")
 
-    utils.configure_logger(log, handlers=[fh, sh], formatter=ff, level=logging.INFO, propagate=False)
+    utils.configure_logger(log, handlers=[fh, sh, gh], formatter=ff, level=logging.INFO, propagate=False)
     utils.configure_logger(dlog, handlers=[dfh, sh], formatter=ff, level=logging.INFO, propagate=False)
 
 

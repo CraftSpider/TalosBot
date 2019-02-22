@@ -83,6 +83,8 @@ def configure_logger(logger, *, handlers=[], formatter=None, level=None, propaga
         logger.setLevel(level)
 
     for handler in handlers:
+        if handler is None:
+            pass
         if formatter is not None:
             handler.setFormatter(formatter)
         logger.addHandler(handler)
