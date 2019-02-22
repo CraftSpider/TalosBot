@@ -448,7 +448,7 @@ def configure_logging():
         import google.cloud.logging as glog
         client = glog.Client()
         gh = client.get_default_handler()
-        gh.setLever(logging.WARNING)
+        gh.setLevel(logging.WARNING)
     except ImportError:
         pass
 
