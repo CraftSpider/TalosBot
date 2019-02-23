@@ -11,6 +11,13 @@ import string
 import random
 import pathlib
 
+try:
+    import google.cloud.error_reporting as g_errors
+    error_client = g_errors.Client()
+    del g_errors
+except ImportError:
+    error_client = None
+
 from . import parsers, element as el
 
 
@@ -140,6 +147,9 @@ def log_error(logger, level, error, message=""):
         message += "\n"
     errmsg = "".join(traceback.format_exception(type(error), error, error.__traceback__))
     logger.log(level, message + errmsg)
+
+    if error_client is not None and level >= logging.ERROR:
+        error_client.report(errmsg)
 
 
 def safe_remove(*filenames):

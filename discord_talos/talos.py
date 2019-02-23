@@ -386,7 +386,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
             except Exception as e:
                 log.error(e)
             message = f"Ignoring exception `{exception}` in command {ctx.command}. Reference ID: {timestamp}"
-            utils.log_error(log, logging.WARNING, exception, message)
+            utils.log_error(log, logging.ERROR, exception, message)
 
 
 runner = command_lang.CommandLang(interpreter=command_lang.DiscordCL())
