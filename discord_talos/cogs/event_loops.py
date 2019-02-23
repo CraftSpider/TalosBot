@@ -9,6 +9,7 @@ import pathlib
 import httplib2
 import logging
 import random
+import utils
 import utils.command_lang as command_lang
 import utils.dutils as dutils
 import datetime as dt
@@ -161,11 +162,15 @@ class EventLoops(dutils.TalosCog):
         original = "Original prompt" if prompt[1].upper() == "YES" else "Submitted"
         out += f"({original} by {prompt[2]})"
         for guild in self.bot.guilds:
-            if not self.database.get_guild_options(guild.id).writing_prompts:
+            options = self.database.get_guild_options(guild.id)
+            if not options.writing_prompts:
                 continue
             for channel in guild.channels:
-                if channel.name == self.database.get_guild_options(guild.id).prompts_channel:
-                    await channel.send(out)
+                if channel.name == options.prompts_channel:
+                    try:
+                        await channel.send(out)
+                    except Exception as e:
+                        utils.log_error(log, logging.WARNING, e, "Error while attempting to send daily prompt")
 
         prompt.append("POSTED")
         self.set_spreadsheet(prompt_sheet_id, [prompt],
