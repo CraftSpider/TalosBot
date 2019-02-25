@@ -450,7 +450,7 @@ def configure_logging():
         gh = client.get_default_handler()
         gh.name = "dtalos"
         gh.setLevel(logging.WARNING)
-    except ImportError:
+    except (ImportError, OSError):
         pass
 
     ff = logging.Formatter("%(levelname)s:%(name)s:%(message)s")

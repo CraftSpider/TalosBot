@@ -34,7 +34,7 @@ class AdminCommands(dutils.TalosCog):
     If no admins list is set, anyone with administrator role permission can use admin commands"""
 
     LEVELS = {"guild": 0, "channel": 1, "role": 2, "user": 3}
-    __local_check = dutils.admin_local
+    cog_check = dutils.admin_local
 
     @commands.command(description="Changes Talos' nickname")
     @commands.guild_only()

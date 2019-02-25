@@ -15,7 +15,7 @@ try:
     import google.cloud.error_reporting as g_errors
     error_client = g_errors.Client()
     del g_errors
-except ImportError:
+except (ImportError, OSError):
     error_client = None
 
 from . import parsers, element as el
@@ -91,7 +91,7 @@ def configure_logger(logger, *, handlers=[], formatter=None, level=None, propaga
 
     for handler in handlers:
         if handler is None:
-            pass
+            continue
         if formatter is not None:
             handler.setFormatter(formatter)
         logger.addHandler(handler)

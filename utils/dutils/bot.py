@@ -261,17 +261,10 @@ def _perms_check(self, ctx):
     return True
 
 
-class TalosCog:
+class TalosCog(commands.Cog):
     """Super class to all Talos cogs. Sets a default __local_check, and other init stuff."""
 
     __slots__ = ("bot", "database")
-
-    def __new__(cls, bot):
-        """Creates the instance of the current cog. Takes an instance of Talos to use while running."""
-        local_name = f"_{cls.__name__}__local_check"
-        if not hasattr(cls, local_name):
-            setattr(cls, local_name, _perms_check)
-        return super().__new__(cls)
 
     def __init__(self, bot):
         """Initiates the current cog. Takes an instance of Talos to use while running."""
@@ -279,6 +272,8 @@ class TalosCog:
         self.database = None
         if hasattr(bot, "database"):
             self.database = bot.database
+
+    cog_check = _perms_check
 
 
 # TODO: rework this to be more consistent
