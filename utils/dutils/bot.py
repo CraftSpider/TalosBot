@@ -245,7 +245,7 @@ def _perms_check(self, ctx):
 
     try:
         options = self.bot.database.get_guild_options(ctx.guild.id)
-        if not getattr(options, utils.to_snake_case(ctx.command.instance.__class__.__name__)):
+        if not getattr(options, utils.to_snake_case(ctx.command.cog.__class__.__name__)):
             return False
     except KeyError:
         pass
