@@ -508,7 +508,7 @@ class AdminCommands(dutils.TalosCog):
         if self.database.get_guild_event(ctx.guild.id, name):
             await ctx.send("That event already exists. Maybe you meant to `edit` it instead?")
             return
-        event = utils.GuildEvent((ctx.guild.id, name, period, ctx.channel.id, text))
+        event = utils.GuildEvent((ctx.guild.id, name, period, 0, ctx.channel.id, text))
         self.database.save_item(event)
         await ctx.send(f"Event {name} created")
 

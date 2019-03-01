@@ -1,8 +1,10 @@
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import aiohttp.web as web
 import aiohttp
 import pathlib
+import website.api_handler as api
+
 from utils.twitch.twitch_app import TwitchApp
 
 Path = pathlib.Path
@@ -16,11 +18,15 @@ class TalosPrimaryHandler:
     webmaster: Dict[str, str]
     base_path: Path
     session: aiohttp.ClientSession
-    twitch_app: TwitchApp
+    twitch_app: Optional[TwitchApp]
+    api_handler: api.APIHandler
+    t_redirect: Optional[str]
 
     def __new__(cls, settings: Dict[str, Any] = ...) -> TalosPrimaryHandler: ...
 
     def __init__(self, settings: Dict[str, Any] = ...) -> None: ...
+
+    def __sinit__(self, settings: Dict[str, Any] = ...) -> None: ...
 
     async def site_get(self, request: web.Request) -> web.Response: ...
 

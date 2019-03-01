@@ -11,6 +11,7 @@ import warnings
 import importlib.util
 import importlib.machinery
 import aiohttp.web as web
+import website.api_handler as api
 import utils.twitch as twitch
 
 log = logging.getLogger("talos.server")
@@ -81,18 +82,24 @@ class TalosPrimaryHandler:
         :param settings: Settings dict for the server
         """
         if getattr(self, "_settings", None) is None:
-            if settings is None:
-                raise ServerError("Missing settings on server handler creation")
-            self._settings = settings
-            self.webmaster = self._settings.get("webmaster")
-            self.base_path = pathlib.Path(self._settings.get("basepath")).expanduser()
-            if self._settings.get("twitch_id") is None:
-                self.twitch_app = None
-                return
-            self.twitch_app = twitch.TwitchApp(cid=self._settings["twitch_id"],
-                                               secret=self._settings["twitch_secret"],
-                                               redirect=self._settings["twitch_redirect"])
-            self.t_redirect = None
+            self.__sinit__(settings)
+
+    def __sinit__(self, settings=None):
+        if settings is None:
+            raise ServerError("Missing settings on server handler creation")
+        self._settings = settings
+
+        self.webmaster = self._settings.get("webmaster")
+        self.base_path = pathlib.Path(self._settings.get("basepath")).expanduser()
+        self.twitch_app = None
+        if "twitch_id" in self._settings:
+            cid = self._settings["twitch_id"]
+            secret = self._settings["twitch_secret"]
+            redirect = self._settings["twitch_redirect"]
+            self.twitch_app = twitch.TwitchApp(cid=cid, secret=secret, redirect=redirect)
+
+        self.t_redirect = None
+        self.api_handler = api.APIHandler()
 
     # Request handlers
 
@@ -164,37 +171,25 @@ class TalosPrimaryHandler:
         :return: Response object
         """
         log.info("API POST")
-        path = request.path.lstrip("/").replace("/", "_")
-        print(request.headers)
+        headers = request.headers
+
+        # Verify token
+        user_token = headers.get("token")
+        username = headers.get("username")
+        server_token = self._settings["tokens"].get(username, None)
+        if user_token is None or server_token is None:
+            return web.Response(text="Invalid Token/Unknown User", status=403)
+        known = secrets.compare_digest(user_token, server_token)
+        if not known:
+            return web.Response(text="Invalid Token/Unknown User", status=403)
+
+        # And finally we can do what the request is asking
         try:
-            headers = request.headers
+            path = "_".join(request.path.split("/")[1:])
             data = await request.json()
-            user_token = headers.get("token")
-            username = headers.get("username")
-            server_token = self._settings["tokens"].get(username)
-            if user_token is None or server_token is None:
-                return web.Response(text="Invalid Token/Unknown User", status=403)
-            known = secrets.compare_digest(user_token, server_token)
-            if not known:
-                return web.Response(text="Invalid Token/Unknown User", status=403)
-            # And finally we can do what the request is asking
-            method = getattr(self, path, None)
-            if method is not None:
-                return await method(data)
+            return await self.api_handler.dispatch(path, data)
         except json.JSONDecodeError:
             return web.Response(text="Malformed JSON in request", status=400)
-        return web.Response(text="Talos API Coming soon")
-
-    # API Methods
-
-    async def api_commands(self, data):
-        """
-            Handle a POST to the Talos Commands endpoint
-        :param data: Commands data being passed in
-        :return: Response, success or failure
-        """
-        # TODO
-        return web.Response(text="Talos Command posting is WIP")
 
     # Website Methods
 

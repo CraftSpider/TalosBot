@@ -135,6 +135,7 @@ class EventLoops(dutils.TalosCog):
     async def daily_task(self):
         """Called every day, and removes old uptimes from the database"""
         self.database.remove_uptime(int((dt.datetime.now() - dt.timedelta(days=30)).timestamp()))
+        await self.bot.session.server_post_commands(self.bot.commands_dict())
 
     @dutils.eventloop("1m", description="Called to add another uptime mark to the database")
     async def uptime_task(self):
