@@ -12,10 +12,12 @@ import importlib.util
 import importlib.machinery
 import aiohttp.web as web
 import website.api_handler as api
+import utils
 import utils.twitch as twitch
 
 log = logging.getLogger("talos.server")
 log.setLevel(logging.INFO)
+log.addHandler(logging.FileHandler(utils.log_folder / "server.log"))
 importlib.machinery.SOURCE_SUFFIXES.append(".psp")
 
 
