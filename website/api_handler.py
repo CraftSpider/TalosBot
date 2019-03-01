@@ -3,10 +3,19 @@ import aiohttp.web as web
 
 
 class APIHandler:
+    """
+        Handler for the Talos Webserver API. Parses and dispatches requests, returning their result
+    """
 
     __slots__ = ()
 
     async def dispatch(self, path, data):
+        """
+            Dispatch an API command for a given path with given data
+        :param path: API endpoint path
+        :param data: Data sent to this endpoint
+        :return: Web response to return
+        """
         parser = getattr(self, "handle_" + path, None)
         if parser is not None:
             data = parser(data)

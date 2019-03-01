@@ -85,6 +85,10 @@ class TalosPrimaryHandler:
             self.__sinit__(settings)
 
     def __sinit__(self, settings=None):
+        """
+            Static initialization of the server, called by __init__ the first time it is called
+        :param settings: Settings dict for the server
+        """
         if settings is None:
             raise ServerError("Missing settings on server handler creation")
         self._settings = settings
