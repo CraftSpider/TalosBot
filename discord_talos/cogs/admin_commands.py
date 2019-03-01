@@ -9,6 +9,7 @@ import discord
 import discord.ext.commands as commands
 import asyncio
 import logging
+import typing
 import utils
 import utils.dutils as dutils
 
@@ -53,24 +54,25 @@ class AdminCommands(dutils.TalosCog):
 
     @commands.command(usage="[number=10]", description="Remove messages from a channel")
     @commands.guild_only()
-    async def purge(self, ctx, number="10", key=None):
+    async def purge(self, ctx, number: typing.Union[discord.Member, int, str] = 10, key=None):
         """Purges messages from a channel. By default, this will be 10 (including the invoking command)."""\
             """ Use 'all' to purge whole channel. Confirmation keys should be tacked on the end, so """\
             """`^purge 100 [key]`"""
-        if number != "all":
-            number = int(number)
+        if isinstance(number, discord.Member):
+            await ctx.send("Purging a member's messages not yet supported")
+        elif isinstance(number, int):
             if number >= 100 and (key is None or key != secure_keys[str(ctx.guild.id)]):
                 rand_key = utils.key_generator()
                 secure_keys[str(ctx.guild.id)] = rand_key
                 await ctx.send(f"Are you sure? If so, re-invoke with {rand_key} on the end.")
             else:
                 await ctx.channel.purge(limit=number)
-        else:
-            if len(key) == 0 or key[0] != secure_keys[str(ctx.guild.id)]:
+        elif number == "all":
+            if key is None or key != secure_keys[str(ctx.guild.id)]:
                 rand_key = utils.key_generator()
                 secure_keys[str(ctx.guild.id)] = rand_key
                 await ctx.send(f"Are you sure? If so, re-invoke with {rand_key} on the end.")
-            elif key[0] == secure_keys[str(ctx.guild.id)]:
+            elif key == secure_keys[str(ctx.guild.id)]:
                 await ctx.channel.purge(limit=None)
                 secure_keys[str(ctx.guild.id)] = ""
 

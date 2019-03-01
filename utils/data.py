@@ -438,6 +438,12 @@ class EventPeriod(SqlConvertable):
 
     __slots__ = ("_seconds",)
 
+    def __new__(cls, period):
+        if period is None:
+            return None
+        else:
+            return super().__new__(cls)
+
     def __init__(self, period):
         """
             Initialize an EventPeriod. If input is an EventPeriod, we create a copy.
