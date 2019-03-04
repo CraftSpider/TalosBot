@@ -88,6 +88,7 @@ def testlos_m(request):
     log.debug("Setting up Module Talos")
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
+    testlos.database.verify_schema()
     testlos.load_extensions(testlos.startup_extensions)
     dpytest.configure(testlos)
     request.module.testlos = testlos
