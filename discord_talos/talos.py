@@ -409,7 +409,7 @@ def custom_creator(name, text):
         if out != "":
             await ctx.send(out)
 
-    return commands.Command(name, custom_callback)
+    return commands.Command(custom_callback, name=name)
 
 
 def talos_prefix(bot, message):
