@@ -109,7 +109,7 @@ class EventLoops(dutils.TalosCog):
                 valueInputOption="RAW", body=body).execute()
         return result
 
-    @dutils.eventloop("1m", description="Called once at the start of every minute")
+    @dutils.eventloop("1m", description="Called once at the start of every minute", persist=True)
     async def minute_task(self):
         """Called every minute, checks for guild-specific events and runs any that need to be"""
         for guild in self.bot.guilds:
@@ -125,13 +125,13 @@ class EventLoops(dutils.TalosCog):
                     event.last_active = current
                     self.database.save_item(event)
 
-    @dutils.eventloop("1h", description="Called once at the start of every hour")
+    @dutils.eventloop("1h", description="Called once at the start of every hour", persist=True)
     async def hourly_task(self):
         """Called every hour, and posts current guild amount to DBL if a key is provided and the amount changed"""
         guild_count = len(self.bot.guilds)
         await self.bot.session.botlist_post_guilds(guild_count)
 
-    @dutils.eventloop("1d", description="Called once at the start of every day")
+    @dutils.eventloop("1d", description="Called once at the start of every day", persist=True)
     async def daily_task(self):
         """Called every day, and removes old uptimes from the database"""
         self.database.remove_uptime(int((dt.datetime.now() - dt.timedelta(days=30)).timestamp()))
