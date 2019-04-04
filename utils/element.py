@@ -218,17 +218,17 @@ class Node(abc.ABC):
         :param el: New child node
         :param pos: Position to insert at, default to inserting at end
         """
-        if pos < 0:
+
+        if pos < 0 or pos == len(self.child_nodes):
             pos = len(self.child_nodes)
+            self.child_nodes.append(el)
             self._pos_map[el] = pos
-
-        self.child_nodes.insert(pos, el)
-        el.parent = self
-
-        if pos != len(self.child_nodes):
+        else:
+            self.child_nodes.insert(pos, el)
             for i in range(pos, len(self.child_nodes)):
                 el = self.child_nodes[i]
                 self._pos_map[el] = i
+        el.parent = self
 
     @lru_cache()
     def next_child(self, el):

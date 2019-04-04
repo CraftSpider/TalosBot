@@ -78,7 +78,7 @@ class Talos(dutils.ExtendedBot):
     """
 
     # Current Talos version. Loosely incremented.
-    VERSION = "2.8.0"
+    VERSION = "2.9.0"
     # Time Talos started
     BOOT_TIME = dt.datetime.utcnow()
     # Time, in UTC, that the prompt task kicks off each day.
@@ -367,8 +367,9 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         elif isinstance(exception, commands.BadArgument):
             await ctx.send(exception)
         elif isinstance(exception, commands.MissingRequiredArgument):
-            exception: commands.MissingRequiredArgument
             await ctx.send(f"Missing parameter `{exception.param}`")
+        elif isinstance(exception, commands.UserInputError):
+            await ctx.send(exception)
         elif isinstance(exception, dutils.NotRegistered):
             await ctx.send(f"User {exception} isn't registered, command could not be executed.")
         elif isinstance(exception, dutils.CustomCommandError):

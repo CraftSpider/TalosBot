@@ -3,7 +3,6 @@ import sys
 import asyncio
 import pathlib
 import logging
-import secrets
 import json
 import ssl
 import inspect
@@ -11,7 +10,7 @@ import warnings
 import importlib.util
 import importlib.machinery
 import aiohttp.web as web
-import website.api_handler as api
+import website.handlers as handlers
 import utils
 import utils.twitch as twitch
 
@@ -59,145 +58,21 @@ class ServerWarning(Warning):
     pass
 
 
-class TalosPrimaryHandler:
-    """
-        Handler class for Talos server. Contains handlers for GETs, POSTs, and such
-    """
+class TalosApplication(web.Application):
 
-    _instance = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def __new__(cls, settings=None):
-        """
-            Create new instance, Handler is a singleton so only every creates one instance
-        :param settings: Settings dict for the server
-        :return: Instance of Handler
-        """
+    def apply_settings(self, settings):
+        settings["base_path"] = pathlib.Path(settings["base_path"]).expanduser()
 
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
+        self['settings'] = settings
 
-        return cls._instance
-
-    def __init__(self, settings=None):
-        """
-            Initializer for the Handler. Will only be run once due to singleton nature
-        :param settings: Settings dict for the server
-        """
-        if getattr(self, "_settings", None) is None:
-            self.__sinit__(settings)
-
-    def __sinit__(self, settings=None):
-        """
-            Static initialization of the server, called by __init__ the first time it is called
-        :param settings: Settings dict for the server
-        """
-        if settings is None:
-            raise ServerError("Missing settings on server handler creation")
-        self._settings = settings
-
-        self.webmaster = self._settings.get("webmaster")
-        self.base_path = pathlib.Path(self._settings.get("basepath")).expanduser()
-        self.twitch_app = None
-        if "twitch_id" in self._settings:
-            cid = self._settings["twitch_id"]
-            secret = self._settings["twitch_secret"]
-            redirect = self._settings["twitch_redirect"]
-            self.twitch_app = twitch.TwitchApp(cid=cid, secret=secret, redirect=redirect)
-
-        self.t_redirect = None
-        self.api_handler = api.APIHandler()
-
-    # Request handlers
-
-    async def site_get(self, request):
-        """
-            GET a page on the site normally
-        :param request: aiohttp Request
-        :return: Response object
-        """
-        log.info("Site GET")
-        path = await self.get_path(request.path)
-        if isinstance(path, int):
-            response = await self.error_code(path)
-        else:
-            response = await self.get_response(path, request=request)
-        return response
-
-    async def api_get(self, request):
-        """
-            GET a page from the API
-        :param request: aiohttp Request
-        :return: Response object
-        """
-        log.info("API GET")
-        return web.Response(text="Talos API Coming soon")
-
-    async def auth_get(self, request):
-        """
-            GET the Twitch auth page
-        :param request: aiohttp Request
-        :return: Response object
-        """
-        log.info("Auth GET")
-        if request.query.get("code") is not None:
-            code = request.query["code"]
-            await self.twitch_app.get_oauth(code)
-            if self.t_redirect is not None:
-                redir = self.t_redirect
-                self.t_redirect = None
-                return web.HTTPFound(redir)
-            return web.Response(text="All set!")
-        self.t_redirect = request.query.get("redirect", None)
-        try:
-            params = {
-                "client_id": self._settings["twitch_id"],
-                "redirect_uri": self._settings["twitch_redirect"],
-                "response_type": "code",
-                "scope": " ".join(request.query["scopes"].split(","))
-            }
-        except KeyError as er:
-            return await self.error_code(500, er)
-        return web.HTTPFound("https://id.twitch.tv/oauth2/authorize?" + '&'.join(x + "=" + params[x] for x in params))
-
-    async def do_head(self, request):
-        """
-            Respond to a HEAD request properly
-        :param request: aiohttp Request
-        :return: Response object
-        """
-        log.info("Site HEAD")
-        response = await self.site_get(request)
-        response = web.Response(headers=response.headers, status=response.status)
-        return response
-
-    async def api_post(self, request):
-        """
-            POST to the Talos API
-        :param request: aiohttp Request
-        :return: Response object
-        """
-        log.info("API POST")
-        headers = request.headers
-
-        # Verify token
-        user_token = headers.get("token")
-        username = headers.get("username")
-        server_token = self._settings["tokens"].get(username, None)
-        if user_token is None or server_token is None:
-            return web.Response(text="Invalid Token/Unknown User", status=403)
-        known = secrets.compare_digest(user_token, server_token)
-        if not known:
-            return web.Response(text="Invalid Token/Unknown User", status=403)
-
-        # And finally we can do what the request is asking
-        try:
-            path = "_".join(request.path.split("/")[1:])
-            data = await request.json()
-            return await self.api_handler.dispatch(path, data)
-        except json.JSONDecodeError:
-            return web.Response(text="Malformed JSON in request", status=400)
-
-    # Website Methods
+        if "twitch_id" in settings:
+            cid = settings["twitch_id"]
+            secret = settings["twitch_secret"]
+            redirect = settings["twitch_redirect"]
+            self['twitch_app'] = twitch.TwitchApp(cid=cid, secret=secret, redirect=redirect)
 
     async def get_path(self, path):
         """
@@ -209,7 +84,7 @@ class TalosPrimaryHandler:
         # any hardcoded redirects here
         if path == "/":
             path = "/index"
-        path = self.base_path / path.lstrip("/")
+        path = self["settings"]["base_path"] / path.lstrip("/")
 
         # Now do logic to find the desired file. If found, return that path. If not, return an error code
         if pathlib.Path.is_file(path):
@@ -261,7 +136,7 @@ class TalosPrimaryHandler:
         try:
             # Do argument resolution
             possible_args = {
-                "handler": self, "path": path, "dir": path.parent, "status": status, "request": request
+                "app": self, "path": path, "dir": path.parent, "status": status, "request": request
             }
             argspec = inspect.getfullargspec(psp.page)
             args = []
@@ -318,7 +193,8 @@ class TalosPrimaryHandler:
         :return: web.Response object
         """
         return web.Response(
-            text=BACKUP_ERROR.format(first=old_code, second=new_code, err=error, email=self.webmaster["email"]),
+            text=BACKUP_ERROR.format(first=old_code, second=new_code, err=error,
+                                     email=self["settings"]["webmaster"]["email"]),
             status=new_code
         )
 
@@ -358,14 +234,19 @@ def main():
     else:
         sslcontext = None
 
-    app = web.Application()
-    handler = TalosPrimaryHandler(settings)
+    app = TalosApplication()
+    app.apply_settings(settings)
+
+    site_handler = handlers.SiteHandler(app=app)
+    auth_handler = handlers.AuthHandler(app=app)
+    api_handler = handlers.APIHandler(app=app)
+
     app.add_routes([
-        web.get("/{tail:(?!api/|auth/).*}", handler.site_get),
-        web.head("/{tail:(?!api/|auth/).*}", handler.do_head),
-        web.get("/api/{tail:.*}", handler.api_get),
-        web.post("/api/{tail:.*}", handler.api_post),
-        web.get("/auth/{tail:.*}", handler.auth_get)
+        web.get("/{tail:(?!api/|auth/).*}", site_handler.get),
+        web.head("/{tail:(?!api/|auth/).*}", site_handler.head),
+        web.get("/api/{tail:.*}", api_handler.get),
+        web.post("/api/{tail:.*}", api_handler.post),
+        web.get("/auth/{tail:.*}", auth_handler.get)
     ])
     web.run_app(app, port=443 if sslcontext else 80, ssl_context=sslcontext)
     return 0
