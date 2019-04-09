@@ -17,17 +17,17 @@ class AuthHandler:
 
     async def get(self, request):
         """
-                    GET the Twitch auth page
-                :param request: aiohttp Request
-                :return: Response object
-                """
+            GET the Twitch auth page
+        :param request: aiohttp Request
+        :return: Response object
+        """
         log.info("Auth GET")
         tail = request.match_info['tail'].split("/")
         if tail[0] == "twitch":
             if tail[1] == "start":
-                await self.twitch_start(request)
+                return await self.twitch_start(request)
             elif tail[1] == "complete":
-                await self.twitch_complete(request)
+                return await self.twitch_complete(request)
         else:
             return web.Response(text="Unrecognized authorization")
 
