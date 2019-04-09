@@ -22,7 +22,7 @@ class AuthHandler:
                 :return: Response object
                 """
         log.info("Auth GET")
-        tail = request['tail'].split("/")
+        tail = request.match_info['tail'].split("/")
         if tail[0] == "twitch":
             if tail[1] == "start":
                 await self.twitch_start(request)
