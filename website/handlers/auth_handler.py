@@ -46,6 +46,11 @@ class AuthHandler:
         return web.HTTPFound(twitch.OAUTH + "authorize?" + '&'.join(x + "=" + params[x] for x in params))
 
     async def twitch_complete(self, request):
+        if "error" in request.query:
+            error = request.query["error"]
+            description = request.query.get("error_description", "")
+            text = f"""Error while authenticating to twitch: {error}\n\t{description}"""
+            return web.Response(text=text)
         code = request.query["code"]
         await self.app['twitch_app'].get_oauth(code)
         if self.t_redirect is not None:
