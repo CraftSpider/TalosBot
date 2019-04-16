@@ -75,7 +75,7 @@ class APIHandler:
     async def on_commands(self, commands):
         """
             Handle a POST to the Talos Commands endpoint
-        :param data: Commands data being passed in
+        :param commands: Commands data being passed in
         :return: Response, success or failure
         """
         # TODO

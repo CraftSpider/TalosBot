@@ -101,8 +101,8 @@ class Talos(dutils.ExtendedBot):
         # Set default values to pass to super
         description = '''Greetings. I'm Talos, chat helper. Here are my command types. If you like me and have the \
 money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
-        if not kwargs.get("formatter", None):
-            kwargs["formatter"] = kwargs.get("formatter", dutils.TalosFormatter())
+        if kwargs.get("help_command", None) is None:
+            kwargs["help_command"] = dutils.TalosHelpCommand()
         super().__init__(talos_prefix, description=description, **kwargs)
 
         # Set talos specific things
@@ -112,8 +112,8 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
 
         # Override things set by super init that we don't want
-        self.remove_command("help")
-        self.command(name="help", aliases=["man"], description="Shows this message")(self._talos_help_command)
+        # self.remove_command("help")
+        # self.command(name="help", aliases=["man"], description="Shows this message")(self._talos_help_command)
 
     def __setattr__(self, key, value):
         """
@@ -170,73 +170,6 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         log.debug("Closing Talos")
         await self.session.close()
         await super().close()
-
-    async def _talos_help_command(self, ctx, *args: str):
-        """The command you're using. Can show help for any command, cog, or extension Talos is running."""
-        if ctx.guild is not None and self.database.is_connected():
-            destination = ctx.message.author if self.database.get_guild_options(ctx.guild.id).pm_help else \
-                          ctx.message.channel
-        else:
-            destination = ctx.message.channel
-
-        def repl(obj):
-            return _mentions_transforms.get(obj.group(0), '')
-
-        # help by itself just lists our own commands.
-        if len(args) == 0:
-            pages = await self.formatter.format_help_for(ctx, self)
-        elif len(args) == 1:
-            # try to see if it is a cog name
-            name = _mention_pattern.sub(repl, args[0])
-            if name in self.cogs:
-                command = self.cogs[name]
-            elif name.capitalize() in self.cogs:
-                command = self.cogs[name.capitalize()]
-            else:
-                command = self.all_commands.get(name)
-                if command is None:
-                    # Command not found always sent to invoke location
-                    await ctx.send(self.command_not_found.format(name))
-                    return
-
-            pages = await self.formatter.format_help_for(ctx, command)
-        elif ''.join(map(str.capitalize, args)) in self.cogs:
-            command = self.cogs[''.join(map(str.capitalize, args))]
-            pages = await self.formatter.format_help_for(ctx, command)
-        else:
-            name = _mention_pattern.sub(repl, args[0])
-            command = self.all_commands.get(name)
-            if command is None:
-                # Command not found always sent to invoke location
-                await ctx.send(self.command_not_found.format(name))
-                return
-
-            for key in args[1:]:
-                try:
-                    key = _mention_pattern.sub(repl, key)
-                    command = command.all_commands.get(key)
-                    if command is None:
-                        await destination.send(self.command_not_found.format(key))
-                        return
-                except AttributeError:
-                    await destination.send(self.command_has_no_subcommands.format(command, key))
-                    return
-
-            pages = await self.formatter.format_help_for(ctx, command)
-
-        if self.pm_help is None:
-            characters = sum(map(len, pages))
-            # modify destination based on length of pages.
-            if characters > 1000:
-                destination = ctx.message.author
-
-        if destination == ctx.message.author:
-            await ctx.send("I've DMed you some help.")
-        for page in pages:
-            if isinstance(page, discord.Embed):
-                await destination.send(embed=page)
-            else:
-                await destination.send(page)
 
     async def process_commands(self, message):
         """

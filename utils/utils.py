@@ -377,7 +377,7 @@ def to_camel_case(text, upper=True):
     elif is_camel(text):
         out = text.capitalize()
     elif is_other(text):
-        out = text.capitalize().replace(" ", "")
+        out = text.title().replace(" ", "")
     else:
         raise ValueError("Bad text input, no formatting done")
 

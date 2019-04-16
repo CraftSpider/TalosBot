@@ -276,18 +276,17 @@ class TalosCog(commands.Cog):
     cog_check = _perms_check
 
 
-# TODO: rework this to be more consistent
-class TalosFormatter(commands.HelpFormatter):
-    """
-        Talos help formatter. Fairly self explanatory.
-    """
+class TalosHelpCommand(commands.HelpCommand):
 
-    def __init__(self, width=75):
-        """
-            Instantiate a new TalosFormatter object
-        """
-        self._paginator = None
-        super().__init__(width)
+    def get_destination(self):
+        ctx = self.context
+        if ctx.guild is not None and ctx.bot.database.is_connected():
+            if ctx.bot.database.get_guild_options(ctx.guild.id).pm_help:
+                return ctx.author
+            else:
+                return ctx.channel
+        else:
+            return ctx.channel
 
     @property
     async def clean_prefix(self):
@@ -297,180 +296,119 @@ class TalosFormatter(commands.HelpFormatter):
         """
         return (await self.context.bot.get_prefix(self.context))[0]
 
-    async def get_command_signature(self):
+    async def get_command_signature(self, command):
         """
             Retrieves the signature portion of the help page.
-        :return: Command signature string
+        :return: The signature of the given command
         """
-        prefix = await self.clean_prefix
-        cmd = self.command
-        return prefix + cmd.signature
 
-    async def get_ending_note(self):
+        parent = command.full_parent_name
+        if len(command.aliases) > 0:
+            aliases = '|'.join(command.aliases)
+            fmt = '[%s|%s]' % (command.name, aliases)
+            if parent:
+                fmt = parent + ' ' + fmt
+            alias = fmt
+        else:
+            alias = command.name if not parent else parent + ' ' + command.name
+
+        return '%s%s %s' % (await self.clean_prefix, alias, command.signature)
+
+    async def get_starting_note(self):
         """
-            Get the note to add on to the end of the help message
+            Get the text that the help begins with
         :return: Note to end the help with
         """
-        command_name = self.context.invoked_with
+        command_name = self.invoked_with
         return "Type `{0}{1} category` for a list of commands in a category.".format(
-                   await self.clean_prefix, command_name
-               )
+            await self.clean_prefix, command_name
+        )
 
-    def embed_shorten(self, text):
-        """
-            Shorten a string to end with ellipsis if it is longer than the allowed width
-        :param text: Text to bound
-        :return: Text originally, or shortened with ellipsis if longer than width
-        """
-        if len(text) > self.width:
-            return text[:self.width - 3] + '...\n'
-        return text
+    def normalize_cog(self, bot, name):
+        if name is None:
+            return None
+        normalized = utils.to_camel_case(name)
+        if bot.get_cog(normalized) is not None:
+            return normalized
 
-    def _subcommands_field_value(self, _commands):
-        """
-            Get the value of the subcommands field for an embed from a given group command
-        :param _commands: List of subcommands
-        :return: String value of subcommands field in help
-        """
-        out = ""
-        for name, command in _commands:
-            if name in command.aliases:
-                # skip aliases
+    async def setup_paginator(self):
+        paginator = paginators.PaginatedEmbed()
+
+        paginator.title = "Talos Help"
+        paginator.set_footer(text="Contact CraftSpider in the Talos discord (^info) for further help")
+
+        return paginator
+
+    async def send_bot_help(self, mapping):
+        paginator = await self.setup_paginator()
+
+        paginator.description = self.context.bot.description + "\n" + await self.get_starting_note()
+
+        for cog in mapping:
+            if cog is None:
                 continue
-
-            entry = '{0} - {1}\n'.format(name, command.description if command.description else "")
-            shortened = self.embed_shorten(entry)
-            out += shortened
-        return out
-
-    def _add_subcommands_to_page(self, max_width, _commands):
-        """
-            Add the subcommands field to a text page
-        :param max_width: Maximum width of the help message
-        :param _commands: List of subcommands
-        """
-        for name, command in _commands:
-            if name in command.aliases:
-                # skip aliases
+            name = cog.qualified_name
+            if name == "EventLoops" or name == "DevCommands":
                 continue
+            value = inspect.getdoc(cog)
+            paginator.add_field(name=utils.add_spaces(name), value=value)
 
-            entry = '  {0:<{width}} {1}'.format(name, command.description if command.description else "",
-                                                width=max_width)
-            shortened = self.shorten(entry)
-            self._paginator.add_line(shortened)
+        dest = self.get_destination()
+        paginator.close()
+        for page in paginator.pages:
+            await dest.send(embed=page)
 
-    async def format(self):
-        """
-            Run formatting on the current context and command
-        :return: Result of formatting
-        """
-        if self.context.bot.should_embed(self.context):
-            return await self.embed_format()
-        else:
-            return await self.string_format()
+    async def send_cog_help(self, cog):
+        paginator = await self.setup_paginator()
 
-    async def embed_format(self):
-        """
-            Format an embed help message
-        :return: Embed to post as result of formatting
-        """
-        self._paginator = paginators.PaginatedEmbed()
+        paginator.description = cog.description
 
-        description = self.command.description if not self.is_cog() else inspect.getdoc(self.command)
+        text = ""
+        for command in cog.get_commands():
+            text += f"{command.name} - {command.description}\n"
+        paginator.add_field(name="Commands", value=text)
 
-        if description:
-            # <description> section
-            self._paginator.description = description
+        paginator.close()
+        dest = self.get_destination()
+        for page in paginator.pages:
+            await dest.send(embed=page)
 
-        if isinstance(self.command, commands.Command):
-            # <signature> section
-            signature = await self.get_command_signature()
-            self._paginator.add_field(name="Signature", value=signature)
+    async def send_command_help(self, command):
+        paginator = await self.setup_paginator()
 
-            # <long doc> section
-            if self.command.help:
-                self._paginator.add_field(name="Documentation", value=self.command.help)
+        paginator.description = command.description
+        paginator.add_field(name="Signature", value=await self.get_command_signature(command))
+        paginator.add_field(name="Documentation", value=command.help)
 
-            # end it here if it's just a regular command
-            if not self.has_subcommands():
-                self._paginator.close()
-                return self._paginator.pages
+        paginator.close()
+        dest = self.get_destination()
+        for page in paginator.pages:
+            await dest.send(embed=page)
 
-        filtered = await self.filter_command_list()
-        if self.is_bot():
-            self._paginator.title = "Talos Help"
-            self._paginator.description = description+"\n"+await self.get_ending_note()
+    async def send_group_help(self, group):
+        paginator = await self.setup_paginator()
 
-            for cog in self.command.cogs:
-                if cog == "EventLoops" or cog == "DevCommands":
-                    continue
-                value = inspect.getdoc(self.command.cogs[cog])
-                self._paginator.add_field(name=utils.add_spaces(cog), value=value)
-        else:
-            filtered = sorted(filtered)
-            if filtered:
-                value = self._subcommands_field_value(filtered)
-                self._paginator.add_field(name='Commands', value=value)
+        paginator.description = group.description
+        paginator.add_field(name="Signature", value=await self.get_command_signature(group))
+        paginator.add_field(name="Documentation", value=group.help)
 
-        self._paginator.set_footer(text="Contact CraftSpider in the Talos discord (^info) for further help")
-        self._paginator.close()
-        return self._paginator.pages
+        text = ""
+        for command in group.commands:
+            text += f"{command.name} - {command.description}\n"
+        paginator.add_field(name="Subcommands", value=text)
 
-    async def string_format(self):
-        """
-            Format a string help message
-        :return: String to post as result of formatting
-        """
-        self._paginator = commands.Paginator()
+        paginator.close()
+        dest = self.get_destination()
+        for page in paginator.pages:
+            await dest.send(embed=page)
 
-        # we need a padding of ~80 or so
+    async def command_callback(self, ctx, *, command=None):
+        if not ctx.bot.should_embed(ctx):
+            await ctx.send("Non-embed help command currently WIP")
+            return
 
-        description = self.command.description if not self.is_cog() else inspect.getdoc(self.command)
+        cog_name = self.normalize_cog(ctx.bot, command)
+        if cog_name is not None:
+            command = cog_name
 
-        if description:
-            # <description> portion
-            self._paginator.add_line(description, empty=True)
-
-        if isinstance(self.command, commands.Command):
-            # <signature portion>
-            signature = await self.get_command_signature()
-            self._paginator.add_line(signature, empty=True)
-
-            # <long doc> section
-            if self.command.help:
-                self._paginator.add_line(self.command.help, empty=True)
-
-            # end it here if it's just a regular command
-            if not self.has_subcommands():
-                self._paginator.close_page()
-                return self._paginator.pages
-
-        max_width = self.max_name_size
-
-        def category(tup):
-            cog = tup[1].cog_name
-            # we insert the zero width space there to give it approximate
-            # last place sorting position.
-            return utils.add_spaces(cog) + ':' if cog is not None else '\u200bBase Commands:'
-
-        filtered = await self.filter_command_list()
-        if self.is_bot():
-            data = sorted(filtered, key=category)
-            for category, _commands in itertools.groupby(data, key=category):
-                # there simply is no prettier way of doing this.
-                _commands = sorted(_commands)
-                if len(_commands) > 0:
-                    self._paginator.add_line(category)
-
-                self._add_subcommands_to_page(max_width, _commands)
-        else:
-            filtered = sorted(filtered)
-            if filtered:
-                self._paginator.add_line('Commands:')
-                self._add_subcommands_to_page(max_width, filtered)
-
-        # add the ending note
-        self._paginator.add_line()
-        ending_note = await self.get_ending_note()
-        self._paginator.add_line(ending_note)
-        return self._paginator.pages
+        return await super().command_callback(ctx, command=command)
