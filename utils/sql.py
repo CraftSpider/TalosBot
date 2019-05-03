@@ -213,7 +213,7 @@ def invalidate(func):
                     pass
         else:
             for key in _caches:
-                _caches[key] = {}
+                _caches[key].clear()
         return func(self, *args, **kwargs)
 
     return cache_invalidate
