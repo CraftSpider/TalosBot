@@ -16,6 +16,7 @@ import utils.dutils as dutils
 import html
 import os
 import typing
+import psutil
 import subprocess as sp
 import datetime as dt
 
@@ -221,14 +222,15 @@ class Commands(dutils.TalosCog):
     @commands.command(aliases=["info"], description="Displays a short blurb about Talos")
     async def information(self, ctx):
         """Displays such information as who made me, how I'm built, where you can contact me, and more."""
+        prefix = (await self.bot.get_prefix(ctx.message))[0]
         if self.bot.should_embed(ctx):
             description = "Hello! I'm Talos, official PtP Mod-Bot and general writing helper.\n"\
-                          "`{}help` to see a list of my commands.\nPlease donate to support my development on "\
+                          f"`{prefix}help` to see a list of my commands.\nPlease donate to support my development on "\
                           "[Patreon](https://www.patreon.com/craftspider)"
             with dutils.PaginatedEmbed() as embed:
                 embed.title = "Talos Information"
                 embed.colour = discord.Colour(0x202020)
-                embed.description = description.format((await self.bot.get_prefix(ctx.message))[0])
+                embed.description = description
                 embed.timestamp = dt.datetime.now(tz=self.bot.get_timezone(ctx))
                 embed.set_footer(text=f"{random.choice(self.phrases)}")
                 embed.add_field(name="Developers", value="CraftSpider#0269\nDino\nHiddenStorys", inline=True)
@@ -243,13 +245,18 @@ class Commands(dutils.TalosCog):
                 uptime_str = "{}\n{:.0f}% Day, {:.0f}% Week, {:.0f}% Month".format(self.get_uptime_days(),
                                                                                    *self.get_uptime_percent())
                 embed.add_field(name="Uptime", value=uptime_str, inline=True)
-                stats_str = f"I'm in {len(self.bot.guilds)} Guilds,\nWith {len(self.bot.users)} Users."
+                stats_str = f"I'm in {len(self.bot.guilds)} Guilds,\nWith {len(self.bot.users)} Users.\n"
+                try:
+                    process = psutil.Process()
+                    ram = utils.pretty_bytes(process.memory_info().rss)
+                    stats_str += f"CPU Usage: {process.cpu_percent()}%\nRAM Usage: {ram}"
+                except Exception:
+                    pass
                 embed.add_field(name="Statistics", value=stats_str, inline=True)
             for page in embed:
                 await ctx.send(embed=page)
             # await ctx.send(embed=embed.get_pages())
         else:
-            prefix = (await self.bot.get_prefix(ctx.message))[0]
             out = f"Hello! I'm Talos, official PtP mod-bot. `{prefix}help` for command details.\
                     \nMy Developers are CraftSpider, Dino, and HiddenStorys.\
                     \nI am built using discord.py, version {discord.__version__}.\

@@ -7,3 +7,4 @@ httplib2
 oauth2client
 pytest
 dpytest
+psutil

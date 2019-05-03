@@ -10,6 +10,7 @@ import traceback
 import string
 import random
 import pathlib
+import math
 
 try:
     import google.cloud.error_reporting as g_errors
@@ -64,6 +65,9 @@ tz_map = {
     "WET": 0, "WFT": +12, "WGST": -2, "WGT": -3, "WIB": +7, "WIT": +9, "WITA": +8, "WST": +14, "WT": 0, "X": -11,
     "Y": -12, "YAKST": +10, "YAKT": +9, "YAPT": +10, "YEKST": +6, "YEKT": +5, "Z": 0
 }
+
+# Maps powers of 1024 to byte suffixes
+byte_suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
 
 # Folder to store logs in
 log_folder = pathlib.Path(__file__).parent.parent / "logs"
@@ -122,6 +126,13 @@ def time_to_write(words, wpm):
     """
     time = words / wpm
     return int(time + random.randint(-2 * time * 30, 2 * time * 30))
+
+
+def pretty_bytes(bytes):
+    power = math.floor(math.log(bytes, 1024)) - 1
+    suffix = byte_suffixes[power]
+    val = bytes / (1024**power)
+    return f"{val:.2f} {suffix}"
 
 
 def key_generator(size=6, chars=string.ascii_uppercase + string.digits):
