@@ -249,7 +249,7 @@ class Commands(dutils.TalosCog):
                 try:
                     process = psutil.Process()
                     ram = utils.pretty_bytes(process.memory_info().rss)
-                    stats_str += f"CPU Usage: {process.cpu_percent()}%\nRAM Usage: {ram}"
+                    stats_str += f"CPU Usage: {process.cpu_percent(0.5)}%\nRAM Usage: {ram}"
                 except Exception:
                     pass
                 embed.add_field(name="Statistics", value=stats_str, inline=True)
