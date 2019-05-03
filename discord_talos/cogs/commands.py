@@ -248,8 +248,9 @@ class Commands(dutils.TalosCog):
                 stats_str = f"I'm in {len(self.bot.guilds)} Guilds,\nWith {len(self.bot.users)} Users.\n"
                 try:
                     process = psutil.Process()
+                    cpu = await self.bot.loop.run_in_executor(None, process.cpu_percent, 0.5)
                     ram = utils.pretty_bytes(process.memory_info().rss)
-                    stats_str += f"CPU Usage: {process.cpu_percent(0.5)}%\nRAM Usage: {ram}"
+                    stats_str += f"CPU Usage: {cpu}%\nRAM Usage: {ram}"
                 except Exception:
                     pass
                 embed.add_field(name="Statistics", value=stats_str, inline=True)
