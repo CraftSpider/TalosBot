@@ -168,7 +168,7 @@ def and_from_dict(kwargs):
 
 
 def key_from_dict(kwargs):
-    return tuple(f"{x}|{str(kwargs[x])}" for x in kwargs)
+    return frozenset(f"{x}|{kwargs[x]}" for x in kwargs)
 
 
 def cached(func):
