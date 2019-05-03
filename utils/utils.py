@@ -129,7 +129,7 @@ def time_to_write(words, wpm):
 
 
 def pretty_bytes(bytes):
-    power = math.floor(math.log(bytes, 1024)) - 1
+    power = math.floor(math.log(bytes, 1024))
     suffix = byte_suffixes[power]
     val = bytes / (1024**power)
     return f"{val:.2f} {suffix}"
