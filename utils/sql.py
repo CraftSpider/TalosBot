@@ -167,6 +167,10 @@ def and_from_dict(kwargs):
     return " AND ".join(f"{x} = %({x})s" for x in kwargs)
 
 
+def key_from_dict(kwargs):
+    return tuple(f"{x}|{str(kwargs[x])}" for x in kwargs)
+
+
 def cached(func):
     """
         Marks a method as cached, meaning that it will not actually poll the database,
@@ -178,10 +182,9 @@ def cached(func):
     _cache = {}
 
     def cache_check(self, type, *args, **kwargs):
-        expr = and_from_dict(kwargs)
+        expr = key_from_dict(kwargs)
         if _cache.get(type, None) is not None and _cache[type].get(expr, None) is not None:
-            cache = _cache[type]
-            return cache[expr]
+            return _cache[type][expr]
         result = func(self, type, *args, **kwargs)
         _cache.setdefault(type, {})[expr] = result
         return result
