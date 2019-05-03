@@ -54,7 +54,7 @@ talos_triggers: Dict[str, Dict[str, str]]
 
 class TalosDatabase:
 
-    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port")
+    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port", "_cache")
 
     _sql_conn: Optional[mysql_abstracts.MySQLConnectionAbstract]
     _cursor: Union[cursor_cext.CMySQLCursor, EmptyCursor]

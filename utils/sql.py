@@ -167,13 +167,51 @@ def and_from_dict(kwargs):
     return " AND ".join(f"{x} = %({x})s" for x in kwargs)
 
 
+def cached(func):
+    """
+        Marks a method as cached, meaning that it will not actually poll the database,
+        if there hasn't been a database write since the last call.
+    :param func: Function to convert to a cached function
+    :return: New function, stores result in cache and doesn't call again till cache is invalidated
+    """
+
+    def cache_check(self, type, *args, **kwargs):
+        expr = and_from_dict(kwargs)
+        if self._cache.get(type, None) is not None and self._cache[type].get(expr, None) is not None:
+            cache = self._cache[type]
+            return cache[expr]
+        result = func(self, type, *args, **kwargs)
+        self._cache.setdefault(type, {})[expr] = result
+        return result
+    
+    return cache_check
+
+
+def invalidate(func):
+    """
+        Marks a function as invalidating the cache for a given type
+    :param func: Function to apply cache invalidation
+    :return: New function, invalidates cache when called
+    """
+
+    def cache_invalidate(self, *args, **kwargs):
+        if len(args) > 0:
+            t = type(args[0])
+            del self._cache[t]
+        else:
+            self._cache = {}
+        return func(self, *args, **kwargs)
+
+    return cache_invalidate
+
+
 class TalosDatabase:
     """
         Class for handling a Talos connection to a MySQL database that fits the schema expected by Talos.
         (Schema matching can be enforced with verify_schema)
     """
 
-    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port")
+    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port", "_cache")
 
     def __init__(self, address, port, username, password, schema):
         """
@@ -192,6 +230,7 @@ class TalosDatabase:
         self._sql_conn = None
         self._cursor = None
         self.reset_connection()
+        self._cache = {}
 
     def verify_schema(self):
         """
@@ -405,6 +444,7 @@ class TalosDatabase:
 
     # Generic methods
 
+    @cached
     def get_item(self, type, *, order=None, default=None, **kwargs):
         """
             Get the first TalosDatabase compatible object from the database, based on a type.
@@ -428,6 +468,7 @@ class TalosDatabase:
             return default
         return type(result)
 
+    @cached
     def get_items(self, type, *, limit=None, order=None, **kwargs):
         """
             Get a list of TalosDatabase compatible objects from the database, based on a type.
@@ -451,6 +492,7 @@ class TalosDatabase:
         self._cursor.execute(query, kwargs)
         return [type(x) for x in self._cursor]
 
+    @cached
     def get_count(self, type, **kwargs):
         """
             Get the number of given TalosDatabase objects that are in the database, matching the kwargs filter
@@ -465,6 +507,7 @@ class TalosDatabase:
         self._cursor.execute(query, kwargs)
         return self._cursor.fetchone()[0]
 
+    @invalidate
     def save_item(self, item):
         """
             Save any TalosDatabase compatible object to the database, inserting or updating that row.
@@ -488,9 +531,10 @@ class TalosDatabase:
                 removed_items = item.removed_items()
                 for removed in removed_items:
                     self.remove_item(removed)
-            except AttributeError:  # So iterables not having this property is just ignored
+            except AttributeError:  # So iterables not having this property are just ignored
                 pass
 
+    @invalidate
     def remove_item(self, item, general=False):
         """
             Remove any TalosDatabase compatible object from the database.
@@ -515,6 +559,7 @@ class TalosDatabase:
             for row in item:
                 self.remove_item(row, general)
 
+    @invalidate
     def remove_items(self, type, *, limit=None, order=None, **kwargs):
         """
             Remove any TalosDatabase objects from the database of a specific type, that match the given parameters
