@@ -175,13 +175,15 @@ def cached(func):
     :return: New function, stores result in cache and doesn't call again till cache is invalidated
     """
 
+    _cache = {}
+
     def cache_check(self, type, *args, **kwargs):
         expr = and_from_dict(kwargs)
-        if self._cache.get(type, None) is not None and self._cache[type].get(expr, None) is not None:
-            cache = self._cache[type]
+        if _cache.get(type, None) is not None and _cache[type].get(expr, None) is not None:
+            cache = _cache[type]
             return cache[expr]
         result = func(self, type, *args, **kwargs)
-        self._cache.setdefault(type, {})[expr] = result
+        _cache.setdefault(type, {})[expr] = result
         return result
     
     return cache_check
@@ -211,7 +213,7 @@ class TalosDatabase:
         (Schema matching can be enforced with verify_schema)
     """
 
-    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port", "_cache")
+    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port")
 
     def __init__(self, address, port, username, password, schema):
         """
@@ -230,7 +232,6 @@ class TalosDatabase:
         self._sql_conn = None
         self._cursor = None
         self.reset_connection()
-        self._cache = {}
 
     def verify_schema(self):
         """
