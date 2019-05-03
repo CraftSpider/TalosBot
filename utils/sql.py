@@ -171,6 +171,9 @@ def key_from_dict(kwargs):
     return frozenset(f"{x}|{kwargs[x]}" for x in kwargs)
 
 
+_caches = {}
+
+
 def cached(func):
     """
         Marks a method as cached, meaning that it will not actually poll the database,
@@ -179,7 +182,8 @@ def cached(func):
     :return: New function, stores result in cache and doesn't call again till cache is invalidated
     """
 
-    _cache = {}
+    _caches[func] = {}
+    _cache = _caches[func]
 
     def cache_check(self, type, *args, **kwargs):
         expr = key_from_dict(kwargs)
@@ -202,9 +206,14 @@ def invalidate(func):
     def cache_invalidate(self, *args, **kwargs):
         if len(args) > 0:
             t = type(args[0])
-            del self._cache[t]
+            for key in _caches:
+                try:
+                    del _caches[key][t]
+                except KeyError:
+                    pass
         else:
-            self._cache = {}
+            for key in _caches:
+                _caches[key] = {}
         return func(self, *args, **kwargs)
 
     return cache_invalidate
