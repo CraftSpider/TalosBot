@@ -1,7 +1,6 @@
 
 import asyncio
 import logging
-import datetime as dt
 
 
 class DiscordLogger(logging.Handler):

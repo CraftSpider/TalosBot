@@ -58,11 +58,6 @@ async def test_master_nick():
         assert guild.me.nick == "Newnick"
 
 
-async def test_idlist():
-    await devmess("^idlist")
-    verify_message()
-
-
 async def test_eval():
     await devmess("^eval 1 + 1")
     verify_message("```py\n2\n```")
