@@ -128,3 +128,14 @@ def get_id(mention):
     :return: Snowflake ID as an int
     """
     return int(mention.strip("<@#&!>"))
+
+
+async def _send_paginated(self, msg, prefix="```", suffix="```"):
+    msg = str(msg)
+    pag = commands.Paginator(prefix=prefix, suffix=suffix)
+
+    for line in [msg[i:i+pag.max_size-len(prefix+suffix)] for i in range(0, len(msg), pag.max_size-len(prefix+suffix))]:
+        pag.add_line(line)
+    for page in pag.pages:
+        await self.send(page)
+commands.Context.send_paginated = _send_paginated

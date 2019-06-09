@@ -72,6 +72,25 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
         await ctx.send("Et tū, Brute?")
         await self.bot.logout()
 
+    log_channels = {}
+
+    @commands.command(description="Toggle Talos logging to the current channel")
+    async def loghere(self, ctx):
+        """Will toggle on/off Talos sending its log messages to the current channel in addition to its normal """\
+            """logfiles."""
+        t = logging.getLogger("talos")
+        if ctx.channel.id in self.log_channels:
+            h = self.log_channels[ctx.channel.id]
+            h.stop()
+            t.removeHandler(h)
+            await ctx.send("No longer logging here")
+        else:
+            h = dutils.DiscordLogger(ctx)
+            h.setFormatter(logging.Formatter("`%(levelname)s:%(name)s:%(message)s`"))
+            self.log_channels[ctx.channel.id] = h
+            t.addHandler(h)
+            await ctx.send("Started logging here")
+
     @commands.command(description="Change Talos' nickname everywhere. Never use this.")
     async def master_nick(self, ctx, nick):
         """Sets Talos' nickname in all guilds it is in."""
@@ -79,25 +98,26 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
             await guild.me.edit(nick=nick)
         await ctx.send(f"Nickname universally changed to {nick}")
 
-    @commands.command(description="List various IDs")
-    async def idlist(self, ctx):
-        """Lists off IDs of things that are a pain to get IDs from. Currently Roles and Channels."""
-        out = "```\n"
-        out += "Roles:\n"
-        for role in ctx.guild.roles:
-            out += f"  {role.name}: {role.id}\n".replace("@everyone", "@\u200beveryone")
-        out += "Channels:\n"
-        for channel in ctx.guild.channels:
-            out += f"  {channel.name}: {channel.id}\n"
-        out += "```"
-        await ctx.send(out)
-
     @commands.command(description="Verify Schema. Because updating by hand is hell.")
     async def verifysql(self, ctx):
         """Check connected SQL database schema, if it doesn't match the expected schema then alter it to fit."""
         await ctx.send("Verifying Talos Schema...")
-        self.bot.database.verify_schema()
-        await ctx.send("Talos Schema verified")
+        results = self.bot.database.verify_schema()
+        schema = self.bot.database._schema
+        tables = results["tables"]
+        columns_add = results["columns_add"]
+        columns_remove = results["columns_remove"]
+        if tables == 0 and columns_add == 0 and columns_remove == 0:
+            await ctx.send(f"Talos Schema {schema} verified. Everything up-to-date")
+        else:
+            out = f"Talos Schema {schema} verified."
+            if tables:
+                out += f"\n\t{tables} tables created"
+            if columns_add:
+                out += f"\n\t{columns_add} columns added"
+            if columns_remove:
+                out += f"\n\t{columns_remove} columns removed"
+            await ctx.send(out)
 
     @commands.command(description="Grant a user title. I knight thee...")
     async def grant_title(self, ctx, user: discord.User, *, title):
@@ -124,10 +144,14 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
         """Will reload a given extension. Name should match class name exactly. Any extension can be reloaded."""
         try:
             self.bot.unload_extension(name)
+        except commands.ExtensionNotLoaded:
+            pass
+        try:
             self.bot.load_extension(name)
-            await ctx.send("Extension reloaded successfully.")
-        except ImportError:
+        except commands.ExtensionNotFound:
             await ctx.send("That extension doesn't exist.")
+        else:
+            await ctx.send("Extension reloaded successfully.")
 
     @commands.command(description="Run eval on input. This is not dangerous.")
     async def eval(self, ctx, *, program):
@@ -136,27 +160,43 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
             result = str(eval(program))
             if result is not None and result is not "":
                 result = re.sub(r"([`])", "\\g<1>\u200b", result)
-                await ctx.send(f"```py\n{result}\n```")
+                await ctx.send_paginated(result, prefix="```py")
         except Exception as e:
             await ctx.send(f"Program failed with {type(e).__name__}: {e}")
 
     @commands.command(description="Run exec on input. I laugh in the face of danger.")
-    async def exec(self, ctx, *, program):
+    async def exec(self, ctx, *, program: str = None):
         """Execute a given string as python code. replaces `\\n` with newlines and `\\t` with tabs. Supports """\
             """multiline input, as well as triple backtick code blocks. Async await can be used raw, as input is """\
             """wrapped in an async function and error catcher."""
+        if program is None and hasattr(self, "last_exec"):
+            await ctx.send("Re-running last exec...")
+            program = self.last_exec
+
+        if program is None:
+            await ctx.send("No prior exec to run")
+            return
+
+        program = program.strip()
+        self.last_exec = program
+
         if program.startswith("```"):
             program = re.sub(r"```(?:py)?", "", program, count=2)
         program = re.sub(r"(?<!\\)\\((?:\\\\)*)t", "\t", program)
         program = program.replace("\n", "\n        ")
         program = f"""
-async def gyfiuqo(self, ctx):
+async def __(self, ctx):
+    import sys, io
+    sys.stdout = io.StringIO()
     try:
         {program}
     except Exception as e:
         await ctx.send(f"Program failed with {{type(e).__name__}}: {{e}}")
-        return
-self.bot.loop.create_task(gyfiuqo(self, ctx))
+    else:
+        await ctx.send_paginated(sys.stdout.getvalue())
+    finally:
+        sys.stdout = sys.__stdout__
+self.bot.loop.create_task(__(self, ctx))
 """
         try:
             exec(program)

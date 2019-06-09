@@ -250,6 +250,8 @@ class TalosDatabase:
             Verifies the schema of the connected Database. If the expected schema doesn't exist, or it doesn't match the
             expected table forms, it will be updated to match. This requires basically root on the database.
         """
+        out = {"tables": 0, "columns_add": 0, "columns_remove": 0}
+
         if not self.is_connected():
             log.warning("Attempt to verify schema when database not connected")
             return
@@ -283,9 +285,11 @@ class TalosDatabase:
                     exists, type_match = columndat[name]
                     if exists == 1:
                         log.warning(f"  Found column {name} that shouldn't exist, removing")
+                        out["columns_remove"] += 1
                         self._cursor.execute(talos_remove_column.format(table, name))
                     elif exists == 2:
                         log.warning(f"  Could not find column {name}, creating column")
+                        out["columns_add"] += 1
                         column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
                                                   talos_tables[table]["columns"]))
                         column_index = talos_tables[table]["columns"].index(column_spec)
@@ -307,9 +311,10 @@ class TalosDatabase:
                         log.info(f"  Found column {name}")
             else:
                 log.info(f"Could not find table {table}, creating table")
+                out["tables"] += 1
                 self._cursor.execute(
                     talos_create_table.format(
-                        table, ',\n'.join(talos_tables[table]["columns"] + [talos_tables[table]["primary"]])
+                        table, ',\n'.join(talos_tables[table]["columns"] + (talos_tables[table]["primary"],))
                     )
                 )
 
@@ -332,6 +337,8 @@ class TalosDatabase:
             table = talos_triggers[name]["table"]
             text = talos_triggers[name]["text"]
             self._cursor.execute(talos_create_trigger.format(name, cause, table, text))
+
+        return out
 
     def clean_guild(self, guild_id):
         """

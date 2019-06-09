@@ -356,7 +356,7 @@ class Commands(dutils.TalosCog):
                 embed.set_footer(text=random.choice(self.nano_facts))
             await ctx.send(embed=embed)
         else:
-            await ctx.send("Non-embed nano info not yet supported")  # TODO
+            await ctx.send("Non-embed nano info not yet supported (Please give me website embed permissions)")  # TODO
 
     @nanowrimo.command(name="novel", description="Fetch a user's nano novel.")
     async def _novel(self, ctx, username, novel_name=None):
