@@ -64,7 +64,8 @@ async def test_eval():
 
 
 async def test_exec():
-    pytest.skip("Exec testing not yet implemented")
+    await devmess("^exec print(2 * 2)")
+    verify_message("```\n4\n```")
 
 
 async def test_grant_title():

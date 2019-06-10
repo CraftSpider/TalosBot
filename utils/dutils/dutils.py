@@ -143,7 +143,7 @@ async def _send_paginated(self, msg, prefix="```", suffix="```"):
     pag = commands.Paginator(prefix=prefix, suffix=suffix)
 
     for line in [msg[i:i+pag.max_size-len(prefix+suffix)] for i in range(0, len(msg), pag.max_size-len(prefix+suffix))]:
-        pag.add_line(line)
+        pag.add_line(line.strip())
     for page in pag.pages:
         await self.send(page)
 commands.Context.send_paginated = _send_paginated
