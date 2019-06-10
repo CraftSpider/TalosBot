@@ -277,8 +277,13 @@ class TalosCog(commands.Cog):
 
 
 class TalosHelpCommand(commands.HelpCommand):
+    """Talos default help command. Sends help as an embed, eventually should be able to send as text as well."""
 
     def get_destination(self):
+        """
+            Get where to send the help to. Checks the context for the bot and the database guild options
+        :return: Messageable to send help to
+        """
         ctx = self.context
         if ctx.guild is not None and ctx.bot.database.is_connected():
             if ctx.bot.database.get_guild_options(ctx.guild.id).pm_help:
@@ -325,6 +330,12 @@ class TalosHelpCommand(commands.HelpCommand):
         )
 
     def normalize_cog(self, bot, name):
+        """
+            Normalize the name of a cog, if the normalized form exists on the bot
+        :param bot: Bot to test against
+        :param name: Name to normalize
+        :return: The original name, or the normalized form if it matches a cog
+        """
         if name is None:
             return None
         normalized = utils.to_camel_case(name)
@@ -332,6 +343,10 @@ class TalosHelpCommand(commands.HelpCommand):
             return normalized
 
     async def setup_paginator(self):
+        """
+            Prepare the output paginator for usage
+        :return: The new setup paginator
+        """
         paginator = paginators.PaginatedEmbed()
 
         paginator.title = "Talos Help"
@@ -340,6 +355,10 @@ class TalosHelpCommand(commands.HelpCommand):
         return paginator
 
     async def send_bot_help(self, mapping):
+        """
+            Send the help for the whole bot, no sub-commands. Lists the available cogs
+        :param mapping: Mapping of names to cogs
+        """
         paginator = await self.setup_paginator()
 
         paginator.description = self.context.bot.description + "\n" + await self.get_starting_note()
@@ -359,6 +378,10 @@ class TalosHelpCommand(commands.HelpCommand):
             await dest.send(embed=page)
 
     async def send_cog_help(self, cog):
+        """
+            Send help for a given cog. Lists the description and all non-hidden subcommands
+        :param cog: The cog to send help for
+        """
         paginator = await self.setup_paginator()
 
         paginator.description = cog.description
@@ -374,6 +397,10 @@ class TalosHelpCommand(commands.HelpCommand):
             await dest.send(embed=page)
 
     async def send_command_help(self, command):
+        """
+            Send the help for a specific command, showing signature and extended description
+        :param command: Command to send help for
+        """
         paginator = await self.setup_paginator()
 
         paginator.description = command.description
@@ -386,6 +413,10 @@ class TalosHelpCommand(commands.HelpCommand):
             await dest.send(embed=page)
 
     async def send_group_help(self, group):
+        """
+            Send the help for a specific command group, showing signature, extended description, and subcommands
+        :param group: Group to send help for
+        """
         paginator = await self.setup_paginator()
 
         paginator.description = group.description
@@ -403,6 +434,13 @@ class TalosHelpCommand(commands.HelpCommand):
             await dest.send(embed=page)
 
     async def command_callback(self, ctx, *, command=None):
+        """
+            The actual running function for the help command. Not normally overriden, only overriden in this case to
+            allow the use of the cog normalization
+        :param ctx: Context of the help command
+        :param command: Command, cog, bot or other object to send help for
+        :return: Result of the parent callback
+        """
         if not ctx.bot.should_embed(ctx):
             await ctx.send("Non-embed help command currently WIP")
             return

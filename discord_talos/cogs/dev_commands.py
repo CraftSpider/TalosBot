@@ -85,7 +85,7 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
             t.removeHandler(h)
             await ctx.send("No longer logging here")
         else:
-            h = dutils.DiscordLogger(ctx)
+            h = dutils.DiscordHandler(ctx)
             h.setFormatter(logging.Formatter("`%(levelname)s:%(name)s:%(message)s`"))
             self.log_channels[ctx.channel.id] = h
             t.addHandler(h)

@@ -131,6 +131,14 @@ def get_id(mention):
 
 
 async def _send_paginated(self, msg, prefix="```", suffix="```"):
+    """
+        Send a message in a paginated form automatically. Does a naive split, breaking every maximum number of
+        characters with no respect for newlines. Actually attached to the Context class dynamically
+    :param self: Context object
+    :param msg: Message to send
+    :param prefix: Prefix for the paginator on each page
+    :param suffix: Suffix for the paginator on each page
+    """
     msg = str(msg)
     pag = commands.Paginator(prefix=prefix, suffix=suffix)
 

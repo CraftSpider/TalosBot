@@ -168,6 +168,12 @@ def and_from_dict(kwargs):
 
 
 def key_from_dict(kwargs):
+    """
+        Generator a key for a dictionary from a set of keyword arguments and their values. Used for the cache SQL
+        lookups. frozenset, so that lookup order doesn't matter
+    :param kwargs: Arguments to generate key from
+    :return: frozenset of string keys generated from arguments
+    """
     return frozenset(f"{x}|{kwargs[x]}" for x in kwargs)
 
 
@@ -192,6 +198,8 @@ def cached(func):
         result = func(self, type, *args, **kwargs)
         _cache.setdefault(type, {})[expr] = result
         return result
+
+    cache_check.__doc__ = func.__doc__
     
     return cache_check
 
@@ -215,6 +223,8 @@ def invalidate(func):
             for key in _caches:
                 _caches[key].clear()
         return func(self, *args, **kwargs)
+
+    cache_invalidate.__doc__ = func.__doc__
 
     return cache_invalidate
 

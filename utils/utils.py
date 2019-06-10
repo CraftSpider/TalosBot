@@ -129,6 +129,12 @@ def time_to_write(words, wpm):
 
 
 def pretty_bytes(bytes):
+    """
+        Convert a number of bytes to a human-prefix number, EG 14.5 GB. Can handle any number of bytes, up to numbers
+        larger than any computer can handle
+    :param bytes: Number of bytes total
+    :return: The formatted human-readable number of bytes
+    """
     power = math.floor(math.log(bytes, 1024))
     suffix = byte_suffixes[power]
     val = bytes / (1024**power)

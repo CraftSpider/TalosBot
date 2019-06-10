@@ -54,10 +54,18 @@ class TwitchApp:
 
     @property
     def client_id(self):
+        """
+            Get the client's ID, a unique string that represents us to Twitch
+        :return: The ID of this client
+        """
         return self._cid
 
     @property
     def redirect(self):
+        """
+            Get the client's redirect link, the location Twitch will send auth requests to after the auth is complete
+        :return: The redirect link of this client
+        """
         return self._redirect
 
     async def open(self):
@@ -69,6 +77,11 @@ class TwitchApp:
         self.session = aiohttp.ClientSession()
 
     def _get_token(self, name):
+        """
+            Get a desired OAuth token by name from the list of internally saved tokens
+        :param name: Name of person to get token of
+        :return: The found oauth token, or the input name if not found
+        """
         oauth = self._oauths.get(name, None)
         if oauth is not None:
             oauth = oauth.token
@@ -89,6 +102,11 @@ class TwitchApp:
         }
 
     def build_helix_headers(self, name=None):
+        """
+            Build the request headers for a Twitch Helix API request
+        :param name: Name of the user to OAuth with, if any
+        :return: Dict of request headers, using OAuth token or client ID for auth
+        """
         if name is not None:
             return {
                 "Authorization": f"Bearer {self._get_token(name)}"

@@ -12,17 +12,13 @@ class SiteHandler:
         Site handler class for Talos server. Contains handlers for GETs, POSTs, and such
     """
 
-    def __init__(self, app=None):
+    def __init__(self, app):
         """
             Initializer for the Handler. Will only be run once due to singleton nature
         :param settings: Settings dict for the server
         """
         super().__init__()
-        if app is None:
-            pass
-            # raise ServerError("Missing app on server handler creation")
         self.app = app
-
         self.webmaster = self.app["settings"].get("webmaster")
         self.base_path = self.app["settings"].get("base_path")
 

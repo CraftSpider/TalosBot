@@ -16,6 +16,10 @@ class APIHandler:
     __slots__ = ("app",)
 
     def __init__(self, app):
+        """
+            Create a new Webserver API handler
+        :param app: The application this handler is tied to
+        """
         super().__init__()
         self.app = app
 

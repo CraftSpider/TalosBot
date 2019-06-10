@@ -59,11 +59,24 @@ class ServerWarning(Warning):
 
 
 class TalosApplication(web.Application):
+    """
+        The custom application class used by Talos. Ignore the deprecation warnings unless they become errors,
+        in which case yell at craft to fix things
+    """
 
     def __init__(self, *args, **kwargs):
+        """
+            Initialize a new Talos Application. Just a passthrough to the super init
+        :param args: Positional arguments
+        :param kwargs: Keyword arguments
+        """
         super().__init__(*args, **kwargs)
 
     def apply_settings(self, settings):
+        """
+            From a dict of settings, save them locally and set up any necessary child systems from those settings
+        :param settings: Dict of settings data
+        """
         settings["base_path"] = pathlib.Path(settings["base_path"]).expanduser()
 
         self['settings'] = settings

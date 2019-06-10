@@ -7,10 +7,18 @@ log = logging.getLogger("talos.server.auth")
 
 
 class AuthHandler:
+    """
+        Handler for the Twitch Webserver authorization path. Currently only handles twitch authorization,
+        but any future auth flows will redirect here. Returns the authorization results
+    """
 
     __slots__ = ("app", "t_redirect")
 
     def __init__(self, app):
+        """
+            Create a new Webserver Authorization handler
+        :param app: The application this handler is tied to
+        """
         super().__init__()
         self.app = app
         self.t_redirect = None
@@ -32,6 +40,12 @@ class AuthHandler:
             return web.Response(text="Unrecognized authorization")
 
     async def twitch_start(self, request):
+        """
+            The beginning of a twitch Authorization request. Handles redirecting the user to twitch, and preparing
+            for the redirect back afterwards
+        :param request: aiohttp Request
+        :return: Response object
+        """
         self.t_redirect = request.query.get("redirect", None)
         try:
             twitch_app = self.app["twitch_app"]
@@ -46,6 +60,12 @@ class AuthHandler:
         return web.HTTPFound(twitch.OAUTH + "authorize?" + '&'.join(x + "=" + params[x] for x in params))
 
     async def twitch_complete(self, request):
+        """
+            The completion of a twitch Authorization request. Handles both the case of an error being found,
+            or a correct authorization being finished
+        :param request: aiohttp Request
+        :return: Response object
+        """
         if "error" in request.query:
             error = request.query["error"]
             description = request.query.get("error_description", "")
