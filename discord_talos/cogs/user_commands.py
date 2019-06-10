@@ -172,8 +172,12 @@ class UserCommands(dutils.TalosCog):
                 embed.title = tal_user.profile.title
                 embed.description = description
                 embed.set_author(name=user.name, icon_url=user.avatar_url)
-                value = f"Total Invoked Commands: {tal_user.profile.commands_invoked}\n" \
-                        f"Favorite Command: `{fav_command.command_name}`, invoked {fav_command.times_invoked} times."
+                value = f"Total Invoked Commands: {tal_user.profile.commands_invoked}\n"
+                if fav_command is not None:
+                    value += f"Favorite Command: `{fav_command.command_name}`, invoked {fav_command.times_invoked} " \
+                             f"times."
+                else:
+                    value += f"Favorite Command: Unknown"
                 embed.add_field(name="Command Stats", value=value)
             for page in embed:
                 await ctx.send(embed=page)

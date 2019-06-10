@@ -293,7 +293,9 @@ class TalosUser(MultiRow):
             Get the user's most invoked command
         :return:
         """
-        return self.invoked[0]
+        if len(self.invoked):
+            return self.invoked[0]
+        return None
 
     def add_title(self, title):
         """
