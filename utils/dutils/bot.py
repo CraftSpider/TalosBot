@@ -153,15 +153,16 @@ class ExtendedBot(commands.Bot):
         :param extensions: List of extensions to unload, or None if all
         """
         log.info("Unloading multiple extensions")
+        prefix = True
         if extensions is None:
-            while len(self.extensions) > 0:
-                extension = self.extensions.popitem()
-                log.debug(f"Unloading extension {extension}")
-                self.unload_extension(extension, False)
-        else:
-            for extension in extensions:
-                log.debug(f"Unloading extension {extension}")
-                self.unload_extension(extension)
+            extensions = list(self.extensions.keys())
+            prefix = False
+        for extension in extensions:
+            log.debug(f"Unloading extension {extension}")
+            try:
+                self.unload_extension(extension, prefix)
+            except commands.ExtensionNotLoaded:
+                pass
 
     def find_command(self, command):
         """

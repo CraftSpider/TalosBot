@@ -1,5 +1,6 @@
 
-from typing import Optional, Any, Dict, Iterable, List, Union
+from typing import Optional, Any, Dict, Iterable, List
+import types
 from . import paginators
 import utils
 import utils.dutils as dutils
@@ -11,6 +12,7 @@ import discord.ext.commands as commands
 class ExtendedBot(commands.Bot):
 
     all_events: Dict[str, dutils.EventLoop]
+    extensions: types.MappingProxyType
 
     def __init__(self, *args: Any, **kwargs: Any) -> None: ...
 
