@@ -490,7 +490,7 @@ class Element(Node):
         out = ""
         for child in self.child_nodes:
             out += child.outerhtml + "\n"
-        return out
+        return out.rstrip()
 
     @innerhtml.setter
     def innerhtml(self, value):

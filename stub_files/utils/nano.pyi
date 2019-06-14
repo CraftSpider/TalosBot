@@ -1,5 +1,5 @@
 
-from typing import NamedTuple, List, Dict, AsyncGenerator, Union, NoReturn
+from typing import NamedTuple, List, Dict, AsyncIterator, Union, NoReturn
 import datetime as dt
 
 from utils import TalosHTTPClient, Document
@@ -22,9 +22,9 @@ class NanoUser:
     username: str
     _avatar: str
     _age: str
-    _info: NanoInfo
-    _novels: List[NanoNovel]
-    _simple_novel: NamedTuple
+    _info: 'NanoInfo'
+    _novels: List['NanoNovel']
+    _simple_novel: SimpleNovel
 
     def __init__(self, client: TalosHTTPClient, username: str) -> None: ...
 
@@ -35,13 +35,13 @@ class NanoUser:
     async def age(self) -> str: ...
 
     @property
-    async def info(self) -> NanoInfo: ...
+    async def info(self) -> 'NanoInfo': ...
 
     @property
-    async def novels(self) -> List[NanoNovel]: ...
+    async def novels(self) -> List['NanoNovel']: ...
 
     @property
-    async def current_novel(self) -> NanoNovel: ...
+    async def current_novel(self) -> 'NanoNovel': ...
 
     @property
     async def simple_novel(self) -> SimpleNovel: ...
@@ -73,7 +73,7 @@ class NanoNovel:
     cover: str
     winner: bool
     synopsis: str
-    stats: NanoNovelStats
+    stats: 'NanoNovelStats'
     _excerpt: str
 
     def __init__(self, client: TalosHTTPClient, author: NanoUser, nid: str): ...
@@ -103,7 +103,7 @@ class NanoNovelStats:
 
     def __init__(self, client: TalosHTTPClient, novel: NanoNovel) -> None: ...
 
-    def __aiter__(self) -> AsyncGenerator[Union[int, dt.date]]: ...
+    def __aiter__(self) -> AsyncIterator[Union[int, dt.date]]: ...
 
     @property
     def author(self) -> NanoUser: ...
@@ -138,6 +138,6 @@ class NanoNovelStats:
     @property
     async def average_to_finish(self) -> int: ...
 
-    async def _aiter(self) -> AsyncGenerator[Union[int, dt.date]]: ...
+    async def _aiter(self) -> AsyncIterator[Union[int, dt.date]]: ...
 
     async def _initialize(self) -> None: ...

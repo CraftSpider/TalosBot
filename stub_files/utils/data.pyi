@@ -4,7 +4,7 @@ import abc
 import datetime as dt
 import discord.ext.commands as commands
 
-SqlRow = Sequence[Union[str, int], ...]
+SqlRow = Sequence[Union[str, int]]
 
 class Row(metaclass=abc.ABCMeta):
 
@@ -18,7 +18,7 @@ class Row(metaclass=abc.ABCMeta):
 
     def __eq__(self, other) -> bool: ...
 
-    def to_row(self) -> List[str, int]: ...
+    def to_row(self) -> List[Union[str, int]]: ...
 
     @classmethod
     def table_name(cls) -> str: ...
@@ -109,10 +109,10 @@ class TalosUser(MultiRow):
 
     __slots__ = ("profile", "invoked", "titles", "options")
 
-    profile: UserProfile
+    profile: 'UserProfile'
     invoked: List[InvokedCommand]
     titles: List[UserTitle]
-    options: UserOptions
+    options: 'UserOptions'
 
     @property
     def id(self) -> int: ...
@@ -213,7 +213,7 @@ class EventPeriod(SqlConvertable):
 
     _seconds: int
 
-    def __init__(self, period: Union[EventPeriod, str]) -> None: ...
+    def __init__(self, period: Union['EventPeriod', str]) -> None: ...
 
     def __str__(self) -> str: ...
 

@@ -145,7 +145,7 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
         try:
             self.bot.unload_extension(name)
         except commands.ExtensionNotLoaded:
-            pass
+            await ctx.send("Extension wasn't loaded, loading fresh")
         try:
             self.bot.load_extension(name)
         except commands.ExtensionNotFound:

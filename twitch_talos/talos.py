@@ -2,7 +2,8 @@ import json
 import logging
 import urllib.request as urlreq
 
-import airc
+# import airc
+airc = None
 
 CLIENT_ID = "jt04pq09w3rui89eokt5ke2v1mveml"
 CLIENT_SECRET = ""
@@ -43,18 +44,18 @@ def revoke_token(client_id, token):
     return False
 
 
-class Talos(airc.TwitchBot):
-
-    async def on_welcome(self, event):
-        log.info("| Talos Booting")
-        log.info("| " + event.server.username)
-        await self.server.req_tags()
-        await self.server.req_commands()
-        await self.server.req_membership()
-        await self.server.join("#craftspider")
-        await self.server.join("#alixrose99")
-        await self.server.privmsg("#craftspider", "[Talos Boot successful]")
-        log.info("Boot cycle complete")
+# class Talos(airc.TwitchBot):
+#
+#     async def on_welcome(self, event):
+#         log.info("| Talos Booting")
+#         log.info("| " + event.server.username)
+#         await self.server.req_tags()
+#         await self.server.req_commands()
+#         await self.server.req_membership()
+#         await self.server.join("#craftspider")
+#         await self.server.join("#alixrose99")
+#         await self.server.privmsg("#craftspider", "[Talos Boot successful]")
+#         log.info("Boot cycle complete")
 
 
 def dev_only():

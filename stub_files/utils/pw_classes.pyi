@@ -9,7 +9,7 @@ class PW:
 
     start: dt.datetime
     end: dt.datetime
-    members: List[PWMember]
+    members: List['PWMember']
 
     def __init__(self) -> None: ...
 

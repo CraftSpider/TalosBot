@@ -3,7 +3,15 @@ import pytest
 
 
 def test_init_content():
-    element.Content("TestContent")
+    value = "TestContent"
+    node = element.Content(value)
+    assert node.value == value
+
+
+def test_content_depth():
+    value = "TestContent"
+    node = element.Content(value)
+    assert node.depth == 0
 
 
 def test_content_innertext():
@@ -32,24 +40,43 @@ def test_content_children():
 
 
 def test_init_element():
-    pytest.skip()
+    node = element.Element("p", {})
+    assert node.tag == "p"
+    assert node._attrs == {}
+
+
+def test_element_depth():
+    node1 = element.Element("div", {})
+    node2 = element.Element("p", {})
+    node1.add_child(node2)
+    assert node1.depth == 0
+    assert node2.depth == 1
 
 
 def test_element_innertext():
-    pytest.skip()
+    node1 = element.Element("p", {})
+    assert node1.innertext == ""
 
 
 def test_element_innerhtml():
-    pytest.skip()
+    node1 = element.Element("div", {})
+    node2 = element.Element("p", {})
+    node1.add_child(node2)
+    assert node1.innerhtml == "<p>\n</p>"
+    assert node2.innerhtml == ""
 
 
 def test_element_outerhtml():
-    pytest.skip()
+    node1 = element.Element("div", {})
+    node2 = element.Element("p", {})
+    node1.add_child(node2)
+    assert node1.outerhtml == "<div>\n  <p>\n  </p>\n</div>"
+    assert node2.outerhtml == "<p>\n</p>"
 
 
 def test_element_children():
-    pytest.skip()
-
-
-def test_site_parse():
-    pytest.skip()
+    node1 = element.Element("div", {})
+    node2 = element.Element("p", {})
+    node1.add_child(node2)
+    assert node2 in node1.child_nodes
+    assert node2.parent == node1

@@ -1,7 +1,6 @@
 
-import pathlib
+import pytest
 import tests.reflection as reflection
-import os
 
 
 def test_discord_docs():
@@ -20,32 +19,27 @@ def test_website_docs():
 
 
 SKIP_DIRS = ("stub_files", "__pycache__", "tests")
-SKIP_FILES = ("__init__.py",)
 
 
-def test_stubs():
-
+def test_stub_files():
     missing = []
 
-    # TODO: change to use filecmp
-
-    for path, dirs, files in os.walk("."):
-        root_path = pathlib.Path(path)
-        stub_path = pathlib.Path("./stub_files/" + path[2:])
-
-        remove = []
-        for item in dirs:
-            if item.startswith(".") or item in SKIP_DIRS:
-                remove.append(item)
-        for item in remove:
-            dirs.remove(item)
-        files = list(filter(lambda x: x not in SKIP_FILES and x.endswith(".py"), files))
-
-        for file in files:
-            code_file = root_path / file
-            stub_file = (stub_path / file).with_suffix(".pyi")
-
-            if not stub_file.exists() and not stub_file.is_file():
-                missing.append(code_file)
+    for code, stub in reflection.walk_with_stubs(".", skip_dirs=SKIP_DIRS):
+        if not stub.exists() or not stub.is_file():
+            missing.append(code)
 
     assert len(missing) == 0, f"Missing stub files for files: {', '.join(map(lambda x: x.name, missing))}"
+
+
+def test_stub_classes():
+    missing = []
+
+    for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
+        print(code)
+        print(stub)
+
+    pytest.skip()
+
+
+def test_stub_funcs():
+    pytest.skip()

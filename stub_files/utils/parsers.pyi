@@ -1,20 +1,20 @@
 
-from typing import Tuple, Dict, List, Iterable, Union
-from utils.element import Node
+from typing import Tuple, Dict, List, Iterable, Union, Optional
+from utils.element import Node, Element
 import html.parser as parser
 
 def attrs_to_dict(attrs: Iterable[Tuple[str, str]]) -> Dict[str, Union[str, List[str]]]: ...
 
 class TreeGen(parser.HTMLParser):
 
-    heads: List[Node]
-    cur: Node
+    heads: List[Element]
+    cur: Optional[Node]
 
     def __init__(self) -> None: ...
 
     def reset(self) -> None: ...
 
-    def close(self) -> List[Node]: ...
+    def close(self) -> List[Element]: ...
 
     def error(self, message: str) -> None: ...
 
