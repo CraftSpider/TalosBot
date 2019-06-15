@@ -1,12 +1,13 @@
 
 from typing import Optional, Any, Dict, Iterable, List
 import types
-from . import paginators
 import utils
 import utils.dutils as dutils
-from discord_talos.talos import Talos
 import discord
 import discord.ext.commands as commands
+
+from utils.dutils import paginators
+from discord_talos.talos import Talos
 
 
 class ExtendedBot(commands.Bot):

@@ -2,6 +2,7 @@
 import discord.ext.commands as commands
 import utils.dutils as dutils
 import os
+import sys
 import inspect
 import importlib
 import importlib.util
@@ -131,6 +132,8 @@ def _mod_from_path(path, base=None):
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    if name not in sys.modules:
+        sys.modules[name] = mod
     return mod
 
 
@@ -142,6 +145,6 @@ def walk_with_modules(base_path, stub_dir="stub_files", skip_dirs=None, skip_fil
             continue
 
         code_mod = _mod_from_path(code, base_path)
-        stub_mod = _mod_from_path(stub, base_path / stub_dir)
+        stub_mod = _mod_from_path(stub, base_path)
 
         yield code_mod, stub_mod

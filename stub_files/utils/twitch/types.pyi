@@ -1,8 +1,7 @@
 
 from typing import Dict, Any, Set
 import datetime as dt
-
-from . import twitch_app
+import utils.twitch.twitch_app as twitch_app
 
 
 class OAuth:

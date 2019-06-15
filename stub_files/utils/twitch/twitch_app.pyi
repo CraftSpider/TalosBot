@@ -2,7 +2,7 @@
 from typing import Any, List, Dict
 import aiohttp
 
-from . import types
+import utils.twitch.types as types
 
 
 class InsufficientPerms(Exception):

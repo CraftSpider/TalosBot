@@ -75,7 +75,7 @@ def test_stub_funcs_extra():
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
         for item in dir(stub):
             func = getattr(stub, item)
-            if not inspect.isfunction(func) or not _file_matches(func, code):
+            if not inspect.isfunction(func) or not _file_matches(func, stub):
                 continue
             cfunc = getattr(code, item, None)
             if cfunc is None:
@@ -105,7 +105,7 @@ def test_stub_classes_extra():
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
         for item in dir(stub):
             cls = getattr(stub, item)
-            if not inspect.isclass(cls) or not _file_matches(cls, code):
+            if not inspect.isclass(cls) or not _file_matches(cls, stub):
                 continue
             ccls = getattr(code, item, None)
             if ccls is None:
@@ -148,7 +148,7 @@ def test_stub_methods_extra():
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
         for item in dir(stub):
             cls = getattr(stub, item)
-            if not inspect.isclass(cls) or not _file_matches(cls, code):
+            if not inspect.isclass(cls) or not _file_matches(cls, stub):
                 continue
             ccls = getattr(code, item, None)
             if ccls is None:
