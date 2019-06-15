@@ -50,6 +50,8 @@ class NanoUser:
 
     async def _init_novels(self) -> None: ...
 
+class NanoAccount(NanoUser): ...
+
 class NanoInfo:
 
     __slots__ = ("bio", "lifetime_stats", "fact_sheet")
@@ -82,6 +84,8 @@ class NanoNovel:
     async def excerpt(self): ...
 
     async def _initialize(self) -> None: ...
+
+class NanoAuthoredNovel(NanoNovel): ...
 
 class NanoNovelStats:
 

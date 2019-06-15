@@ -1,5 +1,5 @@
 
-from typing import Optional, Dict, List, Union, Sequence
+from typing import Optional, Dict, List, Union, Sequence, Any
 from utils.element import Document, Element
 from utils.nano import NanoUser, NanoNovel
 import aiohttp
@@ -24,6 +24,8 @@ class TalosHTTPClient(aiohttp.ClientSession):
     def __init__(self, *args, **kwargs) -> None: ...
 
     async def get_site(self, url: str, **kwargs) -> Document: ...
+
+    async def server_post_commands(self, commands: Dict[str, Any]) -> None: ...
 
     async def botlist_post_guilds(self, num: int) -> None: ...
 

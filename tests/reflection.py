@@ -122,15 +122,12 @@ def walk_with_stubs(base_path, stub_dir="stub_files", skip_dirs=None, skip_files
 
 
 def _mod_from_path(path, base=None):
+    temp = path.with_suffix("")
     if base is None:
-        name = path.name
+        name = temp.name
     else:
-        temp = path.relative_to(base).with_suffix("")
-        name = ""
-        for item in temp.parts[:-1]:
-            name += "." + item
-        name += "." + temp.name
-        name = name.lstrip(".")
+        temp = temp.relative_to(base)
+        name = ".".join(temp.parts)
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

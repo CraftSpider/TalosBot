@@ -4,7 +4,7 @@
     author: CraftSpider
 """
 
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union, Tuple, Any
 from discord_talos.talos import Talos
 import utils.command_lang as command_lang
 import logging
@@ -20,9 +20,9 @@ APPLICATION_NAME: str = ...
 log: logging.Logger = ...
 runner: command_lang.CommandLang()
 
-class SpreadsheetService(googleapiclient.discovery.Resource):
-
-    def spreadsheets(self) -> None: ...
+# class SpreadsheetService(googleapiclient.discovery.Resource):
+#
+#     def spreadsheets(self) -> None: ...
 
 def get_credentials() -> oauth2client.client.Credentials: ...
 
@@ -32,7 +32,7 @@ class EventLoops(dutils.TalosCog):
 
     __slots__: Tuple[str, ...] = ('service', 'flags', 'last_guild_count', "__local_check")
 
-    service: SpreadsheetService
+    service: Any
     flags: argparse.ArgumentParser
     last_guild_count: int
 

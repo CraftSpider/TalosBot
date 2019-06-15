@@ -12,9 +12,9 @@ import re
 # Useful Variables
 
 mention_patterns = {
-    "user": re.compile("<@!?\d+>"),
-    "channel": re.compile("<#\d+>"),
-    "role": re.compile("<@​&\d+>")
+    "user": re.compile(r"<@!?\d+>"),
+    "channel": re.compile(r"<#\d+>"),
+    "role": re.compile(r"<@​&\d+>")
 }
 
 
@@ -76,7 +76,7 @@ def dev_check():
         Decorator for adding dev check to a single command
     :return: Command check
     """
-    return commands.check(functools.partial(dev_check, None))
+    return commands.check(functools.partial(dev_local, None))
 
 
 # Helper utils

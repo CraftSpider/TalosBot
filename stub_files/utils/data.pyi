@@ -6,6 +6,10 @@ import discord.ext.commands as commands
 
 SqlRow = Sequence[Union[str, int]]
 
+class _EmptyVal:
+
+    def __eq__(self, other: Any) -> bool: ...
+
 class Row(metaclass=abc.ABCMeta):
 
     __slots__ = ()

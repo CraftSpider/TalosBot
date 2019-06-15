@@ -50,7 +50,7 @@ class _TalosConverter(type, commands.Converter, metaclass=ConverterMeta):
 
         return super().__new__(mcs, name, bases, namespace)
 
-    def convert(cls, ctx, argument):
+    async def convert(cls, ctx, argument):
         """
             Take in a context and an argument, and attempt to convert the argument in some way. Return the result,
             or None

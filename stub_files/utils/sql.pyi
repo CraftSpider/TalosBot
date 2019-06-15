@@ -1,5 +1,5 @@
 
-from typing import Tuple, Dict, List, Union, Optional, Any, Iterable, TypeVar, Type
+from typing import Tuple, Dict, List, Union, Optional, Any, Iterable, TypeVar, Type, FrozenSet, Callable
 from utils.data import *
 import mysql.connector.cursor_cext as cursor_cext
 import mysql.connector.abstracts as mysql_abstracts
@@ -51,6 +51,14 @@ talos_create_trigger: str = ...
 
 talos_tables: Dict[str, Dict[str, Union[List[str], List[Tuple[str, int, Any]], str]]] = ...
 talos_triggers: Dict[str, Dict[str, str]]
+
+def and_from_dict(kwargs: Dict[str, Any]) -> str: ...
+
+def key_from_dict(kwargs: Dict[str, Any]) -> FrozenSet[str]: ...
+
+def cached(func: Callable[[Any, Type[Row], Any, Any], Any]) -> Callable[[Any, Type[Row], Any, Any], Any]: ...
+
+def invalidate(func: Callable[[Any, T, Any, Any], T]) -> Callable[[Any, T, Any, Any], T]: ...
 
 class TalosDatabase:
 
