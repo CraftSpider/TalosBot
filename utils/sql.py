@@ -200,6 +200,7 @@ def cached(func):
         return result
 
     cache_check.__doc__ = func.__doc__
+    cache_check.__wrapped__ = func
     
     return cache_check
 
@@ -225,6 +226,7 @@ def invalidate(func):
         return func(self, *args, **kwargs)
 
     cache_invalidate.__doc__ = func.__doc__
+    cache_invalidate.__wrapped__ = func
 
     return cache_invalidate
 

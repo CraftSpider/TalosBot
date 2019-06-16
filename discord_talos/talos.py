@@ -133,14 +133,11 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         :return: Whether Talos should embed message
         """
         if self.database.is_connected():
-            try:
-                if not self.database.get_user_options(ctx.author.id).rich_embeds:
-                    return False
-                if ctx.guild is not None:
-                    return self.database.get_guild_options(ctx.guild.id).rich_embeds and\
-                           ctx.channel.permissions_for(ctx.me).embed_links
-            except mysql.connector.ProgrammingError:
+            if not ctx.user_options.rich_embeds:
                 return False
+            if ctx.guild is not None:
+                return ctx.guild_options.rich_embeds and\
+                       ctx.channel.permissions_for(ctx.me).embed_links
         return ctx.channel.permissions_for(ctx.me).embed_links
 
     def get_timezone(self, ctx):
@@ -151,7 +148,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         """
         if self.database.is_connected():
             if ctx.guild is not None:
-                timezone = self.database.get_guild_options(ctx.guild.id).timezone
+                timezone = ctx.guild_options.timezone
                 return dt.timezone(dt.timedelta(hours=utils.tz_map[timezone.upper()]), timezone.upper())
         return dt.timezone(dt.timedelta(), "UTC")
 
@@ -171,6 +168,41 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         await self.session.close()
         await super().close()
 
+    async def get_context(self, message, *, cls=commands.Context):
+        """
+            Create a new context from an incoming message, setting up attributes and etc
+        :param message: Message to generate context from
+        :param cls: Class to use for the context
+        :return: new Context object
+        """
+        ctx = await super().get_context(message, cls=cls)
+
+        if ctx.guild is not None:
+            try:
+                ctx.guild_options = self.database.get_guild_options(ctx.guild.id)
+            except mysql.connector.Error:
+                ctx.guild_options = None
+                log.warning("Error getting guild options from database")
+        else:
+            ctx.guild_options = None
+
+        try:
+            ctx.user_options = self.database.get_user_options(ctx.author.id)
+        except mysql.connector.Error:
+            ctx.user_options = None
+            log.warning("Error getting user options from database")
+
+        # Check for custom command
+        if ctx.command is None and message.guild is not None:
+            try:
+                command = self.database.get_item(utils.GuildCommand, guild_id=ctx.guild.id, name=ctx.invoked_with)
+                if command is not None:
+                    ctx.command = custom_creator(ctx.invoked_with, command.text)
+            except mysql.connector.Error:
+                pass
+
+        return ctx
+
     async def process_commands(self, message):
         """
             Processes incoming messages from Discord, generates a ctx and invokes it.
@@ -180,16 +212,6 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
             return
 
         ctx = await self.get_context(message)
-
-        # Check for custom command
-        if ctx.command is None and message.guild is not None:
-            try:
-                command = self.database.get_item(utils.GuildCommand, guild_id=message.guild.id, name=ctx.invoked_with)
-                if command is not None:
-                    ctx.command = custom_creator(ctx.invoked_with, command.text)
-            except mysql.connector.Error:
-                pass
-
         await self.invoke(ctx)
 
     async def mod_log(self, ctx, event, user, message):
@@ -200,7 +222,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         :param user: User who is the target of the event
         :param message: The reason or details associated with the action
         """
-        options = self.database.get_guild_options(ctx.guild.id)
+        options = ctx.guild_options
         if not options.mod_log:
             return False
         try:
@@ -286,8 +308,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         """
         log.debug("OnCommandError Event")
         if isinstance(exception, commands.CommandNotFound):
-            if self.database.is_connected() and (ctx.guild is None or
-                                                 self.database.get_guild_options(ctx.guild.id).fail_message):
+            if ctx.guild is None or ctx.guild_options.fail_message:
                 cur_pref = (await self.get_prefix(ctx.message))[0]
                 await ctx.send(f"Sorry, I don't understand \"{ctx.invoked_with}\". May I suggest {cur_pref}help?")
         elif isinstance(exception, commands.BotMissingPermissions):

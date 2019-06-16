@@ -1,5 +1,4 @@
 
-import pytest
 import pathlib
 import inspect
 import tests.reflection as reflection
@@ -52,11 +51,8 @@ def test_stub_funcs():
     wrong_type = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for item in dir(code):
-            func = getattr(code, item)
-            if not inspect.isfunction(func) or not _file_matches(func, code):
-                continue
-            sfunc = getattr(stub, item, None)
+        for name, func in inspect.getmembers(code, predicate=lambda x: inspect.isfunction(x) and _file_matches(x, code)):
+            sfunc = getattr(stub, name, None)
             if sfunc is None:
                 missing.append(func)
                 continue
@@ -73,11 +69,8 @@ def test_stub_funcs_extra():
     extra = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for item in dir(stub):
-            func = getattr(stub, item)
-            if not inspect.isfunction(func) or not _file_matches(func, stub):
-                continue
-            cfunc = getattr(code, item, None)
+        for name, func in inspect.getmembers(stub, predicate=lambda x: inspect.isfunction(x) and _file_matches(x, stub)):
+            cfunc = getattr(code, name, None)
             if cfunc is None:
                 extra.append(func)
 
@@ -88,11 +81,8 @@ def test_stub_classes():
     missing = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for item in dir(code):
-            cls = getattr(code, item)
-            if not inspect.isclass(cls) or not _file_matches(cls, code):
-                continue
-            scls = getattr(stub, item, None)
+        for name, cls in inspect.getmembers(code, predicate=lambda x: inspect.isclass(x) and _file_matches(x, code)):
+            scls = getattr(stub, name, None)
             if scls is None:
                 missing.append(cls)
 
@@ -103,11 +93,8 @@ def test_stub_classes_extra():
     extra = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for item in dir(stub):
-            cls = getattr(stub, item)
-            if not inspect.isclass(cls) or not _file_matches(cls, stub):
-                continue
-            ccls = getattr(code, item, None)
+        for name, cls in inspect.getmembers(stub, predicate=lambda x: inspect.isclass(x) and _file_matches(x, stub)):
+            ccls = getattr(code, name, None)
             if ccls is None:
                 extra.append(cls)
 
@@ -119,15 +106,14 @@ def test_stub_methods():
     wrong_type = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for item in dir(code):
-            cls = getattr(code, item)
-            if not inspect.isclass(cls) or not _file_matches(cls, code):
-                continue
-            scls = getattr(stub, item, None)
+        for cls_name, cls in inspect.getmembers(code, predicate=lambda x: inspect.isclass(x) and _file_matches(x, code)):
+            scls = getattr(stub, cls_name, None)
             if scls is None:
                 continue
             for name in reflection.get_declared(cls, lambda x: inspect.isfunction(x.object)):
                 name = name.name
+                if name == "get_context":
+                    print()
                 sub = getattr(cls, name)
                 ssub = getattr(scls, name, None)
                 if ssub is None:
@@ -146,11 +132,8 @@ def test_stub_methods_extra():
     extra = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for item in dir(stub):
-            cls = getattr(stub, item)
-            if not inspect.isclass(cls) or not _file_matches(cls, stub):
-                continue
-            ccls = getattr(code, item, None)
+        for cls_name, cls in inspect.getmembers(stub, predicate=lambda x: inspect.isclass(x) and _file_matches(x, stub)):
+            ccls = getattr(code, cls_name, None)
             if ccls is None:
                 continue
             for name in reflection.get_declared(cls, lambda x: inspect.isfunction(x.object)):
