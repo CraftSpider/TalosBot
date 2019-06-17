@@ -3,7 +3,7 @@
 
     author: CraftSpider
 """
-from typing import List, Tuple, Union, Any, Dict, Pattern
+from typing import List, Tuple, Union, Any, Dict, Pattern, TypeVar, Type
 import logging
 import discord
 import discord.ext.commands as commands
@@ -11,6 +11,8 @@ import datetime
 import utils
 import utils.command_lang as cl
 import utils.dutils as dutils
+
+C = TypeVar("C", bound=commands.Context)
 
 TOKEN_FILE: str = ...
 FILE_BASE: Dict[str, Any] = ...
@@ -53,6 +55,8 @@ class Talos(dutils.ExtendedBot):
     async def logout(self) -> None: ...
 
     async def close(self) -> None: ...
+
+    async def get_context(self, message: discord.Message, *, cls: Type[C] = ...) -> C: ...
 
     async def process_commands(self, message: discord.Message) -> None: ...
 

@@ -1,5 +1,5 @@
 
-from typing import Callable, Awaitable, Any, Optional, Union
+from typing import Callable, Awaitable, Any, Optional, Union, NoReturn
 import asyncio
 import utils
 import utils.dutils as dutils
@@ -14,7 +14,7 @@ class EventLoop:
                  "description", "long_desc")
 
     _task: asyncio.Task
-    _callback: Callable[[Any], Awaitable]
+    _callback: Callable[[Any], Awaitable[None]]
     period: utils.EventPeriod
     persist: bool
     start_time: Optional[dt.datetime]
@@ -23,6 +23,12 @@ class EventLoop:
     parent: Union[dutils.TalosCog, dutils.ExtendedBot]
     description: str
     long_desc: str
+
+    def __call__(self, *args: Any, **kwargs: Any) -> NoReturn: ...
+
+    def __init__(self, coro: Callable[[Any], Awaitable[None]], period: str, loop: asyncio.AbstractEventLoop = ..., **kwargs: Any) -> None: ...
+
+    def __str__(self) -> str: ...
 
     @property
     def callback(self) -> Callable[[Any], Awaitable]: ...

@@ -112,15 +112,13 @@ def test_stub_methods():
                 continue
             for name in reflection.get_declared(cls, lambda x: inspect.isfunction(x.object)):
                 name = name.name
-                if name == "get_context":
-                    print()
                 sub = getattr(cls, name)
-                ssub = getattr(scls, name, None)
-                if ssub is None:
+                ssub = reflection.classify_attr(scls, name, None)
+                if ssub is None or ssub.defining_class != scls:
                     missing.append(sub)
                     continue
                 casync = inspect.iscoroutinefunction(sub) or inspect.isasyncgenfunction(sub)
-                sasync = inspect.iscoroutinefunction(ssub)
+                sasync = inspect.iscoroutinefunction(ssub.object)
                 if casync != sasync:
                     wrong_type.append((sub.__name__, casync, sasync))
 
@@ -139,8 +137,8 @@ def test_stub_methods_extra():
             for name in reflection.get_declared(cls, lambda x: inspect.isfunction(x.object)):
                 name = name.name
                 sub = getattr(cls, name)
-                csub = getattr(ccls, name, None)
-                if csub is None:
+                csub = reflection.classify_attr(ccls, name, None)
+                if csub is None or csub.defining_class != ccls:
                     extra.append(sub)
                     continue
 

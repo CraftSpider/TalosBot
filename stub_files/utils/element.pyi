@@ -1,5 +1,5 @@
 
-from typing import List, Dict, Optional, Any, Iterator
+from typing import List, Dict, Optional, Any, Iterator, NoReturn
 import abc
 
 
@@ -72,7 +72,7 @@ class Node:
     @abc.abstractmethod
     def outerhtml(self, value) -> None: ...
 
-    def add_child(self, el: 'Node', pos: int = ...): ...
+    def add_child(self, el: 'Node', pos: int = ...) -> None: ...
 
     def next_child(self, el: 'Node') -> Optional['Node']: ...
 
@@ -111,6 +111,10 @@ class Content(Node):
 
     @outerhtml.setter
     def outerhtml(self, value) -> None: ...
+
+    def add_child(self, el: 'Node', pos: int = ...) -> NoReturn: ...
+
+    def remove_child(self, el: 'Node') -> None: ...
 
 class Element(Node):
 
