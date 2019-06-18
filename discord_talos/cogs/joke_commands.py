@@ -76,7 +76,7 @@ class JokeCommands(dutils.TalosCog):
         await ctx.send(f"Hello there {ctx.author.name}")
 
     @commands.command(description="There's a relevant XKCD for everything")
-    async def xkcd(self, ctx, comic: int=0):
+    async def xkcd(self, ctx, comic: int = 0):
         """Gets an XKCD comic with the given number, or the current one if one isn't specified, and displays it."""
         if comic < 0:
             await ctx.send("Requested XKCD can't be negative")

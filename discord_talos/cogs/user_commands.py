@@ -157,7 +157,7 @@ class UserCommands(dutils.TalosCog):
             raise dutils.NotRegistered(ctx.author)
 
     @commands.command(description="Display a user profile")
-    async def profile(self, ctx, user: discord.User=None):
+    async def profile(self, ctx, user: discord.User = None):
         """Displays you or another user's profile, if it exists. Defaults to your own profile, but accepts the name """\
             """of a user to display instead."""
         if user is None:

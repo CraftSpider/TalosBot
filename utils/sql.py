@@ -752,7 +752,8 @@ class TalosDatabase:
         :param target: the target of the permission rule
         :return: the priority and whether to allow this rule if it exists, or None
         """
-        return self.get_item(data.PermissionRule, guild_id=guild_id, command=command, perm_type=perm_type, target=target)
+        return self.get_item(data.PermissionRule, guild_id=guild_id, command=command, perm_type=perm_type,
+                             target=target)
 
     def get_perm_rules(self, guild_id=-1, command=None, perm_type=None, target=None):
         """

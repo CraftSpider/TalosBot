@@ -219,7 +219,7 @@ self.bot.loop.create_task(__(self, ctx))
         await ctx.send("SQL Database Reconnection complete")
 
     @commands.command(description="Image testing. Smile!")
-    async def image(self, ctx, red: int=0, green: int=0, blue: int=0):
+    async def image(self, ctx, red: int = 0, green: int = 0, blue: int = 0):
         """Prints out a test image created on the spot. May eventually be useful for something."""
         start = datetime.now()
         image = Image.new("RGB", (250, 250), (red, green, blue))

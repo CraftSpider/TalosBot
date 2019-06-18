@@ -187,7 +187,7 @@ class Commands(dutils.TalosCog):
         await ctx.send(out)
 
     @generate.command(name="name", description="Generates a random name")
-    async def _name(self, ctx, number: int=1):
+    async def _name(self, ctx, number: int = 1):
         """Generates a name or names. Number must be between 1 and 6. Names are sourced from Behind The Name"""
         if number < 1 or number > 6:
             await ctx.send("Number must be between 1 and 6 inclusive.")
@@ -822,7 +822,7 @@ class Commands(dutils.TalosCog):
         await ctx.send(f"Version: {self.bot.VERSION}")
 
     @commands.group(aliases=["ww", "WW"], description="Have Talos help run a Word War", invoke_without_command=True)
-    async def wordwar(self, ctx, length, start=None, wpm: typing.Optional[int]=30, *, name=""):
+    async def wordwar(self, ctx, length, start=None, wpm: typing.Optional[int] = 30, *, name=""):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
             """number of words in the given time period. `^wordwar cancel [id]` to cancel a pending ww."""
         try:

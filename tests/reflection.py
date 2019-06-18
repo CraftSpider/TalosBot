@@ -51,7 +51,7 @@ def classify_attr(cls, name, default=...):
         if name == '__dict__':
             raise Exception("__dict__ is special, don't want the proxy")
         get_obj = getattr(cls, name)
-    except Exception as exc:
+    except Exception:
         pass
     else:
         homecls = getattr(get_obj, "__objclass__", homecls)

@@ -222,7 +222,7 @@ class AdminCommands(dutils.TalosCog):
 
     @perms.command(name="add", aliases=["create"], description="Create or alter permission rules")
     @commands.guild_only()
-    async def _p_add(self, ctx, command, level, allow, name=None, priority: int=None):
+    async def _p_add(self, ctx, command, level, allow, name=None, priority: int = None):
         """Provide a command, one of the four levels (see `^help perms`), whether to allow or forbid the command, """\
             """a name (If level is guild, this is ignored), and a priority if you don't want default."""
         level = level.lower()

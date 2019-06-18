@@ -51,7 +51,8 @@ def test_stub_funcs():
     wrong_type = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for name, func in inspect.getmembers(code, predicate=lambda x: inspect.isfunction(x) and _file_matches(x, code)):
+        for name, func in inspect.getmembers(code,
+                                             predicate=lambda x: inspect.isfunction(x) and _file_matches(x, code)):
             sfunc = getattr(stub, name, None)
             if sfunc is None:
                 missing.append(func)
@@ -69,7 +70,8 @@ def test_stub_funcs_extra():
     extra = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for name, func in inspect.getmembers(stub, predicate=lambda x: inspect.isfunction(x) and _file_matches(x, stub)):
+        for name, func in inspect.getmembers(stub,
+                                             predicate=lambda x: inspect.isfunction(x) and _file_matches(x, stub)):
             cfunc = getattr(code, name, None)
             if cfunc is None:
                 extra.append(func)
@@ -106,7 +108,8 @@ def test_stub_methods():
     wrong_type = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for cls_name, cls in inspect.getmembers(code, predicate=lambda x: inspect.isclass(x) and _file_matches(x, code)):
+        for cls_name, cls in inspect.getmembers(code,
+                                                predicate=lambda x: inspect.isclass(x) and _file_matches(x, code)):
             scls = getattr(stub, cls_name, None)
             if scls is None:
                 continue
@@ -130,7 +133,8 @@ def test_stub_methods_extra():
     extra = []
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for cls_name, cls in inspect.getmembers(stub, predicate=lambda x: inspect.isclass(x) and _file_matches(x, stub)):
+        for cls_name, cls in inspect.getmembers(stub,
+                                                predicate=lambda x: inspect.isclass(x) and _file_matches(x, stub)):
             ccls = getattr(code, cls_name, None)
             if ccls is None:
                 continue
