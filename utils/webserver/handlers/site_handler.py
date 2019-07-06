@@ -1,24 +1,26 @@
 
 import logging
-import pathlib
 import aiohttp.web as web
 
+from .base_handler import BaseHandler
 
-log = logging.getLogger("talos.server.site")
+
+log = logging.getLogger("utils.webserver.site")
 
 
-class SiteHandler:
+class SiteHandler(BaseHandler):
     """
         Site handler class for Talos server. Contains handlers for GETs, POSTs, and such
     """
 
+    __slots__ = ("webmaster", "base_path")
+
     def __init__(self, app):
         """
             Initializer for the Handler. Will only be run once due to singleton nature
-        :param settings: Settings dict for the server
+        :param app: Application for this server
         """
-        super().__init__()
-        self.app = app
+        super().__init__(app)
         self.webmaster = self.app["settings"].get("webmaster")
         self.base_path = self.app["settings"].get("base_path")
 
@@ -31,11 +33,11 @@ class SiteHandler:
         :return: Response object
         """
         log.info("Site GET")
-        path = await self.app.get_path(request.path)
+        path = await self.get_path(request.path)
         if isinstance(path, int):
-            response = await self.app.error_code(path)
+            response = await self.error_code(path)
         else:
-            response = await self.app.get_response(path, request=request)
+            response = await self.get_response(path, request=request)
         return response
 
     async def head(self, request):

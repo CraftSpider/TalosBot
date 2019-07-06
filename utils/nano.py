@@ -28,6 +28,10 @@ class _Empty:
     """
 
     def __init_subclass__(cls, **kwargs):
+        """
+            Implementation to forbid the creation  of subclasses of _Empty
+        :param kwargs: Any subclass arguments
+        """
         raise TypeError("type '_Empty' is not an acceptable base type")
 
 

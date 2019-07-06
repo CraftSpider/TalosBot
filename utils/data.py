@@ -441,6 +441,12 @@ class EventPeriod(SqlConvertable):
     __slots__ = ("_seconds",)
 
     def __new__(cls, period):
+        """
+            Create a new EventPeriod. If input is None, then we return None instead of a new
+            EventPeriod
+        :param period: object to create a new EventPeriod from
+        :return: Newly created EventPeriod, or None
+        """
         if period is None:
             return None
         else:

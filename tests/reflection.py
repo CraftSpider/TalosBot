@@ -11,17 +11,27 @@ import pkgutil
 import pathlib
 
 
-importlib.machinery.SOURCE_SUFFIXES += ".pyi"
+def unwrap(obj):
+    while hasattr(obj, "__func__") or hasattr(obj, "__wrapped__"):
+        if getattr(obj, "__func__", None) is not None:
+            obj = obj.__func__
+        elif getattr(obj, "__wrapped__", None) is not None:
+            obj = obj.__wrapped__
+    return obj
 
 
-def get_doc(object):
+def has_doc(obj):
+    return hasattr(obj, "__doc__") and isinstance(obj.__doc__, str)
+
+
+def get_doc(obj):
     try:
-        doc = object.__doc__
+        doc = obj.__doc__
     except AttributeError:
-        doc = None
+        return None
     if not isinstance(doc, str):
         return None
-    return doc
+    return inspect.cleandoc(doc)
 
 
 def is_docable(attr):
@@ -31,9 +41,7 @@ def is_docable(attr):
         member = attr
     if isinstance(member, commands.Command) or isinstance(member, dutils.EventLoop):
         return True
-    return inspect.iscoroutinefunction(member) or inspect.isfunction(member) or inspect.ismethod(member) or \
-        inspect.isasyncgenfunction(member) or inspect.isgeneratorfunction(member) or inspect.isclass(member) or \
-        isinstance(member, property)
+    return inspect.isroutine(member) or inspect.isclass(member) or isinstance(member, property)
 
 
 def classify_attr(cls, name, default=...):
@@ -120,7 +128,7 @@ def get_declared(type, predicate=None):
 def _get_undoc_type(type):
     out = []
 
-    if get_doc(type) is None:
+    if not has_doc(type):
         out.append((type.__name__, type))
 
     for attr in get_declared(type, is_docable):
@@ -129,11 +137,22 @@ def _get_undoc_type(type):
         if inspect.isclass(member):
             out.extend(get_undoced(member))
         elif isinstance(member, commands.Command) or isinstance(member, dutils.EventLoop):
-            if get_doc(member.callback) is None or member.description is "":
+            if not has_doc(member.callback) or member.description is "":
                 out.append((name, member))
         else:
-            if get_doc(member) is None:
+            member = unwrap(member)
+            if not has_doc(member):
                 out.append((name, member))
+    return out
+
+
+def _get_undoc_mod(mod):
+    out = []
+    for name, member in inspect.getmembers(mod, is_docable):
+        if inspect.isclass(member):
+            out.extend(get_undoced(member))
+        elif not has_doc(member):
+            out.append((name, member))
     return out
 
 
@@ -144,12 +163,8 @@ def _get_undoc_pkg(pkg):
         found = True
         if ispkg:
             continue
-        pkg = importlib.import_module(pname)
-        for name, member in inspect.getmembers(pkg, is_docable):
-            if inspect.isclass(member):
-                result.extend(get_undoced(member))
-            elif get_doc(member) is None:
-                result.append((name, member))
+        mod = importlib.import_module(pname)
+        result.extend(_get_undoc_mod(mod))
     if not found:
         raise FileNotFoundError("Unable to find any packages for the specified name")
     return result
@@ -158,20 +173,38 @@ def _get_undoc_pkg(pkg):
 def get_undoced(obj):
     if inspect.isclass(obj):
         return _get_undoc_type(obj)
+    elif inspect.ismodule(obj):
+        return _get_undoc_mod(obj)
     elif isinstance(obj, str):
         return _get_undoc_pkg(obj)
     else:
-        raise TypeError("get_undoced invalid for non-class or package name type")
+        raise TypeError("get_undoced only valid for class, module, or package name")
 
 
-def walk_with_stubs(base_path, stub_dir="stub_files", skip_dirs=None, skip_files=None):
+def module_from_file(path, base=None):
+    temp = path.with_suffix("")
+    if base is None:
+        name = temp.name
+    else:
+        temp = temp.relative_to(base)
+        name = ".".join(temp.parts)
+    loader = importlib.machinery.SourceFileLoader(name, path.__fspath__())
+    spec = importlib.util.spec_from_file_location(name, path, loader=loader)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    if name not in sys.modules:
+        sys.modules[name] = mod
+    return mod
+
+
+def walk_with_stub_files(base_path, stub_dir="stub_files", *, skip_dirs=None, skip_files=None, skip_hidden=True):
 
     base_path = pathlib.Path(base_path)
     base_stub_path = base_path / stub_dir
     if skip_dirs is None:
-        skip_dirs = (stub_dir, "__pycache__")
+        skip_dirs = {stub_dir, "__pycache__"}
     if skip_files is None:
-        skip_files = ("__init__.py", "__main__.py")
+        skip_files = {"__init__.py", "__main__.py"}
 
     for path, dirs, files in os.walk(base_path):
         root_path = pathlib.Path(path)
@@ -179,7 +212,7 @@ def walk_with_stubs(base_path, stub_dir="stub_files", skip_dirs=None, skip_files
 
         remove = []
         for item in dirs:
-            if item.startswith(".") or item in skip_dirs:
+            if (skip_hidden and item.startswith(".")) or item in skip_dirs:
                 remove.append(item)
         for item in remove:
             dirs.remove(item)
@@ -192,29 +225,14 @@ def walk_with_stubs(base_path, stub_dir="stub_files", skip_dirs=None, skip_files
             yield code_file, stub_file
 
 
-def _mod_from_path(path, base=None):
-    temp = path.with_suffix("")
-    if base is None:
-        name = temp.name
-    else:
-        temp = temp.relative_to(base)
-        name = ".".join(temp.parts)
-    spec = importlib.util.spec_from_file_location(name, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    if name not in sys.modules:
-        sys.modules[name] = mod
-    return mod
-
-
 def walk_with_modules(base_path, stub_dir="stub_files", skip_dirs=None, skip_files=None):
     base_path = pathlib.Path(base_path)
 
-    for code, stub in walk_with_stubs(base_path, stub_dir, skip_dirs, skip_files):
+    for code, stub in walk_with_stub_files(base_path, stub_dir, skip_dirs=skip_dirs, skip_files=skip_files):
         if not code.exists() or not stub.exists():
             continue
 
-        code_mod = _mod_from_path(code, base_path)
-        stub_mod = _mod_from_path(stub, base_path)
+        code_mod = module_from_file(code, base_path)
+        stub_mod = module_from_file(stub, base_path)
 
         yield code_mod, stub_mod

@@ -3,24 +3,25 @@ import logging
 import aiohttp.web as web
 import utils.twitch as twitch
 
-log = logging.getLogger("talos.server.auth")
+from .base_handler import BaseHandler
+
+log = logging.getLogger("utils.webserver.auth")
 
 
-class AuthHandler:
+class AuthHandler(BaseHandler):
     """
         Handler for the Twitch Webserver authorization path. Currently only handles twitch authorization,
         but any future auth flows will redirect here. Returns the authorization results
     """
 
-    __slots__ = ("app", "t_redirect")
+    __slots__ = ("t_redirect",)
 
     def __init__(self, app):
         """
             Create a new Webserver Authorization handler
         :param app: The application this handler is tied to
         """
-        super().__init__()
-        self.app = app
+        super().__init__(app)
         self.t_redirect = None
 
     async def get(self, request):

@@ -1,12 +1,12 @@
 
 from typing import Optional
 import aiohttp.web as web
+import utils.webserver.handlers.base_handler as bh
 
-class AuthHandler:
+class AuthHandler(bh.BaseHandler):
 
-    __slots__ = ("app", "t_redirect")
+    __slots__ = ("t_redirect",)
 
-    app: web.Application
     t_redirect: Optional[str]
 
     def __init__(self, app: web.Application) -> None: ...

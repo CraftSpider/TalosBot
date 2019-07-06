@@ -19,13 +19,13 @@ def test_website_docs():
     assert len(result) is 0, f"Missing documentation on: {', '.join(map(lambda x: x[0], result))}"
 
 
-SKIP_DIRS = ("stub_files", "__pycache__", "tests")
+SKIP_DIRS = {"stub_files", "__pycache__", "tests"}
 
 
 def test_stub_files():
     missing = []
 
-    for code, stub in reflection.walk_with_stubs(".", skip_dirs=SKIP_DIRS):
+    for code, stub in reflection.walk_with_stub_files(".", skip_dirs=SKIP_DIRS):
         if not stub.exists() or not stub.is_file():
             missing.append(code)
 
@@ -52,7 +52,7 @@ def test_stub_funcs():
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
         for name, func in inspect.getmembers(code,
-                                             predicate=lambda x: inspect.isfunction(x) and _file_matches(x, code)):
+                                             predicate=lambda x: inspect.isroutine(x) and _file_matches(x, code)):
             sfunc = getattr(stub, name, None)
             if sfunc is None:
                 missing.append(func)
@@ -71,7 +71,7 @@ def test_stub_funcs_extra():
 
     for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
         for name, func in inspect.getmembers(stub,
-                                             predicate=lambda x: inspect.isfunction(x) and _file_matches(x, stub)):
+                                             predicate=lambda x: inspect.isroutine(x) and _file_matches(x, stub)):
             cfunc = getattr(code, name, None)
             if cfunc is None:
                 extra.append(func)
@@ -113,7 +113,7 @@ def test_stub_methods():
             scls = getattr(stub, cls_name, None)
             if scls is None:
                 continue
-            for name in reflection.get_declared(cls, lambda x: inspect.isfunction(x.object)):
+            for name in reflection.get_declared(cls, lambda x: inspect.isroutine(x.object)):
                 name = name.name
                 sub = getattr(cls, name)
                 ssub = reflection.classify_attr(scls, name, None)
@@ -138,7 +138,7 @@ def test_stub_methods_extra():
             ccls = getattr(code, cls_name, None)
             if ccls is None:
                 continue
-            for name in reflection.get_declared(cls, lambda x: inspect.isfunction(x.object)):
+            for name in reflection.get_declared(cls, lambda x: inspect.isroutine(x.object)):
                 name = name.name
                 sub = getattr(cls, name)
                 csub = reflection.classify_attr(ccls, name, None)
