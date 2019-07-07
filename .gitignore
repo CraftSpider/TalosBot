@@ -12,3 +12,4 @@
 *.log
 *.json
 *.dat
+!schema.json

@@ -237,7 +237,7 @@ self.bot.loop.create_task(__(self, ctx))
         await ctx.send(file=file)
         end = datetime.now()
         await asyncio.sleep(.1)
-        await ctx.send(end - start)
+        await ctx.send(str(end - start))
 
     @commands.command(description="General test command. Does whatever it needs to")
     async def devtest(self, ctx):

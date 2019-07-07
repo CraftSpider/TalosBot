@@ -107,8 +107,11 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
 
         # Set talos specific things
         __tokens = kwargs.get("tokens", {})
+        with open("discord_talos/schema.json", "r") as file:
+            import json
+            schema_def = json.load(file)
 
-        self.database = utils.TalosDatabase(**__tokens.get("sql"))
+        self.database = utils.TalosDatabase(**__tokens.get("sql"), schemadef=schema_def)
         self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
 
         # Override things set by super init that we don't want

@@ -49,9 +49,6 @@ talos_remove_column: str = ...
 talos_modify_column: str = ...
 talos_create_trigger: str = ...
 
-talos_tables: Dict[str, Dict[str, Union[List[str], List[Tuple[str, int, Any]], str]]] = ...
-talos_triggers: Dict[str, Dict[str, str]]
-
 def and_from_dict(kwargs: Dict[str, Any]) -> str: ...
 
 def key_from_dict(kwargs: Dict[str, Any]) -> FrozenSet[str]: ...
@@ -62,7 +59,7 @@ def invalidate(func: Callable[[Any, T, Any, Any], T]) -> Callable[[Any, T, Any, 
 
 class TalosDatabase:
 
-    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port")
+    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port", "_schemadef")
 
     _sql_conn: Optional[mysql_abstracts.MySQLConnectionAbstract]
     _cursor: Union[cursor_cext.CMySQLCursor, EmptyCursor]
@@ -71,8 +68,9 @@ class TalosDatabase:
     _schema: str
     _host: str
     _port: int
+    _schemadef: Dict[str, Dict[str, Any]]
 
-    def __init__(self, address: str, port: int, username: str, password: str, schema: str) -> None: ...
+    def __init__(self, address: str, port: int, username: str, password: str, schema: str, schemadef: Dict[str, Dict[str, Any]]) -> None: ...
 
     def verify_schema(self) -> Dict[str, int]: ...
 

@@ -87,76 +87,6 @@ talos_remove_column = "ALTER TABLE {} DROP COLUMN {}"
 talos_modify_column = "ALTER TABLE {} MODIFY COLUMN {}"
 talos_create_trigger = "CREATE TRIGGER {} {} on {} {} END;"
 
-talos_tables = {
-    "guild_options": {
-        "columns": ("`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
-                    "`fail_message` tinyint(1) DEFAULT NULL", "`pm_help` tinyint(1) DEFAULT NULL",
-                    "`any_color` tinyint(1) DEFAULT NULL", "`commands` tinyint(1) DEFAULT NULL",
-                    "`user_commands` tinyint(1) DEFAULT NULL", "`joke_commands` tinyint(1) DEFAULT NULL",
-                    "`writing_prompts` tinyint(1) DEFAULT NULL", "`prompts_channel` varchar(64) DEFAULT NULL",
-                    "`mod_log` tinyint(1) DEFAULT NULL", "`log_channel` varchar(64) DEFAULT NULL",
-                    "`prefix` varchar(32) DEFAULT NULL", "`timezone` varchar(5) DEFAULT NULL"),
-        "primary": "PRIMARY KEY (`guild_id`)",
-        "defaults": ((-1, True, False, False, True, True, True, True, False, "prompts", False, "mod-log", "^", "UTC"),)
-    },
-    "admins": {
-        "columns": ("`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"),
-        "primary": "PRIMARY KEY (`guild_id`,`opname`)"
-    },
-    "perm_rules": {
-        "columns": ("`guild_id` bigint(20) NOT NULL", "`command` varchar(255) NOT NULL",
-                    "`perm_type` varchar(32) NOT NULL", "`target` varchar(255) NOT NULL",
-                    "`priority` int(11) NOT NULL", "`allow` tinyint(1) NOT NULL"),
-        "primary": "PRIMARY KEY (`guild_id`,`command`,`perm_type`,`target`)",
-    },
-    "uptime": {
-      "columns": ("`time` bigint(20) NOT NULL",),
-      "primary": "PRIMARY KEY (`time`)"
-    },
-    "user_options": {
-        "columns": ("`user_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
-                    "`prefix` varchar(32) DEFAULT NULL"),
-        "primary": "PRIMARY KEY (`user_id`)",
-        "defaults": ((-1, 1, "^"),)
-    },
-    "user_profiles": {
-        "columns": ("`user_id` bigint(20) NOT NULL", "`description` text",
-                    "`commands_invoked` int(11) NOT NULL DEFAULT '0'", "`title` text"),
-        "primary": "PRIMARY KEY (`user_id`)"
-    },
-    "user_titles": {
-        "columns": ("`user_id` bigint(20) NOT NULL", "`title` varchar(255) NOT NULL"),
-        "primary": "PRIMARY KEY (`user_id`,`title`)"
-    },
-    "invoked_commands": {
-        "columns": ("`user_id` bigint(20) NOT NULL", "`command_name` varchar(32) NOT NULL",
-                    "`times_invoked` int(11) NOT NULL DEFAULT '1'"),
-        "primary": "PRIMARY KEY (`command_name`,`user_id`)"
-    },
-    "guild_commands": {
-        "columns": ("`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`text` text NOT NULL"),
-        "primary": "PRIMARY KEY (`guild_id`,`name`)"
-    },
-    "guild_events": {
-        "columns": ("`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`period` varchar(32) NOT NULL",
-                    "`last_active` int NOT NULL", "`channel` bigint(20) NOT NULL", "`text` text NOT NULL"),
-        "primary": "PRIMARY KEY (`guild_id`,`name`)"
-    },
-    "quotes": {
-        "columns": ("`guild_id` bigint(20) NOT NULL", "`id` bigint NOT NULL", "`author` text",
-                    "`quote` text"),
-        "primary": "PRIMARY KEY (`guild_id`, `id`)"
-    }
-}
-talos_triggers = {
-    "quote_increment": {
-        "cause": "before insert",
-        "table": "quotes",
-        "text": "FOR EACH ROW BEGIN SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes "
-                "WHERE guild_id = NEW.guild_id);"
-    }
-}
-
 
 def and_from_dict(kwargs):
     """
@@ -237,9 +167,9 @@ class TalosDatabase:
         (Schema matching can be enforced with verify_schema)
     """
 
-    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port")
+    __slots__ = ("_sql_conn", "_cursor", "_username", "_password", "_schema", "_host", "_port", "_schemadef")
 
-    def __init__(self, address, port, username, password, schema):
+    def __init__(self, address, port, username, password, schema, schemadef):
         """
             Initializes a TalosDatabase object. If passed None, then it replaces the cursor with a dummy class.
         :param address: Address of the SQL database
@@ -247,6 +177,7 @@ class TalosDatabase:
         :param username: SQL username
         :param password: SQL password
         :param schema: SQL schema
+        :param schemadef: SQL Schema definition dict
         """
         self._username = username
         self._password = password
@@ -255,6 +186,7 @@ class TalosDatabase:
         self._port = port
         self._sql_conn = None
         self._cursor = None
+        self._schemadef = schemadef
         self.reset_connection()
 
     def verify_schema(self):
@@ -263,6 +195,8 @@ class TalosDatabase:
             expected table forms, it will be updated to match. This requires basically root on the database.
         """
         out = {"tables": 0, "columns_add": 0, "columns_remove": 0}
+        tables = self._schemadef.get("tables", {})
+        triggers = self._schemadef.get("triggers", {})
 
         if not self.is_connected():
             log.warning("Attempt to verify schema when database not connected")
@@ -277,7 +211,7 @@ class TalosDatabase:
             self._cursor.execute(talos_create_schema.format(self._schema))
 
         # Verify tables match expected
-        for table in talos_tables:
+        for table in tables:
             if self.has_table(table):
                 log.info(f"Found table {table}")
 
@@ -287,7 +221,7 @@ class TalosDatabase:
                 for item in columns:
                     columndat[item.name][0] += 1
                     columndat[item.name][1] = item.type
-                for item in talos_tables[table]["columns"]:
+                for item in tables[table]["columns"]:
                     details = re.search(r"`(.*?)` (\w+)", item)
                     name, col_type = details.group(1), details.group(2)
                     columndat[name][0] += 2
@@ -303,21 +237,21 @@ class TalosDatabase:
                         log.warning(f"  Could not find column {name}, creating column")
                         out["columns_add"] += 1
                         column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
-                                                  talos_tables[table]["columns"]))
-                        column_index = talos_tables[table]["columns"].index(column_spec)
+                                                  tables[table]["columns"]))
+                        column_index = tables[table]["columns"].index(column_spec)
                         if column_index == 0:
                             column_place = "FIRST"
                         else:
                             column_place = "AFTER " +\
                                            re.search(
                                                r"`(.*?)`",
-                                               talos_tables[table]["columns"][column_index-1]
+                                               tables[table]["columns"][column_index-1]
                                            ).group(1)
                         self._cursor.execute(talos_add_column.format(table, column_spec, column_place))
                     elif exists == 3 and type_match is not True:
                         log.warning(f"  Column {name} didn't match expected type, attempting to fix.")
                         column_spec = next(filter(lambda x: x.find("`{}`".format(name)) > -1,
-                                                  talos_tables[table]["columns"]))
+                                                  tables[table]["columns"]))
                         self._cursor.execute(talos_modify_column.format(table, column_spec))
                     else:
                         log.info(f"  Found column {name}")
@@ -326,28 +260,29 @@ class TalosDatabase:
                 out["tables"] += 1
                 self._cursor.execute(
                     talos_create_table.format(
-                        table, ',\n'.join(talos_tables[table]["columns"] + (talos_tables[table]["primary"],))
+                        table, ',\n'.join(tables[table]["columns"] + (tables[table]["primary"],))
                     )
                 )
 
         # Fill tables with default values
-        for table in talos_tables:
-            if talos_tables[table].get("defaults") is not None:
-                for values in talos_tables[table]["defaults"]:
-                    self._cursor.execute(f"REPLACE INTO {table} VALUES {values}")
+        for table in tables:
+            if tables[table].get("defaults") is not None:
+                for values in tables[table]["defaults"]:
+                    vals = str(values).strip("[]")
+                    self._cursor.execute(f"REPLACE INTO {table} VALUES ({vals})")
 
         # Drop existing triggers
         query = "SELECT trigger_name FROM information_schema.TRIGGERS WHERE trigger_schema = SCHEMA();"
         self._cursor.execute(query)
-        triggers = map(lambda x: x[0], self._cursor.fetchall())
-        for trigger in triggers:
+        old_triggers = map(lambda x: x[0], self._cursor.fetchall())
+        for trigger in old_triggers:
             self._cursor.execute(f"DROP TRIGGER {trigger}")
 
         # Add all triggers
-        for name in talos_triggers:
-            cause = talos_triggers[name]["cause"]
-            table = talos_triggers[name]["table"]
-            text = talos_triggers[name]["text"]
+        for name in triggers:
+            cause = triggers[name]["cause"]
+            table = triggers[name]["table"]
+            text = triggers[name]["text"]
             self._cursor.execute(talos_create_trigger.format(name, cause, table, text))
 
         return out
@@ -548,7 +483,10 @@ class TalosDatabase:
         try:
             table_name = item.table_name()
             row = item.to_row()
-            columns = list(map(lambda x: re.match(r"`(.*?)`", x).group(1), talos_tables[table_name]["columns"]))
+            columns = list(map(
+                lambda x: re.match(r"`(.*?)`", x).group(1),
+                self._schemadef["tables"][table_name]["columns"]
+            ))
             replace_str = ", ".join("%s" for _ in range(len(columns)))
             update_str = ", ".join(f"{i} = VALUES({i})" for i in columns)
             query = f"INSERT INTO {self._schema}.{table_name} VALUES ({replace_str}) "\
@@ -576,7 +514,10 @@ class TalosDatabase:
         try:
             table_name = item.table_name()
             row = item.to_row()
-            columns = list(map(lambda x: re.match(r"`(.*?)`", x).group(1), talos_tables[table_name]["columns"]))
+            columns = list(map(
+                lambda x: re.match(r"`(.*?)`", x).group(1),
+                self._schemadef["tables"][table_name]["columns"]
+            ))
             if not general:
                 delete_str = " AND ".join(f"{i} = %s" for i in columns)
             else:
@@ -620,7 +561,7 @@ class TalosDatabase:
             Get all default guild option values
         :return: List of guild option default values
         """
-        default = data.GuildOptions(talos_tables["guild_options"]["defaults"][0])
+        default = data.GuildOptions(self._schemadef["tables"]["guild_options"]["defaults"][0])
         return self.get_item(data.GuildOptions, default=default, guild_id=-1)
 
     def get_guild_options(self, guild_id):
@@ -654,7 +595,7 @@ class TalosDatabase:
             Get all default user option values
         :return: List of user option default values
         """
-        default = data.UserOptions(talos_tables["user_options"]["defaults"][0])
+        default = data.UserOptions(self._schemadef["tables"]["user_options"]["defaults"][0])
         return self.get_item(data.UserOptions, default=default, user_id=-1)
 
     def get_user_options(self, user_id):

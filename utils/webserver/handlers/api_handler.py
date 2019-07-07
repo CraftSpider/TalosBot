@@ -69,7 +69,7 @@ class APIHandler(BaseHandler):
         :param path: Request path
         :return: Command name
         """
-        return "_".join(path.split("/")[1:])
+        return "_".join(path.lstrip("/").split("/")[1:])
 
     async def get(self, request):
         """
@@ -112,6 +112,18 @@ class APIHandler(BaseHandler):
         except json.JSONDecodeError:
             return web.json_response(data={"error": "Malformed JSON in request"}, status=400)
 
+    def _get_handler(self, method, name):
+        """
+            Find a handler for a given method and name, if one exists
+        :param method: HTTP method
+        :param name: Name of the command
+        :return: Handler, if one exists
+        """
+        handler = self._handlers.get(f"{method}_{name}", None)
+        if handler is None:
+            handler = self._handlers.get(name, None)
+        return handler
+
     async def dispatch(self, name, method, data):
         """
             Dispatch an API command for a given path with given data
@@ -119,16 +131,13 @@ class APIHandler(BaseHandler):
         :param data: Data sent to this endpoint
         :return: Web response to return
         """
-        method = method.upper()
-
-        print(self._handlers)
-        print(method)
+        method = method.lower()
 
         parser = getattr(self, "handle_" + name, None)
         if parser is not None:
             data = parser(method, data)
 
-        handler = getattr(self, "on_" + name, None)
+        handler = self._get_handler(method, name)
         if handler is not None:
             return await handler(method, data)
         else:
