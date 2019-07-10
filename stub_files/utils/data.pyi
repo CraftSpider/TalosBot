@@ -1,5 +1,5 @@
 
-from typing import Dict, List, Any, Sequence, Union, Iterable, Optional
+from typing import Dict, List, Any, Sequence, Union, Iterable, Optional, Iterator
 import abc
 import datetime as dt
 import discord.ext.commands as commands
@@ -31,16 +31,18 @@ class MultiRow(metaclass=abc.ABCMeta):
 
     __slots__ = ("_removed",)
 
-    _removed: List[type(Row)]
+    _removed: Iterable[type(Row)]
 
     def __init__(self, data: Dict[str, Union[type(Row), List[type(Row)], Dict[Any, type(Row)]]]) -> None: ...
 
-    def __iter__(self) -> Iterable[type(Row)]: ...
+    def __iter__(self) -> Iterator[type(Row)]: ...
 
     def __eq__(self, other: Any) -> bool: ...
 
+    def items(self) -> Iterator[type(Row)]: ...
+
     @abc.abstractmethod
-    def removed_items(self) -> List[type(Row)]: ...
+    def removed_items(self) -> Iterable[type(Row)]: ...
 
 class SqlConvertable(metaclass=abc.ABCMeta):
 

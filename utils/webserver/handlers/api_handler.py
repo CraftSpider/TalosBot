@@ -89,6 +89,15 @@ class APIHandler(BaseHandler):
         log.info("API POST")
         return await self.dispatch_request("POST", request)
 
+    def json_error(self, text, status=400):
+        """
+            Return a JSON response indicating an error in a standard form
+        :param text: Text of the error
+        :param status: Status code of the response
+        :return: Response object
+        """
+        return web.json_response(data={"error": text}, status=status)
+
     async def dispatch_request(self, method, request):
         """
             Dispatch a request to the API
@@ -102,7 +111,7 @@ class APIHandler(BaseHandler):
         user_token = headers.get("token")
         username = headers.get("username")
         if not self._check_token(username, user_token):
-            return web.json_response(data={"error": "Invalid Token/Unknown User"}, status=403)
+            return self.json_error("Invalid Token/Unknown User", status=403)
 
         # And finally we can do what the request is asking
         try:
@@ -110,7 +119,7 @@ class APIHandler(BaseHandler):
             data = await request.json()
             return await self.dispatch(path, method, data)
         except json.JSONDecodeError:
-            return web.json_response(data={"error": "Malformed JSON in request"}, status=400)
+            return self.json_error("Malformed JSON in request")
 
     def _get_handler(self, method, name):
         """
@@ -139,7 +148,7 @@ class APIHandler(BaseHandler):
 
         handler = self._get_handler(method, name)
         if handler is not None:
-            return await handler(method, data)
+            return await handler(self, method, data)
         else:
-            return web.json_response(data={"error": "Unknown API Command"})
+            return self.json_error("Unknown API Command")
 

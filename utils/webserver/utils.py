@@ -66,6 +66,8 @@ def add_handler(app, handler, path=None):
     """
     if isinstance(handler, type):
         handler = handler(app=app)
+    if "handlers" not in app:
+        app["handlers"] = []
 
     routes = []
     for method in hdrs.METH_ALL:
@@ -74,6 +76,7 @@ def add_handler(app, handler, path=None):
             npath = f"/{path}/{{tail:.*}}" if path else "/{tail:.*}"
             routes.append(web.route(method, npath, meth))
     app.add_routes(routes)
+    app["handlers"].append(handler)
 
 
 def add_handlers(app, handlers, paths=None):
@@ -106,7 +109,7 @@ def setup(settings_path, handlers=None, paths=None):
     if paths is not None and handlers is None:
         raise ValueError("If paths is passed to setup, handlers must also be passed")
 
-    app = web.Application()
+    app = web.Application(client_max_size=1024**3)
     settings = load_settings(settings_path)
     apply_settings(app, settings)
     if handlers is not None:

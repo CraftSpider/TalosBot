@@ -60,8 +60,11 @@ def pytest_pycollect_makeitem(collector, name, obj):
 
 @pytest.fixture()
 def database():
+    import json
     log.debug("Creating database connection")
-    database = tutils.TalosDatabase("localhost", 3306, "root", "", "")
+    with open("discord_talos/schema.json") as f:
+        schemadef = json.load(f)
+    database = tutils.TalosDatabase("localhost", 3306, "root", "", "", schemadef)
     database.verify_schema()
     if not database.is_connected():
         raise pytest.skip("Test database not found")

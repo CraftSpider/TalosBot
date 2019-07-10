@@ -258,9 +258,15 @@ class TalosDatabase:
             else:
                 log.info(f"Could not find table {table}, creating table")
                 out["tables"] += 1
+                body = ',\n'.join(tables[table]["columns"] + ["PRIMARY KEY " + tables[table]["primary"]])
+                if "foreign" in tables[table]:
+                    for key in tables[table]["foreign"]:
+                        body += ",\n FOREIGN KEY " + key
+                    if "cascade" in tables[table] and tables[table]["cascade"] is True:
+                        body += " ON DELETE CASCADE"
                 self._cursor.execute(
                     talos_create_table.format(
-                        table, ',\n'.join(tables[table]["columns"] + (tables[table]["primary"],))
+                        table, ',\n'.join(tables[table]["columns"] + ["PRIMARY KEY " + tables[table]["primary"]])
                     )
                 )
 
@@ -391,8 +397,8 @@ class TalosDatabase:
         :param table: Name of the table to retrieve columnns from
         :return: List of column names and data types, or None if table doesn't exist
         """
-        query = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_NAME = %s"
-        self._cursor.execute(query, [table])
+        query = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s"
+        self._cursor.execute(query, [self._schema, table])
         return [data.Column(x) for x in self._cursor]
 
     def has_column(self, table, column):
@@ -482,6 +488,8 @@ class TalosDatabase:
         """
         try:
             table_name = item.table_name()
+            if not isinstance(table_name, str):
+                raise ValueError(f"Row table_name must be an instance of string, not {type(table_name).__name__}")
             row = item.to_row()
             columns = list(map(
                 lambda x: re.match(r"`(.*?)`", x).group(1),
@@ -519,7 +527,9 @@ class TalosDatabase:
                 self._schemadef["tables"][table_name]["columns"]
             ))
             if not general:
-                delete_str = " AND ".join(f"{i} = %s" for i in columns)
+                delete_str = " AND ".join(
+                    (f"{i} = %s" if v is not None else f"{i} is %s") for i, v in zip(columns, row)
+                )
             else:
                 delete_str = " AND ".join(
                     f"{columns[i]} = %s" for i in range(len(columns)) if getattr(item, item.__slots__[i]) is not None

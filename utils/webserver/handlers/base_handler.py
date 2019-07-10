@@ -7,6 +7,7 @@ import importlib.util
 import asyncio
 import warnings
 import inspect
+import os
 
 from .errors import ServerWarning, ServerError
 
@@ -164,6 +165,7 @@ class BaseHandler:
         :param request: web.Request object
         :return: web.Response to send to the user
         """
+        from .api_handler import APIHandler
         psp = _module_from_file(path)
 
         if not hasattr(psp, "page"):
@@ -178,20 +180,27 @@ class BaseHandler:
 
         # Do argument resolution
         possible_args = {
-            "app": self.app, "path": path, "dir": path.parent, "status": status, "request": request
+            "app": self.app, "path": path, "dir": path.parent, "status": status, "request": request,
+            "handler": self
         }
+        for handler in self.app["handlers"]:
+            if isinstance(handler, APIHandler):
+                possible_args["api"] = handler
         args, kwargs = _resolve_args(psp.page, possible_args)
 
+        curdir = os.getcwd()
         try:
             # Get result of page call
+            os.chdir(self.app["settings"]["base_path"])
             if asyncio.iscoroutinefunction(psp.page):
                 resp = await psp.page(*args, **kwargs)
             else:
                 resp = psp.page(*args, **kwargs)
         except Exception as e:
-            log.error(f"Encountered {e} while attempting to load page {path}")
+            log.error(f"Encountered {e.__class__.__name__}: {e} while attempting to load page {path}")
             return await self.error_code(500, e)
         finally:
+            os.chdir(curdir)
             del psp
 
         # Depending on result type, generate a response

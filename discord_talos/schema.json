@@ -8,56 +8,56 @@
                     "`writing_prompts` tinyint(1) DEFAULT NULL", "`prompts_channel` varchar(64) DEFAULT NULL",
                     "`mod_log` tinyint(1) DEFAULT NULL", "`log_channel` varchar(64) DEFAULT NULL",
                     "`prefix` varchar(32) DEFAULT NULL", "`timezone` varchar(5) DEFAULT NULL"],
-        "primary": "PRIMARY KEY (`guild_id`)",
+        "primary": "(`guild_id`)",
         "defaults": [[-1, true, false, false, true, true, true, true, false, "prompts", false, "mod-log", "^", "UTC"]]
     },
     "admins": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"],
-        "primary": "PRIMARY KEY (`guild_id`,`opname`)"
+        "primary": "(`guild_id`,`opname`)"
     },
     "perm_rules": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`command` varchar(255) NOT NULL",
                     "`perm_type` varchar(32) NOT NULL", "`target` varchar(255) NOT NULL",
                     "`priority` int(11) NOT NULL", "`allow` tinyint(1) NOT NULL"],
-        "primary": "PRIMARY KEY (`guild_id`,`command`,`perm_type`,`target`)"
+        "primary": "(`guild_id`,`command`,`perm_type`,`target`)"
     },
     "uptime": {
       "columns": ["`time` bigint(20) NOT NULL"],
-      "primary": "PRIMARY KEY (`time`)"
+      "primary": "(`time`)"
     },
     "user_options": {
         "columns": ["`user_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
                     "`prefix` varchar(32) DEFAULT NULL"],
-        "primary": "PRIMARY KEY (`user_id`)",
+        "primary": "(`user_id`)",
         "defaults": [[-1, 1, "^"]]
     },
     "user_profiles": {
         "columns": ["`user_id` bigint(20) NOT NULL", "`description` text",
                     "`commands_invoked` int(11) NOT NULL DEFAULT '0'", "`title` text"],
-        "primary": "PRIMARY KEY (`user_id`)"
+        "primary": "(`user_id`)"
     },
     "user_titles": {
         "columns": ["`user_id` bigint(20) NOT NULL", "`title` varchar(255) NOT NULL"],
-        "primary": "PRIMARY KEY (`user_id`,`title`)"
+        "primary": "(`user_id`,`title`)"
     },
     "invoked_commands": {
         "columns": ["`user_id` bigint(20) NOT NULL", "`command_name` varchar(32) NOT NULL",
                     "`times_invoked` int(11) NOT NULL DEFAULT '1'"],
-        "primary": "PRIMARY KEY (`command_name`,`user_id`)"
+        "primary": "(`command_name`,`user_id`)"
     },
     "guild_commands": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`text` text NOT NULL"],
-        "primary": "PRIMARY KEY (`guild_id`,`name`)"
+        "primary": "(`guild_id`,`name`)"
     },
     "guild_events": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`period` varchar(32) NOT NULL",
                     "`last_active` int NOT NULL", "`channel` bigint(20) NOT NULL", "`text` text NOT NULL"],
-        "primary": "PRIMARY KEY (`guild_id`,`name`)"
+        "primary": "(`guild_id`,`name`)"
     },
     "quotes": {
         "columns": ["`guild_id` bigint(20) NOT NULL", "`id` bigint NOT NULL", "`author` text",
                     "`quote` text"],
-        "primary": "PRIMARY KEY (`guild_id`, `id`)"
+        "primary": "(`guild_id`, `id`)"
     }
   },
   "triggers": {

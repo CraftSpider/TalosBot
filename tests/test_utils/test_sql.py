@@ -37,7 +37,7 @@ def test_data_classes(database):
 
 
 def test_empty_database():
-    database = tutils.TalosDatabase("", -1, "notauser", "", "talos_data")
+    database = tutils.TalosDatabase("", -1, "notauser", "", "talos_data", {})
 
     assert database.is_connected() is False, "Empty database considered connected"
     assert database.raw_exec("SELECT * FROM admins") == list(), "raw_exec didn't return empty fetchall"

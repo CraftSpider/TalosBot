@@ -124,7 +124,7 @@ class MultiRow(metaclass=abc.ABCMeta):
             Override this if not all slots are Rows or iterables of rows
         :return: Iterable of rows or iterable containing rows
         """
-        return iter(getattr(self, x) for x in self.__slots__)
+        return self.items()
 
     def __eq__(self, other):
         """
@@ -142,6 +142,14 @@ class MultiRow(metaclass=abc.ABCMeta):
             if sval != oval:
                 return False
         return True
+
+    def items(self):
+        """
+            Get an iterable of all Row like objects or iterable of row like objects in the MultiRow.
+            Override this if not all slots are Rows or iterables of rows
+        :return: Iterable of rows or iterable containing rows
+        """
+        return iter(getattr(self, x) for x in self.__slots__)
 
     @abc.abstractmethod
     def removed_items(self):
