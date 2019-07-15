@@ -191,9 +191,9 @@ def module_from_file(path, base=None):
     loader = importlib.machinery.SourceFileLoader(name, path.__fspath__())
     spec = importlib.util.spec_from_file_location(name, path, loader=loader)
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
     if name not in sys.modules:
         sys.modules[name] = mod
+    spec.loader.exec_module(mod)
     return mod
 
 

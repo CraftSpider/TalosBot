@@ -63,6 +63,24 @@ def html_to_markdown(html_text):
     return html_text
 
 
+def _parse_latex_out(output):
+    out = {}
+    out["errors"] = []
+    out["messages"] = []
+
+    lines = output.split("\n")
+    for line in lines:
+        if line.startswith("! "):
+            out["errors"].append(line[2:])
+        elif line.startswith("> "):
+            out["messages"].append(line[2:])
+        elif line.startswith("->"):
+            out["messages"][-1] += "  " + line
+        elif line.startswith("#"):
+            out["messages"][-1] += "  " + line
+    return out
+
+
 class Commands(dutils.TalosCog):
     """General Talos commands. Get bot info, check the time, or run a wordwar from here. These commands generally """\
         """aren't very user-specific, most commands are in this category."""
@@ -284,6 +302,7 @@ class Commands(dutils.TalosCog):
 \\usepackage{{tex/talos}}
 
 \\begin{{document}}
+    \\color{{DiscordWhite}}
     ${latex}$
 \\end{{document}}
 """
@@ -296,26 +315,42 @@ class Commands(dutils.TalosCog):
             with open(tex, "w") as file:
                 file.write(doc)
 
-            sp.check_output(["pdflatex", "-interaction=nonstopmode", tex])
-            if os.name == 'nt':
-                gs = "gswin64c"
-            else:
-                gs = "gs"
-            sp.call([gs, "-sDEVICE=pngalpha", "-dNOPAUSE", "-dBATCH", "-r300", f"-sOutputFile={filename}.png",
-                     f"{filename}.pdf"])
+            try:
+                sp.check_output(["pdflatex", "-interaction=nonstopmode", tex])
+            except sp.CalledProcessError as e:
+                latex_out = e.stdout.decode()
+                log.debug(latex_out)
+                output = _parse_latex_out(latex_out)
 
-            await ctx.send(file=discord.File(f"{filename}.png"))
-        except Exception as e:
-            if isinstance(e, sp.CalledProcessError):
-                out = "Error while parsing LaTeX:\n"
-                lines = e.stdout.decode().split("\n")
-                log.debug('\n'.join(lines))
-                for line in lines:
-                    if line.startswith("! "):
-                        out += line[2:] + "\n"
+                if output["errors"]:
+                    out = "Error while parsing LaTeX:\n"
+                    out += "\n".join(output["errors"])
+                else:
+                    out = "LaTeX Console Output:\n"
+                    out += "```\n"
+                    out += "\n".join(output["messages"])
+                    out += "```"
                 await ctx.send(out)
+            except FileNotFoundError:
+                await ctx.send("pdflatex command not found")
             else:
-                await ctx.send("Unknown error while attempting to parse LaTeX")
+                if os.name == 'nt':
+                    gs = "gswin64c"
+                else:
+                    gs = "gs"
+
+                try:
+                    sp.call([gs, "-sDEVICE=pngalpha", "-dNOPAUSE", "-dBATCH", "-r300", f"-sOutputFile={filename}.png",
+                            "-dGraphicsAlphaBits=4", "-dTextAlphaBits=4", f"{filename}.pdf"])
+                except sp.CalledProcessError:
+                    await ctx.send("Error during pdf -> png conversion")
+                except FileNotFoundError:
+                    await ctx.send("ghostscript command not found")
+                else:
+                    await ctx.send(file=discord.File(f"{filename}.png"))
+        except Exception as e:
+            utils.log_error(log, logging.WARNING, e, "Latex Command Error:")
+            await ctx.send("Unknown error while parsing/compiling LaTeX")
         finally:
             log.debug("Cleaning up LaTeX files")
             utils.safe_remove(*(f"{filename}." + x for x in ["tex", "aux", "pdf", "png", "log"]))

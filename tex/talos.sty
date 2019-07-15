@@ -1,7 +1,12 @@
 \ProvidesPackage{talos}
 
+% Pre-included packages
+
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage{xcolor}
+
+% New Commands
 
 \newcommand{\alias}[2]{\newcommand{#1}{#2}}
 \newcommand{\rlalias}[2]{\newcommand{#1}[1]{\csname l#2\endcsname ##1 \csname r#2\endcsname}}
@@ -14,3 +19,7 @@
 
 \rlalias{\floor}{floor}
 \rlalias{\ceil}{ceil}
+
+% Predefined Values
+
+\definecolor{DiscordWhite}{RGB}{220, 221, 222}
