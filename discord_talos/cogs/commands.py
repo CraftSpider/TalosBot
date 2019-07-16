@@ -64,6 +64,12 @@ def html_to_markdown(html_text):
 
 
 def _parse_latex_out(output):
+    """
+        Converts pdfLaTeX command output into a dictionary of
+        data about it
+    :param output: pdflatex command output string
+    :return: dictionary of important output
+    """
     out = {}
     out["errors"] = []
     out["messages"] = []
