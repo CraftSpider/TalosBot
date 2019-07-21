@@ -9,11 +9,6 @@ def test_discord_docs():
     assert len(result) is 0, f"Missing documentation on: {', '.join(map(lambda x: x[0], result))}"
 
 
-def test_util_docs():
-    result = reflection.get_undoced("utils")
-    assert len(result) is 0, f"Missing documentation on: {', '.join(map(lambda x: x[0], result))}"
-
-
 def test_website_docs():
     result = reflection.get_undoced("website")
     assert len(result) is 0, f"Missing documentation on: {', '.join(map(lambda x: x[0], result))}"
