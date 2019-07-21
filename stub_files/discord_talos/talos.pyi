@@ -8,9 +8,9 @@ import logging
 import discord
 import discord.ext.commands as commands
 import datetime
-import utils
-import utils.command_lang as cl
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.command_lang as cl
+import spidertools.discord as dutils
 
 C = TypeVar("C", bound=commands.Context)
 

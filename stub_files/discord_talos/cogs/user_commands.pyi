@@ -6,8 +6,8 @@
 
 from discord_talos.talos import Talos
 import logging
-import utils
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.discord as dutils
 import discord
 import discord.ext.commands as commands
 

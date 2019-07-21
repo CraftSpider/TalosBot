@@ -1,10 +1,10 @@
 
 import sys
-import utils
 import pathlib
 import logging
 import aiohttp.web as web
-import utils.webserver as webserver
+import spidertools.common as utils
+import spidertools.webserver as webserver
 
 
 log = logging.getLogger("talos.server")

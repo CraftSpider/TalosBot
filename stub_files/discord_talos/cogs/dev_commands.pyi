@@ -4,10 +4,10 @@
     author: CraftSpider
 """
 
-from typing import Callable, Any
+from typing import Callable
 from discord_talos.talos import Talos
 import logging
-import utils.dutils as dutils
+import spidertools.discord as dutils
 import discord
 import discord.ext.commands as commands
 

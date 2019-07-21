@@ -10,8 +10,8 @@ import discord.ext.commands as commands
 import typing
 import logging
 import asyncio
-import utils
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.discord as dutils
 
 log = logging.getLogger("talos.user")
 

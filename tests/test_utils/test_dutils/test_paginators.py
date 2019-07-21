@@ -1,6 +1,6 @@
 
 import datetime as dt
-import utils.dutils as dutils
+import spidertools.discord as dutils
 
 
 def test_paginated_helpers():

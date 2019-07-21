@@ -13,9 +13,9 @@ import re
 import pathlib
 import mysql.connector
 import datetime as dt
-import utils
-import utils.dutils as dutils
-import utils.command_lang as command_lang
+import spidertools.common as utils
+import spidertools.discord as dutils
+import spidertools.command_lang as command_lang
 
 #
 #   Constants

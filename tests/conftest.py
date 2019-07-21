@@ -8,7 +8,7 @@ import _pytest.python as py
 
 import discord.ext.test as dpytest
 import discord_talos.talos as dtalos
-import utils as tutils
+import spidertools.common as tutils
 
 
 log = logging.getLogger("talos.tests.conftest")

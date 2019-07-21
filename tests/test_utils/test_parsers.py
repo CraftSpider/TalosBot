@@ -1,5 +1,5 @@
 
-import utils.parsers as parsers
+import spidertools.common.parsers as parsers
 
 
 def test_site_parse():

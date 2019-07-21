@@ -8,7 +8,7 @@ from typing import Union, Dict
 from discord_talos.talos import Talos
 import logging
 import datetime as dt
-import utils.dutils as dutils
+import spidertools.discord as dutils
 import discord.ext.commands as commands
 
 log: logging.Logger = ...

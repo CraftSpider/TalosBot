@@ -1,7 +1,7 @@
 
 import pytest
 
-import utils as tutils
+import spidertools.common as tutils
 
 
 def test_empty_cursor():

@@ -11,8 +11,8 @@ import discord.ext.commands as commands
 import asyncio
 import logging
 import random
-import utils
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.discord as dutils
 
 log = logging.getLogger("talos.joke")
 

@@ -6,12 +6,12 @@
 
 from typing import List, Dict, Union, Tuple, Any
 from discord_talos.talos import Talos
-import utils.command_lang as command_lang
+import spidertools.command_lang as command_lang
+import spidertools.discord as dutils
 import logging
 import argparse
 import googleapiclient.discovery
 import oauth2client.client
-import utils.dutils as dutils
 import datetime as dt
 
 SCOPES: str = ...

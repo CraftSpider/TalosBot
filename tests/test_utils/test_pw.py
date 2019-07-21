@@ -3,7 +3,7 @@ import pytest
 
 import datetime as dt
 import discord.ext.test.backend as back
-import utils as tutils
+import spidertools.common as tutils
 
 
 def test_pw_member():

@@ -8,8 +8,8 @@ import logging
 import asyncio
 import discord.ext.commands as commands
 import datetime as dt
-import utils
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.discord as dutils
 from discord_talos.talos import Talos
 
 active_pw: Dict[int, utils.PW] = ...

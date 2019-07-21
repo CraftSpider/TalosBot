@@ -10,8 +10,8 @@ import discord.ext.commands as commands
 import asyncio
 import logging
 import typing
-import utils
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.discord as dutils
 
 from collections import defaultdict
 

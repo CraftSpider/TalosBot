@@ -11,8 +11,8 @@ import asyncio
 import random
 import logging
 import re
-import utils
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.discord as dutils
 import html
 import os
 import typing

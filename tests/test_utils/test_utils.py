@@ -6,8 +6,8 @@
 """
 
 import pytest
-import utils
 import string
+import spidertools.common.utils as utils
 
 from pathlib import Path
 

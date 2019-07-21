@@ -9,9 +9,9 @@ import pathlib
 import httplib2
 import logging
 import random
-import utils
-import utils.command_lang as command_lang
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.command_lang as command_lang
+import spidertools.discord as dutils
 import datetime as dt
 
 from apiclient import discovery

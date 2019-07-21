@@ -1,6 +1,6 @@
 
 import discord.ext.commands as commands
-import utils.dutils as dutils
+import spidertools.discord as dutils
 import os
 import sys
 import inspect

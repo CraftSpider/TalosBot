@@ -8,7 +8,7 @@ from typing import Callable, Dict, Union
 from collections import defaultdict
 from discord_talos.talos import Talos
 import logging
-import utils.dutils as dutils
+import spidertools.discord as dutils
 import discord
 import discord.ext.commands as commands
 

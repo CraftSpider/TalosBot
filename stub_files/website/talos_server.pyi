@@ -1,7 +1,7 @@
 
 from typing import Dict, Any
 import aiohttp.web as web
-import utils.webserver as webserver
+import spidertools.webserver as webserver
 import pathlib
 
 SETTINGS_FILE: pathlib.Path = ...

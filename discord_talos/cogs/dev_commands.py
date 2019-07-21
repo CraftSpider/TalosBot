@@ -10,8 +10,8 @@ import discord.ext.commands as commands
 import logging
 import re
 import io
-import utils
-import utils.dutils as dutils
+import spidertools.common as utils
+import spidertools.discord as dutils
 import asyncio
 
 from datetime import datetime
