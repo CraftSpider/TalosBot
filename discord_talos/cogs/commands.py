@@ -87,6 +87,18 @@ def _parse_latex_out(output):
     return out
 
 
+class WWTimeConverter(commands.Converter):
+
+    REG = re.compile(r":?(\d+)")
+
+    async def convert(self, ctx, argument):
+        match = self.REG.match(argument)
+        if match is not None:
+            return int(match.group(1))
+        else:
+            raise commands.CommandError("Invalid start time argument to WordWar")
+
+
 class Commands(dutils.TalosCog):
     """General Talos commands. Get bot info, check the time, or run a wordwar from here. These commands generally """\
         """aren't very user-specific, most commands are in this category."""
@@ -863,7 +875,7 @@ class Commands(dutils.TalosCog):
         await ctx.send(f"Version: {self.bot.VERSION}")
 
     @commands.group(aliases=["ww", "WW"], description="Have Talos help run a Word War", invoke_without_command=True)
-    async def wordwar(self, ctx, length, start=None, wpm: typing.Optional[int] = 30, *, name=""):
+    async def wordwar(self, ctx, length, start: typing.Optional[WWTimeConverter] = None, wpm: typing.Optional[int] = 30, *, name=""):
         """Runs a word war for a given length. A word war being a multi-person race to see who can get the greatest """\
             """number of words in the given time period. `^wordwar cancel [id]` to cancel a pending ww."""
         try:
@@ -878,18 +890,9 @@ class Commands(dutils.TalosCog):
             await ctx.send("Please choose a non-negative WPM.")
             return
 
-        if start is not None:
-            try:
-                if start[0] == ":":
-                    start = int(start[1:])
-                else:
-                    start = int(start)
-                if start > 59 or start < 0:
-                    await ctx.send("Please specify a start time in the range of 0 to 59.")
-                    return
-            except ValueError:
-                await ctx.send("Start time format broken. Starting now.")
-                start = None
+        if start is not None and start > 59 or start < 0:
+            await ctx.send("Please specify a start time in the range of 0 to 59.")
+            return
 
         dif = dt.timedelta(0)
         if start is not None:
