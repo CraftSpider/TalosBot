@@ -12,6 +12,7 @@ import logging
 import typing
 import spidertools.common as utils
 import spidertools.discord as dutils
+import discord_talos.talossql as sql
 
 from collections import defaultdict
 
@@ -107,9 +108,9 @@ class AdminCommands(dutils.TalosCog):
         await ctx.send(f"User {user} silenced")
         if length is not None:
             if isinstance(length, str):
-                period = utils.data.EventPeriod(length)
+                period = dutils.EventPeriod(length)
             elif isinstance(length, int):
-                period = utils.data.EventPeriod("")
+                period = dutils.EventPeriod("")
                 period.minutes = length
 
             async def unmuter():
@@ -140,7 +141,7 @@ class AdminCommands(dutils.TalosCog):
     @commands.guild_only()
     async def _ad_add(self, ctx, member: discord.Member):
         """Adds a user to the guild admin list."""
-        new_admin = utils.TalosAdmin((ctx.guild.id, member.id))
+        new_admin = sql.TalosAdmin((ctx.guild.id, member.id))
         if new_admin not in self.database.get_admins(ctx.guild.id):
             self.database.save_item(new_admin)
             await ctx.send(f"Added admin {member.name}!")
@@ -257,7 +258,7 @@ class AdminCommands(dutils.TalosCog):
             name = str(name) if name != "" else "SELF"
             priority = priority or utils.sql.levels[level]
 
-            perm_rule = utils.PermissionRule((ctx.guild.id, command, level, name, priority, allow))
+            perm_rule = sql.PermissionRule((ctx.guild.id, command, level, name, priority, allow))
             self.database.save_item(perm_rule)
             await ctx.send(f"Permissions for command **{command}** at level **{level}** updated.")
         elif not found:
@@ -280,7 +281,7 @@ class AdminCommands(dutils.TalosCog):
                     name = str(discord.utils.find(lambda r: r.name == name, ctx.guild.roles))
                 elif level == "channel":
                     name = str(discord.utils.find(lambda c: c.name == name, ctx.guild.channels))
-            perm_rule = utils.PermissionRule((ctx.guild.id, command, level, name, None, None))
+            perm_rule = sql.PermissionRule((ctx.guild.id, command, level, name, None, None))
             self.database.remove_item(perm_rule, general=True)
             if command is None:
                 await ctx.send("Permissions for guild cleared")
@@ -461,7 +462,7 @@ class AdminCommands(dutils.TalosCog):
         elif self.database.get_guild_command(ctx.guild.id, name):
             await ctx.send("That command already exists. Maybe you meant to `edit` it instead?")
             return
-        self.database.save_item(utils.GuildCommand((ctx.guild.id, name, text)))
+        self.database.save_item(sql.GuildCommand((ctx.guild.id, name, text)))
         await ctx.send(f"Command {name} created")
 
     @command.command(name="edit", description="Edit existing command")
@@ -470,7 +471,7 @@ class AdminCommands(dutils.TalosCog):
         if not self.database.get_guild_command(ctx.guild.id, name):
             await ctx.send("That command doesn't exist. Maybe you meant to `add` it instead?")
             return
-        self.database.save_item(utils.GuildCommand((ctx.guild.id, name, text)))
+        self.database.save_item(sql.GuildCommand((ctx.guild.id, name, text)))
         await ctx.send(f"Command {name} successfully edited")
 
     @command.command(name="remove", description="Remove existing command")
@@ -479,7 +480,7 @@ class AdminCommands(dutils.TalosCog):
         if self.database.get_guild_command(ctx.guild.id, name) is None:
             await ctx.send("That command doesn't exist, sorry.")
             return
-        self.database.remove_item(utils.GuildCommand((ctx.guild.id, name, None)), True)
+        self.database.remove_item(sql.GuildCommand((ctx.guild.id, name, None)), True)
         await ctx.send(f"Command {name} successfully removed")
 
     @command.command(name="list", description="List existing commands")
@@ -510,7 +511,7 @@ class AdminCommands(dutils.TalosCog):
         if self.database.get_guild_event(ctx.guild.id, name):
             await ctx.send("That event already exists. Maybe you meant to `edit` it instead?")
             return
-        event = utils.GuildEvent((ctx.guild.id, name, period, 0, ctx.channel.id, text))
+        event = sql.GuildEvent((ctx.guild.id, name, period, 0, ctx.channel.id, text))
         self.database.save_item(event)
         await ctx.send(f"Event {name} created")
 
@@ -532,7 +533,7 @@ class AdminCommands(dutils.TalosCog):
         if self.database.get_guild_event(ctx.guild.id, name) is None:
             await ctx.send("That event doesn't exist, sorry.")
             return
-        event = utils.GuildEvent((ctx.guild.id, name, None, None, None, None))
+        event = sql.GuildEvent((ctx.guild.id, name, None, None, None, None))
         self.database.remove_item(event, True)
         await ctx.send(f"Event {name} successfully removed")
 

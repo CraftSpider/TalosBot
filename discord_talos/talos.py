@@ -16,6 +16,7 @@ import datetime as dt
 import spidertools.common as utils
 import spidertools.discord as dutils
 import spidertools.command_lang as command_lang
+import discord_talos.talossql as sql
 
 #
 #   Constants
@@ -198,7 +199,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         # Check for custom command
         if ctx.command is None and message.guild is not None:
             try:
-                command = self.database.get_item(utils.GuildCommand, guild_id=ctx.guild.id, name=ctx.invoked_with)
+                command = self.database.get_item(sql.GuildCommand, guild_id=ctx.guild.id, name=ctx.invoked_with)
                 if command is not None:
                     ctx.command = custom_creator(ctx.invoked_with, command.text)
             except mysql.connector.Error:

@@ -19,6 +19,7 @@ import typing
 import psutil
 import subprocess as sp
 import datetime as dt
+import discord_talos.talossql as sql
 
 from collections import defaultdict
 
@@ -732,7 +733,7 @@ class Commands(dutils.TalosCog):
             member = ctx.guild.get_member(dutils.get_id(author))
             if member is not None:
                 author = str(member)
-        quote = utils.Quote([ctx.guild.id, None, author, quote])
+        quote = sql.Quote([ctx.guild.id, None, author, quote])
         self.database.save_item(quote)
         await ctx.send(f"Quote from {author} added!")
 
@@ -742,7 +743,7 @@ class Commands(dutils.TalosCog):
         """Remove the quote with a specific ID"""
         quote = self.database.get_quote(ctx.guild.id, num)
         if quote is not None:
-            self.database.remove_items(utils.Quote, guild_id=ctx.guild.id, id=num)
+            self.database.remove_items(sql.Quote, guild_id=ctx.guild.id, id=num)
             await ctx.send(f"Removed quote {num}")
         else:
             await ctx.send(f"No quote for ID {num}")
@@ -755,7 +756,7 @@ class Commands(dutils.TalosCog):
             await ctx.send(f"Requested page must be greater than 0")
             return
 
-        num_quotes = self.database.get_count(utils.Quote, guild_id=ctx.guild.id)
+        num_quotes = self.database.get_count(sql.Quote, guild_id=ctx.guild.id)
         pages = round(num_quotes / 10 + .5)
         if page > pages:
             await ctx.send(f"Requested page doesn't exist, last page is {pages}")
@@ -763,7 +764,7 @@ class Commands(dutils.TalosCog):
 
         start = (page - 1) * 10
         count = 10
-        quotes = self.database.get_items(utils.Quote, limit=(start, count), order="id", guild_id=ctx.guild.id)
+        quotes = self.database.get_items(sql.Quote, limit=(start, count), order="id", guild_id=ctx.guild.id)
 
         if self.bot.should_embed(ctx):
             with dutils.PaginatedEmbed() as embed:

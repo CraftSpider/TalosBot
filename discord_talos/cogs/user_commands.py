@@ -12,6 +12,7 @@ import logging
 import asyncio
 import spidertools.common as utils
 import spidertools.discord as dutils
+import discord_talos.talossql as sql
 
 log = logging.getLogger("talos.user")
 
@@ -251,7 +252,7 @@ class UserCommands(dutils.TalosCog):
     @user.command(name="stats", description="List your current user stats")
     async def _stats(self, ctx):
         """Will show just about everything Talos knows about you."""
-        ctx.t_user: utils.TalosUser
+        ctx.t_user: sql.TalosUser
         out = "```"
         out += f"Desc: {ctx.t_user.profile.description}\n"
         out += f"Total Invoked: {ctx.t_user.profile.commands_invoked}\n"
