@@ -3,7 +3,7 @@
 
     author: CraftSpider
 """
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict, Optional, Pattern
 import logging
 import asyncio
 import discord.ext.commands as commands
@@ -22,6 +22,12 @@ def strfdelta(time_delta: dt.timedelta, fmt: str) -> str: ...
 def html_to_markdown(html_text: str) -> str: ...
 
 def _parse_latex_out(output: str) -> Dict[str, List[str]]: ...
+
+class WWTimeConverter(commands.Converter):
+
+    REG: Pattern
+
+    async def convert(self, ctx: commands.Context, argument: str) -> int: ...
 
 class Commands(dutils.TalosCog):
 

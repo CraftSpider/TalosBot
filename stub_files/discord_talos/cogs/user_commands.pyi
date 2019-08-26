@@ -10,6 +10,7 @@ import spidertools.common as utils
 import spidertools.discord as dutils
 import discord
 import discord.ext.commands as commands
+import discord_talos.talossql as sql
 
 log: logging.Logger = ...
 
@@ -44,7 +45,7 @@ class UserCommands(dutils.TalosCog):
     async def user(self, ctx: commands.Context) -> None: ...
 
     class UserCtx(commands.Context):
-        profile: utils.TalosUser
+        profile: sql.TalosUser
 
     async def _title(self, ctx: UserCtx, title: str = ...) -> None: ...
 

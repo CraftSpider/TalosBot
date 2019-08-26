@@ -9,6 +9,7 @@ import _pytest.python as py
 import discord.ext.test as dpytest
 import discord_talos.talos as dtalos
 import spidertools.common as tutils
+import discord_talos.talossql as sql
 
 
 log = logging.getLogger("talos.tests.conftest")
@@ -64,7 +65,7 @@ def database():
     log.debug("Creating database connection")
     with open("discord_talos/schema.json") as f:
         schemadef = json.load(f)
-    database = tutils.TalosDatabase("localhost", 3306, "root", "", "", schemadef)
+    database = sql.TalosDatabase("localhost", 3306, "root", "", "", schemadef)
     database.verify_schema()
     if not database.is_connected():
         raise pytest.skip("Test database not found")

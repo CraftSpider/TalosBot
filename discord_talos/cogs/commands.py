@@ -89,10 +89,19 @@ def _parse_latex_out(output):
 
 
 class WWTimeConverter(commands.Converter):
+    """
+        A converter for WW times that accepts either bare ints or ints prefixed by `:`
+    """
 
     REG = re.compile(r":?(\d+)")
 
     async def convert(self, ctx, argument):
+        """
+            Convert a WWTime argument, or throw a CommandError if conversion fails
+        :param ctx: discord context
+        :param argument: string argument to convert
+        :return: int form of the argument
+        """
         match = self.REG.match(argument)
         if match is not None:
             return int(match.group(1))
@@ -891,7 +900,7 @@ class Commands(dutils.TalosCog):
             await ctx.send("Please choose a non-negative WPM.")
             return
 
-        if start is not None and start > 59 or start < 0:
+        if start is not None and (start > 59 or start < 0):
             await ctx.send("Please specify a start time in the range of 0 to 59.")
             return
 

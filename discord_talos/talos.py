@@ -112,7 +112,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
             import json
             schema_def = json.load(file)
 
-        self.database = utils.TalosDatabase(**__tokens.get("sql"), schemadef=schema_def)
+        self.database = sql.TalosDatabase(**__tokens.get("sql"), schemadef=schema_def)
         self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
 
         # Override things set by super init that we don't want

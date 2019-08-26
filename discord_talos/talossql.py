@@ -265,6 +265,10 @@ class Quote(Row):
 
 
 class TalosDatabase(common.GenericDatabase):
+    """
+        A talos-specific variant of the generic database that provides methods to get Talos data objects,
+        as well as add and remove uptimes.
+    """
 
     # Guild option methods
 

@@ -11,6 +11,7 @@ import datetime
 import spidertools.common as utils
 import spidertools.command_lang as cl
 import spidertools.discord as dutils
+import discord_talos.talossql as sql
 
 C = TypeVar("C", bound=commands.Context)
 
@@ -40,7 +41,7 @@ class Talos(dutils.ExtendedBot):
     extension_dir: str = ...
     startup_extensions: Tuple[str, ...] = ...
     DEVS: Tuple[int, int, int] = ...
-    database: utils.TalosDatabase
+    database: sql.TalosDatabase
     session: utils.TalosHTTPClient
 
     # noinspection PyMissingConstructor
