@@ -1,16 +1,13 @@
 
-import pathlib
 import inspect
-import tests.reflection as reflection
+import pytest
+import spidertools.common.reflection as reflection
+from collections import namedtuple
 
 
-def test_discord_docs():
-    result = reflection.get_undoced("discord_talos")
-    assert len(result) is 0, f"Missing documentation on: {', '.join(map(lambda x: x[0], result))}"
-
-
-def test_website_docs():
-    result = reflection.get_undoced("website")
+@pytest.mark.parametrize("package", ["discord_talos", "website"])
+def test_docs(package):
+    result = reflection.get_undoced(package)
     assert len(result) is 0, f"Missing documentation on: {', '.join(map(lambda x: x[0], result))}"
 
 
@@ -27,118 +24,56 @@ def test_stub_files():
     assert len(missing) == 0, f"Missing stub files for files: {', '.join(map(lambda x: x.name, missing))}"
 
 
-def _format_missing(func):
-    return f"{func.__name__} in {inspect.getfile(func)}"
+def _get_type(obj):
+    import discord.ext.commands as commands
+    if isinstance(obj, commands.Command):
+        obj = obj.callback
+    obj = inspect.unwrap(obj)
+
+    if inspect.isclass(obj):
+        return 'class'
+    elif inspect.isroutine(obj):
+        return 'async' if inspect.iscoroutinefunction(obj) or inspect.isasyncgenfunction(obj) else 'sync'
+    elif isinstance(obj, type(...)):
+        return 'ellipsis'
+    else:
+        return 'unknown'
 
 
-def _format_wrong(args):
-    return f"{args[0]}: Real {'async' if args[1] else 'sync'}, Stub {'async' if args[2] else 'sync'}"
+ItemGenResult = namedtuple("ItemGenResult", "name code stub")
 
 
-def _file_matches(obj, mod):
-    modpath = pathlib.Path(mod.__file__).absolute()
-    objpath = pathlib.Path(inspect.getfile(obj)).absolute()
-    return objpath.parts == modpath.parts
+def _clean_name(name, real, stub):
+    import discord.ext.commands as commands
+    test = real if real is not None else stub
+    if isinstance(test, commands.Command):
+        test = test.callback
+    test = reflection.unwrap(test)
+    if isinstance(test, type):
+        return test.__name__
+    elif inspect.isfunction(test):
+        return test.__qualname__
+    return name
 
 
-def test_stub_funcs():
-    missing = []
-    wrong_type = []
-
-    for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for name, func in inspect.getmembers(code,
-                                             predicate=lambda x: inspect.isroutine(x) and _file_matches(x, code)):
-            sfunc = getattr(stub, name, None)
-            if sfunc is None:
-                missing.append(func)
-                continue
-            casync = inspect.iscoroutinefunction(func) or inspect.isasyncgenfunction(func)
-            sasync = inspect.iscoroutinefunction(sfunc)
-            if casync != sasync:
-                wrong_type.append((func.__name__, casync, sasync))
-
-    assert len(missing) == 0, f"Missing stubs for functions: {', '.join(map(_format_missing, missing))}"
-    assert len(wrong_type) == 0, f"Type mismatch for functions: {', '.join(map(_format_wrong, wrong_type))}"
+def _gen_test_id(val):
+    import sys
+    sys.stdout.write(str(val))
+    return val.name.replace(".", "/")
 
 
-def test_stub_funcs_extra():
-    extra = []
+@pytest.mark.parametrize("val",
+                         reflection.walk_all_items(".", skip_dirs=SKIP_DIRS, name_cleaner=_clean_name),
+                         ids=_gen_test_id)
+def test_stub(val):
+    name, real, stub = val
+    if stub is None:
+        pytest.fail(f"Missing stub for object {name}")
+    elif real is None:
+        pytest.fail(f"Extra stub for object {name}")
 
-    for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for name, func in inspect.getmembers(stub,
-                                             predicate=lambda x: inspect.isroutine(x) and _file_matches(x, stub)):
-            cfunc = getattr(code, name, None)
-            if cfunc is None:
-                extra.append(func)
+    real_type = _get_type(real)
+    stub_type = _get_type(stub)
 
-    assert len(extra) == 0, f"Extra stubs for functions: {', '.join(map(_format_missing, extra))}"
-
-
-def test_stub_classes():
-    missing = []
-
-    for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for name, cls in inspect.getmembers(code, predicate=lambda x: inspect.isclass(x) and _file_matches(x, code)):
-            scls = getattr(stub, name, None)
-            if scls is None:
-                missing.append(cls)
-
-    assert len(missing) == 0, f"Missing stubs for classes: {', '.join(map(_format_missing, missing))}"
-
-
-def test_stub_classes_extra():
-    extra = []
-
-    for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for name, cls in inspect.getmembers(stub, predicate=lambda x: inspect.isclass(x) and _file_matches(x, stub)):
-            ccls = getattr(code, name, None)
-            if ccls is None:
-                extra.append(cls)
-
-    assert len(extra) == 0, f"Extra stubs for classes: {', '.join(map(_format_missing, extra))}"
-
-
-def test_stub_methods():
-    missing = []
-    wrong_type = []
-
-    for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for cls_name, cls in inspect.getmembers(code,
-                                                predicate=lambda x: inspect.isclass(x) and _file_matches(x, code)):
-            scls = getattr(stub, cls_name, None)
-            if scls is None:
-                continue
-            for name in reflection.get_declared(cls, lambda x: inspect.isroutine(x.object)):
-                name = name.name
-                sub = getattr(cls, name)
-                ssub = reflection.classify_attr(scls, name, None)
-                if ssub is None or ssub.defining_class != scls:
-                    missing.append(sub)
-                    continue
-                casync = inspect.iscoroutinefunction(sub) or inspect.isasyncgenfunction(sub)
-                sasync = inspect.iscoroutinefunction(ssub.object)
-                if casync != sasync:
-                    wrong_type.append((sub.__name__, casync, sasync))
-
-    assert len(missing) == 0, f"Missing stubs for methods: {', '.join(map(_format_missing, missing))}"
-    assert len(wrong_type) == 0, f"Type mismatch for functions: {', '.join(map(_format_wrong, wrong_type))}"
-
-
-def test_stub_methods_extra():
-    extra = []
-
-    for code, stub in reflection.walk_with_modules(".", skip_dirs=SKIP_DIRS):
-        for cls_name, cls in inspect.getmembers(stub,
-                                                predicate=lambda x: inspect.isclass(x) and _file_matches(x, stub)):
-            ccls = getattr(code, cls_name, None)
-            if ccls is None:
-                continue
-            for name in reflection.get_declared(cls, lambda x: inspect.isroutine(x.object)):
-                name = name.name
-                sub = getattr(cls, name)
-                csub = reflection.classify_attr(ccls, name, None)
-                if csub is None or csub.defining_class != ccls:
-                    extra.append(sub)
-                    continue
-
-    assert len(extra) == 0, f"Extra stubs for methods: {', '.join(map(_format_missing, extra))}"
+    if real_type != stub_type:
+        pytest.fail(f"Type mismatch for objects: {name} - Real: {real_type}, Stub: {stub_type}")
