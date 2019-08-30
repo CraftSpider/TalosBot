@@ -8,7 +8,6 @@ import _pytest.python as py
 
 import discord.ext.test as dpytest
 import discord_talos.talos as dtalos
-import spidertools.common as tutils
 import discord_talos.talossql as sql
 
 
@@ -29,7 +28,6 @@ class AsyncFunction(pytest.Function):
 
 
 def pytest_pycollect_makeitem(collector, name, obj):
-    print(collector, name, obj, sep="\n")
     if collector.istestfunction(obj, name) and asyncio.iscoroutinefunction(obj):
         module = collector.getparent(pytest.Module).obj
         clscol = collector.getparent(pytest.Class)

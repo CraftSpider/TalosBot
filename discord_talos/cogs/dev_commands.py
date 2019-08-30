@@ -28,6 +28,8 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
     """These commands can only be used by Talos Devs, and will work at any time. Several of them are very """\
         """dangerous. Also, they are all hidden from the help command, thus why there's no list here."""
 
+    log_channels = {}
+
     cog_check = dutils.dev_local
 
     def __getattr__(self, item):
@@ -71,8 +73,6 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
         """Stops Talos running and logs it out safely, killing the Talos process."""
         await ctx.send("Et tū, Brute?")
         await self.bot.logout()
-
-    log_channels = {}
 
     @commands.command(description="Toggle Talos logging to the current channel")
     async def loghere(self, ctx):

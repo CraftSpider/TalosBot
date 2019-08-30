@@ -2,7 +2,6 @@
 import inspect
 import pytest
 import spidertools.common.reflection as reflection
-from collections import namedtuple
 
 
 @pytest.mark.parametrize("package", ["discord_talos", "website"])
@@ -34,16 +33,11 @@ def _get_type(obj):
         return 'class'
     elif inspect.isroutine(obj):
         return 'async' if inspect.iscoroutinefunction(obj) or inspect.isasyncgenfunction(obj) else 'sync'
-    elif isinstance(obj, type(...)):
-        return 'ellipsis'
     else:
         return 'unknown'
 
 
-ItemGenResult = namedtuple("ItemGenResult", "name code stub")
-
-
-def _clean_name(name, real, stub):
+def _clean_name(name, qualname, real, stub):
     import discord.ext.commands as commands
     test = real if real is not None else stub
     if isinstance(test, commands.Command):
@@ -59,17 +53,17 @@ def _clean_name(name, real, stub):
 def _gen_test_id(val):
     import sys
     sys.stdout.write(str(val))
-    return val.name.replace(".", "/")
+    return val.qualname.replace(".", "/")
 
 
 @pytest.mark.parametrize("val",
                          reflection.walk_all_items(".", skip_dirs=SKIP_DIRS, name_cleaner=_clean_name),
                          ids=_gen_test_id)
 def test_stub(val):
-    name, real, stub = val
-    if stub is None:
+    name, _, real, stub = val
+    if stub is reflection.Empty:
         pytest.fail(f"Missing stub for object {name}")
-    elif real is None:
+    elif real is reflection.Empty:
         pytest.fail(f"Extra stub for object {name}")
 
     real_type = _get_type(real)

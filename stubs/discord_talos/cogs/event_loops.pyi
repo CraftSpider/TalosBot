@@ -30,10 +30,9 @@ def create_service() -> googleapiclient.discovery.Resource: ...
 
 class EventLoops(dutils.TalosCog):
 
-    __slots__: Tuple[str, ...] = ('service', 'flags', 'last_guild_count', "__local_check")
+    __slots__ = ("service", "last_guild_count")
 
     service: Any
-    flags: argparse.ArgumentParser
     last_guild_count: int
 
     # noinspection PyMissingConstructor
