@@ -21,11 +21,19 @@ from collections import defaultdict
 # Admin Command Variables
 #
 
+# Configure Logging
+log = logging.getLogger("talos.admin")
+
 # Security keys, for security-locked commands.
 secure_keys = defaultdict(lambda: "")
 
-# Configure Logging
-log = logging.getLogger("talos.admin")
+# Default priority levels
+PRIORITY_LEVELS = {
+    "guild": 10,
+    "channel": 20,
+    "role": 30,
+    "user": 40
+}
 
 
 #
@@ -256,7 +264,7 @@ class AdminCommands(dutils.TalosCog):
                 return
 
             name = str(name) if name != "" else "SELF"
-            priority = priority or utils.sql.levels[level]
+            priority = priority or PRIORITY_LEVELS[level]
 
             perm_rule = sql.PermissionRule((ctx.guild.id, command, level, name, priority, allow))
             self.database.save_item(perm_rule)

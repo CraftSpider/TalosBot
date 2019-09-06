@@ -163,6 +163,8 @@ class Quote(Row):
 
 class TalosDatabase(common.GenericDatabase):
 
+    def clean_guild(self, guild_id: int) -> None: ...
+
     # Guild option methods
 
     def get_guild_defaults(self) -> GuildOptions: ...
@@ -215,9 +217,9 @@ class TalosDatabase(common.GenericDatabase):
 
     # Quote methods
 
-    def get_quote(self, guild_id: int, qid: int): ...
+    def get_quote(self, guild_id: int, qid: int) -> Quote: ...
 
-    def get_random_quote(self, guild_id: int): ...
+    def get_random_quote(self, guild_id: int) -> Quote: ...
 
     # Uptime methods
 

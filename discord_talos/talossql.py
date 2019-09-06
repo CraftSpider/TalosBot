@@ -270,6 +270,14 @@ class TalosDatabase(common.GenericDatabase):
         as well as add and remove uptimes.
     """
 
+    def clean_guild(self, guild_id):
+        """
+            Remove all entries belonging to a specific guild from the database.
+        :param guild_id: id of guild to clean.
+        """
+        for item in ["guild_options", "admins", "perm_rules", "guild_commands"]:
+            self.execute(f"DELETE FROM {self._schema}.{item} WHERE guild_id = %s", [guild_id])
+
     # Guild option methods
 
     def get_guild_defaults(self):
@@ -365,7 +373,7 @@ class TalosDatabase(common.GenericDatabase):
         user_data["titles"] = self.get_items(UserTitle, user_id=user_id)
         user_data["options"] = self.get_user_options(user_id)
 
-        return data.TalosUser(user_data)
+        return TalosUser(user_data)
 
     def user_invoked_command(self, user_id, command):
         """
