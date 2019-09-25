@@ -114,10 +114,10 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
 
         self.database = sql.TalosDatabase(**__tokens.get("sql"), schemadef=schema_def)
         self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
-
-        # Override things set by super init that we don't want
-        # self.remove_command("help")
-        # self.command(name="help", aliases=["man"], description="Shows this message")(self._talos_help_command)
+        self.nano_session = utils.nano.NanoClient(
+            username=__tokens["nano"]["username"],
+            password=__tokens["nano"]["password"]
+        )
 
     def __setattr__(self, key, value):
         """
@@ -155,6 +155,10 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
                 timezone = ctx.guild_options.timezone
                 return dt.timezone(dt.timedelta(hours=utils.tz_map[timezone.upper()]), timezone.upper())
         return dt.timezone(dt.timedelta(), "UTC")
+
+    async def start(self, *args, **kwargs):
+        await self.nano_session.init()
+        await super().start(*args, **kwargs)
 
     async def logout(self):
         """

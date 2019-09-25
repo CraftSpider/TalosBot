@@ -430,7 +430,7 @@ class Commands(dutils.TalosCog):
             novel_name = novel_name.lower().replace(" ", "-")
 
         try:
-            novel = await self.bot.session.nano_get_novel(username, novel_name)
+            novel = await self.bot.nano_session.get_novel(username, novel_name)
         except utils.NotAUser:
             await ctx.send("Sorry, I couldn't find that user")
             return
@@ -493,15 +493,15 @@ class Commands(dutils.TalosCog):
         site_name = site_name.lower().replace(".", "-")
 
         try:
-            user = await self.bot.session.nano_get_user(site_name)
+            user = await self.bot.nano_session.get_user(site_name)
         except utils.NotAUser:
             await ctx.send("Sorry, I couldn't find that user on the NaNo site")
             return
 
         # Get member info
-        member_age = await user.age
+        member_age = user.created_at
         info = await user.info
-        avatar = await user.avatar
+        avatar = user.avatar
         novel = await user.simple_novel
 
         author_bio = html_to_markdown(info.bio)
