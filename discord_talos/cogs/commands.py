@@ -430,7 +430,14 @@ class Commands(dutils.TalosCog):
             novel_name = novel_name.lower().replace(" ", "-")
 
         try:
-            novel = await self.bot.nano_session.get_novel(username, novel_name)
+            user = await self.bot.nano_session.get_user(username)
+            novels = await user.get_projects()
+            novel = None
+            challenges = None
+            for novel in reversed(novels):
+                challenges = await novel.get_project_challenges()
+                if novel.title == novel_name or (novel_name is None and len(challenges)):
+                    break
         except utils.NotAUser:
             await ctx.send("Sorry, I couldn't find that user")
             return
@@ -439,45 +446,45 @@ class Commands(dutils.TalosCog):
             return
 
         # Pull out desired novel info
-        avatar = await novel.author.avatar
+        avatar = user.avatar
         novel_title = novel.title
         novel_cover = novel.cover
-        novel_genre = novel.genre
-        novel_synopsis = html_to_markdown(novel.synopsis)
-        if novel_synopsis.strip() == "":
-            novel_synopsis = None
-        elif len(novel_synopsis) > 1024:
-            novel_synopsis = novel_synopsis[:1021] + "..."
-        novel_excerpt = html_to_markdown(await novel.excerpt)
+        novel_genres = ', '.join(map(lambda x: x.name, await novel.get_genres()))
+        novel_summary = html_to_markdown(novel.summary)
+        if novel_summary.strip() == "":
+            novel_summary = None
+        elif len(novel_summary) > 1024:
+            novel_summary = novel_summary[:1021] + "..."
+        novel_excerpt = html_to_markdown(novel.excerpt)
         if novel_excerpt.strip() == "":
             novel_excerpt = None
         elif len(novel_excerpt) > 1024:
             novel_excerpt = novel_excerpt[:1021] + "..."
-        stats = {}
-        async for name, stat in novel.stats:
-            stats[utils.add_spaces(name).title()] = stat
+        # stats = {}
+        # async for name, stat in novel.stats:
+        #     stats[utils.add_spaces(name).title()] = stat
 
         if self.bot.should_embed(ctx):
             # Construct Embed
-            stats_page = ""
-            for stat in stats:
-                if stats[stat] is None:
-                    continue
-                if isinstance(stats[stat], int):
-                    stats_page += f"{stat}: {stats[stat]:,}\n"
-                elif isinstance(stats[stat], dt.date):
-                    date = stats[stat].strftime("%B %d, %Y")
-                    stats_page += f"{stat}: {date}\n"
+            # stats_page = ""
+            # for stat in stats:
+            #     if stats[stat] is None:
+            #         continue
+            #     if isinstance(stats[stat], int):
+            #         stats_page += f"{stat}: {stats[stat]:,}\n"
+            #     elif isinstance(stats[stat], dt.date):
+            #         date = stats[stat].strftime("%B %d, %Y")
+            #         stats_page += f"{stat}: {date}\n"
             with dutils.PaginatedEmbed() as embed:
-                embed.set_author(name=f"{novel.author.username}'s Novel ({novel.year})", icon_url=avatar,
-                                 url=f"https://nanowrimo.org/participants/{novel.author.username}")
+                embed.set_author(name=f"{user.name}'s Novel ({novel.created_at.year})", icon_url=avatar,
+                                 url=f"https://nanowrimo.org/participants/{user.slug}")
                 embed.add_field(name="Title", value=novel_title, inline=True)
-                embed.add_field(name="Genre", value=novel_genre, inline=True)
-                embed.add_field(name="__Stats__", value=stats_page)
+                embed.add_field(name="Genres", value=novel_genres, inline=True)
+                # embed.add_field(name="__Stats__", value=stats_page)
                 if novel_cover is not None:
                     embed.set_thumbnail(url=novel_cover)
-                if novel_synopsis is not None:
-                    embed.add_field(name="__Synopsis__", value=novel_synopsis)
+                if novel_summary is not None:
+                    embed.add_field(name="__Synopsis__", value=novel_summary)
                 if novel_excerpt is not None:
                     embed.add_field(name="__Excerpt__", value=novel_excerpt)
                 embed.set_footer(text="")
@@ -499,15 +506,21 @@ class Commands(dutils.TalosCog):
             return
 
         # Get member info
-        member_age = user.created_at
+        member_age = "Joined: *" + user.created_at.strftime("%B %d, %Y") + "*"
         avatar = user.avatar
         novels = await user.get_projects()
-        print(novels)
-        challenge = await novels[0].get_project_challenges()
+        novel = None
+        challenges = None
+        genres = None
+        for novel in reversed(novels):
+            challenges = await novel.get_project_challenges()
+            if len(challenges):
+                genres = ', '.join(map(lambda x: x.name, await novel.get_genres()))
+                break
 
         author_bio = html_to_markdown(user.bio)
         if len(member_age) + len(author_bio) > 2048:
-            author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
+            author_bio = author_bio[:2048 - len(member_age) - 5] + "..."
         author_bio = author_bio.strip()
 
         # facts = user.fact_sheet
@@ -517,19 +530,15 @@ class Commands(dutils.TalosCog):
             # Build Embed
             with dutils.PaginatedEmbed() as embed:
                 embed.title = "__Author Info__"
-                embed.description = f"*{member_age}*\n\n" + author_bio
+                embed.description = f"{member_age}\n\n" + author_bio
                 embed.set_author(name=username, url="http://nanowrimo.org/participants/" + site_name, icon_url=avatar)
                 embed.set_thumbnail(url=avatar)
-                if novel.title is not None:
-                    genres = ', '.join(map(lambda x: x.name, await novel.get_genres()))
+                if novel is not None:
                     embed.add_field(
                         name="__Novel Info__",
-                        value=f"**Title:** {novel.title}\n**Genres:** {genres}\n**Words:** {challenge.current_count}"
-                    )
-                if False:
-                    embed.add_field(
-                        name="__Fact Sheet__",
-                        value=fact_sheet
+                        value=f"**Title:** {novel.title}\n"
+                              f"**Genres:** {genres}\n"
+                              f"**Words:** {challenges[0].current_count}"
                     )
             for page in embed:
                 await ctx.send(embed=page)
@@ -541,13 +550,10 @@ class Commands(dutils.TalosCog):
                     author_bio = author_bio[:match.start()] + out[match.end():]
                 else:
                     author_bio = author_bio[:197] + "..."
-            out += f"*{member_age}*\n{author_bio}\n"
-            if novel.title is not None:
+            out += f"{member_age}\n{author_bio}\n"
+            if novel is not None:
                 out += "__**Novel Info**__\n"
-                out += f"**Title:** {novel.title} **Genre:** {novel.genre} **Words:** {novel.words}\n"
-            if False:
-                fact_sheet = fact_sheet.replace('\n', ' ')
-                out += f"__**Fact Sheet**__\n{fact_sheet}"
+                out += f"**Title:** {novel.title} **Genres:** {genres} **Words:** {challenges[0].current_count}\n"
             await ctx.send(out)
 
     @commands.command(description="Pong!")
