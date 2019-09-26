@@ -500,17 +500,18 @@ class Commands(dutils.TalosCog):
 
         # Get member info
         member_age = user.created_at
-        info = await user.info
         avatar = user.avatar
-        novel = await user.simple_novel
+        novels = await user.get_projects()
+        print(novels)
+        challenge = await novels[0].get_project_challenges()
 
-        author_bio = html_to_markdown(info.bio)
+        author_bio = html_to_markdown(user.bio)
         if len(member_age) + len(author_bio) > 2048:
             author_bio = author_bio[:2048 - len(member_age) - 7] + "..."
         author_bio = author_bio.strip()
 
-        facts = info.fact_sheet
-        fact_sheet = "\n".join(f"**{fact}**:\n{facts[fact]}" for fact in facts)
+        # facts = user.fact_sheet
+        # fact_sheet = "\n".join(f"**{fact}**:\n{facts[fact]}" for fact in facts)
 
         if self.bot.should_embed(ctx):
             # Build Embed
@@ -520,11 +521,12 @@ class Commands(dutils.TalosCog):
                 embed.set_author(name=username, url="http://nanowrimo.org/participants/" + site_name, icon_url=avatar)
                 embed.set_thumbnail(url=avatar)
                 if novel.title is not None:
+                    genres = ', '.join(map(lambda x: x.name, await novel.get_genres()))
                     embed.add_field(
                         name="__Novel Info__",
-                        value=f"**Title:** {novel.title}\n**Genre:** {novel.genre}\n**Words:** {novel.words}"
+                        value=f"**Title:** {novel.title}\n**Genres:** {genres}\n**Words:** {challenge.current_count}"
                     )
-                if fact_sheet:
+                if False:
                     embed.add_field(
                         name="__Fact Sheet__",
                         value=fact_sheet
@@ -543,7 +545,7 @@ class Commands(dutils.TalosCog):
             if novel.title is not None:
                 out += "__**Novel Info**__\n"
                 out += f"**Title:** {novel.title} **Genre:** {novel.genre} **Words:** {novel.words}\n"
-            if fact_sheet is not None:
+            if False:
                 fact_sheet = fact_sheet.replace('\n', ' ')
                 out += f"__**Fact Sheet**__\n{fact_sheet}"
             await ctx.send(out)
