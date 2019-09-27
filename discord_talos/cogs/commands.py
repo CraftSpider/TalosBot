@@ -430,7 +430,7 @@ class Commands(dutils.TalosCog):
             novel_name = novel_name.lower().replace(" ", "-")
 
         try:
-            user = await self.bot.nano_session.get_user(username)
+            user = await self.bot.nano_session.get_user(username, include=["projects"])
             novels = await user.get_projects()
             novel = None
             challenges = None
@@ -450,15 +450,11 @@ class Commands(dutils.TalosCog):
         novel_title = novel.title
         novel_cover = novel.cover
         novel_genres = ', '.join(map(lambda x: x.name, await novel.get_genres()))
-        novel_summary = html_to_markdown(novel.summary)
-        if novel_summary.strip() == "":
-            novel_summary = None
-        elif len(novel_summary) > 1024:
+        novel_summary = html_to_markdown(novel.summary) if novel.summary else None
+        if novel_summary and len(novel_summary) > 1024:
             novel_summary = novel_summary[:1021] + "..."
-        novel_excerpt = html_to_markdown(novel.excerpt)
-        if novel_excerpt.strip() == "":
-            novel_excerpt = None
-        elif len(novel_excerpt) > 1024:
+        novel_excerpt = html_to_markdown(novel.excerpt) if novel.excerpt else None
+        if novel_excerpt and len(novel_excerpt) > 1024:
             novel_excerpt = novel_excerpt[:1021] + "..."
         # stats = {}
         # async for name, stat in novel.stats:
@@ -500,7 +496,7 @@ class Commands(dutils.TalosCog):
         site_name = site_name.lower().replace(".", "-")
 
         try:
-            user = await self.bot.nano_session.get_user(site_name)
+            user = await self.bot.nano_session.get_user(site_name, include=["projects"])
         except utils.NotAUser:
             await ctx.send("Sorry, I couldn't find that user on the NaNo site")
             return
