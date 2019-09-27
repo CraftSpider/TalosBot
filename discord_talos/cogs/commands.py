@@ -536,6 +536,7 @@ class Commands(dutils.TalosCog):
                               f"**Genres:** {genres}\n"
                               f"**Words:** {challenges[0].current_count}"
                     )
+                embed.set_footer(text="")
             for page in embed:
                 await ctx.send(embed=page)
         else:
