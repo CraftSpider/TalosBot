@@ -114,10 +114,13 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
 
         self.database = sql.TalosDatabase(**__tokens.get("sql"), schemadef=schema_def)
         self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
-        self.nano_session = utils.nano.NanoClient(
-            username=__tokens["nano"][0],
-            password=__tokens["nano"][1]
-        )
+        if "nano" in __tokens:
+            self.nano_session = utils.nano.NanoClient(
+                username=__tokens["nano"][0],
+                password=__tokens["nano"][1]
+            )
+        else:
+            self.nano_session = None
 
     def __setattr__(self, key, value):
         """
@@ -162,7 +165,10 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         :param args: Arguments to pass to super
         :param kwargs: Keywords to pass to super
         """
-        await self.nano_session.init()
+        try:
+            await self.nano_session.init()
+        except utils.nano.InvalidLogin:
+            log.warn("Nano Login failed, nano commands will fail")
         await super().start(*args, **kwargs)
 
     async def logout(self):

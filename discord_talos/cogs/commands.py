@@ -425,6 +425,10 @@ class Commands(dutils.TalosCog):
     async def _novel(self, ctx, username, novel_name=None):
         """Fetches detailed info on a user's novel from the NaNo site. If no novel name is given, it grabs the most """\
             """recent."""
+        if self.bot.nano_session is None or not self.bot.nano_session.logged_in():
+            await ctx.send("They didn't give me the login info")
+            return
+
         username = username.lower().replace(" ", "-")
         if novel_name is not None:
             novel_name = novel_name.lower().replace(" ", "-")
@@ -438,10 +442,10 @@ class Commands(dutils.TalosCog):
                 challenges = await novel.get_project_challenges()
                 if novel.title == novel_name or (novel_name is None and len(challenges)):
                     break
-        except utils.NotAUser:
+        except utils.nano.UserNotFound:
             await ctx.send("Sorry, I couldn't find that user")
             return
-        except utils.NotANovel:
+        except utils.nano.ProjectNotFound:
             await ctx.send("Sorry, I couldn't find that novel")
             return
 
@@ -492,12 +496,16 @@ class Commands(dutils.TalosCog):
     @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
     async def _profile(self, ctx, username):
         """Fetches detailed info on a user's profile from the NaNo website."""
+        if self.bot.nano_session is None or not self.bot.nano_session.logged_in():
+            await ctx.send("They didn't give me the login info")
+            return
+
         site_name = username.lower().replace(" ", "-")
         site_name = site_name.lower().replace(".", "-")
 
         try:
             user = await self.bot.nano_session.get_user(site_name, include=["projects"])
-        except utils.NotAUser:
+        except utils.nano.UserNotFound:
             await ctx.send("Sorry, I couldn't find that user on the NaNo site")
             return
 
