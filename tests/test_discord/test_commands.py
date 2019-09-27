@@ -45,6 +45,8 @@ async def test_info():
 
 
 async def test_nanowrimo():
+    await testlos.nano_session.init()
+
     await message("^nanowrimo")
     verify_message("Valid options are 'novel', 'profile', and 'info'.")
     with pytest.raises(commands.MissingRequiredArgument):

@@ -157,6 +157,11 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         return dt.timezone(dt.timedelta(), "UTC")
 
     async def start(self, *args, **kwargs):
+        """
+            Start Talos, runs any initialization coroutine functions
+        :param args: Arguments to pass to super
+        :param kwargs: Keywords to pass to super
+        """
         await self.nano_session.init()
         await super().start(*args, **kwargs)
 
