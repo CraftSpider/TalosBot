@@ -14,7 +14,7 @@ pytestmark = pytest.mark.usefixtures("testlos_m")
 def setup(testlos_m):
     global dev, devmess
     dev = backend.make_member(
-            backend.make_user("DevUser", "0001", id_num=testlos.DEVS[0]),
+            backend.make_user("DevUser", "0001", id_num=testlos_m.DEVS[0]),
             get_config().guilds[0]
         )
 

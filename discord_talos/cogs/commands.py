@@ -344,7 +344,7 @@ class Commands(dutils.TalosCog):
                 file.write(doc)
 
             try:
-                sp.check_output(["pdflatex", "-interaction=nonstopmode", tex])
+                sp.check_output(["pdflatex", "-interaction=nonstopmode", "-disable-installer", tex])
             except sp.CalledProcessError as e:
                 latex_out = e.stdout.decode()
                 log.debug(latex_out)
