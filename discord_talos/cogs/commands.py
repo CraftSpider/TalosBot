@@ -395,31 +395,40 @@ class Commands(dutils.TalosCog):
             """countdown if nano isn't happening. If you're wondering what NaNo is, go to https://nanowrimo.org for """\
             """more info"""
         nano_crest_url = "https://d1lj9l30x2igqs.cloudfront.net/nano-2013/files/2018/08/NaNo-Shield-Logo-Web.png"
+        description = "National Novel Writing Month, often shortened to NaNoWriMo or just Nano, is an event that takes"\
+            " place in the month of November, and challenges participants to write 50k words in a single month."
+        now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
+        if now.month == 11:
+            end = now.replace(month=12, day=1, hour=0, minute=0, second=0)
+            remaining = str(end - now)
+        else:
+            start = now.replace(month=11, day=1, hour=0, minute=0, second=0)
+            if now.month > 11:
+                start = start.replace(year=now.year + 1)
+            remaining = start - now
 
-        if self.bot.should_embed(ctx):
+        if False and self.bot.should_embed(ctx):
             with dutils.PaginatedEmbed() as embed:
                 embed.title = "NaNoWriMo"
-                embed.description = "National Novel Writing Month, often shortened to NaNoWriMo or just Nano, is an "\
-                    "event that takes place in the month of November, and challenges participants to write 50k words "\
-                    "in a single month."
+                embed.description = description
                 embed.colour = discord.Colour(0xA3DCE6)
-                now = dt.datetime.now(tz=self.bot.get_timezone(ctx))
                 if now.month == 11:
-                    end = now.replace(month=12, day=1, hour=0, minute=0, second=0)
-                    remaining = end - now
                     embed.add_field(name="Time Left", value=str(remaining), inline=True)
                     embed.add_field(name="Expected Words", value=str(1667*now.day), inline=True)
                 else:
-                    start = now.replace(month=11, day=1, hour=0, minute=0, second=0)
-                    if now.month > 11:
-                        start = start.replace(year=now.year + 1)
-                    remaining = start - now
                     embed.add_field(name="Countdown", value=str(remaining), inline=True)
                 embed.set_thumbnail(url=nano_crest_url)
                 embed.set_footer(text=random.choice(self.nano_facts))
             await ctx.send(embed=embed)
         else:
-            await ctx.send("Non-embed nano info not yet supported (Please give me website embed permissions)")  # TODO
+            out = f"__**NanoWrimo**__\n{description}\n"
+            if now.month == 11:
+                out += f"__Time Left__: {remaining}\n"
+                out += f"__Expected Words__: {1667*now.day}\n"
+            else:
+                out += f"*Countdown*: {str(remaining)}\n"
+            out += f"*Fun Fact*: {random.choice(self.nano_facts)}"
+            await ctx.send(out)
 
     @nanowrimo.command(name="novel", description="Fetch a user's nano novel.")
     async def _novel(self, ctx, username, novel_name=None):
@@ -464,7 +473,7 @@ class Commands(dutils.TalosCog):
         # async for name, stat in novel.stats:
         #     stats[utils.add_spaces(name).title()] = stat
 
-        if self.bot.should_embed(ctx):
+        if False and self.bot.should_embed(ctx):
             # Construct Embed
             # stats_page = ""
             # for stat in stats:
@@ -491,7 +500,14 @@ class Commands(dutils.TalosCog):
             for page in embed:
                 await ctx.send(embed=page)
         else:
-            await ctx.send("Non-embed novel listing not yet implemented")  # TODO: support non-embed novel details
+            out = f"__{user.name}'s Novel ({novel.created_at.year})__\n"
+            out += f"*Title*: {novel_title}\n"
+            out += f"*Genres*: {novel_genres}\n"
+            if novel_summary is not None:
+                out += f"*Synopsis*: {novel_summary}"
+            if novel_excerpt is not None:
+                out += f"*Excerpt*: {novel_excerpt}"
+            await ctx.send(out)
 
     @nanowrimo.command(name="profile", description="Fetches a user's profile info.")
     async def _profile(self, ctx, username):
@@ -558,7 +574,7 @@ class Commands(dutils.TalosCog):
             out += f"{member_age}\n{author_bio}\n"
             if novel is not None:
                 out += "__**Novel Info**__\n"
-                out += f"**Title:** {novel.title} **Genres:** {genres} **Words:** {challenges[0].current_count}\n"
+                out += f"*Title*: {novel.title} **Genres:** {genres} **Words:** {challenges[0].current_count}\n"
             await ctx.send(out)
 
     @commands.command(description="Pong!")
