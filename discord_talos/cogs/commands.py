@@ -407,7 +407,7 @@ class Commands(dutils.TalosCog):
                 start = start.replace(year=now.year + 1)
             remaining = start - now
 
-        if False and self.bot.should_embed(ctx):
+        if self.bot.should_embed(ctx):
             with dutils.PaginatedEmbed() as embed:
                 embed.title = "NaNoWriMo"
                 embed.description = description
@@ -473,7 +473,7 @@ class Commands(dutils.TalosCog):
         # async for name, stat in novel.stats:
         #     stats[utils.add_spaces(name).title()] = stat
 
-        if False and self.bot.should_embed(ctx):
+        if self.bot.should_embed(ctx):
             # Construct Embed
             # stats_page = ""
             # for stat in stats:
