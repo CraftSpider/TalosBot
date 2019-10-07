@@ -59,7 +59,7 @@ async def test_nanowrimo():
     await message("^nano novel craftspider")
     if not sent_queue.empty():
         mes = await sent_queue.get()
-        if mes.content != "Sorry, I couldn't find that user":
+        if mes.content != "Sorry, I couldn't find that user" or mes.content != "They didn't give me the login info":
             await sent_queue.put(mes)
             verify_embed()
 
@@ -69,7 +69,7 @@ async def test_nanowrimo():
     await message("^nano profile craftspider")
     if not sent_queue.empty():
         mes = await sent_queue.get()
-        if mes.content != "Sorry, I couldn't find that user on the NaNo site":
+        if mes.content != "Sorry, I couldn't find that user on the NaNo site" or mes.content != "They didn't give me the login info":
             await sent_queue.put(mes)
             verify_embed()
 
