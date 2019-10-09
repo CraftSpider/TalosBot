@@ -11,3 +11,19 @@ async def test_colour():
     # TODO: Setup bot permissions
     # await message("^colour #8F008F")
     pytest.skip("Colour testing not yet implemented")
+
+
+async def test_register():
+    pytest.skip()
+
+
+async def test_deregister():
+    pytest.skip()
+
+
+async def test_profile():
+    pytest.skip()
+
+
+async def test_user():
+    pytest.skip()

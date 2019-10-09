@@ -31,3 +31,43 @@ async def test_nick():
     with pytest.raises(commands.CheckFailure):
         await message("^nick BadNick")
     assert testlos.guilds[0].me.display_name == "NewNick"
+
+
+async def test_repeat():
+    pytest.skip()
+
+
+async def test_purge():
+    pytest.skip()
+
+
+async def test_kick():
+    pytest.skip()
+
+
+async def test_ban():
+    pytest.skip()
+
+
+async def test_silence():
+    pytest.skip()
+
+
+async def test_admins():
+    pytest.skip()
+
+
+async def test_perms():
+    pytest.skip()
+
+
+async def test_options():
+    pytest.skip()
+
+
+async def test_command():
+    pytest.skip()
+
+
+async def test_event():
+    pytest.skip()

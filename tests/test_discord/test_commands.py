@@ -44,6 +44,10 @@ async def test_info():
     verify_embed()
 
 
+async def test_latex():
+    pytest.skip()
+
+
 async def test_nanowrimo():
     import spidertools.common.nano as nano
     try:
@@ -84,6 +88,10 @@ async def test_ping():
 
 async def test_productivitywar():
     pytest.skip("Productivity War testing not yet implemented")
+
+
+async def test_quote():
+    pytest.skip()
 
 
 async def test_roll():

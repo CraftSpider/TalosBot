@@ -35,3 +35,7 @@ async def test_xkcd():
 async def test_smbc():
     await message("^smbc")
     verify_embed()
+
+
+async def test_tvtropes():
+    pytest.skip()

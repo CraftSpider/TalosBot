@@ -80,6 +80,10 @@ async def test_reload():
     pytest.skip("Reload testing not yet implemented")
 
 
+async def test_resetsql():
+    pytest.skip("ResetSQL testing not yet implemented")
+
+
 async def test_sql():
     pytest.skip("SQL testing not yet implemented")
 
