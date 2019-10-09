@@ -76,7 +76,7 @@ def testlos():
     tokens = dtalos.load_token_file(dtalos.TOKEN_FILE)
     testlos = dtalos.Talos(tokens=tokens)
     testlos.load_extensions(testlos.startup_extensions)
-    dpytest.configure(testlos)
+    dpytest.configure(testlos, 2, 2, 2)
 
     yield testlos
 
@@ -92,7 +92,7 @@ def testlos_m(request):
     testlos = dtalos.Talos(tokens=tokens)
     testlos.database.verify_schema()
     testlos.load_extensions(testlos.startup_extensions)
-    dpytest.configure(testlos)
+    dpytest.configure(testlos, 2, 2, 2)
     request.module.testlos = testlos
 
     yield testlos
