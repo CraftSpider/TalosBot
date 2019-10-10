@@ -30,6 +30,7 @@ async def test_nick():
     assert testlos.guilds[0].me.display_name == "NewNick"
     with pytest.raises(commands.CheckFailure):
         await message("^nick BadNick")
+    verify_message()
     assert testlos.guilds[0].me.display_name == "NewNick"
 
 

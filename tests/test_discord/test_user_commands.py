@@ -9,14 +9,15 @@ pytestmark = pytest.mark.usefixtures("testlos_m")
 
 
 async def test_colour():
-    # TODO: Setup bot permissions
     config = get_config()
     guild = config.guilds[0]
+    member = config.members[0]
     perms = dpytest.backend.make_role("Perms", guild, permissions=0x8)
     await dpytest.add_role(guild.me, perms)
 
-    # await message("^colour #8F008F")
-    pytest.skip("Colour testing not yet implemented")
+    assert len(member.roles) == 1
+    await message("^colour #8F008F")
+    assert len(member.roles) == 2
 
 
 async def test_register():
