@@ -40,3 +40,5 @@ async def test_smbc():
 async def test_tvtropes():
     await message("^tvtropes ImprovisedGolems")
     verify_message()
+    await message("^tvtropes Sugar/GeniusProgramming")
+    verify_message("That trope or media page appears to not exist", equals=False)

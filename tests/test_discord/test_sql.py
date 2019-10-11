@@ -162,8 +162,15 @@ def test_data_classes(database):
                                      "options": options})
     database.save_item(options)
     database.save_item(profile)
+
+    assert options == database.get_item(data.UserOptions, id=2)
+    assert profile == database.get_item(data.UserProfile, id=1)
+
     database.remove_item(options)
     database.remove_item(profile)
+
+    assert database.get_item(data.UserOptions, id=2) is None
+    assert database.get_item(data.UserProfile, id=1) is None
 
 
 def test_talos_database(database):
