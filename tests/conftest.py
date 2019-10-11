@@ -78,6 +78,9 @@ def testlos():
     testlos.load_extensions(testlos.startup_extensions)
     dpytest.configure(testlos, 2, 2, 2)
 
+    loop = testlos.loop
+    loop.call_soon(testlos.init)
+
     yield testlos
 
     log.debug("Tearing down Talos")
@@ -94,6 +97,9 @@ def testlos_m(request):
     testlos.load_extensions(testlos.startup_extensions)
     dpytest.configure(testlos, 2, 2, 2)
     request.module.testlos = testlos
+
+    loop = testlos.loop
+    loop.call_soon(testlos.init)
 
     yield testlos
 
