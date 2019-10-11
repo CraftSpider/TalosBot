@@ -39,7 +39,27 @@ async def test_repeat():
 
 
 async def test_purge():
-    pytest.skip()
+    config = get_config()
+    chan = config.channels[0]
+
+    m1 = await message("Before")
+    m2 = await message("Fuck")
+    m3 = await message("abc")
+    m4 = await message("123")
+
+    history = list(map(lambda x: x.id, await chan.history().flatten()))
+    assert m1.id in history
+    assert m2.id in history
+    assert m3.id in history
+    assert m4.id in history
+
+    await admess("^purge 4")
+
+    history = list(map(lambda x: x.id, await chan.history().flatten()))
+    assert m1.id in history
+    assert m2.id not in history
+    assert m3.id not in history
+    assert m4.id not in history
 
 
 async def test_kick():
