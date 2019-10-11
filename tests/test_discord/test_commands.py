@@ -178,7 +178,6 @@ async def test_quote(database):
     verify_message("There are no quotes available for this guild")
 
 
-
 async def test_roll():
     with pytest.raises(commands.MissingRequiredArgument):
         await message("^roll")
