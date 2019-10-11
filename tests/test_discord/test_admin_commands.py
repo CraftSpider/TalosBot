@@ -94,8 +94,26 @@ async def test_options():
     pytest.skip()
 
 
-async def test_command():
-    pytest.skip()
+async def test_command(database):
+    with pytest.raises(commands.CommandNotFound):
+        await message("^testcom")
+    await admess("^command add testcom Hello World!")
+    verify_message()
+    await message("^testcom")
+    verify_message("Hello World!")
+    with pytest.raises(commands.CommandNotFound):
+        await message("^testcom", member=2, channel=2)
+
+    await admess("^command list")
+    verify_message()
+    await admess("^command edit testcom New Text")
+    verify_message()
+    await message("^testcom")
+    verify_message("New Text")
+    await admess("^command remove testcom")
+    verify_message()
+    with pytest.raises(commands.CommandNotFound):
+        await message("^testcom")
 
 
 async def test_event():
