@@ -61,12 +61,6 @@ async def test_latex():
 
 
 async def test_nanowrimo():
-    import spidertools.common.nano as nano
-    try:
-        await testlos.nano_session.init()
-    except nano.InvalidLogin:
-        pass
-
     await message("^nanowrimo")
     verify_message("Valid options are 'novel', 'profile', and 'info'.")
     with pytest.raises(commands.MissingRequiredArgument):

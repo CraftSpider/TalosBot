@@ -160,6 +160,9 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         return dt.timezone(dt.timedelta(), "UTC")
 
     async def init(self):
+        """
+            Initialize Talos async sessions
+        """
         try:
             await self.session.init()
         except utils.nano.InvalidLogin:
