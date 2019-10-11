@@ -316,7 +316,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         """
         user = self.database.get_user(ctx.author.id)
         if user:
-            self.database.user_invoked_command(ctx.author.id, str(ctx.command))
+            self.database.user_invoked_command(user, str(ctx.command))
 
     async def on_command_error(self, ctx, exception):
         """

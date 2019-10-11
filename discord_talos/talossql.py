@@ -353,10 +353,10 @@ class TalosDatabase(common.GenericDatabase):
             Register a user with Talos. Creates values in user_profiles and user_options
         :param user_id: id of the user to register
         """
-        query = f"INSERT INTO {self._schema}.user_options (user_id) VALUES (%s)"
-        self.execute(query, [user_id])
-        query = f"INSERT INTO {self._schema}.user_profiles (user_id) VALUES (%s)"
-        self.execute(query, [user_id])
+        options = UserOptions((user_id, None, None))
+        self.save_item(options)
+        profile = UserProfile((user_id, None, 0, None))
+        self.save_item(profile)
 
     def get_user(self, user_id):
         """
@@ -375,19 +375,21 @@ class TalosDatabase(common.GenericDatabase):
 
         return TalosUser(user_data)
 
-    def user_invoked_command(self, user_id, command):
+    def user_invoked_command(self, user, command):
         """
             Called when a registered user invokes a command. Insert or increment the times that command has been invoked
             in invoked_commands table for that user.
         :param user_id: id of the user who invoked the command
         :param command: name of the command that was invoked
         """
-        query = f"UPDATE {self._schema}.user_profiles SET commands_invoked = commands_invoked + 1 WHERE user_id = %s"
-        self.execute(query, [user_id])
-        query = f"INSERT INTO {self._schema}.invoked_commands (user_id, command_name) VALUES (%s, %s) " \
-                "ON DUPLICATE KEY UPDATE " \
-                "times_invoked = times_invoked + 1"
-        self.execute(query, [user_id, command])
+
+        user.profile.commands_invoked += 1
+        self.save_item(user.profile)
+        inv_com = self.get_item(InvokedCommand, user_id=user.id, command_name=command)
+        if inv_com is None:
+            inv_com = InvokedCommand((user.id, command, 0))
+        inv_com.times_invoked += 1
+        self.save_item(inv_com)
 
     # Admin methods
 

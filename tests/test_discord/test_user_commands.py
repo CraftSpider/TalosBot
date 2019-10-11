@@ -60,11 +60,11 @@ async def test_profile(database):
     member1 = get_config().members[1]
 
     await message("^profile")
-    await verify_embed()
-    await message(f"^profile {member.name}")
-    await verify_embed()
+    verify_embed()
+    await message(f"^profile {str(member)}")
+    verify_embed()
     with pytest.raises(derrors.NotRegistered):
-        await message(f"^profile {member1.name}")
+        await message(f"^profile {str(member1)}")
 
 
 async def test_user(database):
@@ -75,6 +75,7 @@ async def test_user(database):
 
     with pytest.raises(derrors.NotRegistered):
         await message("^user", member=1)
+    await empty_queue()
 
     await message("^user")
     verify_message("Valid options are 'options', 'stats', 'title', 'description', 'set', and 'remove'")
