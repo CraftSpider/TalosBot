@@ -17,11 +17,20 @@ async def test_colour():
     await dpytest.add_role(guild.me, perms)
 
     assert len(member.roles) == 1
+
+    await message("^colour BadColour")
+    verify_message("Unrecognized colour format. Valid formats include `#123456`, `0x123456`, and some names such as "
+                   "teal or orange")
+    assert len(member.roles) == 2
+
     await message("^colour #8F008F")
+    verify_message(f"{member.display_name}'s colour changed to #8F008F!")
     assert len(member.roles) == 2
     role = guild.roles[1]
     assert member.roles[1] == role
+
     await message("^colour clear")
+    verify_message("Talos colour removed")
     assert len(member.roles) == 1
     assert role not in guild.roles
 

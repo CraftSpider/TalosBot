@@ -92,7 +92,7 @@ class UserCommands(dutils.TalosCog):
                 log.error(e.args)
             await ctx.author.add_roles(colour_role)
 
-        await ctx.send(f"{ctx.message.author.display_name}'s colour changed to {colour}!")
+        await ctx.send(f"{ctx.author.display_name}'s colour changed to {colour}!")
 
     @colour.command(name="clear", description="Remove all your colour roles")
     async def _clear(self, ctx):

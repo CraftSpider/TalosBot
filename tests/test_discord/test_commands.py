@@ -50,7 +50,7 @@ async def test_latex():
         mes = await sent_queue.get()
         if mes.content != "pdflatex command not found" and mes.content != "ghostscript command not found":
             await sent_queue.put(mes)
-            verify_embed()
+            verify_file()
         else:
             return
     else:
