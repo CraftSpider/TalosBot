@@ -89,6 +89,11 @@ async def test_nanowrimo():
             await sent_queue.put(mes)
             verify_embed()
 
+    await message("^nano novel InvalidTestUsername")
+    verify_message("Sorry, I couldn't find that user")
+    await message("^nano novel craftspider InvalidTestNovel")
+    verify_message("Sorry, I couldn't find that novel")
+
     with pytest.raises(commands.MissingRequiredArgument):
         await message("^nano profile")
     await empty_queue()
@@ -98,6 +103,9 @@ async def test_nanowrimo():
         if mes.content != "Sorry, I couldn't find that user on the NaNo site" and mes.content != "They didn't give me the login info":
             await sent_queue.put(mes)
             verify_embed()
+
+    await message("^nano profile InvalidTestUsername")
+    verify_message("Sorry, I couldn't find that user on the NaNo site")
 
     await message("^nano info")
     verify_embed()

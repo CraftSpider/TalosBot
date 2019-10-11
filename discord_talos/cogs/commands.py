@@ -447,14 +447,17 @@ class Commands(dutils.TalosCog):
             novels = await user.get_projects()
             novel = None
             challenges = None
-            for novel in reversed(novels):
-                challenges = await novel.get_project_challenges()
-                if novel.title == novel_name or (novel_name is None and len(challenges)):
-                    break
+            for n in reversed(novels):
+                challenges = await n.get_project_challenges()
+                if n.title == novel_name or (novel_name is None and len(challenges)):
+                    novel = n
         except utils.nano.UserNotFound:
             await ctx.send("Sorry, I couldn't find that user")
             return
         except utils.nano.ProjectNotFound:
+            await ctx.send("Sorry, I couldn't find that novel")
+            return
+        if novel is None:
             await ctx.send("Sorry, I couldn't find that novel")
             return
 

@@ -34,6 +34,9 @@ async def test_colour():
     assert len(member.roles) == 1
     assert role not in guild.roles
 
+    await message("^colour list")
+    verify_message()
+
 
 async def test_register(database):
     await message("^register")
