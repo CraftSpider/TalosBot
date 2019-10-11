@@ -24,7 +24,7 @@ async def test_colour():
     assert len(member.roles) == 1
 
     await message("^colour #8F008F")
-    verify_message(f"{member.display_name}'s colour changed to #8F008F!")
+    verify_message(f"{member.display_name}'s colour changed to #8f008f!")
     assert len(member.roles) == 2
     role = guild.roles[1]
     assert member.roles[1] == role
