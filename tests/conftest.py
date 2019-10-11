@@ -58,7 +58,7 @@ def pytest_pycollect_makeitem(collector, name, obj):
 
 
 @pytest.fixture()
-def database():
+def database(request):
     import json
     log.debug("Creating database connection")
     with open("discord_talos/schema.json") as f:
@@ -67,6 +67,8 @@ def database():
     database.verify_schema()
     if not database.is_connected():
         raise pytest.skip("Test database not found")
+    if hasattr(request.module, "testlos"):
+        request.module.testlos.database = database
     return database
 
 
