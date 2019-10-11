@@ -18,8 +18,11 @@ async def test_colour():
     assert len(member.roles) == 1
     await message("^colour #8F008F")
     assert len(member.roles) == 2
+    role = guild.roles[1]
+    assert member.roles[1] == role
     await message("^colour clear")
     assert len(member.roles) == 1
+    assert role not in guild.roles
 
 
 async def test_register():
