@@ -369,7 +369,7 @@ class Commands(dutils.TalosCog):
 
                 try:
                     sp.call([gs, "-sDEVICE=pngalpha", "-dNOPAUSE", "-dBATCH", "-r300", f"-sOutputFile={filename}.png",
-                            "-dGraphicsAlphaBits=4", "-dTextAlphaBits=4", f"{filename}.pdf"])
+                            "-dGraphicsAlphaBits=4", "-dTextAlphaBits=4", f"{filename}.pdf"], stdout=sp.PIPE)
                 except sp.CalledProcessError:
                     await ctx.send("Error during pdf -> png conversion")
                 except FileNotFoundError:

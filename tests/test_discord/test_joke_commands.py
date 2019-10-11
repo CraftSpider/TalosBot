@@ -38,4 +38,5 @@ async def test_smbc():
 
 
 async def test_tvtropes():
-    pytest.skip()
+    await message("^tvtropes ImprovisedGolems")
+    verify_message()

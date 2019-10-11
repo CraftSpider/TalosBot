@@ -267,7 +267,7 @@ class UserCommands(dutils.TalosCog):
         """Change what the user description on your profile is. Max size of 2048 characters."""
         ctx.t_user.profile.description = text
         self.database.save_item(ctx.t_user.profile)
-        await ctx.send("Description set.")
+        await ctx.send("Description set")
 
     @user.command(name="set", description="Set your user options")
     async def _set(self, ctx, option, value):

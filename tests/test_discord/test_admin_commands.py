@@ -4,7 +4,7 @@ import pytest
 import discord.ext.commands as commands
 
 from discord.ext.test import backend, get_config
-from discord.ext.test import message, verify_message, verify_embed, verify_file
+from discord.ext.test import message, verify_message, empty_queue, verify_file
 
 
 pytestmark = pytest.mark.usefixtures("testlos_m")
@@ -24,6 +24,12 @@ def setup(testlos_m):
     admess = functools.partial(message, member=admin)
 
 
+async def test_normal_user():
+    with pytest.raises(commands.CheckFailure):
+        await message("^nick Bad")
+    await empty_queue()
+
+
 async def test_nick():
     await admess("^nick NewNick")
     verify_message("Nickname changed to NewNick")
@@ -35,7 +41,9 @@ async def test_nick():
 
 
 async def test_repeat():
-    pytest.skip()
+    message = "Testing is Fun"
+    await admess(f"^repeat {message}")
+    verify_message(message)
 
 
 async def test_purge():

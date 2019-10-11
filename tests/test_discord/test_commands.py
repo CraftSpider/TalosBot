@@ -3,7 +3,7 @@ import pytest
 import asyncio
 import discord.ext.commands as commands
 
-from discord.ext.test import message, verify_message, verify_embed, empty_queue, sent_queue
+from discord.ext.test import message, verify_message, verify_embed, empty_queue, sent_queue, verify_file
 
 
 pytestmark = pytest.mark.usefixtures("testlos_m")
@@ -45,7 +45,8 @@ async def test_info():
 
 
 async def test_latex():
-    pytest.skip()
+    await message("^latex \\frac{1}{2}")
+    verify_file()
 
 
 async def test_nanowrimo():
@@ -91,7 +92,7 @@ async def test_productivitywar():
 
 
 async def test_quote():
-    pytest.skip()
+    pytest.skip("Quote testing not yet implemented")
 
 
 async def test_roll():
