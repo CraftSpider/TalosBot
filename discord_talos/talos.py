@@ -164,10 +164,10 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
             Initialize Talos async sessions
         """
         try:
-            await self.session.init()
+            await self.nano_session.init()
         except utils.nano.InvalidLogin:
             log.warning("Nano Login failed, nano commands will fail")
-        await self.nano_session.init()
+        await self.session.init()
 
     async def start(self, *args, **kwargs):
         """

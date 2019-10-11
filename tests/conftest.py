@@ -79,7 +79,7 @@ def testlos():
     dpytest.configure(testlos, 2, 2, 2)
 
     loop = testlos.loop
-    loop.call_soon(testlos.init)
+    loop.run_until_complete(testlos.init())
 
     yield testlos
 
@@ -99,7 +99,7 @@ def testlos_m(request):
     request.module.testlos = testlos
 
     loop = testlos.loop
-    loop.call_soon(testlos.init)
+    loop.run_until_complete(testlos.init())
 
     yield testlos
 
