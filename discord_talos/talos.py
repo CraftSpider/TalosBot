@@ -113,7 +113,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
             schema_def = json.load(file)
 
         self.database = sql.TalosDatabase(**__tokens.get("sql"), schemadef=schema_def)
-        self.session = utils.TalosHTTPClient(tokens=__tokens, read_timeout=60, loop=self.loop)
+        self.session = utils.TalosHTTPClient(tokens=__tokens, timeout=60, loop=self.loop)
         if "nano" in __tokens:
             self.nano_session = utils.nano.NanoClient(
                 username=__tokens["nano"][0],
