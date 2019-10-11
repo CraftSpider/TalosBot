@@ -79,13 +79,22 @@ async def test_latex():
 async def test_nanowrimo():
     await message("^nanowrimo")
     verify_message("Valid options are 'novel', 'profile', and 'info'.")
+
+    await message("^nano info")
+    verify_embed()
+
+    await message("^nano profile craftspider")
+    mes = sent_queue.get_nowait()
+    if mes.content == "They didn't give me the login info":
+        return
+
     with pytest.raises(commands.MissingRequiredArgument):
         await message("^nano novel")
     await empty_queue()
     await message("^nano novel craftspider")
     if not sent_queue.empty():
         mes = await sent_queue.get()
-        if mes.content != "Sorry, I couldn't find that user" and mes.content != "They didn't give me the login info":
+        if mes.content != "Sorry, I couldn't find that user":
             await sent_queue.put(mes)
             verify_embed()
 
@@ -100,15 +109,12 @@ async def test_nanowrimo():
     await message("^nano profile craftspider")
     if not sent_queue.empty():
         mes = await sent_queue.get()
-        if mes.content != "Sorry, I couldn't find that user on the NaNo site" and mes.content != "They didn't give me the login info":
+        if mes.content != "Sorry, I couldn't find that user on the NaNo site":
             await sent_queue.put(mes)
             verify_embed()
 
     await message("^nano profile InvalidTestUsername")
     verify_message("Sorry, I couldn't find that user on the NaNo site")
-
-    await message("^nano info")
-    verify_embed()
 
 
 async def test_ping():
