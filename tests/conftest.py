@@ -63,7 +63,7 @@ def database():
     log.debug("Creating database connection")
     with open("discord_talos/schema.json") as f:
         schemadef = json.load(f)
-    database = sql.TalosDatabase("localhost", 3306, "root", "", "", schemadef)
+    database = sql.TalosDatabase("localhost", 3306, "root", "", "talos_data", schemadef)
     database.verify_schema()
     if not database.is_connected():
         raise pytest.skip("Test database not found")
