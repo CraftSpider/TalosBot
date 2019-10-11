@@ -46,7 +46,18 @@ async def test_info():
 
 async def test_latex():
     await message("^latex \\frac{1}{2}")
-    verify_file()
+    if not sent_queue.empty():
+        mes = await sent_queue.get()
+        if mes.content != "pdflatex command not found" and mes.content != "ghostscript command not found":
+            await sent_queue.put(mes)
+            verify_embed()
+        else:
+            return
+    else:
+        pytest.fail()
+
+    await message("^latex \\badcommand")
+    verify_message()
 
 
 async def test_nanowrimo():
