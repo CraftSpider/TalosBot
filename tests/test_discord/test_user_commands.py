@@ -21,7 +21,7 @@ async def test_colour():
     await message("^colour BadColour")
     verify_message("Unrecognized colour format. Valid formats include `#123456`, `0x123456`, and some names such as "
                    "teal or orange")
-    assert len(member.roles) == 2
+    assert len(member.roles) == 1
 
     await message("^colour #8F008F")
     verify_message(f"{member.display_name}'s colour changed to #8F008F!")
