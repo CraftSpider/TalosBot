@@ -4,7 +4,7 @@ import pytest
 import discord.ext.commands as commands
 
 from discord.ext.test import backend, get_config
-from discord.ext.test import message, verify_message, empty_queue, verify_file
+from discord.ext.test import message, verify_message, empty_queue, verify_file, member_join
 
 
 pytestmark = pytest.mark.usefixtures("testlos_m")
@@ -71,11 +71,27 @@ async def test_purge():
 
 
 async def test_kick():
-    pytest.skip()
+    guild = get_config().guilds[0]
+    mem = await member_join()
+
+    assert guild.get_member(mem.id) is not None
+
+    await admess(f"^kick {str(mem)}")
+    verify_message(f"User {mem} kicked")
+
+    assert guild.get_member(mem.id) is None
 
 
 async def test_ban():
-    pytest.skip()
+    guild = get_config().guilds[0]
+    mem = await member_join()
+
+    assert guild.get_member(mem.id) is not None
+
+    await admess(f"^ban {str(mem)}")
+    verify_message(f"User {mem} banned")
+
+    assert guild.get_member(mem.id) is None
 
 
 async def test_silence():
