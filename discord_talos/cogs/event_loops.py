@@ -164,7 +164,7 @@ class EventLoops(dutils.TalosCog):
         prompt[0] = prompt[0].strip("\"")
         out += f"{prompt[0]}\n\n"
         original = "Original prompt" if prompt[1].upper() == "YES" else "Submitted"
-        if len(prompt) > 2:
+        if prompt[2] != "":
             out += f"({original} by {prompt[2]})"
         else:
             out += f"({original} by Anonymous)"
