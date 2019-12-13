@@ -149,10 +149,13 @@ class EventLoops(dutils.TalosCog):
             raise dutils.StopEventLoop("No google service, prompt task quitting")
         prompt_sheet_id = "1bL0mSDGK4ypn8wioQCBqkZH47HmYp6GnmJbXkIOg2fA"
         values = self.get_spreadsheet(prompt_sheet_id, "Form Responses 1!B:E")
+        for item in values:
+            if len(item) < 4:
+                item.extend("" for _ in range(4 - len(item)))
         possibilities = []
         values = list(values)
         for item in values:
-            if len(item[3:]) == 0:
+            if item[3] == "":
                 possibilities.append(item)
         prompt = random.choice(possibilities)
 
@@ -173,7 +176,7 @@ class EventLoops(dutils.TalosCog):
                     except Exception as e:
                         utils.log_error(log, logging.WARNING, e, "Error while attempting to send daily prompt")
 
-        prompt.append("POSTED")
+        prompt[3] = "POSTED"
         self.set_spreadsheet(prompt_sheet_id, [prompt],
                              f"Form Responses 1!B{values.index(prompt) + 1}:E{values.index(prompt) + 1}")
 
