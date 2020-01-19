@@ -432,7 +432,7 @@ def configure_logging():
         gh.name = "dtalos"
         gh.setLevel(logging.WARNING)
     except (ImportError, OSError):
-        pass
+        print("Could not setup GCloud logging, setup google dependencies")
 
     ff = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
 
