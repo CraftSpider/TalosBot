@@ -970,7 +970,7 @@ class Commands(dutils.TalosCog):
         self.active_wws[wwid] = task
 
     @wordwar.command(name="cancel", description="Remove a pending WW from the queue")
-    async def _cancel(self, ctx, name):
+    async def _cancel(self, ctx, *, name):
         """Cancels a pending ww with the given ID/name. Won't stop a WW already in progress."""
         try:
             name = int(name) - 1
