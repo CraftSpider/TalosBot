@@ -55,13 +55,13 @@ class JokeCommands(dutils.TalosCog):
         if not east or east.status != discord.Status.online:
             await ctx.send(f"I'm afraid I can't do that, {ctx.author.display_name}.")
             return
-        await ctx.send("!East could I ask you for a favor? I need someone to verify my code.")
+        await ctx.send("&East, could I ask you for a favor? I need someone to verify my code.")
         await asyncio.sleep(2)
         async with ctx.typing():
             await asyncio.sleep(1)
             await ctx.send("Oh my. Well, if you insist ;)")
 
-    @commands.command(aliases=["Hi"], description="Say hello to Talos")
+    @commands.command(aliases=["Hi", "Hello", "hello"], description="Say hello to Talos")
     async def hi(self, ctx, *, extra=""):
         """Talos is friendly, and love to say hello. Some rare people may invoke special responses."""
         if str(ctx.author) == "East#4048" and extra.startswith("there..."):
