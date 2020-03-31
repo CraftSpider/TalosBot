@@ -15,6 +15,7 @@ log.addHandler(logging.FileHandler(utils.log_folder / "server.log"))
 SETTINGS_FILE = pathlib.Path(__file__).parent / "settings.json"
 
 
+@webserver.auth_required
 class TalosAPI(webserver.APIHandler):
     """
         Talos API handler class
