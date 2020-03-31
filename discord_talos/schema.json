@@ -1,5 +1,5 @@
 {
-  "sql_flavor": "mysql",
+  "sql_flavor": "postgres",
   "tables": {
     "guild_options": {
       "columns": [
@@ -233,91 +233,90 @@
       ]
     },
     "guild_commands": {
-      "columns": [
-        {
-          "name": "guild_id",
-          "type": "bigint",
-          "not_null": true
-        },
-        {
-          "name": "name",
-          "type": "varchar(32)",
-          "not_null": true
-        },
-        {
-          "name": "text",
-          "type": "text",
-          "not_null": true
-        }
-      ],
-      "primary": ["guild_id", "name"]
+        "columns": [
+          {
+            "name": "guild_id",
+            "type": "bigint",
+            "not_null": true
+          },
+          {
+            "name": "name",
+            "type": "varchar(32)",
+            "not_null": true
+          },
+          {
+            "name": "text",
+            "type": "text",
+            "not_null": true
+          }
+        ],
+        "primary": ["guild_id", "name"]
     },
     "guild_events": {
-      "columns": [
-        {
-          "name": "guild_id",
-          "type": "bigint",
-          "not_null": true
-        },
-        {
-          "name": "name",
-          "type": "varchar(32)",
-          "not_null": true
-        },
-        {
-          "name": "period",
-          "type": "varchar(32)",
-          "not_null": true
-        },
-        {
-          "name": "last_active",
-          "type": "integer",
-          "not_null": true
-        },
-        {
-          "name": "channel",
-          "type": "bigint",
-          "not_null": true
-        },
-        {
-          "name": "text",
-          "type": "text",
-          "not_null": true
-        }
-      ],
-      "primary": ["guild_id", "name"]
+        "columns": [
+          {
+            "name": "guild_id",
+            "type": "bigint",
+            "not_null": true
+          },
+          {
+            "name": "name",
+            "type": "varchar(32)",
+            "not_null": true
+          },
+          {
+            "name": "period",
+            "type": "varchar(32)",
+            "not_null": true
+          },
+          {
+            "name": "last_active",
+            "type": "integer",
+            "not_null": true
+          },
+          {
+            "name": "channel",
+            "type": "bigint",
+            "not_null": true
+          },
+          {
+            "name": "text",
+            "type": "text",
+            "not_null": true
+          }
+        ],
+        "primary": ["guild_id", "name"]
     },
     "quotes": {
-      "columns": [
-        {
-          "name": "guild_id",
-          "type": "bigint",
-          "not_null": true
-        },
-        {
-          "name": "id",
-          "type": "bigint",
-          "not_null": true
-        },
-        {
-          "name": "author",
-          "type": "text"
-        },
-        {
-          "name": "quote",
-          "type": "text",
-          "not_null": true
-        }
-      ],
-      "primary": ["guild_id", "id"]
+        "columns": [
+          {
+            "name": "guild_id",
+            "type": "bigint",
+            "not_null": true
+          },
+          {
+            "name": "id",
+            "type": "bigint",
+            "not_null": true
+          },
+          {
+            "name": "author",
+            "type": "text"
+          },
+          {
+            "name": "quote",
+            "type": "text",
+            "not_null": true
+          }
+        ],
+        "primary": ["guild_id", "id"]
     }
   },
   "triggers": {
     "quote_increment": {
-      "cause": "before insert",
-      "table": "quotes",
-      "for_each": "row",
-      "text": "SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes WHERE guild_id = NEW.guild_id);"
+        "cause": "before insert",
+        "table": "quotes",
+        "text": "FOR EACH ROW BEGIN SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes WHERE guild_id = NEW.guild_id);"
     }
   }
 }
