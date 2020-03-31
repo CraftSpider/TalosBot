@@ -1,5 +1,5 @@
 {
-  "sql_flavor": "postgres",
+  "sql_flavor": "mysql",
   "tables": {
     "guild_options": {
       "columns": [
