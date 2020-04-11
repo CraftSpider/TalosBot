@@ -8,4 +8,4 @@ oauth2client
 pytest
 dpytest
 psutil
-git+https://github.com/craftspider/spidertools.git@sql-rewrite#egg=spidertools
+git+https://github.com/craftspider/spidertools.git#egg=spidertools
