@@ -58,8 +58,8 @@ class UserCommands(dutils.TalosCog):
         for role in ctx.author.roles:
             if talos_colour(role) or lopez_colour(role):
                 await ctx.author.remove_roles(role)
-                if unnamed_colour(role) and unused_role(ctx, role):
-                    await role.delete()
+                # if unnamed_colour(role) and unused_role(ctx, role):
+                #     await role.delete()
 
         options = self.bot.database.get_guild_options(ctx.guild.id)
 
