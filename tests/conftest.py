@@ -34,20 +34,20 @@ def pytest_pycollect_makeitem(collector, name, obj):
         cls = clscol and clscol.obj or None
         fm = collector.session._fixturemanager
 
-        definition = py.FunctionDefinition(name=name, parent=collector, callobj=obj)
+        definition = py.FunctionDefinition.from_parent(collector, name=name, callobj=obj)
         fixinfo = fm.getfixtureinfo(definition, obj, cls)
 
         metafunc = py.Metafunc(definition, fixinfo, collector.config, cls=cls, module=module)
 
         if not metafunc._calls:
-            return AsyncFunction(name, parent=collector, fixtureinfo=fixinfo)
+            return AsyncFunction.from_parent(collector, name=name, fixtureinfo=fixinfo)
         else:
             output = []
             for callspec in metafunc._calls:
                 subname = f"{name}[{callspec.id}]"
-                output.append(AsyncFunction(
+                output.append(AsyncFunction.from_parent(
+                    collector,
                     name=subname,
-                    parent=collector,
                     callspec=callspec,
                     callobj=obj,
                     fixtureinfo=fixinfo,
