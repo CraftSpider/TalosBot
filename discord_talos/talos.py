@@ -499,7 +499,9 @@ def main():
         log.warning("TheCatAPI key missing, catpic command will fail.")
 
     # Create and run Talos
-    talos = Talos(tokens=tokens)
+    intents = discord.Intents.default()
+    intents.members = True
+    talos = Talos(tokens=tokens, intents=intents)
 
     try:
         talos.run(bot_token)
