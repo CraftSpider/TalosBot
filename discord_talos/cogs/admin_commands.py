@@ -495,7 +495,7 @@ class AdminCommands(dutils.TalosCog):
     async def _c_list(self, ctx):
         """Lists commands in this guild"""
         command_list = self.database.get_guild_commands(ctx.guild.id)
-        if len(command_list) is 0:
+        if len(command_list) == 0:
             await ctx.send("This server has no custom commands")
             return
         out = "```\nServer Commands:\n"
@@ -549,7 +549,7 @@ class AdminCommands(dutils.TalosCog):
     async def _e_list(self, ctx):
         """Display a list of all events currently defined for this guild."""
         event_list = self.database.get_guild_events(ctx.guild.id)
-        if len(event_list) is 0:
+        if len(event_list) == 0:
             await ctx.send("This server has no custom events")
             return
         out = "```\nServer Events:\n"

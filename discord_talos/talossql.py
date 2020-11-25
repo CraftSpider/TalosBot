@@ -522,7 +522,7 @@ class TalosDatabase(common.GenericDatabase):
         """
         query = f"SELECT time FROM {self._schema}.uptime WHERE time >= %s"
         self.execute(query, [start])
-        result = self._cursor.fetchall()
+        result = self._accessor._cursor.fetchall()
         return result
 
     def remove_uptime(self, end):

@@ -158,7 +158,7 @@ class DevCommands(dutils.TalosCog, command_attrs=dict(hidden=True)):
         """Evaluate a given string as python code. Prints the return, if not empty."""
         try:
             result = str(eval(program))
-            if result is not None and result is not "":
+            if result is not None and result != "":
                 result = re.sub(r"([`])", "\\g<1>\u200b", result)
                 await ctx.send_paginated(result, prefix="```py")
         except Exception as e:

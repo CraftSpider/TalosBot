@@ -206,7 +206,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         if ctx.guild is not None:
             try:
                 ctx.guild_options = self.database.get_guild_options(ctx.guild.id)
-            except mysql.connector.Error:
+            except Exception:  # TODO: This and below, something that works on postgres and mysql
                 ctx.guild_options = None
                 log.warning("Error getting guild options from database")
         else:
@@ -214,7 +214,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
 
         try:
             ctx.user_options = self.database.get_user_options(ctx.author.id)
-        except mysql.connector.Error:
+        except Exception:
             ctx.user_options = None
             log.warning("Error getting user options from database")
 
@@ -224,7 +224,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
                 command = self.database.get_item(sql.GuildCommand, guild_id=ctx.guild.id, name=ctx.invoked_with)
                 if command is not None:
                     ctx.command = custom_creator(ctx.invoked_with, command.text)
-            except mysql.connector.Error:
+            except Exception:  # TODO: Better error for both mysql and postgres
                 pass
 
         return ctx
@@ -334,7 +334,7 @@ money, please support me on [Patreon](https://www.patreon.com/CraftSpider)'''
         """
         log.debug("OnCommandError Event")
         if isinstance(exception, commands.CommandNotFound):
-            if ctx.guild is None or ctx.guild_options.fail_message:
+            if ctx.guild is None or (ctx.guild_options is not None and ctx.guild_options.fail_message):
                 cur_pref = (await self.get_prefix(ctx.message))[0]
                 await ctx.send(f"Sorry, I don't understand \"{ctx.invoked_with}\". May I suggest {cur_pref}help?")
         elif isinstance(exception, commands.BotMissingPermissions):

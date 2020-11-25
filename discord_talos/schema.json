@@ -1,70 +1,323 @@
 {
+  "sql_flavor": "mysql",
   "tables": {
     "guild_options": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
-                    "`fail_message` tinyint(1) DEFAULT NULL", "`pm_help` tinyint(1) DEFAULT NULL",
-                    "`any_color` tinyint(1) DEFAULT NULL", "`commands` tinyint(1) DEFAULT NULL",
-                    "`user_commands` tinyint(1) DEFAULT NULL", "`joke_commands` tinyint(1) DEFAULT NULL",
-                    "`writing_prompts` tinyint(1) DEFAULT NULL", "`prompts_channel` varchar(64) DEFAULT NULL",
-                    "`mod_log` tinyint(1) DEFAULT NULL", "`log_channel` varchar(64) DEFAULT NULL",
-                    "`prefix` varchar(32) DEFAULT NULL", "`timezone` varchar(5) DEFAULT NULL"],
-        "primary": "(`guild_id`)",
-        "defaults": [[-1, true, false, false, true, true, true, true, false, "prompts", false, "mod-log", "^", "UTC"]]
+      "columns": [
+        {
+          "name": "guild_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "rich_embeds",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "fail_message",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "pm_help",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "any_color",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "commands",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "user_commands",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "joke_commands",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "writing_prompts",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "prompts_channel",
+          "type": "varchar(64)",
+          "default": null
+        },
+        {
+          "name": "mod_log",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "log_channel",
+          "type": "varchar(64)",
+          "default": null
+        },
+        {
+          "name": "prefix",
+          "type": "varchar(32)",
+          "default": null
+        },
+        {
+          "name": "timezone",
+          "type": "varchar(5)",
+          "default": null
+        }
+      ],
+      "primary": ["guild_id"],
+      "defaults": [[-1, true, false, false, true, true, true, true, false, "prompts", false, "mod-log", "^", "UTC"]]
     },
     "admins": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`opname` bigint(20) NOT NULL"],
-        "primary": "(`guild_id`,`opname`)"
+      "columns": [
+        {
+          "name": "guild_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "opname",
+          "type": "bigint",
+          "not_null": true
+        }
+      ],
+      "primary": ["guild_id", "opname"]
     },
     "perm_rules": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`command` varchar(255) NOT NULL",
-                    "`perm_type` varchar(32) NOT NULL", "`target` varchar(255) NOT NULL",
-                    "`priority` int(11) NOT NULL", "`allow` tinyint(1) NOT NULL"],
-        "primary": "(`guild_id`,`command`,`perm_type`,`target`)"
+      "columns": [
+        {
+          "name": "guild_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "command",
+          "type": "varchar(255)",
+          "not_null": true
+        },
+        {
+          "name": "perm_type",
+          "type": "varchar(32)",
+          "not_null": true
+        },
+        {
+          "name": "target",
+          "type": "varchar(255)",
+          "not_null": true
+        },
+        {
+          "name": "priority",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "allow",
+          "type": "boolean",
+          "not_null": true
+        }
+      ],
+      "primary": ["guild_id", "command", "perm_type", "target"]
     },
     "uptime": {
-      "columns": ["`time` bigint(20) NOT NULL"],
-      "primary": "(`time`)"
+      "columns": [
+        {
+          "name": "time",
+          "type": "bigint",
+          "not_null": true
+        }
+      ],
+      "primary": ["time"]
     },
     "user_options": {
-        "columns": ["`user_id` bigint(20) NOT NULL", "`rich_embeds` tinyint(1) DEFAULT NULL",
-                    "`prefix` varchar(32) DEFAULT NULL"],
-        "primary": "(`user_id`)",
-        "defaults": [[-1, 1, "^"]]
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "not_null": "true"
+        },
+        {
+          "name": "rich_embeds",
+          "type": "boolean",
+          "default": null
+        },
+        {
+          "name": "prefix",
+          "type": "varchar(32)",
+          "default": null
+        }
+      ],
+      "primary": ["user_id"],
+      "defaults": [[-1, true, "^"]]
     },
     "user_profiles": {
-        "columns": ["`user_id` bigint(20) NOT NULL", "`description` text",
-                    "`commands_invoked` int(11) NOT NULL DEFAULT '0'", "`title` text"],
-        "primary": "(`user_id`)"
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "description",
+          "type": "text"
+        },
+        {
+          "name": "commands_invoked",
+          "type": "integer",
+          "not_null": true,
+          "default": 0
+        },
+        {
+          "name": "title",
+          "type": "text"
+        }
+      ],
+      "primary": ["user_id"]
     },
     "user_titles": {
-        "columns": ["`user_id` bigint(20) NOT NULL", "`title` varchar(255) NOT NULL"],
-        "primary": "(`user_id`,`title`)"
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "title",
+          "type": "varchar(255)",
+          "not_null": true
+        }
+      ],
+      "primary": ["user_id", "title"],
+      "foreign": [
+        {
+          "local_name": "user_id",
+          "remote_table": "user_profiles",
+          "on_delete": "cascade"
+        }
+      ]
     },
     "invoked_commands": {
-        "columns": ["`user_id` bigint(20) NOT NULL", "`command_name` varchar(32) NOT NULL",
-                    "`times_invoked` int(11) NOT NULL DEFAULT '1'"],
-        "primary": "(`command_name`,`user_id`)"
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "command_name",
+          "type": "varchar(32)",
+          "not_null": true
+        },
+        {
+          "name": "times_invoked",
+          "type": "integer",
+          "not_null": true,
+          "default": 1
+        }
+      ],
+      "primary": ["command_name", "user_id"],
+      "foreign": [
+        {
+          "local_name": "user_id",
+          "remote_table": "user_profiles",
+          "on_delete": "cascade"
+        }
+      ]
     },
     "guild_commands": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`text` text NOT NULL"],
-        "primary": "(`guild_id`,`name`)"
+      "columns": [
+        {
+          "name": "guild_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(32)",
+          "not_null": true
+        },
+        {
+          "name": "text",
+          "type": "text",
+          "not_null": true
+        }
+      ],
+      "primary": ["guild_id", "name"]
     },
     "guild_events": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`name` varchar(32) NOT NULL", "`period` varchar(32) NOT NULL",
-                    "`last_active` int NOT NULL", "`channel` bigint(20) NOT NULL", "`text` text NOT NULL"],
-        "primary": "(`guild_id`,`name`)"
+      "columns": [
+        {
+          "name": "guild_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "name",
+          "type": "varchar(32)",
+          "not_null": true
+        },
+        {
+          "name": "period",
+          "type": "varchar(32)",
+          "not_null": true
+        },
+        {
+          "name": "last_active",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "channel",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "text",
+          "type": "text",
+          "not_null": true
+        }
+      ],
+      "primary": ["guild_id", "name"]
     },
     "quotes": {
-        "columns": ["`guild_id` bigint(20) NOT NULL", "`id` bigint NOT NULL", "`author` text",
-                    "`quote` text"],
-        "primary": "(`guild_id`, `id`)"
+      "columns": [
+        {
+          "name": "guild_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "author",
+          "type": "text"
+        },
+        {
+          "name": "quote",
+          "type": "text",
+          "not_null": true
+        }
+      ],
+      "primary": ["guild_id", "id"]
     }
   },
   "triggers": {
     "quote_increment": {
-        "cause": "before insert",
-        "table": "quotes",
-        "text": "FOR EACH ROW BEGIN SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes WHERE guild_id = NEW.guild_id);"
+      "cause": "before insert",
+      "table": "quotes",
+      "for_each": "row",
+      "text": "SET NEW.id = (SELECT IFNULL(MAX(id), 0) + 1 FROM quotes WHERE guild_id = NEW.guild_id);"
     }
   }
 }
